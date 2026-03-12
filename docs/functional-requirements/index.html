@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能要件定義書 - WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-top: 32px; }
+  .card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; border: 1px solid #eee; }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-color: #0f3460; }
+  .card .icon { font-size: 2.5rem; margin-bottom: 16px; }
+  .card h2 { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+  .card .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
+  .card .file-count { font-size: 0.8rem; color: #aaa; }
+  .badge { display: inline-block; background: #e8f0fe; color: #0f3460; font-size: 0.75rem; padding: 2px 10px; border-radius: 20px; }
+  .badge.empty { background: #f5f5f5; color: #aaa; }
+  .section-header { margin-bottom: 32px; }
+  .section-header h1 { font-size: 1.6rem; color: #1a1a2e; display: flex; align-items: center; gap: 12px; }
+  .doc-list { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+  .doc-item { padding: 20px 28px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+  .doc-item:last-child { border-bottom: none; }
+  .doc-item a { text-decoration: none; color: #0f3460; font-weight: 500; font-size: 1rem; }
+  .doc-item a:hover { text-decoration: underline; }
+  .doc-item .meta { font-size: 0.8rem; color: #aaa; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', 'Monaco', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; font-size: 0.88em; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .drawio-wrapper { margin: 20px 0; }
+  .drawio-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb"><a href="../index.html">Home</a> &rsaquo; 機能要件定義書</nav>
+<main>
+
+    <div class="section-header">
+      <h1>📝 機能要件定義書</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem">Functional Requirements</p>
+    </div>
+    <div style="background:white;border-radius:12px;padding:20px 28px;margin-bottom:32px;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
+      <strong style="color:#1a1a2e">目次</strong>
+      <ul style="margin-top:12px;padding-left:24px"><li><a href="#01-master-management">01-master-management</a></li><li><a href="#02-inbound-management">02-inbound-management</a></li><li><a href="#03-inventory-management">03-inventory-management</a></li><li><a href="#04-outbound-management">04-outbound-management</a></li><li><a href="#05-reports">05-reports</a></li><li><a href="#06-batch-processing">06-batch-processing</a></li><li><a href="#07-interface">07-interface</a></li></ul>
+    </div>
+    <div class="markdown-body" id="01-master-management"><h1>機能要件定義書 — マスタ管理</h1>
+<h2>共通設計方針</h2>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>削除方式</strong></td>
+<td>論理削除（有効/無効フラグ）。物理削除は行わない</td>
+</tr>
+<tr>
+<td><strong>トランへのコピー</strong></td>
+<td>トランザクションデータはマスタIDに加え、利用する名称等の情報をその時点でコピー保持する。マスタの変更・無効化後もトランデータは登録時の情報を維持する</td>
+</tr>
+<tr>
+<td><strong>一括登録</strong></td>
+<td>CSVインポート不要。初期データ・テストデータはFlywayのSQLスクリプトで投入する</td>
+</tr>
+<tr>
+<td><strong>アクセス権限</strong></td>
+<td>認可方式は <a href="../architecture-blueprint/07-auth-architecture.md">07-auth-architecture.md</a> の権限マトリクスに従う</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>1. 商品マスタ</h2>
+<h3>機能一覧</h3>
+<table>
+<thead>
+<tr>
+<th>機能</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>商品一覧照会</td>
+<td>登録済み商品を一覧表示する。有効・無効を絞り込める</td>
+</tr>
+<tr>
+<td>商品登録</td>
+<td>新規商品を登録する</td>
+</tr>
+<tr>
+<td>商品編集</td>
+<td>登録済み商品の情報を更新する</td>
+</tr>
+<tr>
+<td>商品無効化 / 有効化</td>
+<td>商品の有効/無効を切り替える</td>
+</tr>
+</tbody></table>
+<h3>管理項目</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>商品コード</td>
+<td>システム全体で一意。登録後は変更不可</td>
+</tr>
+<tr>
+<td>商品名</td>
+<td></td>
+</tr>
+<tr>
+<td>商品名カナ</td>
+<td></td>
+</tr>
+<tr>
+<td>単位</td>
+<td>個・箱・ケース等</td>
+</tr>
+<tr>
+<td>カテゴリ</td>
+<td>商品の分類</td>
+</tr>
+<tr>
+<td>ケース入数</td>
+<td>1ケースに含まれるボール数</td>
+</tr>
+<tr>
+<td>ボール入数</td>
+<td>1ボールに含まれるバラ数</td>
+</tr>
+<tr>
+<td>重量（kg）</td>
+<td></td>
+</tr>
+<tr>
+<td>サイズ（cm）</td>
+<td>縦・横・高さ</td>
+</tr>
+<tr>
+<td>バーコード / JANコード</td>
+<td></td>
+</tr>
+<tr>
+<td>保管条件</td>
+<td>常温・冷蔵・冷凍</td>
+</tr>
+<tr>
+<td>危険物フラグ</td>
+<td>危険物該当の有無</td>
+</tr>
+</tbody></table>
+<h3>ビジネスルール</h3>
+<ul>
+<li>商品コードはシステム全体で一意</li>
+<li>商品コードは登録後に変更不可</li>
+<li>無効化した商品は入荷・出荷・棚卸の新規登録で選択不可</li>
+<li>既存トランザクション（入荷・出荷等）に紐づく商品の情報をトランが保持するため、商品情報を変更しても過去トランに影響しない</li>
+</ul>
+<hr>
+<h2>2. 取引先マスタ</h2>
+<h3>機能一覧</h3>
+<table>
+<thead>
+<tr>
+<th>機能</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>取引先一覧照会</td>
+<td>登録済み取引先を一覧表示する。種別・有効/無効で絞り込める</td>
+</tr>
+<tr>
+<td>取引先登録</td>
+<td>新規取引先を登録する</td>
+</tr>
+<tr>
+<td>取引先編集</td>
+<td>登録済み取引先の情報を更新する</td>
+</tr>
+<tr>
+<td>取引先無効化 / 有効化</td>
+<td>取引先の有効/無効を切り替える</td>
+</tr>
+</tbody></table>
+<h3>管理項目</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>取引先コード</td>
+<td>システム全体で一意。登録後は変更不可</td>
+</tr>
+<tr>
+<td>取引先名</td>
+<td></td>
+</tr>
+<tr>
+<td>取引先名カナ</td>
+<td></td>
+</tr>
+<tr>
+<td>種別</td>
+<td>仕入先 / 出荷先 / 両方</td>
+</tr>
+<tr>
+<td>住所</td>
+<td></td>
+</tr>
+<tr>
+<td>電話番号</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3>ビジネスルール</h3>
+<ul>
+<li>取引先コードはシステム全体で一意</li>
+<li>取引先コードは登録後に変更不可</li>
+<li>種別「仕入先」または「両方」の取引先のみ、入荷予定の入荷元として選択可能</li>
+<li>種別「出荷先」または「両方」の取引先のみ、受注の出荷先として選択可能</li>
+<li>無効化した取引先は新規の入荷・出荷の登録で選択不可</li>
+</ul>
+<hr>
+<h2>3. ロケーションマスタ</h2>
+<h3>機能一覧</h3>
+<table>
+<thead>
+<tr>
+<th>機能</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ロケーション一覧照会</td>
+<td>登録済みロケーションを一覧表示する。コードの前方一致で絞り込める</td>
+</tr>
+<tr>
+<td>ロケーション登録</td>
+<td>新規ロケーションを登録する</td>
+</tr>
+<tr>
+<td>ロケーション編集</td>
+<td>ロケーション名称等を更新する（コードは変更不可）</td>
+</tr>
+<tr>
+<td>ロケーション無効化 / 有効化</td>
+<td>ロケーションの有効/無効を切り替える</td>
+</tr>
+</tbody></table>
+<h3>管理項目</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ロケーションコード</td>
+<td><code>棟(1桁英字)-フロア(2桁数字)-エリア(1桁英字)-棚(2桁数字)-段(2桁数字)-並び(2桁数字)</code> の形式。例：<code>A-01-A-01-01-01</code></td>
+</tr>
+<tr>
+<td>ロケーション名称</td>
+<td>任意の説明的な名前</td>
+</tr>
+</tbody></table>
+<h3>ビジネスルール</h3>
+<ul>
+<li>ロケーションコードはシステム全体で一意</li>
+<li>ロケーションコードは登録後に変更不可</li>
+<li>一覧の絞り込みはコードの前方一致で行う（棟→フロア→エリアの順に上位から絞り込める）</li>
+<li>在庫が存在するロケーションは無効化不可</li>
+<li>棚卸中のロケーションは無効化不可（棚卸確定後に無効化可能）</li>
+<li>無効化したロケーションは入庫・在庫移動の登録で選択不可</li>
+</ul>
+<hr>
+<h2>4. ユーザーマスタ</h2>
+<blockquote>
+<p>認証・認可の詳細は <a href="../architecture-blueprint/07-auth-architecture.md">07-auth-architecture.md</a>、セキュリティ仕様は <a href="../architecture-blueprint/10-security-architecture.md">10-security-architecture.md</a> を参照</p>
+</blockquote>
+<h3>機能一覧</h3>
+<table>
+<thead>
+<tr>
+<th>機能</th>
+<th>説明</th>
+<th>操作可能ロール</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ユーザー一覧照会</td>
+<td>登録済みユーザーを一覧表示する</td>
+<td>SYSTEM_ADMIN</td>
+</tr>
+<tr>
+<td>ユーザー登録</td>
+<td>新規ユーザーを登録し、初期パスワードを発行する</td>
+<td>SYSTEM_ADMIN</td>
+</tr>
+<tr>
+<td>ユーザー編集</td>
+<td>ユーザー情報（氏名・メールアドレス・ロール等）を更新する</td>
+<td>SYSTEM_ADMIN</td>
+</tr>
+<tr>
+<td>ユーザー無効化 / 有効化</td>
+<td>ユーザーの有効/無効を切り替える</td>
+<td>SYSTEM_ADMIN</td>
+</tr>
+<tr>
+<td>アカウントロック解除</td>
+<td>ログイン失敗によりロックされたアカウントを解除する</td>
+<td>SYSTEM_ADMIN</td>
+</tr>
+</tbody></table>
+<h3>管理項目</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ユーザーコード</td>
+<td>ログインIDとして使用。システム全体で一意。登録後は変更不可</td>
+</tr>
+<tr>
+<td>氏名</td>
+<td></td>
+</tr>
+<tr>
+<td>メールアドレス</td>
+<td>通知・連絡先として使用。ログインIDとは別</td>
+</tr>
+<tr>
+<td>ロール</td>
+<td>SYSTEM_ADMIN / WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER</td>
+</tr>
+<tr>
+<td>初回ログインフラグ</td>
+<td>ONの間は初回パスワード変更を強制（他操作不可）</td>
+</tr>
+</tbody></table>
+<h3>ビジネスルール</h3>
+<ul>
+<li>ユーザーコードはシステム全体で一意</li>
+<li>ユーザー登録時に SYSTEM_ADMIN が初期パスワードを設定する</li>
+<li>登録されたユーザーは初回ログイン時にパスワード変更を強制される（変更完了まで他操作不可）</li>
+<li>ログイン失敗が連続5回でアカウントロック（ロック解除は SYSTEM_ADMIN のみ）</li>
+<li>自分自身のロールを変更・無効化することはできない（誤操作による管理者不在の防止）</li>
+</ul>
+</div><hr class="doc-separator"><div class="markdown-body" id="02-inbound-management"><h1>機能要件定義書 — 入荷管理</h1>
+<h2>ステータス遷移</h2>
+<pre><code>入荷予定 → 入荷確認済 → 検品中 → 一部入庫 → 入庫完了
+                                          ↑
+                                     (一部商品のみ入庫完了時)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>ステータス</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>入荷予定</strong></td>
+<td>入荷予定データが登録された初期状態</td>
+</tr>
+<tr>
+<td><strong>入荷確認済</strong></td>
+<td>入荷予定を担当者が確認・受領した状態</td>
+</tr>
+<tr>
+<td><strong>検品中</strong></td>
+<td>少なくとも1明細の検品が開始された状態</td>
+</tr>
+<tr>
+<td><strong>一部入庫</strong></td>
+<td>一部の商品明細の入庫が完了しているが全体未完了の状態</td>
+</tr>
+<tr>
+<td><strong>入庫完了</strong></td>
+<td>全商品明細の入庫が完了した状態</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 入荷予定登録（手動）</h3>
+<ul>
+<li>ユーザーが画面から直接入荷予定を登録できる</li>
+<li>入荷予定日・仕入先・商品明細（商品・予定数量）を入力する</li>
+<li>登録時のステータスは「入荷予定」</li>
+</ul>
+<h3>2. 入荷予定取り込み（外部I/F）</h3>
+<ul>
+<li>外部I/F（CSV）から入荷予定を取り込める</li>
+<li>取り込み仕様は <a href="../architecture-blueprint/09-interface-architecture.md">09-interface-architecture.md</a> を参照</li>
+<li>取り込み後のステータスは「入荷予定」</li>
+</ul>
+<h3>3. 入荷予定一覧照会</h3>
+<ul>
+<li>登録済みの入荷予定を一覧表示する</li>
+<li>ステータス・入荷予定日・仕入先で絞り込める</li>
+</ul>
+<h3>4. 入荷確認</h3>
+<ul>
+<li>「入荷予定」ステータスの入荷予定を「入荷確認済」に更新する</li>
+<li>入荷物が届いたことを記録する操作</li>
+</ul>
+<h3>5. 入荷キャンセル</h3>
+<ul>
+<li>「入庫完了」以外のステータスの入荷予定をキャンセルできる</li>
+<li>キャンセルされた入荷予定は修正不可（再登録が必要）</li>
+<li>キャンセル時点で検品済みの在庫があった場合は在庫を戻す</li>
+</ul>
+<h3>6. 入荷検品</h3>
+<ul>
+<li>商品明細単位で検品数量を入力する</li>
+<li>最初の検品入力でステータスが「検品中」に遷移する</li>
+<li>検品数が予定数と異なる場合も、検品数をそのまま確定できる（差異は記録として保持）</li>
+<li>入力済みの検品数は確定前であれば修正可能</li>
+</ul>
+<h3>7. 入庫指示・確定</h3>
+<ul>
+<li>検品済みの商品明細ごとに入庫先ロケーションを指定して入庫を確定する</li>
+<li><strong>ロケーション自動割当</strong>：システムが以下の優先順で候補ロケーションを初期表示する<ol>
+<li>同一商品の既存在庫があるロケーション</li>
+<li>在庫ゼロの空きロケーション（先着順）</li>
+</ol>
+</li>
+<li>ユーザーは自動割当候補をそのまま使うか、別のロケーションを選択できる</li>
+<li>商品明細を個別に入庫確定できる（全明細一括・部分確定どちらも可）</li>
+<li>一部の明細のみ入庫確定するとステータスが「一部入庫」に遷移する</li>
+<li>全明細の入庫確定でステータスが「入庫完了」に遷移する</li>
+</ul>
+<h3>8. 入荷実績照会</h3>
+<ul>
+<li>入庫完了した入荷実績を照会できる</li>
+<li>入荷予定数・検品数・差異数を確認できる</li>
+</ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead>
+<tr>
+<th>ルール</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動登録とCSV取り込みの共存</td>
+<td>どちらの方法で作成した入荷予定も同一の業務フローで処理する</td>
+</tr>
+<tr>
+<td>検品差異の扱い</td>
+<td>予定数と検品数の差異はデータとして記録するが、確定を妨げない</td>
+</tr>
+<tr>
+<td>修正不可</td>
+<td>作成済みの入荷予定の内容（明細・数量等）は変更不可。修正が必要な場合はキャンセルして再登録</td>
+</tr>
+<tr>
+<td>未入荷の扱い</td>
+<td>入荷予定日を過ぎても入庫完了していない入荷予定は、日替処理で未入荷として記録し帳票出力できる</td>
+</tr>
+<tr>
+<td>トランへのマスタ情報コピー</td>
+<td>入荷データには商品コード・商品名・取引先コード・取引先名等をコピー保持する</td>
+</tr>
+</tbody></table>
+</div><hr class="doc-separator"><div class="markdown-body" id="03-inventory-management"><h1>機能要件定義書 — 在庫管理</h1>
+<h2>在庫の管理単位</h2>
+<p>在庫は <strong>ロケーション × 商品 × 荷姿</strong> の組み合わせで管理する。</p>
+<h3>荷姿の種類</h3>
+<table>
+<thead>
+<tr>
+<th>荷姿</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>ケース</strong></td>
+<td>最大単位。段ボール等の梱包単位</td>
+</tr>
+<tr>
+<td><strong>ボール</strong></td>
+<td>中間単位。6個入り等、少量がまとまった単位</td>
+</tr>
+<tr>
+<td><strong>バラ</strong></td>
+<td>最小単位。1個単位</td>
+</tr>
+</tbody></table>
+<p>荷姿間の変換レート（ケース入数・ボール入数）は商品マスタで管理する。</p>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 在庫照会</h3>
+<ul>
+<li>ロケーション・商品・荷姿で絞り込んで在庫を照会できる</li>
+<li>商品単位での合計在庫数（荷姿別・全体）を確認できる</li>
+<li>ロケーション別の在庫一覧を確認できる</li>
+</ul>
+<h3>2. 在庫移動</h3>
+<ul>
+<li>在庫をあるロケーションから別のロケーションへ移動できる</li>
+<li>移動元ロケーション・移動先ロケーション・商品・荷姿・数量を指定して実行する</li>
+<li>移動元の在庫が指定数量を下回る場合はエラー</li>
+</ul>
+<h3>3. 在庫ばらし</h3>
+<ul>
+<li>大きな荷姿を小さな荷姿に分解できる<ul>
+<li>ケース → ボール（1ケース = 商品マスタのケース入数 分のボールに変換）</li>
+<li>ケース → バラ（1ケース = ケース入数 × ボール入数 分のバラに変換）</li>
+<li>ボール → バラ（1ボール = 商品マスタのボール入数 分のバラに変換）</li>
+</ul>
+</li>
+<li>ばらし元・ばらし先のロケーションは同一でも別でも指定可能</li>
+<li>変換後の数量はシステムが自動計算して表示する（ユーザーが確認して実行）</li>
+<li>まとめ（小→大）機能は対象外</li>
+</ul>
+<h3>4. 在庫訂正</h3>
+<ul>
+<li>在庫数量を直接補正できる（増加・減少どちらも可）</li>
+<li>訂正時に訂正理由を入力必須とする</li>
+<li>訂正の履歴（訂正日時・対象ロケーション/商品/荷姿・訂正前数量・訂正後数量・訂正理由・実施者）をすべて記録する</li>
+<li>在庫訂正一覧は帳票出力できる</li>
+</ul>
+<h3>5. 棚卸</h3>
+<ul>
+<li>ロケーションを範囲指定して棚卸を実施できる（例：棟Aのみ、特定エリアのみ）</li>
+<li>棚卸の流れ：<ol>
+<li><strong>棚卸開始</strong>：対象ロケーション範囲を指定して棚卸を開始する。棚卸リストを帳票出力できる</li>
+<li><strong>実数入力</strong>：ロケーション・商品・荷姿ごとに実際に数えた数量を画面入力する</li>
+<li><strong>差異確認</strong>：システムが棚卸前在庫数と入力実数を比較し差異を表示する</li>
+<li><strong>棚卸確定</strong>：差異を確認の上、確定すると在庫数が実数に更新される</li>
+</ol>
+</li>
+<li>棚卸中（開始〜確定前）のロケーションへの入出庫を制限する（棚卸ロック）</li>
+<li>棚卸結果（差異含む）は記録として保持し、帳票出力できる</li>
+</ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead>
+<tr>
+<th>ルール</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>在庫マイナス禁止</td>
+<td>在庫移動・ばらし・出荷確定において在庫数が0を下回る操作はエラー</td>
+</tr>
+<tr>
+<td>在庫訂正の記録</td>
+<td>在庫訂正は必ず履歴として記録する。削除・修正は不可</td>
+</tr>
+<tr>
+<td>棚卸ロック</td>
+<td>棚卸中のロケーションは入出庫操作（入庫指示・出荷確定・在庫移動）の対象外とする</td>
+</tr>
+<tr>
+<td>荷姿変換の自動計算</td>
+<td>ばらし時の変換数量は商品マスタの入数から自動計算する。端数が出る場合はエラー（端数ばらし不可）</td>
+</tr>
+<tr>
+<td>トランへのマスタ情報コピー</td>
+<td>在庫訂正・棚卸等のトランには商品コード・商品名・ロケーションコード等をコピー保持する</td>
+</tr>
+</tbody></table>
+</div><hr class="doc-separator"><div class="markdown-body" id="04-outbound-management"><h1>機能要件定義書 — 出荷管理</h1>
+<h2>ステータス遷移</h2>
+<pre><code>受注 → 引当済 → ピッキング中 → 出荷検品中 → 出荷完了
+                                      ↑
+                               (一部明細のみ検品完了時は「ピッキング中」継続)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>ステータス</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>受注</strong></td>
+<td>受注データが登録された初期状態。在庫未引当</td>
+</tr>
+<tr>
+<td><strong>引当済</strong></td>
+<td>全明細の在庫引当が完了した状態</td>
+</tr>
+<tr>
+<td><strong>ピッキング中</strong></td>
+<td>ピッキング指示が作成された状態</td>
+</tr>
+<tr>
+<td><strong>出荷検品中</strong></td>
+<td>少なくとも1明細の出荷検品が開始された状態</td>
+</tr>
+<tr>
+<td><strong>出荷完了</strong></td>
+<td>全明細の出荷検品・確定が完了した状態</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>荷姿について</h2>
+<p>出荷管理で扱う荷姿（ケース・ボール・バラ）の定義および変換レートは <a href="03-inventory-management.md">03-inventory-management.md</a> に準じる。</p>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 受注登録（手動）</h3>
+<ul>
+<li>ユーザーが画面から直接受注を登録できる</li>
+<li>出荷予定日・出荷先取引先・商品明細（商品・荷姿・数量）を入力する</li>
+<li>登録時のステータスは「受注」</li>
+</ul>
+<h3>2. 受注取り込み（外部I/F）</h3>
+<ul>
+<li>外部I/F（CSV）から受注を取り込める</li>
+<li>取り込み仕様は <a href="../architecture-blueprint/09-interface-architecture.md">09-interface-architecture.md</a> を参照</li>
+<li>取り込み後のステータスは「受注」</li>
+</ul>
+<h3>3. 受注一覧照会</h3>
+<ul>
+<li>登録済みの受注を一覧表示する</li>
+<li>ステータス・出荷予定日・出荷先で絞り込める</li>
+</ul>
+<h3>4. 在庫引当</h3>
+<ul>
+<li>受注一覧から1件または複数件を選択して一括で在庫引当を実行できる</li>
+<li>引当ロジック：商品 × 荷姿ごとに <strong>FIFO（先入庫順）</strong> でロケーションから在庫を引当する</li>
+<li>引当時に荷姿の不一致がある場合（例：在庫はケースだが受注はバラ指定）、<strong>ばらし指示を同時に発行できる</strong>（ばらし後の在庫を自動で引当対象とする）</li>
+<li>在庫が不足している場合は不足明細を表示してユーザーが対応を判断できる（一部引当・引当見送りどちらも可）</li>
+<li>引当完了でステータスが「引当済」に遷移する</li>
+</ul>
+<h3>5. ピッキング指示作成</h3>
+<ul>
+<li>「引当済」の受注を複数まとめてピッキング指示1件として作成できる（バッチピッキング）</li>
+<li>ピッキング対象エリアを指定してリストを生成することで、そのエリア内の商品を効率的に回収できる</li>
+<li>ピッキングリストを帳票出力できる（ロケーション順にソートされた作業リスト）</li>
+<li>指示作成後にステータスが「ピッキング中」に遷移する</li>
+</ul>
+<h3>6. 出荷検品</h3>
+<ul>
+<li>ピッキング完了後、商品明細単位で検品数量を入力する</li>
+<li>検品数がピッキング数と異なる場合も、検品数をそのまま出荷数として確定できる（差異は記録として保持）</li>
+<li>最初の検品入力でステータスが「出荷検品中」に遷移する</li>
+</ul>
+<h3>7. 出荷確定</h3>
+<ul>
+<li>全明細の出荷検品完了後、出荷を確定する</li>
+<li>確定時に引当在庫が実際の在庫から減算される</li>
+<li>ステータスが「出荷完了」に遷移する</li>
+</ul>
+<h3>8. 配送指示</h3>
+<ul>
+<li>出荷完了した受注に対して配送情報を登録できる</li>
+<li>配送業者・送り状番号を入力して管理する</li>
+<li>配送リストを帳票出力できる（出荷完了した受注の配送情報一覧）</li>
+<li>操作可能ロール：SYSTEM_ADMIN・WAREHOUSE_MANAGER・WAREHOUSE_STAFF</li>
+</ul>
+<h3>9. 受注キャンセル</h3>
+<ul>
+<li>「出荷完了」以外のステータスの受注をキャンセルできる</li>
+<li>引当済みの在庫がある場合はキャンセル時に引当を解放する</li>
+<li>「ピッキング中」ステータスの受注をキャンセルする場合、その受注を含むピッキング指示から当該受注の明細を除外する（他の受注明細はピッキング継続）</li>
+</ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead>
+<tr>
+<th>ルール</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>手動登録とCSV取り込みの共存</td>
+<td>どちらの方法で作成した受注も同一の業務フローで処理する</td>
+</tr>
+<tr>
+<td>引当はFIFO</td>
+<td>同一商品 × 荷姿の在庫が複数ロケーションにある場合、先に入庫したロケーションから優先して引当する</td>
+</tr>
+<tr>
+<td>引当時のばらし</td>
+<td>荷姿不一致時のばらし指示は引当操作と同時に実行できる。ばらし後の在庫数はシステムが自動計算する</td>
+</tr>
+<tr>
+<td>検品差異の扱い</td>
+<td>予定数と検品数の差異はデータとして記録するが、確定を妨げない</td>
+</tr>
+<tr>
+<td>在庫減算タイミング</td>
+<td>引当時は在庫を仮確保（引当数として管理）し、出荷確定時に実際の在庫から減算する</td>
+</tr>
+<tr>
+<td>ピッキング指示後キャンセル</td>
+<td>ピッキング中の受注をキャンセルした場合、そのピッキング指示から当該受注明細を除外する。ピッキング指示内の全受注がキャンセルされた場合はピッキング指示自体を無効化する</td>
+</tr>
+<tr>
+<td>トランへのマスタ情報コピー</td>
+<td>受注データには商品コード・商品名・荷姿・取引先コード・取引先名等をコピー保持する</td>
+</tr>
+</tbody></table>
+</div><hr class="doc-separator"><div class="markdown-body" id="05-reports"><h1>機能要件定義書 — レポート</h1>
+<h2>共通仕様</h2>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>出力形式</strong></td>
+<td>PDFダウンロード</td>
+</tr>
+<tr>
+<td><strong>配置方針</strong></td>
+<td>各業務メニュー内に配置（レポート専用メニューは設けない）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>入荷管理メニュー内レポート</h2>
+<h3>1. 入荷予定レポート</h3>
+<ul>
+<li>指定期間・仕入先・ステータスで絞り込んだ入荷予定の一覧を出力する</li>
+<li>入荷予定日・仕入先・商品・予定数量・ステータスを含む</li>
+</ul>
+<h3>2. 入庫実績レポート</h3>
+<ul>
+<li>指定期間・仕入先・商品で絞り込んだ入庫実績の一覧を出力する</li>
+<li>入荷予定数・検品数・差異数を並べて確認できる</li>
+</ul>
+<h3>3. 未入荷リスト</h3>
+<ul>
+<li>日替処理で自動生成される</li>
+<li>入荷予定日を過ぎても入庫完了していない入荷予定の一覧</li>
+<li>入荷予定日・仕入先・商品・予定数量・現在ステータスを含む</li>
+</ul>
+<hr>
+<h2>在庫管理メニュー内レポート</h2>
+<h3>4. 在庫一覧レポート</h3>
+<ul>
+<li>ロケーション・商品・荷姿・保管条件で絞り込んだ現在在庫の一覧を出力する</li>
+<li>ロケーションコード・商品・荷姿・在庫数量を含む</li>
+</ul>
+<h3>5. 在庫推移レポート（入出庫履歴）</h3>
+<ul>
+<li>指定期間・商品・ロケーションで絞り込んだ在庫変動履歴を出力する</li>
+<li>日時・種別（入庫/出庫/移動/ばらし/訂正/棚卸）・数量・変動後在庫数を時系列で表示する</li>
+<li>棚卸差異の原因調査や在庫動向の把握に使用する</li>
+</ul>
+<h3>6. 在庫訂正一覧</h3>
+<ul>
+<li>指定期間に実施した在庫訂正の一覧を出力する</li>
+<li>訂正日時・対象ロケーション・商品・荷姿・訂正前数量・訂正後数量・訂正理由・実施者を含む</li>
+</ul>
+<h3>7. 棚卸リスト</h3>
+<ul>
+<li>棚卸開始時に出力する作業用帳票</li>
+<li>対象ロケーション範囲・商品・荷姿・棚卸前在庫数を含む（実数記入欄あり）</li>
+<li>ロケーションコード順にソートして出力する</li>
+</ul>
+<h3>8. 棚卸結果レポート</h3>
+<ul>
+<li>棚卸確定後に出力する</li>
+<li>ロケーション・商品・荷姿・棚卸前数量・実数・差異数を含む</li>
+<li>差異があった明細を識別できる</li>
+</ul>
+<hr>
+<h2>出荷管理メニュー内レポート</h2>
+<h3>9. ピッキング指示書</h3>
+<ul>
+<li>ピッキング指示作成時に出力する作業用帳票</li>
+<li>指定エリア内のロケーション順にソートして出力する（効率的なピッキング動線を実現）</li>
+<li>ロケーション・商品・荷姿・ピッキング数量・対応受注番号を含む</li>
+</ul>
+<h3>10. 出荷検品レポート</h3>
+<ul>
+<li>指定期間・出荷先・商品で絞り込んだ出荷検品実績の一覧を出力する</li>
+<li>受注数量・出荷数量・差異数を並べて確認できる</li>
+</ul>
+<h3>11. 配送リスト</h3>
+<ul>
+<li>出荷完了した受注の配送情報一覧を出力する</li>
+<li>出荷先・配送業者・送り状番号・商品・数量を含む</li>
+<li>指定期間・配送業者で絞り込める</li>
+</ul>
+<h3>12. 未出荷リスト</h3>
+<ul>
+<li>日替処理で自動生成される</li>
+<li>出荷予定日を過ぎても出荷完了していない受注の一覧</li>
+<li>出荷予定日・出荷先・商品・受注数量・現在ステータスを含む</li>
+</ul>
+<hr>
+<h2>バッチ処理メニュー内レポート</h2>
+<h3>13. 日次集計レポート</h3>
+<ul>
+<li>日替処理実行後に出力できる</li>
+<li>対象営業日の入荷・出荷・在庫の集計サマリーを出力する</li>
+<li>入荷件数・入荷数量合計、出荷件数・出荷数量合計、在庫数量（営業日末時点）を含む</li>
+</ul>
+</div><hr class="doc-separator"><div class="markdown-body" id="06-batch-processing"><h1>機能要件定義書 — バッチ処理</h1>
+<h2>実行方式</h2>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>実行方法</strong></td>
+<td>バッチ管理画面から手動実行（対象営業日を指定して実行ボタンを押す）</td>
+</tr>
+<tr>
+<td><strong>実行単位</strong></td>
+<td>5種をまとめた「日替処理」として1回の操作で実行する</td>
+</tr>
+<tr>
+<td><strong>二重実行</strong></td>
+<td>同一営業日に処理済みの場合はエラーにして実行不可</td>
+</tr>
+<tr>
+<td><strong>実行権限</strong></td>
+<td>SYSTEM_ADMIN・WAREHOUSE_MANAGER のみ実行可</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>日替処理の内容</h2>
+<p>5種を以下の順序で内部的に順番に実行する。いずれか1つが失敗した場合は処理を中断する。</p>
+<table>
+<thead>
+<tr>
+<th>順序</th>
+<th>処理名</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>営業日更新</strong></td>
+<td>システムの現在営業日を翌営業日に更新する</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>入荷実績集計</strong></td>
+<td>対象営業日の入庫完了データを集計し、入荷実績サマリーを生成する</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>出荷実績集計</strong></td>
+<td>対象営業日の出荷完了データを集計し、出荷実績サマリーを生成する</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>在庫集計</strong></td>
+<td>対象営業日末時点の在庫数量サマリーを生成する</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>トランデータバックアップ</strong></td>
+<td>対象営業日の確定済みトランザクションデータ（入荷・出荷・在庫変動）をDBのバックアップテーブルに複製して保存する。保持期間は無期限（Azure PostgreSQLの自動バックアップとは別の業務データアーカイブ）</td>
+</tr>
+</tbody></table>
+<p>加えて、日替処理の中で以下を自動生成する：</p>
+<ul>
+<li><strong>未入荷リスト</strong>：入荷予定日が対象営業日以前で入庫未完了の入荷予定を記録する</li>
+<li><strong>未出荷リスト</strong>：出荷予定日が対象営業日以前で出荷未完了の受注を記録する</li>
+</ul>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 日替処理実行</h3>
+<ul>
+<li>対象営業日を指定して日替処理を実行できる（デフォルトは翌営業日）</li>
+<li>同一営業日に処理済みの場合は実行不可（エラー表示）</li>
+<li>実行中は進捗ステータスを画面に表示する</li>
+<li>完了後に結果（成功・失敗・各処理の実行結果）を画面に表示する</li>
+</ul>
+<h3>2. バッチ実行履歴照会</h3>
+<ul>
+<li>過去の日替処理の実行履歴を一覧で確認できる</li>
+<li>実行日時・対象営業日・実行者・実行結果（成功/失敗）・失敗時のエラー内容を表示する</li>
+</ul>
+<h3>3. 日次集計レポート出力</h3>
+<ul>
+<li>バッチ実行履歴から対象営業日を選択して日次集計レポートをPDF出力できる</li>
+<li>詳細は <a href="05-reports.md">05-reports.md</a> を参照</li>
+</ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead>
+<tr>
+<th>ルール</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>処理順序</td>
+<td>5種は定義された順序で実行する。順序の変更・スキップは不可</td>
+</tr>
+<tr>
+<td>途中失敗時の扱い</td>
+<td>いずれかの処理が失敗した場合は残りの処理を中断し、エラーを記録する。再実行時は最初から全処理を実行する</td>
+</tr>
+<tr>
+<td>二重実行防止</td>
+<td>同一営業日の処理済みフラグをDBで管理し、二重実行をエラーで防止する</td>
+</tr>
+<tr>
+<td>実行履歴の保持</td>
+<td>全ての実行履歴（成功・失敗を問わず）を記録する</td>
+</tr>
+</tbody></table>
+</div><hr class="doc-separator"><div class="markdown-body" id="07-interface"><h1>機能要件定義書 — 外部連携I/F</h1>
+<blockquote>
+<p>取り込みフロー・APIエンドポイント・Blob Storageフォルダ構成の詳細は
+<a href="../architecture-blueprint/09-interface-architecture.md">09-interface-architecture.md</a> を参照</p>
+</blockquote>
+<h2>概要</h2>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>連携方式</strong></td>
+<td>ファイルベース（CSV）。リアルタイムAPI連携は対象外</td>
+</tr>
+<tr>
+<td><strong>ファイル配置</strong></td>
+<td>WMS外部（外部システム等）が Azure Blob Storage の <code>pending</code> フォルダに配置する</td>
+</tr>
+<tr>
+<td><strong>実装</strong></td>
+<td>モック実装（実際の外部システム接続なし）</td>
+</tr>
+<tr>
+<td><strong>実行権限</strong></td>
+<td>SYSTEM_ADMIN・WAREHOUSE_MANAGER のみ実行可</td>
+</tr>
+</tbody></table>
+<h2>I/F一覧</h2>
+<table>
+<thead>
+<tr>
+<th>I/F ID</th>
+<th>I/F名</th>
+<th>取り込み先</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>IFX-001</td>
+<td>入荷予定取り込みI/F</td>
+<td>入荷予定データ（入荷管理）</td>
+</tr>
+<tr>
+<td>IFX-002</td>
+<td>受注取り込みI/F</td>
+<td>受注データ（出荷管理）</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. ファイル一覧照会</h3>
+<ul>
+<li><code>pending</code> フォルダに配置されたCSVファイルの一覧を画面に表示する</li>
+<li>ファイル名・ファイルサイズ・配置日時を表示する</li>
+</ul>
+<h3>2. バリデーション実行</h3>
+<ul>
+<li>一覧からファイルを選択してバリデーションを実行できる</li>
+<li>バリデーション結果を行単位で表示する（成功行・失敗行・失敗理由）</li>
+<li>バリデーション結果はDBやキャッシュに保存しない（ステートレス）</li>
+</ul>
+<h3>3. 取り込み実行</h3>
+<ul>
+<li>バリデーション後、以下の2つのモードから選択して実行できる</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>モード</th>
+<th>動作</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>成功行のみ取り込む</strong></td>
+<td>バリデーション成功行のみDBに登録する。失敗行はスキップ</td>
+</tr>
+<tr>
+<td><strong>全件破棄</strong></td>
+<td>DBへの登録は行わず、ファイルをprocessedフォルダへ移動するのみ</td>
+</tr>
+</tbody></table>
+<ul>
+<li>取り込み実行時（成功行のみ・全件破棄どちらも）、CSVファイルを <code>pending</code> から <code>processed</code> フォルダへ移動する</li>
+<li>取り込み実行時に再度バリデーションを実行して整合性を確保する（ファイルの2度読み）</li>
+</ul>
+<h3>4. 取り込み履歴照会</h3>
+<ul>
+<li>過去の取り込み実行履歴を一覧で確認できる</li>
+<li>実行日時・ファイル名・総レコード数・成功件数・エラー件数・実行モード・実行者を表示する</li>
+</ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead>
+<tr>
+<th>ルール</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ファイル移動</td>
+<td>取り込み実行後（成功行のみ・全件破棄どちらでも）、必ず <code>processed</code> フォルダへ移動する</td>
+</tr>
+<tr>
+<td>ステートレス処理</td>
+<td>バリデーション結果はサーバー側で保持しない。取り込み実行時は再度ファイルを読み込む</td>
+</tr>
+<tr>
+<td>取り込み後の扱い</td>
+<td>IFX-001 で取り込んだ入荷予定データは入荷管理の「入荷予定」ステータスで登録される</td>
+</tr>
+<tr>
+<td>取り込み後の扱い</td>
+<td>IFX-002 で取り込んだ受注データは出荷管理の「受注」ステータスで登録される</td>
+</tr>
+</tbody></table>
+</div>
+</main>
+<footer>Generated by Claude Code — 2026/3/12 23:28:08</footer>
+
+</body>
+</html>
