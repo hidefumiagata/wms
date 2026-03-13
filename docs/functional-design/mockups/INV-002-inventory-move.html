@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INV-002 在庫移動登録 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px;
+      border: 1px solid #333; border-radius: var(--border-radius);
+    }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 10px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; font-weight: 400;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+
+    /* === Main === */
+    .app-main { margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Form === */
+    .form-container { max-width: 700px; }
+    .form-section {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px;
+    }
+    .form-section-title {
+      font-size: 14px; font-weight: 700; color: var(--color-gray-700);
+      margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-gray-200);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-section-title .section-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; background: var(--color-primary); color: white;
+      border-radius: 50%; font-size: 11px; font-weight: 700;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label .req { color: var(--color-error); margin-left: 2px; }
+    .form-input, .form-select, .form-number {
+      padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-number:focus { border-color: var(--color-primary); }
+    .form-input[readonly] { background: var(--color-gray-100); color: var(--color-gray-600); cursor: default; }
+    .form-hint { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+    .stock-display {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; background: var(--color-gray-100); border: 1.5px solid var(--color-gray-200);
+      border-radius: var(--border-radius); font-size: 13px;
+    }
+    .stock-display .qty { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+    .stock-display .unit { color: var(--color-gray-600); }
+
+    /* === Arrow divider === */
+    .arrow-divider {
+      display: flex; align-items: center; justify-content: center;
+      padding: 4px 0; color: var(--color-gray-400);
+    }
+    .arrow-divider .arrow-icon {
+      font-size: 24px; color: var(--color-primary); background: var(--color-primary-bg);
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* === Capacity Bar === */
+    .capacity-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .capacity-label { font-size: 12px; color: var(--color-gray-600); white-space: nowrap; }
+    .capacity-bar-wrap { flex: 1; height: 8px; background: var(--color-gray-200); border-radius: 999px; overflow: hidden; }
+    .capacity-bar-fill { height: 100%; background: var(--color-primary); border-radius: 999px; width: 10%; }
+    .capacity-text { font-size: 12px; color: var(--color-gray-600); white-space: nowrap; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-lg { padding: 12px 32px; font-size: 14px; }
+
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 12px;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">INV-002</span>
+    <span>在庫移動登録</span>
+    <span style="color:#555">|</span>
+    <span>URL: /inventory/move</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">📦</span> 入荷管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-primary-light);font-weight:600"><span style="width:16px;text-align:center">📊</span> 在庫管理</a>
+        <ul class="sidebar-submenu">
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 在庫一覧照会</a></li>
+          <li><a href="#" class="active"><span style="width:16px;text-align:center">◾</span> 在庫移動登録</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> ばらし登録</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 在庫訂正登録</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 棚卸</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 在庫管理 <span class="sep">›</span> <a href="#">在庫一覧照会</a> <span class="sep">›</span> 在庫移動登録
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">在庫移動登録</h1>
+    </div>
+
+    <div class="form-container">
+
+      <!-- 移動元 -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-badge">元</span> 移動元
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ロケーション<span class="req">*</span></label>
+            <input type="text" class="form-input" value="A-01-A-01-01-01" placeholder="例: A-01-A-01-01-01">
+            <span class="form-hint">入力後フォーカスアウトで在庫を取得します</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品<span class="req">*</span></label>
+            <select class="form-select">
+              <option>10001 ドライカレー 200g</option>
+              <option>10002 レトルトシチュー 180g</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">荷姿<span class="req">*</span></label>
+            <select class="form-select">
+              <option selected>ケース</option>
+              <option>ボール</option>
+              <option>バラ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">現在在庫数</label>
+            <div class="stock-display">
+              <span class="qty">3</span>
+              <span class="unit">ケース</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="arrow-divider">
+        <div class="arrow-icon">↓</div>
+      </div>
+
+      <!-- 移動先 -->
+      <div class="form-section">
+        <div class="form-section-title">
+          <span class="section-badge">先</span> 移動先
+        </div>
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">ロケーション<span class="req">*</span></label>
+            <input type="text" class="form-input" value="A-02-A-01-01-01" placeholder="例: A-02-A-01-01-01">
+            <span class="form-hint">入力後フォーカスアウトで移動先の在庫・上限を確認します</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">移動先 現在在庫数</label>
+            <div class="stock-display">
+              <span class="qty">0</span>
+              <span class="unit">ケース</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ロケーション上限</label>
+            <div class="stock-display">
+              <span class="qty" style="color:var(--color-success)">1</span>
+              <span class="unit">ケース（システムパラメータ）</span>
+            </div>
+          </div>
+        </div>
+        <!-- Capacity Bar -->
+        <div class="capacity-row">
+          <span class="capacity-label">移動後の充填率:</span>
+          <div class="capacity-bar-wrap">
+            <div class="capacity-bar-fill" style="width:100%; background: var(--color-success);"></div>
+          </div>
+          <span class="capacity-text" style="color:var(--color-success); font-weight:600">1/1 (100%)</span>
+        </div>
+      </div>
+
+      <!-- 移動数量 -->
+      <div class="form-section">
+        <div class="form-section-title">移動数量</div>
+        <div class="form-row" style="max-width:300px">
+          <div class="form-group">
+            <label class="form-label">数量<span class="req">*</span></label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" class="form-number" value="1" min="1" style="width:100px">
+              <span style="font-size:13px;color:var(--color-gray-600)">ケース</span>
+            </div>
+            <span class="form-hint">移動可能数: 1〜3 ケース</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-lg">キャンセル</button>
+        <button class="btn btn-primary btn-lg">登録</button>
+      </div>
+
+    </div>
+
+  </main>
+</body>
+</html>

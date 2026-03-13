@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OUT-021 出荷検品 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--color-black); display: flex; align-items: center; padding: 0 24px; gap: 24px; z-index: 100; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge { display: flex; align-items: center; gap: 8px; background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius); padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer; }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout { font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px; border: 1px solid #333; border-radius: var(--border-radius); }
+
+    .app-sidebar { position: fixed; top: var(--header-height); left: 0; width: var(--sidebar-width); bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90; }
+    .sidebar-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500); }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--color-gray-400); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent; }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); font-weight: 600; }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    .app-main { margin-top: var(--header-height); margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .info-strip { display: flex; align-items: center; gap: 20px; background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); padding: 14px 20px; margin-bottom: 16px; flex-wrap: wrap; }
+    .info-item { display: flex; flex-direction: column; gap: 2px; }
+    .info-label { font-size: 11px; font-weight: 600; color: var(--color-gray-500); text-transform: uppercase; }
+    .info-value { font-size: 14px; font-weight: 700; color: var(--color-gray-900); }
+    .info-divider { width: 1px; height: 32px; background: var(--color-gray-200); }
+
+    .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-inspecting { background: #FFF0E0; color: #B85C00; }
+    .tag-diff { background: var(--color-error-bg); color: var(--color-error); font-size: 11px; padding: 2px 8px; }
+    .tag-ok { background: var(--color-success-bg); color: var(--color-success); font-size: 11px; padding: 2px 8px; }
+
+    .alert-warning { background: var(--color-warning-bg); border: 1px solid #FFE082; border-radius: var(--border-radius-lg); padding: 12px 16px; font-size: 13px; color: var(--color-warning); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+    .table-card { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); font-size: 12px; white-space: nowrap; }
+    thead th.right { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr.row-diff { background: #fffaf0; }
+    tbody tr.row-diff:hover { background: #fff3d0; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 14px; vertical-align: middle; }
+    td.right { text-align: right; }
+
+    .inspect-input { width: 80px; padding: 7px 10px; border: 2px solid var(--color-primary); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 14px; font-weight: 700; text-align: right; color: var(--color-gray-900); outline: none; }
+    .inspect-input:focus { box-shadow: 0 0 0 3px rgba(161,0,255,0.2); }
+    .inspect-input.diff { border-color: var(--color-error); background: var(--color-error-bg); }
+
+    .diff-value { font-weight: 700; }
+    .diff-neg { color: var(--color-error); }
+    .diff-zero { color: var(--color-success); }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 0; }
+
+    .mockup-meta { position: fixed; top: 0; left: 0; right: 0; background: #1A1A2E; color: #AAA; font-size: 11px; padding: 4px 16px; display: flex; gap: 24px; align-items: center; z-index: 999; }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 24px; }
+    .app-header { top: 24px; }
+    .app-sidebar { top: calc(var(--header-height) + 24px); }
+    .app-main { margin-top: calc(var(--header-height) + 24px); }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">OUT-021</span>
+    <span>出荷検品</span>
+    <span style="color:#555">|</span>
+    <span>URL: /outbound/slips/:id/inspect</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span><span>東京DC</span><span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>鈴木 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#" style="background:rgba(161,0,255,0.08);color:#ccc;border-left:3px solid #555;"><span class="icon">🚚</span> 出荷管理</a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#" class="active"><span class="icon">◾</span> 受注一覧</a></li>
+          <li><a href="#"><span class="icon">◾</span> ピッキング指示一覧</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 出荷管理 <span class="sep">›</span> <a href="#">受注一覧</a> <span class="sep">›</span> <a href="#">OUT-20260313-003</a> <span class="sep">›</span> 出荷検品
+    </div>
+    <div class="page-header">
+      <h1 class="page-title">出荷検品</h1>
+      <button class="btn btn-ghost btn-sm">📄 検品レポート出力</button>
+    </div>
+
+    <!-- Info Strip -->
+    <div class="info-strip">
+      <div class="info-item">
+        <span class="info-label">伝票番号</span>
+        <span class="info-value" style="color:var(--color-primary)">OUT-20260313-003</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-label">出荷先</span>
+        <span class="info-value">株式会社東西商事</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-label">出荷予定日</span>
+        <span class="info-value">2026/03/16</span>
+      </div>
+      <div class="info-divider"></div>
+      <div class="info-item">
+        <span class="info-label">ステータス</span>
+        <span class="tag tag-inspecting">出荷検品中</span>
+      </div>
+    </div>
+
+    <!-- Warning: diff exists -->
+    <div class="alert-warning">
+      ⚠ 1件の明細で検品数がピッキング数と異なります。確認してください。
+    </div>
+
+    <!-- Inspection Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>商品コード</th>
+            <th>商品名</th>
+            <th>荷姿</th>
+            <th class="right">ピッキング数</th>
+            <th class="right">検品数（入力）</th>
+            <th class="right">差異</th>
+            <th>確認</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">1</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0042</td>
+            <td>冷凍たこ焼き 20個入</td>
+            <td>ケース</td>
+            <td class="right" style="font-weight:700">10</td>
+            <td class="right"><input type="number" class="inspect-input" value="10"></td>
+            <td class="right"><span class="diff-value diff-zero">0</span> <span class="tag tag-ok">一致</span></td>
+            <td>—</td>
+          </tr>
+          <tr class="row-diff">
+            <td style="color:var(--color-gray-500);font-size:12px">2</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0087</td>
+            <td>有機野菜ジュース 1L×6本</td>
+            <td>ボール</td>
+            <td class="right" style="font-weight:700">20</td>
+            <td class="right"><input type="number" class="inspect-input diff" value="18"></td>
+            <td class="right"><span class="diff-value diff-neg">−2</span> <span class="tag tag-diff">差異あり</span></td>
+            <td><span style="font-size:11px;color:var(--color-warning)">⚠ 要確認</span></td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">3</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0031</td>
+            <td>国産牛すき焼きセット 500g</td>
+            <td>ケース</td>
+            <td class="right" style="font-weight:700">5</td>
+            <td class="right"><input type="number" class="inspect-input" value="5"></td>
+            <td class="right"><span class="diff-value diff-zero">0</span> <span class="tag tag-ok">一致</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">4</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0115</td>
+            <td>ドリップコーヒー 10袋入</td>
+            <td>ケース</td>
+            <td class="right" style="font-weight:700">30</td>
+            <td class="right"><input type="number" class="inspect-input" value="30"></td>
+            <td class="right"><span class="diff-value diff-zero">0</span> <span class="tag tag-ok">一致</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">5</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0208</td>
+            <td>天然水 500mL×24本</td>
+            <td>ケース</td>
+            <td class="right" style="font-weight:700">15</td>
+            <td class="right"><input type="number" class="inspect-input" value="15"></td>
+            <td class="right"><span class="diff-value diff-zero">0</span> <span class="tag tag-ok">一致</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">6</td>
+            <td style="font-family:monospace;font-size:12px">PRD-0063</td>
+            <td>チルド豆腐 300g×4個</td>
+            <td>ケース</td>
+            <td class="right" style="font-weight:700">8</td>
+            <td class="right"><input type="number" class="inspect-input" value="8"></td>
+            <td class="right"><span class="diff-value diff-zero">0</span> <span class="tag tag-ok">一致</span></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="font-size:12px;color:var(--color-gray-500);margin-bottom:12px">
+      ※ 検品数がピッキング数と異なる場合も、検品数をそのまま出荷数として確定できます（差異は記録として保持されます）。
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost">← 受注一覧に戻る</button>
+      <button class="btn btn-primary">検品完了 → 出荷確定へ</button>
+    </div>
+  </main>
+
+</body>
+</html>

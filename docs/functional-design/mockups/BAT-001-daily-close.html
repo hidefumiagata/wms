@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAT-001 日替処理実行 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #000; color: #888; font-size: 11px;
+      height: 32px; padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      cursor: pointer; padding: 4px 10px;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 10px; padding: 8px 20px 8px 40px;
+      color: var(--color-gray-500); font-size: 12px; font-weight: 400;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-danger { background: var(--color-error); color: var(--color-white); }
+    .btn-lg { padding: 12px 28px; font-size: 15px; }
+
+    /* === Card === */
+    .card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Form === */
+    .form-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-end; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label.required::after { content: ' *'; color: var(--color-error); }
+    .form-input {
+      padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.12); }
+    .form-input[readonly] { background: var(--color-gray-100); color: var(--color-gray-600); }
+    .current-date-hint {
+      font-size: 12px; color: var(--color-gray-500); margin-top: 4px;
+    }
+
+    /* === Steps === */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0; border-bottom: 1px solid var(--color-gray-100);
+      position: relative;
+    }
+    .step-item:last-child { border-bottom: none; }
+    .step-icon {
+      width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-icon.waiting { background: var(--color-gray-100); color: var(--color-gray-400); border: 2px solid var(--color-gray-300); }
+    .step-icon.running { background: var(--color-info-bg); color: var(--color-info); border: 2px solid var(--color-info); animation: pulse 1.2s infinite; }
+    .step-icon.done { background: var(--color-success-bg); color: var(--color-success); border: 2px solid var(--color-success); }
+    .step-icon.failed { background: var(--color-error-bg); color: var(--color-error); border: 2px solid var(--color-error); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .step-content { flex: 1; }
+    .step-name { font-size: 14px; font-weight: 600; color: var(--color-gray-900); }
+    .step-desc { font-size: 12px; color: var(--color-gray-500); margin-top: 2px; }
+    .step-status {
+      font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    }
+    .step-status.waiting { background: var(--color-gray-100); color: var(--color-gray-500); }
+    .step-status.running { background: var(--color-info-bg); color: var(--color-info); }
+    .step-status.done { background: var(--color-success-bg); color: var(--color-success); }
+    .step-status.failed { background: var(--color-error-bg); color: var(--color-error); }
+    .step-time { font-size: 12px; color: var(--color-gray-400); width: 48px; text-align: right; }
+
+    /* === Elapsed timer === */
+    .elapsed-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 0 0; border-top: 1px solid var(--color-gray-100); margin-top: 8px;
+    }
+    .elapsed-label { font-size: 12px; color: var(--color-gray-500); }
+    .elapsed-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--color-gray-900); letter-spacing: 0.05em; }
+    .progress-bar-wrap { flex: 1; height: 6px; background: var(--color-gray-200); border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--color-primary); border-radius: 999px; width: 40%; transition: width 0.5s; }
+
+    /* === Result Card === */
+    .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-gray-200); }
+    .result-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 999px;
+      font-size: 14px; font-weight: 700;
+    }
+    .result-badge.success { background: var(--color-success-bg); color: var(--color-success); }
+    .result-badge.failed { background: var(--color-error-bg); color: var(--color-error); }
+    .result-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+    .result-item { }
+    .result-item-label { font-size: 11px; font-weight: 600; color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .result-item-value { font-size: 14px; font-weight: 600; color: var(--color-gray-900); }
+
+    /* === Alert === */
+    .alert {
+      display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px;
+      border-radius: var(--border-radius-lg); font-size: 13px; margin-bottom: 20px;
+    }
+    .alert-error { background: var(--color-error-bg); border: 1px solid #FFB3B8; color: #A2191F; }
+    .alert-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* === State toggle (for demo) === */
+    .demo-controls {
+      position: fixed; bottom: 20px; right: 20px; z-index: 200;
+      background: #1A1A2E; border: 1px solid #333; border-radius: 8px;
+      padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .demo-controls-label { font-size: 10px; color: #666; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .demo-btn {
+      font-size: 11px; padding: 5px 10px; border-radius: 4px; cursor: pointer; border: none;
+      font-family: var(--font-family); font-weight: 600;
+    }
+    .demo-btn-idle { background: #333; color: #aaa; }
+    .demo-btn-running { background: #0043CE; color: white; }
+    .demo-btn-done { background: #198038; color: white; }
+    .demo-btn-error { background: #DA1E28; color: white; }
+
+    /* State display control */
+    .state-idle .section-progress,
+    .state-idle .section-result { display: none; }
+    .state-running .section-result { display: none; }
+    .state-done .section-progress { display: block; }
+    .state-error .section-progress { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">BAT-001</span>
+    <span>日替処理実行</span>
+    <span style="color:#333">|</span>
+    <span>URL: /batch/daily-close</span>
+    <span style="color:#333">|</span>
+    <span>対象ロール: SYSTEM_ADMIN, WAREHOUSE_MANAGER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="color:var(--color-primary-light); background:rgba(161,0,255,0.08);">
+          <span class="icon" style="opacity:1;">⚙</span> バッチ管理
+        </a>
+        <ul class="sidebar-submenu">
+          <li><a href="#" class="active"><span>›</span> 日替処理実行</a></li>
+          <li><a href="#"><span>›</span> バッチ実行履歴</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content (State: IDLE) -->
+  <main class="app-main state-idle" id="mainContent">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> バッチ管理 <span class="sep">›</span> 日替処理実行
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">日替処理実行</h1>
+    </div>
+
+    <!-- =================== 実行設定カード =================== -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">実行設定</div>
+      </div>
+
+      <div class="form-row" style="align-items:flex-start;">
+        <div class="form-group">
+          <label class="form-label required">対象営業日</label>
+          <input type="date" class="form-input" value="2026-03-14" style="width:180px">
+          <div class="current-date-hint">現在の営業日: <strong>2026/03/13</strong>（本日処理済み）</div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--color-gray-200); display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-primary btn-lg" id="runBtn" onclick="switchState('running')">
+          ▶ 日替処理実行
+        </button>
+        <span style="font-size:12px;color:var(--color-gray-500);">
+          対象営業日: 2026/03/14 の日替処理を実行します
+        </span>
+      </div>
+    </div>
+
+    <!-- =================== 処理進捗カード（実行中） =================== -->
+    <div class="card section-progress" id="sectionProgress">
+      <div class="card-header">
+        <div class="card-title">処理進捗</div>
+        <div id="progressStatusBadge" style="font-size:13px;font-weight:600;color:var(--color-info);display:flex;align-items:center;gap:6px;">
+          <span style="width:8px;height:8px;background:var(--color-info);border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span>
+          実行中
+        </div>
+      </div>
+
+      <div class="steps" id="stepsContainer">
+        <!-- Step 1: done -->
+        <div class="step-item">
+          <div class="step-icon done">✓</div>
+          <div class="step-content">
+            <div class="step-name">① 営業日更新</div>
+            <div class="step-desc">システムの現在営業日を翌営業日に更新</div>
+          </div>
+          <div class="step-status done">完了</div>
+          <div class="step-time">0.3秒</div>
+        </div>
+        <!-- Step 2: running -->
+        <div class="step-item">
+          <div class="step-icon running">⟳</div>
+          <div class="step-content">
+            <div class="step-name">② 入荷実績集計</div>
+            <div class="step-desc">対象営業日の入庫完了データを集計してサマリー生成</div>
+          </div>
+          <div class="step-status running">実行中...</div>
+          <div class="step-time">—</div>
+        </div>
+        <!-- Step 3: waiting -->
+        <div class="step-item">
+          <div class="step-icon waiting">3</div>
+          <div class="step-content">
+            <div class="step-name">③ 出荷実績集計</div>
+            <div class="step-desc">対象営業日の出荷完了データを集計してサマリー生成</div>
+          </div>
+          <div class="step-status waiting">待機中</div>
+          <div class="step-time">—</div>
+        </div>
+        <!-- Step 4: waiting -->
+        <div class="step-item">
+          <div class="step-icon waiting">4</div>
+          <div class="step-content">
+            <div class="step-name">④ 在庫集計</div>
+            <div class="step-desc">対象営業日末時点の在庫数量サマリーを生成</div>
+          </div>
+          <div class="step-status waiting">待機中</div>
+          <div class="step-time">—</div>
+        </div>
+        <!-- Step 5: waiting -->
+        <div class="step-item">
+          <div class="step-icon waiting">5</div>
+          <div class="step-content">
+            <div class="step-name">⑤ トランデータバックアップ</div>
+            <div class="step-desc">完了済みトランザクションデータをバックアップテーブルへ複製</div>
+          </div>
+          <div class="step-status waiting">待機中</div>
+          <div class="step-time">—</div>
+        </div>
+      </div>
+
+      <div class="elapsed-bar">
+        <span class="elapsed-label">経過時間</span>
+        <span class="elapsed-value" id="elapsedValue">00:14</span>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar" style="width:20%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== 実行結果カード（完了後） =================== -->
+    <div class="card section-result" id="sectionResult">
+      <div class="card-header">
+        <div class="card-title">実行結果</div>
+      </div>
+
+      <!-- 成功パターン (id="resultSuccess") -->
+      <div id="resultSuccess">
+        <div class="result-header">
+          <span class="result-badge success">✓ 成功</span>
+          <span style="font-size:13px;color:var(--color-gray-500);">すべての処理が正常に完了しました</span>
+        </div>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-item-label">対象営業日</div>
+            <div class="result-item-value">2026/03/13</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">実行日時</div>
+            <div class="result-item-value">2026/03/13 20:05:32</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">実行者</div>
+            <div class="result-item-value">山田 太郎</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">処理時間</div>
+            <div class="result-item-value">00:10:28</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:24px;padding:14px 0;border-top:1px solid var(--color-gray-200);">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">未入荷リスト 記録件数</div>
+            <div style="font-size:22px;font-weight:700;color:var(--color-gray-900);">3 <span style="font-size:13px;font-weight:400;color:var(--color-gray-500);">件</span></div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--color-gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">未出荷リスト 記録件数</div>
+            <div style="font-size:22px;font-weight:700;color:var(--color-gray-900);">1 <span style="font-size:13px;font-weight:400;color:var(--color-gray-500);">件</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 失敗パターン (id="resultFailed", initially hidden) -->
+      <div id="resultFailed" style="display:none;">
+        <div class="result-header">
+          <span class="result-badge failed">✗ 失敗</span>
+          <span style="font-size:13px;color:var(--color-gray-500);">処理が途中で中断されました</span>
+        </div>
+        <div class="alert alert-error">
+          <span class="alert-icon">⚠</span>
+          <div>
+            <strong>④ 在庫集計</strong> でエラーが発生しました。残りの処理は中断されています。<br>
+            <span style="font-size:12px;margin-top:4px;display:inline-block;opacity:0.85;">
+              エラー詳細: PostgreSQL timeout — statement timeout (30000ms) exceeded during inventory aggregation
+            </span>
+          </div>
+        </div>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-item-label">対象営業日</div>
+            <div class="result-item-value">2026/03/13</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">実行日時</div>
+            <div class="result-item-value">2026/03/13 20:05:32</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">実行者</div>
+            <div class="result-item-value">山田 太郎</div>
+          </div>
+          <div class="result-item">
+            <div class="result-item-label">失敗ステップ</div>
+            <div class="result-item-value" style="color:var(--color-error);">④ 在庫集計</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--color-gray-600);margin-top:8px;">
+          再実行時は最初（① 営業日更新）から全処理を実行します。
+        </div>
+      </div>
+    </div>
+
+    <!-- 二重実行エラーパターン（参考表示） -->
+    <div class="card" style="border-color:#FFB3B8;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:12px;background:var(--color-error-bg);color:var(--color-error);padding:2px 8px;border-radius:4px;font-weight:700;">エラー表示例</span>
+        <span style="font-size:11px;color:var(--color-gray-500);">処理済み営業日を指定して実行しようとした場合</span>
+      </div>
+      <div class="alert alert-error" style="margin-bottom:0;">
+        <span class="alert-icon">🚫</span>
+        <div>
+          <strong>2026/03/13 は既に処理済みです。</strong><br>
+          同一営業日への二重実行はできません。対象営業日を確認してください。
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Demo State Controller -->
+  <div class="demo-controls">
+    <div class="demo-controls-label">表示状態デモ</div>
+    <button class="demo-btn demo-btn-idle" onclick="switchState('idle')">初期状態</button>
+    <button class="demo-btn demo-btn-running" onclick="switchState('running')">実行中</button>
+    <button class="demo-btn demo-btn-done" onclick="switchState('done')">完了（成功）</button>
+    <button class="demo-btn demo-btn-error" onclick="switchState('error')">完了（失敗）</button>
+  </div>
+
+  <script>
+    function switchState(state) {
+      const main = document.getElementById('mainContent');
+      const prog = document.getElementById('sectionProgress');
+      const result = document.getElementById('sectionResult');
+      const runBtn = document.getElementById('runBtn');
+      const badge = document.getElementById('progressStatusBadge');
+      const successDiv = document.getElementById('resultSuccess');
+      const failedDiv = document.getElementById('resultFailed');
+
+      main.className = 'app-main state-' + state;
+
+      if (state === 'idle') {
+        prog.style.display = 'none';
+        result.style.display = 'none';
+        runBtn.disabled = false;
+      } else if (state === 'running') {
+        prog.style.display = 'block';
+        result.style.display = 'none';
+        runBtn.disabled = true;
+        badge.innerHTML = '<span style="width:8px;height:8px;background:var(--color-info);border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span> 実行中';
+        badge.style.color = 'var(--color-info)';
+      } else if (state === 'done') {
+        prog.style.display = 'block';
+        result.style.display = 'block';
+        runBtn.disabled = false;
+        badge.innerHTML = '✓ 完了';
+        badge.style.color = 'var(--color-success)';
+        // All steps done
+        const steps = document.querySelectorAll('#stepsContainer .step-item');
+        const labels = ['① 営業日更新','② 入荷実績集計','③ 出荷実績集計','④ 在庫集計','⑤ トランデータバックアップ'];
+        const times = ['0.3秒','1.2秒','0.8秒','2.5秒','5.1秒'];
+        steps.forEach((s,i) => {
+          s.querySelector('.step-icon').className = 'step-icon done';
+          s.querySelector('.step-icon').textContent = '✓';
+          s.querySelector('.step-status').className = 'step-status done';
+          s.querySelector('.step-status').textContent = '完了';
+          s.querySelector('.step-time').textContent = times[i];
+        });
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('elapsedValue').textContent = '00:10';
+        successDiv.style.display = 'block';
+        failedDiv.style.display = 'none';
+      } else if (state === 'error') {
+        prog.style.display = 'block';
+        result.style.display = 'block';
+        runBtn.disabled = false;
+        badge.innerHTML = '✗ 失敗';
+        badge.style.color = 'var(--color-error)';
+        const steps = document.querySelectorAll('#stepsContainer .step-item');
+        const statuses = ['done','done','done','failed','waiting'];
+        const icons = ['✓','✓','✓','✗','4'];
+        const statusLabels = ['完了','完了','完了','失敗','中断'];
+        const times = ['0.3秒','1.2秒','0.8秒','—','—'];
+        steps.forEach((s,i) => {
+          s.querySelector('.step-icon').className = 'step-icon ' + statuses[i];
+          s.querySelector('.step-icon').textContent = icons[i];
+          s.querySelector('.step-status').className = 'step-status ' + statuses[i];
+          s.querySelector('.step-status').textContent = statusLabels[i];
+          s.querySelector('.step-time').textContent = times[i];
+        });
+        document.getElementById('progressBar').style.width = '60%';
+        document.getElementById('elapsedValue').textContent = '00:05';
+        successDiv.style.display = 'none';
+        failedDiv.style.display = 'block';
+      }
+    }
+    // Initialize: show idle state
+    switchState('idle');
+  </script>
+
+</body>
+</html>

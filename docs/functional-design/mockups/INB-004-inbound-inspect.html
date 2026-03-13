@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INB-004 入荷検品 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius); cursor: pointer; padding: 4px 10px;
+    }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    /* === Main === */
+    .app-main { margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* === Tags === */
+    .tag { display: inline-flex; align-items: center; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .tag-inspecting { background: var(--color-warning-bg); color: var(--color-warning); }
+
+    /* === Summary Bar === */
+    .summary-bar {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 14px 20px;
+      display: flex; align-items: center; gap: 32px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .summary-item { display: flex; flex-direction: column; gap: 2px; }
+    .summary-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-500); }
+    .summary-value { font-size: 14px; color: var(--color-gray-900); }
+
+    /* === Info Banner === */
+    .info-banner {
+      background: var(--color-info-bg); border: 1px solid #BAE6FF;
+      border-radius: var(--border-radius-lg); padding: 12px 18px;
+      font-size: 13px; color: #003A6D; margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+
+    /* === Card === */
+    .card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 20px;
+    }
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--color-gray-800); }
+
+    /* === Table === */
+    .table-wrap { border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    thead th.right { text-align: right; }
+    thead th.center { text-align: center; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    tbody td.right { text-align: right; }
+    tbody td.center { text-align: center; }
+    tbody tr.has-diff { background: var(--color-warning-bg); }
+    tbody tr.has-diff:hover { background: #FFF0C8; }
+
+    .form-input-num {
+      padding: 7px 10px; border: 1.5px solid var(--color-primary); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; text-align: right;
+      width: 110px; background: var(--color-white); outline: none;
+    }
+    .form-input-num:focus { box-shadow: 0 0 0 2px rgba(161,0,255,0.15); }
+
+    .diff-negative { color: var(--color-error); font-weight: 700; }
+    .diff-zero     { color: var(--color-gray-400); }
+
+    /* === Action Bar === */
+    .action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0 0; border-top: 1px solid var(--color-gray-200); margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">INB-004</span>
+    <span>入荷検品</span>
+    <span style="color:#444">|</span>
+    <span>URL: /inbound/slips/:id/inspect</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="color:var(--color-primary-light);font-weight:600;border-left:3px solid var(--color-primary);background:rgba(161,0,255,0.08)">
+          <span class="icon">📦</span> 入荷管理
+        </a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#" class="active"><span class="icon">◾</span> 入荷予定一覧</a></li>
+          <li><a href="#"><span class="icon">◾</span> 入荷実績照会</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 入荷管理 <span class="sep">›</span> 入荷予定一覧 <span class="sep">›</span>
+      <a href="#" style="color:var(--color-primary)">INB-20260313-001</a> <span class="sep">›</span> 入荷検品
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">入荷検品</h1>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="summary-bar">
+      <div class="summary-item">
+        <span class="summary-label">伝票番号</span>
+        <span class="summary-value" style="font-family:monospace;font-weight:700">INB-20260313-001</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">仕入先</span>
+        <span class="summary-value">株式会社ABC商事</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">入荷予定日</span>
+        <span class="summary-value">2026/03/20</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">ステータス</span>
+        <span class="summary-value"><span class="tag tag-inspecting">検品中</span></span>
+      </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="info-banner">
+      <span style="font-size:16px">ℹ</span>
+      <div>
+        <strong>入荷数の初期値は入荷予定数と同じ値がセットされています。</strong><br>
+        予定通り入荷していれば修正不要です。差異がある明細のみ入荷数を修正して保存してください。
+      </div>
+    </div>
+
+    <!-- Inspection Table Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">入荷明細（3件）</span>
+        <span style="font-size:12px;color:var(--color-warning);font-weight:600">⚠ 1件に差異があります</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:52px" class="center">No</th>
+              <th style="width:130px">商品コード</th>
+              <th>商品名</th>
+              <th class="right" style="width:110px">予定数量</th>
+              <th class="center" style="width:150px">入荷数（入力）</th>
+              <th class="right" style="width:100px">差異数</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center" style="color:var(--color-gray-500)">1</td>
+              <td style="font-family:monospace;font-size:12px">PRD-1001</td>
+              <td>アルコール消毒液 500ml</td>
+              <td class="right">200</td>
+              <td class="center">
+                <input type="number" class="form-input-num" value="200" min="0">
+              </td>
+              <td class="right diff-zero">0</td>
+            </tr>
+            <tr class="has-diff">
+              <td class="center" style="color:var(--color-gray-500)">2</td>
+              <td style="font-family:monospace;font-size:12px">PRD-1002</td>
+              <td>使い捨て手袋（M）100枚入</td>
+              <td class="right">500</td>
+              <td class="center">
+                <input type="number" class="form-input-num" value="480" min="0" style="border-color:var(--color-error)">
+              </td>
+              <td class="right diff-negative">-20</td>
+            </tr>
+            <tr>
+              <td class="center" style="color:var(--color-gray-500)">3</td>
+              <td style="font-family:monospace;font-size:12px">PRD-1005</td>
+              <td>マスク（不織布）50枚入</td>
+              <td class="right">300</td>
+              <td class="center">
+                <input type="number" class="form-input-num" value="300" min="0">
+              </td>
+              <td class="right diff-zero">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary Row -->
+      <div style="display:flex;justify-content:flex-end;gap:32px;padding:14px 20px;background:var(--color-gray-50);border-top:1px solid var(--color-gray-200);border-radius:0 0 var(--border-radius-lg) var(--border-radius-lg);font-size:13px">
+        <span>予定数量 合計: <strong>1,000</strong></span>
+        <span>入荷数 合計: <strong>980</strong></span>
+        <span>差異 合計: <strong style="color:var(--color-error)">-20</strong></span>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button class="btn btn-ghost btn-sm">← 詳細に戻る</button>
+        <button class="btn btn-primary">検品内容を保存する</button>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

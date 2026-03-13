@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BAT-002 バッチ実行履歴一覧 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #000; color: #888; font-size: 11px;
+      height: 32px; padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      cursor: pointer; padding: 4px 10px;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 10px; padding: 8px 20px 8px 40px;
+      color: var(--color-gray-500); font-size: 12px; font-weight: 400;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Filter Bar === */
+    .filter-bar {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select {
+      padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* === Toolbar === */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-left { display: flex; gap: 8px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+
+    /* === Table Card === */
+    .table-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr.detail-row { background: #FAFBFF; }
+    tbody tr.detail-row:hover { background: #FAFBFF; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+
+    /* === Tags === */
+    .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-success { background: var(--color-success-bg); color: var(--color-success); }
+    .tag-error   { background: var(--color-error-bg);   color: var(--color-error); }
+    .tag-gray    { background: var(--color-gray-100);   color: var(--color-gray-600); }
+
+    /* === Action group === */
+    .action-group { display: flex; gap: 6px; }
+
+    /* === Detail Drawer (inline row) === */
+    .detail-drawer {
+      padding: 16px 20px 16px 56px;
+    }
+    .detail-drawer-inner {
+      background: var(--color-gray-50); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px;
+    }
+    .drawer-title { font-size: 12px; font-weight: 700; color: var(--color-gray-500); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .drawer-steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 14px; }
+    .drawer-step {
+      display: flex; align-items: center; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid var(--color-gray-200);
+    }
+    .drawer-step:last-child { border-bottom: none; }
+    .dstep-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .dstep-icon.done { background: var(--color-success-bg); color: var(--color-success); }
+    .dstep-icon.failed { background: var(--color-error-bg); color: var(--color-error); }
+    .dstep-icon.skipped { background: var(--color-gray-100); color: var(--color-gray-400); }
+    .dstep-name { font-size: 13px; color: var(--color-gray-800); flex: 1; }
+    .dstep-time { font-size: 12px; color: var(--color-gray-400); width: 48px; text-align: right; }
+    .dstep-status { font-size: 11px; font-weight: 700; }
+    .dstep-status.done { color: var(--color-success); }
+    .dstep-status.failed { color: var(--color-error); }
+    .dstep-status.skipped { color: var(--color-gray-400); }
+    .drawer-meta { display: flex; gap: 24px; }
+    .drawer-meta-item { }
+    .drawer-meta-label { font-size: 11px; color: var(--color-gray-500); margin-bottom: 2px; }
+    .drawer-meta-value { font-size: 13px; font-weight: 600; color: var(--color-gray-900); }
+    .drawer-error {
+      background: var(--color-error-bg); border: 1px solid #FFB3B8; border-radius: var(--border-radius);
+      padding: 10px 14px; font-size: 12px; color: #A2191F; margin-bottom: 14px;
+    }
+    .drawer-error strong { display: block; margin-bottom: 4px; }
+
+    /* === Pagination === */
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-top: 1px solid var(--color-gray-200);
+      background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500);
+    }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius);
+      background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700);
+    }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+
+    /* === Report Dialog Overlay === */
+    .dialog-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    .dialog-overlay.open { display: flex; }
+    .dialog {
+      background: var(--color-white); border-radius: var(--border-radius-lg);
+      width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); overflow: hidden;
+    }
+    .dialog-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .dialog-title { font-size: 16px; font-weight: 700; }
+    .dialog-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--color-gray-500); padding: 4px 8px; }
+    .dialog-close:hover { color: var(--color-gray-900); }
+    .dialog-body { padding: 24px; }
+    .dialog-footer { padding: 16px 24px; border-top: 1px solid var(--color-gray-200); display: flex; gap: 10px; justify-content: flex-end; }
+    .dialog-desc { font-size: 13px; color: var(--color-gray-600); margin-bottom: 20px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">BAT-002</span>
+    <span>バッチ実行履歴一覧</span>
+    <span style="color:#333">|</span>
+    <span>URL: /batch/history</span>
+    <span style="color:#333">|</span>
+    <span>対象ロール: SYSTEM_ADMIN, WAREHOUSE_MANAGER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="color:var(--color-primary-light); background:rgba(161,0,255,0.08);">
+          <span class="icon" style="opacity:1;">⚙</span> バッチ管理
+        </a>
+        <ul class="sidebar-submenu">
+          <li><a href="#"><span>›</span> 日替処理実行</a></li>
+          <li><a href="#" class="active"><span>›</span> バッチ実行履歴</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> バッチ管理 <span class="sep">›</span> バッチ実行履歴一覧
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">バッチ実行履歴一覧</h1>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">実行日（From）</label>
+          <input type="date" class="filter-input" value="2026-02-13" style="width:150px">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:8px;color:var(--color-gray-500);font-size:13px;">〜</div>
+        <div class="filter-group">
+          <label class="filter-label">実行日（To）</label>
+          <input type="date" class="filter-input" value="2026-03-13" style="width:150px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">結果</label>
+          <select class="filter-select" style="width:120px">
+            <option>すべて</option>
+            <option>成功</option>
+            <option>失敗</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">対象営業日</label>
+          <input type="date" class="filter-input" style="width:150px" placeholder="指定しない">
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-secondary btn-sm" onclick="openReportDialog()">
+          📄 日次集計レポート出力
+        </button>
+      </div>
+      <div class="record-count">全 <strong>45</strong> 件（1〜20件表示）</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:48px">#</th>
+            <th>実行ID</th>
+            <th>実行日時</th>
+            <th>対象営業日</th>
+            <th>実行者</th>
+            <th>結果</th>
+            <th>処理時間</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+
+          <!-- Row 1: 成功（詳細展開済みデモ） -->
+          <tr style="background: var(--color-primary-bg);">
+            <td style="color:var(--color-gray-400);font-size:12px;">1</td>
+            <td style="font-size:12px;color:var(--color-gray-600);font-family:monospace;">BATCH-20260313-001</td>
+            <td>2026/03/13 20:05:32</td>
+            <td><strong>2026/03/13</strong></td>
+            <td>山田 太郎</td>
+            <td><span class="tag tag-success">✓ 成功</span></td>
+            <td style="color:var(--color-gray-600);">00:10:28</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-primary btn-sm" onclick="toggleDetail(1)">▲ 詳細を閉じる</button>
+              </div>
+            </td>
+          </tr>
+          <!-- Detail Drawer Row 1 -->
+          <tr class="detail-row" id="detail-1">
+            <td colspan="8" class="detail-drawer">
+              <div class="detail-drawer-inner">
+                <div class="drawer-title">ステップ実行結果 — BATCH-20260313-001</div>
+                <div class="drawer-steps">
+                  <div class="drawer-step">
+                    <div class="dstep-icon done">✓</div>
+                    <div class="dstep-name">① 営業日更新</div>
+                    <div class="dstep-status done">完了</div>
+                    <div class="dstep-time">0.3秒</div>
+                  </div>
+                  <div class="drawer-step">
+                    <div class="dstep-icon done">✓</div>
+                    <div class="dstep-name">② 入荷実績集計</div>
+                    <div class="dstep-status done">完了</div>
+                    <div class="dstep-time">1.2秒</div>
+                  </div>
+                  <div class="drawer-step">
+                    <div class="dstep-icon done">✓</div>
+                    <div class="dstep-name">③ 出荷実績集計</div>
+                    <div class="dstep-status done">完了</div>
+                    <div class="dstep-time">0.8秒</div>
+                  </div>
+                  <div class="drawer-step">
+                    <div class="dstep-icon done">✓</div>
+                    <div class="dstep-name">④ 在庫集計</div>
+                    <div class="dstep-status done">完了</div>
+                    <div class="dstep-time">2.5秒</div>
+                  </div>
+                  <div class="drawer-step">
+                    <div class="dstep-icon done">✓</div>
+                    <div class="dstep-name">⑤ トランデータバックアップ</div>
+                    <div class="dstep-status done">完了</div>
+                    <div class="dstep-time">5.1秒</div>
+                  </div>
+                </div>
+                <div class="drawer-meta">
+                  <div class="drawer-meta-item">
+                    <div class="drawer-meta-label">未入荷リスト 記録件数</div>
+                    <div class="drawer-meta-value">3 件</div>
+                  </div>
+                  <div class="drawer-meta-item">
+                    <div class="drawer-meta-label">未出荷リスト 記録件数</div>
+                    <div class="drawer-meta-value">1 件</div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 2: 成功 -->
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px;">2</td>
+            <td style="font-size:12px;color:var(--color-gray-600);font-family:monospace;">BATCH-20260312-001</td>
+            <td>2026/03/12 20:02:17</td>
+            <td><strong>2026/03/12</strong></td>
+            <td>山田 太郎</td>
+            <td><span class="tag tag-success">✓ 成功</span></td>
+            <td style="color:var(--color-gray-600);">00:09:54</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm" onclick="toggleDetail(2)">詳細</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="detail-row" id="detail-2" style="display:none;">
+            <td colspan="8" class="detail-drawer">
+              <div class="detail-drawer-inner">
+                <div class="drawer-title">ステップ実行結果 — BATCH-20260312-001</div>
+                <div class="drawer-steps">
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">① 営業日更新</div><div class="dstep-status done">完了</div><div class="dstep-time">0.2秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">② 入荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.9秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">③ 出荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.7秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">④ 在庫集計</div><div class="dstep-status done">完了</div><div class="dstep-time">2.1秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">⑤ トランデータバックアップ</div><div class="dstep-status done">完了</div><div class="dstep-time">4.8秒</div></div>
+                </div>
+                <div class="drawer-meta">
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未入荷リスト 記録件数</div><div class="drawer-meta-value">0 件</div></div>
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未出荷リスト 記録件数</div><div class="drawer-meta-value">2 件</div></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 3: 失敗（1回目） -->
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px;">3</td>
+            <td style="font-size:12px;color:var(--color-gray-600);font-family:monospace;">BATCH-20260311-002</td>
+            <td>2026/03/11 20:18:44</td>
+            <td><strong>2026/03/11</strong></td>
+            <td>佐藤 花子</td>
+            <td><span class="tag tag-error">✗ 失敗</span></td>
+            <td style="color:var(--color-gray-600);">00:02:41</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm" onclick="toggleDetail(3)">詳細</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="detail-row" id="detail-3" style="display:none;">
+            <td colspan="8" class="detail-drawer">
+              <div class="detail-drawer-inner">
+                <div class="drawer-title">ステップ実行結果 — BATCH-20260311-002（失敗）</div>
+                <div class="drawer-error">
+                  <strong>④ 在庫集計 でエラーが発生しました（処理中断）</strong>
+                  PostgreSQL timeout — statement timeout (30000ms) exceeded during inventory aggregation at step 4. Connection pool exhausted.
+                </div>
+                <div class="drawer-steps">
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">① 営業日更新</div><div class="dstep-status done">完了</div><div class="dstep-time">0.3秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">② 入荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">1.1秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">③ 出荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.8秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon failed">✗</div><div class="dstep-name">④ 在庫集計</div><div class="dstep-status failed">失敗</div><div class="dstep-time">30.0秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon skipped">—</div><div class="dstep-name">⑤ トランデータバックアップ</div><div class="dstep-status skipped">中断</div><div class="dstep-time">—</div></div>
+                </div>
+                <div class="drawer-meta">
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未入荷リスト 記録件数</div><div class="drawer-meta-value">— （未完了）</div></div>
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未出荷リスト 記録件数</div><div class="drawer-meta-value">— （未完了）</div></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 4: 成功（再実行で成功） -->
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px;">4</td>
+            <td style="font-size:12px;color:var(--color-gray-600);font-family:monospace;">BATCH-20260311-001</td>
+            <td>2026/03/11 21:05:12</td>
+            <td><strong>2026/03/11</strong></td>
+            <td>山田 太郎</td>
+            <td><span class="tag tag-success">✓ 成功</span></td>
+            <td style="color:var(--color-gray-600);">00:11:03</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm" onclick="toggleDetail(4)">詳細</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="detail-row" id="detail-4" style="display:none;">
+            <td colspan="8" class="detail-drawer">
+              <div class="detail-drawer-inner">
+                <div class="drawer-title">ステップ実行結果 — BATCH-20260311-001（再実行・成功）</div>
+                <div class="drawer-steps">
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">① 営業日更新</div><div class="dstep-status done">完了</div><div class="dstep-time">0.3秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">② 入荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">1.0秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">③ 出荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.7秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">④ 在庫集計</div><div class="dstep-status done">完了</div><div class="dstep-time">2.3秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">⑤ トランデータバックアップ</div><div class="dstep-status done">完了</div><div class="dstep-time">4.9秒</div></div>
+                </div>
+                <div class="drawer-meta">
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未入荷リスト 記録件数</div><div class="drawer-meta-value">5 件</div></div>
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未出荷リスト 記録件数</div><div class="drawer-meta-value">0 件</div></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Row 5: 成功 -->
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px;">5</td>
+            <td style="font-size:12px;color:var(--color-gray-600);font-family:monospace;">BATCH-20260310-001</td>
+            <td>2026/03/10 20:00:58</td>
+            <td><strong>2026/03/10</strong></td>
+            <td>山田 太郎</td>
+            <td><span class="tag tag-success">✓ 成功</span></td>
+            <td style="color:var(--color-gray-600);">00:08:37</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm" onclick="toggleDetail(5)">詳細</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="detail-row" id="detail-5" style="display:none;">
+            <td colspan="8" class="detail-drawer">
+              <div class="detail-drawer-inner">
+                <div class="drawer-title">ステップ実行結果 — BATCH-20260310-001</div>
+                <div class="drawer-steps">
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">① 営業日更新</div><div class="dstep-status done">完了</div><div class="dstep-time">0.2秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">② 入荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.8秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">③ 出荷実績集計</div><div class="dstep-status done">完了</div><div class="dstep-time">0.6秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">④ 在庫集計</div><div class="dstep-status done">完了</div><div class="dstep-time">1.9秒</div></div>
+                  <div class="drawer-step"><div class="dstep-icon done">✓</div><div class="dstep-name">⑤ トランデータバックアップ</div><div class="dstep-status done">完了</div><div class="dstep-time">3.7秒</div></div>
+                </div>
+                <div class="drawer-meta">
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未入荷リスト 記録件数</div><div class="drawer-meta-value">2 件</div></div>
+                  <div class="drawer-meta-item"><div class="drawer-meta-label">未出荷リスト 記録件数</div><div class="drawer-meta-value">3 件</div></div>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <span>全45件中 1〜20件</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- =================== 日次集計レポート出力ダイアログ =================== -->
+  <div class="dialog-overlay" id="reportDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">📄 日次集計レポート出力 — RPT-017</div>
+        <button class="dialog-close" onclick="closeReportDialog()">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-desc">
+          出力する対象営業日を選択してください。<br>
+          日替処理が正常完了した営業日のみ選択できます。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+          <label style="font-size:12px;font-weight:600;color:var(--color-gray-600);">対象営業日 <span style="color:var(--color-error);">*</span></label>
+          <select style="padding:9px 12px;border:1.5px solid var(--color-gray-300);border-radius:var(--border-radius);font-family:var(--font-family);font-size:14px;background:var(--color-white);outline:none;">
+            <option value="">— 選択してください —</option>
+            <option value="2026-03-13" selected>2026/03/13（2026/03/13 20:05 実行済み）</option>
+            <option value="2026-03-12">2026/03/12（2026/03/12 20:02 実行済み）</option>
+            <option value="2026-03-11">2026/03/11（2026/03/11 21:05 実行済み）</option>
+            <option value="2026-03-10">2026/03/10（2026/03/10 20:00 実行済み）</option>
+            <option value="2026-03-09">2026/03/09（2026/03/09 20:01 実行済み）</option>
+          </select>
+        </div>
+        <div style="background:var(--color-info-bg);border:1px solid #BAE6FF;border-radius:var(--border-radius);padding:12px 14px;font-size:12px;color:#003A6D;">
+          <strong>出力内容:</strong> 入荷件数・入荷数量合計、出荷件数・出荷数量合計、在庫数量（営業日末時点）、未入荷件数、未出荷件数
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-ghost" onclick="closeReportDialog()">キャンセル</button>
+        <button class="btn btn-primary" onclick="downloadReport()">📥 PDF出力</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle detail drawer
+    const detailState = {};
+    function toggleDetail(rowId) {
+      const detailRow = document.getElementById('detail-' + rowId);
+      const rows = document.querySelectorAll('tbody tr:not(.detail-row)');
+      let btn = null;
+      rows.forEach(row => {
+        // Find corresponding button
+        const b = row.querySelector('.btn[onclick="toggleDetail(' + rowId + ')"]');
+        if(b) btn = b;
+      });
+
+      if (!detailState[rowId]) {
+        detailRow.style.display = '';
+        detailState[rowId] = true;
+        if(btn) {
+          btn.className = 'btn btn-primary btn-sm';
+          btn.textContent = '▲ 詳細を閉じる';
+          btn.setAttribute('onclick', 'toggleDetail(' + rowId + ')');
+        }
+        // Highlight row
+        detailRow.previousElementSibling.style.background = 'var(--color-primary-bg)';
+      } else {
+        detailRow.style.display = 'none';
+        detailState[rowId] = false;
+        if(btn) {
+          btn.className = 'btn btn-ghost btn-sm';
+          btn.textContent = '詳細';
+          btn.setAttribute('onclick', 'toggleDetail(' + rowId + ')');
+        }
+        detailRow.previousElementSibling.style.background = '';
+      }
+    }
+
+    // Report Dialog
+    function openReportDialog() {
+      document.getElementById('reportDialog').classList.add('open');
+    }
+    function closeReportDialog() {
+      document.getElementById('reportDialog').classList.remove('open');
+    }
+    function downloadReport() {
+      closeReportDialog();
+      // Show success toast simulation
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:600;background:#DEFBE6;border:1px solid #A7F0BA;border-radius:8px;padding:14px 20px;font-size:13px;color:#0E6027;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
+      toast.innerHTML = '✓ 日次集計レポートのダウンロードを開始しました。';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Initialize row 1 as expanded (demo)
+    detailState[1] = true;
+  </script>
+
+</body>
+</html>

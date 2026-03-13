@@ -55,6 +55,7 @@ sequenceDiagram
 | **レポート** | ✅ | ✅ | ✅ | ✅ |
 | **バッチ実行** | ✅ | ✅ | ✗ | ✗ |
 | **外部連携I/F** | ✅ | ✅ | ✗ | ✗ |
+| **営業日取得**（GET /api/v1/system/business-date） | ✅ | ✅ | ✅ | ✅ |
 
 ### Spring Security 実装方針
 

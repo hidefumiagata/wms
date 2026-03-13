@@ -1,0 +1,112 @@
+<mxfile host="app.diagrams.net" version="21.0.0">
+  <diagram name="dev-infrastructure" id="wms-dev-infra">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="960" pageHeight="780" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="2" value="WMS dev環境 — Japan East（Single Region）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="130" y="20" width="660" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Client -->
+        <mxCell id="3" value="ブラウザ / クライアント" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="375" y="80" width="165" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Azure Subscription background -->
+        <mxCell id="4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3FB;strokeColor=#0078D4;dashed=1;dashPattern=8 4;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="20" y="150" width="880" height="560" as="geometry"/>
+        </mxCell>
+        <mxCell id="5" value="Azure Subscription: wms-dev" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="36" y="158" width="400" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Resource Group background -->
+        <mxCell id="6" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF8EF;strokeColor=#67AB9F;dashed=1;dashPattern=6 3;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="40" y="192" width="840" height="345" as="geometry"/>
+        </mxCell>
+        <mxCell id="7" value="rg-wms-dev — Japan East" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=11;align=left;fontColor=#67AB9F;" vertex="1" parent="1">
+          <mxGeometry x="56" y="199" width="350" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Storage Account box -->
+        <mxCell id="8" value="&lt;b&gt;Storage Account&lt;/b&gt;&lt;br&gt;stwmsdev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="65" y="228" width="200" height="175" as="geometry"/>
+        </mxCell>
+
+        <!-- $web -->
+        <mxCell id="9" value="$web&lt;br&gt;フロントエンド静的ホスティング&lt;br&gt;&lt;font color=&quot;#999999&quot; style=&quot;font-size:9px&quot;&gt;stwmsdev.z11.web.core.windows.net&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="268" width="170" height="58" as="geometry"/>
+        </mxCell>
+
+        <!-- iffiles -->
+        <mxCell id="10" value="iffiles&lt;br&gt;I/Fファイル（CSV）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="340" width="170" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- Container Apps Environment -->
+        <mxCell id="11" value="Container Apps Environment&lt;br&gt;cae-wms-dev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="345" y="218" width="280" height="165" as="geometry"/>
+        </mxCell>
+
+        <!-- Container App -->
+        <mxCell id="12" value="ca-wms-backend-dev&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Spring Boot 3.x / Java 21&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;min:0 / max:3 replicas&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#999999&quot; style=&quot;font-size:9px&quot;&gt;ca-wms-backend-dev.*.japaneast.azurecontainerapps.io&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4E8;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="360" y="258" width="250" height="108" as="geometry"/>
+        </mxCell>
+
+        <!-- PostgreSQL -->
+        <mxCell id="13" value="psql-wms-dev&lt;br&gt;PostgreSQL Flexible Server&lt;br&gt;B1ms (1vCore, 2GB)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=11;size=12;" vertex="1" parent="1">
+          <mxGeometry x="695" y="228" width="160" height="115" as="geometry"/>
+        </mxCell>
+
+        <!-- VNet info -->
+        <mxCell id="14" value="🌐  vnet-wms-dev (10.0.0.0/16)　　　snet-app-dev: 10.0.1.0/24 (Container Apps)　　　snet-db-dev: 10.0.2.0/24 (PostgreSQL)　　　nsg-wms-dev" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#9B8AE0;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="65" y="422" width="800" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Terraform state note -->
+        <mxCell id="tfstate" value="📦  Terraform State: wms-terraform サブスク / stwmsterraform / tfstate / dev/terraform.tfstate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#AAAAAA;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="65" y="473" width="800" height="35" as="geometry"/>
+        </mxCell>
+
+        <!-- ACR box -->
+        <mxCell id="15" value="&lt;b&gt;acrwms — Azure Container Registry&lt;/b&gt;（dev / prd 共用）　Basic SKU" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="545" width="840" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Cost note -->
+        <mxCell id="16" value="💰  稼働時: ~$9/月（dev単体）　|　Destroy後: ~$5/月（ACR + tfstate Blob のみ）" style="text;html=1;strokeColor=#E0E0E0;fillColor=#FAFAFA;align=center;fontSize=10;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="735" width="880" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- Edge: Client → $web -->
+        <mxCell id="e1" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="3" target="9" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Edge: Client → Container App -->
+        <mxCell id="e2" value="HTTPS /api/v1/" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="3" target="12" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Edge: Container App → PostgreSQL -->
+        <mxCell id="e3" value="JPA / JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="12" target="13" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Edge: ACR → Container App (docker pull) -->
+        <mxCell id="e4" value="docker pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;" edge="1" source="15" target="11" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Edge: Container App → iffiles -->
+        <mxCell id="e5" value="読み書き" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;" edge="1" source="12" target="10" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

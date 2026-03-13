@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>モックアップ — WMS ShowCase</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 18px 32px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 1.3rem; font-weight: 700; }
+    header a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.85rem; }
+    header a:hover { color: white; }
+    .layout { display: flex; flex: 1; overflow: hidden; }
+    .sidebar { width: 280px; min-width: 280px; background: white; border-right: 1px solid #e0e0e0; overflow-y: auto; flex-shrink: 0; }
+    .sidebar-header { padding: 12px 16px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: white; background: #1a1a2e; position: sticky; top: 0; }
+    .sidebar-item { padding: 10px 16px; cursor: pointer; border-left: 3px solid transparent; border-bottom: 1px solid #f5f5f5; font-size: 0.82rem; color: #333; transition: background 0.1s; }
+    .sidebar-item:hover { background: #f0f4ff; border-left-color: #0f3460; }
+    .content { flex: 1; overflow-y: auto; padding: 32px 40px; }
+    .mockup-section { margin-bottom: 48px; }
+    .mockup-title { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #0f3460; }
+    .mockup-frame { width: 100%; border: 1px solid #e0e0e0; border-radius: 8px; display: block; background: white; min-height: 400px; }
+    footer { text-align: center; padding: 16px; color: #aaa; font-size: 0.8rem; background: white; border-top: 1px solid #e0e0e0; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🖥️ モックアップ</h1>
+    </div>
+    <a href="../index.html">← 機能設計書に戻る</a>
+  </header>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-header">画面一覧（47画面）</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-AUTH-001-login.html')">AUTH-001 ログイン — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-AUTH-002-change-password.html')">AUTH-002 初回パスワード変更 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-BAT-001-daily-close.html')">BAT-001 日替処理実行 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-BAT-002-batch-history.html')">BAT-002 バッチ実行履歴一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-001-inbound-list.html')">INB-001 入荷予定一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-002-inbound-new.html')">INB-002 入荷予定登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-003-inbound-detail.html')">INB-003 入荷予定詳細 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-004-inbound-inspect.html')">INB-004 入荷検品 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-005-inbound-store.html')">INB-005 入庫指示・確定 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INB-006-inbound-results.html')">INB-006 入荷実績照会 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-001-inventory-list.html')">INV-001 在庫一覧照会 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-002-inventory-move.html')">INV-002 在庫移動登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-003-inventory-breakdown.html')">INV-003 ばらし登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-004-inventory-correction.html')">INV-004 在庫訂正登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-011-stocktake-list.html')">INV-011 棚卸一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-012-stocktake-new.html')">INV-012 棚卸開始 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-013-stocktake-count.html')">INV-013 棚卸実施（実数入力） — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-INV-014-stocktake-confirm.html')">INV-014 棚卸確定 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-001-product-list.html')">MST-001 商品一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-002-product-new.html')">MST-002 商品登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-003-product-edit.html')">MST-003 商品編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-011-partner-list.html')">MST-011 取引先一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-012-partner-new.html')">MST-012 取引先登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-013-partner-edit.html')">MST-013 取引先編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-021-warehouse-list.html')">MST-021 倉庫一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-022-warehouse-new.html')">MST-022 倉庫登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-023-warehouse-edit.html')">MST-023 倉庫編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-031-building-list.html')">MST-031 棟一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-032-building-new.html')">MST-032 棟登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-033-building-edit.html')">MST-033 棟編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-041-area-list.html')">MST-041 エリア一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-042-area-new.html')">MST-042 エリア登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-043-area-edit.html')">MST-043 エリア編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-051-location-list.html')">MST-051 ロケーション一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-052-location-new.html')">MST-052 ロケーション登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-053-location-edit.html')">MST-053 ロケーション編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-061-user-list.html')">MST-061 ユーザー一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-062-user-new.html')">MST-062 ユーザー登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-MST-063-user-edit.html')">MST-063 ユーザー編集 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-001-outbound-list.html')">OUT-001 受注一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-002-outbound-new.html')">OUT-002 受注登録 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-003-outbound-detail.html')">OUT-003 受注詳細 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-011-picking-list.html')">OUT-011 ピッキング指示一覧 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-012-picking-new.html')">OUT-012 ピッキング指示作成 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-013-picking-complete.html')">OUT-013 ピッキング完了入力 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-021-shipping-inspect.html')">OUT-021 出荷検品 — WMS</div>
+      <div class="sidebar-item" onclick="scrollTo('frame-OUT-022-shipping-complete.html')">OUT-022 出荷完了（配送情報入力） — WMS</div>
+    </div>
+    <div class="content" id="main-content">
+
+    <div class="mockup-section" id="section-AUTH-001-login.html">
+      <div class="mockup-title">AUTH-001 ログイン — WMS</div>
+      <iframe
+        id="frame-AUTH-001-login.html"
+        src="AUTH-001-login.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="AUTH-001 ログイン — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-AUTH-002-change-password.html">
+      <div class="mockup-title">AUTH-002 初回パスワード変更 — WMS</div>
+      <iframe
+        id="frame-AUTH-002-change-password.html"
+        src="AUTH-002-change-password.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="AUTH-002 初回パスワード変更 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-BAT-001-daily-close.html">
+      <div class="mockup-title">BAT-001 日替処理実行 — WMS</div>
+      <iframe
+        id="frame-BAT-001-daily-close.html"
+        src="BAT-001-daily-close.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="BAT-001 日替処理実行 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-BAT-002-batch-history.html">
+      <div class="mockup-title">BAT-002 バッチ実行履歴一覧 — WMS</div>
+      <iframe
+        id="frame-BAT-002-batch-history.html"
+        src="BAT-002-batch-history.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="BAT-002 バッチ実行履歴一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-001-inbound-list.html">
+      <div class="mockup-title">INB-001 入荷予定一覧 — WMS</div>
+      <iframe
+        id="frame-INB-001-inbound-list.html"
+        src="INB-001-inbound-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-001 入荷予定一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-002-inbound-new.html">
+      <div class="mockup-title">INB-002 入荷予定登録 — WMS</div>
+      <iframe
+        id="frame-INB-002-inbound-new.html"
+        src="INB-002-inbound-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-002 入荷予定登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-003-inbound-detail.html">
+      <div class="mockup-title">INB-003 入荷予定詳細 — WMS</div>
+      <iframe
+        id="frame-INB-003-inbound-detail.html"
+        src="INB-003-inbound-detail.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-003 入荷予定詳細 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-004-inbound-inspect.html">
+      <div class="mockup-title">INB-004 入荷検品 — WMS</div>
+      <iframe
+        id="frame-INB-004-inbound-inspect.html"
+        src="INB-004-inbound-inspect.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-004 入荷検品 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-005-inbound-store.html">
+      <div class="mockup-title">INB-005 入庫指示・確定 — WMS</div>
+      <iframe
+        id="frame-INB-005-inbound-store.html"
+        src="INB-005-inbound-store.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-005 入庫指示・確定 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INB-006-inbound-results.html">
+      <div class="mockup-title">INB-006 入荷実績照会 — WMS</div>
+      <iframe
+        id="frame-INB-006-inbound-results.html"
+        src="INB-006-inbound-results.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INB-006 入荷実績照会 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-001-inventory-list.html">
+      <div class="mockup-title">INV-001 在庫一覧照会 — WMS</div>
+      <iframe
+        id="frame-INV-001-inventory-list.html"
+        src="INV-001-inventory-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-001 在庫一覧照会 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-002-inventory-move.html">
+      <div class="mockup-title">INV-002 在庫移動登録 — WMS</div>
+      <iframe
+        id="frame-INV-002-inventory-move.html"
+        src="INV-002-inventory-move.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-002 在庫移動登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-003-inventory-breakdown.html">
+      <div class="mockup-title">INV-003 ばらし登録 — WMS</div>
+      <iframe
+        id="frame-INV-003-inventory-breakdown.html"
+        src="INV-003-inventory-breakdown.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-003 ばらし登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-004-inventory-correction.html">
+      <div class="mockup-title">INV-004 在庫訂正登録 — WMS</div>
+      <iframe
+        id="frame-INV-004-inventory-correction.html"
+        src="INV-004-inventory-correction.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-004 在庫訂正登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-011-stocktake-list.html">
+      <div class="mockup-title">INV-011 棚卸一覧 — WMS</div>
+      <iframe
+        id="frame-INV-011-stocktake-list.html"
+        src="INV-011-stocktake-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-011 棚卸一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-012-stocktake-new.html">
+      <div class="mockup-title">INV-012 棚卸開始 — WMS</div>
+      <iframe
+        id="frame-INV-012-stocktake-new.html"
+        src="INV-012-stocktake-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-012 棚卸開始 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-013-stocktake-count.html">
+      <div class="mockup-title">INV-013 棚卸実施（実数入力） — WMS</div>
+      <iframe
+        id="frame-INV-013-stocktake-count.html"
+        src="INV-013-stocktake-count.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-013 棚卸実施（実数入力） — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-INV-014-stocktake-confirm.html">
+      <div class="mockup-title">INV-014 棚卸確定 — WMS</div>
+      <iframe
+        id="frame-INV-014-stocktake-confirm.html"
+        src="INV-014-stocktake-confirm.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="INV-014 棚卸確定 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-001-product-list.html">
+      <div class="mockup-title">MST-001 商品一覧 — WMS</div>
+      <iframe
+        id="frame-MST-001-product-list.html"
+        src="MST-001-product-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-001 商品一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-002-product-new.html">
+      <div class="mockup-title">MST-002 商品登録 — WMS</div>
+      <iframe
+        id="frame-MST-002-product-new.html"
+        src="MST-002-product-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-002 商品登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-003-product-edit.html">
+      <div class="mockup-title">MST-003 商品編集 — WMS</div>
+      <iframe
+        id="frame-MST-003-product-edit.html"
+        src="MST-003-product-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-003 商品編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-011-partner-list.html">
+      <div class="mockup-title">MST-011 取引先一覧 — WMS</div>
+      <iframe
+        id="frame-MST-011-partner-list.html"
+        src="MST-011-partner-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-011 取引先一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-012-partner-new.html">
+      <div class="mockup-title">MST-012 取引先登録 — WMS</div>
+      <iframe
+        id="frame-MST-012-partner-new.html"
+        src="MST-012-partner-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-012 取引先登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-013-partner-edit.html">
+      <div class="mockup-title">MST-013 取引先編集 — WMS</div>
+      <iframe
+        id="frame-MST-013-partner-edit.html"
+        src="MST-013-partner-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-013 取引先編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-021-warehouse-list.html">
+      <div class="mockup-title">MST-021 倉庫一覧 — WMS</div>
+      <iframe
+        id="frame-MST-021-warehouse-list.html"
+        src="MST-021-warehouse-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-021 倉庫一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-022-warehouse-new.html">
+      <div class="mockup-title">MST-022 倉庫登録 — WMS</div>
+      <iframe
+        id="frame-MST-022-warehouse-new.html"
+        src="MST-022-warehouse-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-022 倉庫登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-023-warehouse-edit.html">
+      <div class="mockup-title">MST-023 倉庫編集 — WMS</div>
+      <iframe
+        id="frame-MST-023-warehouse-edit.html"
+        src="MST-023-warehouse-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-023 倉庫編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-031-building-list.html">
+      <div class="mockup-title">MST-031 棟一覧 — WMS</div>
+      <iframe
+        id="frame-MST-031-building-list.html"
+        src="MST-031-building-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-031 棟一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-032-building-new.html">
+      <div class="mockup-title">MST-032 棟登録 — WMS</div>
+      <iframe
+        id="frame-MST-032-building-new.html"
+        src="MST-032-building-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-032 棟登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-033-building-edit.html">
+      <div class="mockup-title">MST-033 棟編集 — WMS</div>
+      <iframe
+        id="frame-MST-033-building-edit.html"
+        src="MST-033-building-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-033 棟編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-041-area-list.html">
+      <div class="mockup-title">MST-041 エリア一覧 — WMS</div>
+      <iframe
+        id="frame-MST-041-area-list.html"
+        src="MST-041-area-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-041 エリア一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-042-area-new.html">
+      <div class="mockup-title">MST-042 エリア登録 — WMS</div>
+      <iframe
+        id="frame-MST-042-area-new.html"
+        src="MST-042-area-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-042 エリア登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-043-area-edit.html">
+      <div class="mockup-title">MST-043 エリア編集 — WMS</div>
+      <iframe
+        id="frame-MST-043-area-edit.html"
+        src="MST-043-area-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-043 エリア編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-051-location-list.html">
+      <div class="mockup-title">MST-051 ロケーション一覧 — WMS</div>
+      <iframe
+        id="frame-MST-051-location-list.html"
+        src="MST-051-location-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-051 ロケーション一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-052-location-new.html">
+      <div class="mockup-title">MST-052 ロケーション登録 — WMS</div>
+      <iframe
+        id="frame-MST-052-location-new.html"
+        src="MST-052-location-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-052 ロケーション登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-053-location-edit.html">
+      <div class="mockup-title">MST-053 ロケーション編集 — WMS</div>
+      <iframe
+        id="frame-MST-053-location-edit.html"
+        src="MST-053-location-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-053 ロケーション編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-061-user-list.html">
+      <div class="mockup-title">MST-061 ユーザー一覧 — WMS</div>
+      <iframe
+        id="frame-MST-061-user-list.html"
+        src="MST-061-user-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-061 ユーザー一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-062-user-new.html">
+      <div class="mockup-title">MST-062 ユーザー登録 — WMS</div>
+      <iframe
+        id="frame-MST-062-user-new.html"
+        src="MST-062-user-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-062 ユーザー登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-MST-063-user-edit.html">
+      <div class="mockup-title">MST-063 ユーザー編集 — WMS</div>
+      <iframe
+        id="frame-MST-063-user-edit.html"
+        src="MST-063-user-edit.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="MST-063 ユーザー編集 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-001-outbound-list.html">
+      <div class="mockup-title">OUT-001 受注一覧 — WMS</div>
+      <iframe
+        id="frame-OUT-001-outbound-list.html"
+        src="OUT-001-outbound-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-001 受注一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-002-outbound-new.html">
+      <div class="mockup-title">OUT-002 受注登録 — WMS</div>
+      <iframe
+        id="frame-OUT-002-outbound-new.html"
+        src="OUT-002-outbound-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-002 受注登録 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-003-outbound-detail.html">
+      <div class="mockup-title">OUT-003 受注詳細 — WMS</div>
+      <iframe
+        id="frame-OUT-003-outbound-detail.html"
+        src="OUT-003-outbound-detail.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-003 受注詳細 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-011-picking-list.html">
+      <div class="mockup-title">OUT-011 ピッキング指示一覧 — WMS</div>
+      <iframe
+        id="frame-OUT-011-picking-list.html"
+        src="OUT-011-picking-list.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-011 ピッキング指示一覧 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-012-picking-new.html">
+      <div class="mockup-title">OUT-012 ピッキング指示作成 — WMS</div>
+      <iframe
+        id="frame-OUT-012-picking-new.html"
+        src="OUT-012-picking-new.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-012 ピッキング指示作成 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-013-picking-complete.html">
+      <div class="mockup-title">OUT-013 ピッキング完了入力 — WMS</div>
+      <iframe
+        id="frame-OUT-013-picking-complete.html"
+        src="OUT-013-picking-complete.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-013 ピッキング完了入力 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-021-shipping-inspect.html">
+      <div class="mockup-title">OUT-021 出荷検品 — WMS</div>
+      <iframe
+        id="frame-OUT-021-shipping-inspect.html"
+        src="OUT-021-shipping-inspect.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-021 出荷検品 — WMS"
+      ></iframe>
+    </div>
+
+    <div class="mockup-section" id="section-OUT-022-shipping-complete.html">
+      <div class="mockup-title">OUT-022 出荷完了（配送情報入力） — WMS</div>
+      <iframe
+        id="frame-OUT-022-shipping-complete.html"
+        src="OUT-022-shipping-complete.html"
+        class="mockup-frame"
+        scrolling="no"
+        onload="resizeFrame(this)"
+        title="OUT-022 出荷完了（配送情報入力） — WMS"
+      ></iframe>
+    </div>
+    </div>
+  </div>
+  <footer>WMS ShowCase — Generated by build-docs.js</footer>
+  <script>
+    function resizeFrame(iframe) {
+      try {
+        const h = iframe.contentDocument.documentElement.scrollHeight;
+        if (h > 100) iframe.style.height = h + 'px';
+      } catch (e) {
+        iframe.style.height = '800px';
+      }
+    }
+    function scrollTo(frameId) {
+      const el = document.getElementById('section-' + frameId.replace('frame-', ''));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+</body>
+</html>

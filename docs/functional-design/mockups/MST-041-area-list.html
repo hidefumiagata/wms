@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MST-041 エリア一覧 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+    .mockup-meta { position: fixed; top: 0; left: 0; right: 0; height: 32px; background: #000; color: #888; font-size: 11px; padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999; }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+    .app-header { position: fixed; left: 0; right: 0; height: var(--header-height); background: var(--color-black); display: flex; align-items: center; padding: 0 24px; gap: 24px; z-index: 100; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge { display: flex; align-items: center; gap: 8px; background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius); padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout { font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px; border: 1px solid #333; border-radius: var(--border-radius); }
+    .app-sidebar { position: fixed; left: 0; width: var(--sidebar-width); bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90; }
+    .sidebar-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500); }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--color-gray-400); font-size: 13px; font-weight: 500; text-decoration: none; border-left: 3px solid transparent; }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); font-weight: 600; }
+    .sidebar-sub { list-style: none; padding-left: 8px; }
+    .sidebar-sub li a { display: flex; align-items: center; gap: 8px; padding: 7px 20px; color: var(--color-gray-500); font-size: 12px; text-decoration: none; border-left: 3px solid transparent; }
+    .sidebar-sub li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); }
+    .app-main { margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+    .filter-bar { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px; }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select { padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900); background: var(--color-white); outline: none; }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-danger    { background: transparent; color: var(--color-error); border: 1.5px solid var(--color-error); }
+    .btn-danger:hover { background: var(--color-error-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+    .table-card { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .col-no { width: 48px; text-align: center; color: var(--color-gray-500); }
+    .col-code { font-family: monospace; font-size: 13px; font-weight: 600; }
+    .action-group { display: flex; gap: 6px; }
+    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-active   { background: var(--color-success-bg); color: var(--color-success); }
+    .tag-inactive { background: var(--color-gray-100); color: var(--color-gray-500); }
+    .tag-ambient  { background: #EDF5FF; color: #0043CE; }
+    .tag-cold     { background: #E5F6FB; color: #006D8F; }
+    .tag-frozen   { background: #EDE8FF; color: #5A3DB8; }
+    .tag-stock    { background: var(--color-primary-bg); color: var(--color-primary-dark); }
+    .tag-inbound  { background: #DEFBE6; color: #198038; }
+    .tag-outbound { background: #FFF8E1; color: #7A5800; }
+    .tag-return   { background: #FFF1F1; color: #A2191F; }
+    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--color-gray-200); background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius); background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700); }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">MST-041</span>
+    <span>エリア一覧</span>
+    <span style="color:#444">|</span>
+    <span>URL: /master/areas</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge"><span class="dot"></span><span>東京DC</span><span class="caret">▼</span></div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>田中 管理者</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    <div class="sidebar-section">マスタ管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#">🏷 商品</a></li>
+      <li><a href="#">🤝 取引先</a></li>
+      <li><a href="#">🏭 倉庫</a></li>
+      <li><a href="#">🏢 棟</a></li>
+      <li>
+        <a href="#" style="color:var(--color-primary-light);">📐 エリア</a>
+        <ul class="sidebar-sub">
+          <li><a href="#" class="active">◾ エリア一覧</a></li>
+        </ul>
+      </li>
+      <li><a href="#">📍 ロケーション</a></li>
+      <li><a href="#">👤 ユーザー</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:12px">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#">📦 入荷管理</a></li>
+      <li><a href="#">📊 在庫管理</a></li>
+      <li><a href="#">🚚 出荷管理</a></li>
+      <li><a href="#">⚙ バッチ管理</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> マスタ管理 <span class="sep">›</span> エリア一覧
+    </div>
+    <div class="page-header">
+      <h1 class="page-title">エリア一覧</h1>
+      <button class="btn btn-primary">＋ エリア登録</button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">棟</label>
+          <select class="filter-select" style="width:140px">
+            <option value="">すべて</option>
+            <option>A棟 (A)</option>
+            <option>B棟 (B)</option>
+            <option>C棟 (C)</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">保管条件</label>
+          <select class="filter-select" style="width:130px">
+            <option value="">すべて</option>
+            <option>常温</option>
+            <option>冷蔵</option>
+            <option>冷凍</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">エリア種別</label>
+          <select class="filter-select" style="width:140px">
+            <option value="">すべて</option>
+            <option>在庫エリア</option>
+            <option>入荷エリア</option>
+            <option>出荷エリア</option>
+            <option>返品エリア</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">有効/無効</label>
+          <select class="filter-select" style="width:130px">
+            <option value="">すべて</option>
+            <option selected>有効</option>
+            <option>無効</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div></div>
+      <div class="record-count">全 <strong>8</strong> 件</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-no">No</th>
+            <th>エリアコード</th>
+            <th>エリア名称</th>
+            <th>棟</th>
+            <th>保管条件</th>
+            <th>エリア種別</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-no">1</td>
+            <td class="col-code">A-01-A</td>
+            <td>A棟1F 常温在庫エリア</td>
+            <td>A棟</td>
+            <td><span class="tag tag-ambient">常温</span></td>
+            <td><span class="tag tag-stock">在庫</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">2</td>
+            <td class="col-code">A-01-F</td>
+            <td>A棟1F 冷凍在庫エリア</td>
+            <td>A棟</td>
+            <td><span class="tag tag-frozen">冷凍</span></td>
+            <td><span class="tag tag-stock">在庫</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">3</td>
+            <td class="col-code">A-IN</td>
+            <td>A棟 入荷エリア</td>
+            <td>A棟</td>
+            <td><span class="tag tag-ambient">常温</span></td>
+            <td><span class="tag tag-inbound">入荷</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">4</td>
+            <td class="col-code">A-OUT</td>
+            <td>A棟 出荷エリア</td>
+            <td>A棟</td>
+            <td><span class="tag tag-ambient">常温</span></td>
+            <td><span class="tag tag-outbound">出荷</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">5</td>
+            <td class="col-code">B-01-A</td>
+            <td>B棟1F 常温在庫エリア</td>
+            <td>B棟</td>
+            <td><span class="tag tag-ambient">常温</span></td>
+            <td><span class="tag tag-stock">在庫</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">6</td>
+            <td class="col-code">B-01-R</td>
+            <td>B棟1F 冷蔵在庫エリア</td>
+            <td>B棟</td>
+            <td><span class="tag tag-cold">冷蔵</span></td>
+            <td><span class="tag tag-stock">在庫</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">7</td>
+            <td class="col-code">B-RET</td>
+            <td>B棟 返品エリア</td>
+            <td>B棟</td>
+            <td><span class="tag tag-ambient">常温</span></td>
+            <td><span class="tag tag-return">返品</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-danger btn-sm">無効化</button></div></td>
+          </tr>
+          <tr>
+            <td class="col-no">8</td>
+            <td class="col-code">C-01-F</td>
+            <td>C棟1F 冷凍在庫エリア</td>
+            <td>C棟</td>
+            <td><span class="tag tag-frozen">冷凍</span></td>
+            <td><span class="tag tag-stock">在庫</span></td>
+            <td><span class="tag tag-inactive">無効</span></td>
+            <td><div class="action-group"><button class="btn btn-ghost btn-sm">編集</button><button class="btn btn-secondary btn-sm">有効化</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination-bar">
+        <span>全8件中 1〜8件</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

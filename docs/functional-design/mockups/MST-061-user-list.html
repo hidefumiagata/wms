@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MST-061 ユーザー一覧 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 4px 10px; cursor: pointer;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; text-decoration: none;
+      border-left: 3px solid transparent; transition: all 0.12s;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Filter Bar === */
+    .filter-bar {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select {
+      padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-warning   { background: #F59E0B; color: var(--color-white); border: none; }
+    .btn-warning:hover { background: #D97706; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* === Toolbar === */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-left { display: flex; gap: 8px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+
+    /* === Table === */
+    .table-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .td-link { color: var(--color-primary); font-weight: 600; cursor: pointer; font-family: monospace; font-size: 13px; }
+    .td-link:hover { text-decoration: underline; }
+    /* Locked row style */
+    tbody tr.row-locked { background: #FFF5F5; }
+    tbody tr.row-locked:hover { background: #FFE8E8; }
+    /* Inactive row style */
+    tbody tr.row-inactive td { color: var(--color-gray-400); }
+    tbody tr.row-inactive .td-link { color: var(--color-gray-400); }
+
+    /* === Status Tags === */
+    .tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-active   { background: var(--color-success-bg); color: var(--color-success); }
+    .tag-inactive { background: var(--color-gray-100); color: var(--color-gray-500); }
+    .tag-locked   { background: var(--color-error-bg); color: var(--color-error); }
+    .tag-admin    { background: var(--color-primary-bg); color: var(--color-primary-dark); }
+    .tag-manager  { background: #EDF5FF; color: var(--color-info); }
+    .tag-staff    { background: #E6F4EC; color: #145523; }
+    .tag-viewer   { background: var(--color-gray-100); color: var(--color-gray-600); }
+
+    /* === Action buttons in table === */
+    .action-group { display: flex; gap: 6px; flex-wrap: nowrap; }
+
+    /* === Pagination === */
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-top: 1px solid var(--color-gray-200);
+      background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500);
+    }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius);
+      background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700);
+    }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">MST-061</span>
+    <span>ユーザー一覧</span>
+    <span style="color:#444">|</span>
+    <span>URL: /master/users</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>田中 システム管理者</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-gray-200);font-weight:600"><span class="icon">🗂</span> マスタ管理</a>
+        <ul class="sidebar-submenu">
+          <li><a href="#">商品マスタ</a></li>
+          <li><a href="#">取引先マスタ</a></li>
+          <li><a href="#">倉庫マスタ</a></li>
+          <li><a href="#">ロケーションマスタ</a></li>
+          <li><a href="#" class="active">ユーザーマスタ</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> マスタ管理 <span class="sep">›</span> ユーザー一覧
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">ユーザー一覧</h1>
+      <button class="btn btn-primary">＋ 新規登録</button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">氏名 / ユーザーコード</label>
+          <input type="text" class="filter-input" placeholder="例: 田中 または tanaka" style="width:220px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">ロール</label>
+          <select class="filter-select" style="width:180px">
+            <option value="">すべて</option>
+            <option>SYSTEM_ADMIN</option>
+            <option>WAREHOUSE_MANAGER</option>
+            <option>WAREHOUSE_STAFF</option>
+            <option>VIEWER</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">ステータス</label>
+          <select class="filter-select" style="width:140px">
+            <option value="">すべて</option>
+            <option>有効</option>
+            <option>無効</option>
+            <option>ロック中</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left"></div>
+      <div class="record-count">全 <strong>12</strong> 件</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>ユーザーコード</th>
+            <th>氏名</th>
+            <th>メールアドレス</th>
+            <th>ロール</th>
+            <th>ステータス</th>
+            <th>登録日時</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 1: SYSTEM_ADMIN・有効（ログイン中の自分） -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">1</td>
+            <td><span class="td-link">sys_admin</span></td>
+            <td>田中 一郎 <span style="font-size:10px;color:var(--color-gray-400);margin-left:4px">（自分）</span></td>
+            <td style="color:var(--color-gray-600)">tanaka.ichiro@example.com</td>
+            <td><span class="tag tag-admin">SYSTEM_ADMIN</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/10/01 09:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 2: SYSTEM_ADMIN・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">2</td>
+            <td><span class="td-link">sys_admin2</span></td>
+            <td>山本 花子</td>
+            <td style="color:var(--color-gray-600)">yamamoto.hanako@example.com</td>
+            <td><span class="tag tag-admin">SYSTEM_ADMIN</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/10/02 10:15</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 3: WAREHOUSE_MANAGER・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">3</td>
+            <td><span class="td-link">mgr_tokyo01</span></td>
+            <td>鈴木 次郎</td>
+            <td style="color:var(--color-gray-600)">suzuki.jiro@example.com</td>
+            <td><span class="tag tag-manager">WAREHOUSE_MANAGER</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/10/05 13:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 4: WAREHOUSE_MANAGER・アカウントロック中 -->
+          <tr class="row-locked">
+            <td style="color:var(--color-gray-500);font-size:12px">4</td>
+            <td><span class="td-link" style="color:#C0392B">mgr_osaka01</span></td>
+            <td>佐藤 三郎</td>
+            <td style="color:var(--color-gray-600)">sato.saburo@example.com</td>
+            <td><span class="tag tag-manager">WAREHOUSE_MANAGER</span></td>
+            <td><span class="tag tag-locked">🔒 ロック中</span></td>
+            <td style="color:var(--color-gray-500)">2025/10/08 09:30</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">🔓 ロック解除</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 5: WAREHOUSE_STAFF・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">5</td>
+            <td><span class="td-link">staff_t001</span></td>
+            <td>高橋 四郎</td>
+            <td style="color:var(--color-gray-600)">takahashi.shiro@example.com</td>
+            <td><span class="tag tag-staff">WAREHOUSE_STAFF</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/11/01 08:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 6: WAREHOUSE_STAFF・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">6</td>
+            <td><span class="td-link">staff_t002</span></td>
+            <td>伊藤 五郎</td>
+            <td style="color:var(--color-gray-600)">ito.goro@example.com</td>
+            <td><span class="tag tag-staff">WAREHOUSE_STAFF</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/11/01 08:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 7: WAREHOUSE_STAFF・アカウントロック中 -->
+          <tr class="row-locked">
+            <td style="color:var(--color-gray-500);font-size:12px">7</td>
+            <td><span class="td-link" style="color:#C0392B">staff_t003</span></td>
+            <td>渡辺 六花</td>
+            <td style="color:var(--color-gray-600)">watanabe.rikka@example.com</td>
+            <td><span class="tag tag-staff">WAREHOUSE_STAFF</span></td>
+            <td><span class="tag tag-locked">🔒 ロック中</span></td>
+            <td style="color:var(--color-gray-500)">2025/11/15 10:30</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">🔓 ロック解除</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 8: WAREHOUSE_STAFF・有効（初回ログイン未完了） -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">8</td>
+            <td><span class="td-link">staff_t004</span></td>
+            <td>中村 七海 <span style="font-size:10px;background:#FFF8E1;color:#7A5800;padding:1px 6px;border-radius:999px;margin-left:4px">初回PW未変更</span></td>
+            <td style="color:var(--color-gray-600)">nakamura.nanami@example.com</td>
+            <td><span class="tag tag-staff">WAREHOUSE_STAFF</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2026/03/10 14:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 9: VIEWER・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">9</td>
+            <td><span class="td-link">viewer001</span></td>
+            <td>小林 八郎</td>
+            <td style="color:var(--color-gray-600)">kobayashi.hachiro@example.com</td>
+            <td><span class="tag tag-viewer">VIEWER</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2025/12/01 10:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 10: WAREHOUSE_STAFF・無効 -->
+          <tr class="row-inactive">
+            <td style="color:var(--color-gray-400);font-size:12px">10</td>
+            <td><span class="td-link">staff_t005</span></td>
+            <td>加藤 九郎</td>
+            <td style="color:var(--color-gray-400)">kato.kuro@example.com</td>
+            <td><span class="tag tag-viewer">WAREHOUSE_STAFF</span></td>
+            <td><span class="tag tag-inactive">無効</span></td>
+            <td style="color:var(--color-gray-400)">2025/09/01 08:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 11: WAREHOUSE_MANAGER・無効 -->
+          <tr class="row-inactive">
+            <td style="color:var(--color-gray-400);font-size:12px">11</td>
+            <td><span class="td-link">mgr_retired</span></td>
+            <td>松田 十子</td>
+            <td style="color:var(--color-gray-400)">matsuda.toko@example.com</td>
+            <td><span class="tag tag-viewer">WAREHOUSE_MANAGER</span></td>
+            <td><span class="tag tag-inactive">無効</span></td>
+            <td style="color:var(--color-gray-400)">2025/07/15 09:00</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+          <!-- 12: VIEWER・有効 -->
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">12</td>
+            <td><span class="td-link">viewer002</span></td>
+            <td>井上 十一郎</td>
+            <td style="color:var(--color-gray-600)">inoue.juichiro@example.com</td>
+            <td><span class="tag tag-viewer">VIEWER</span></td>
+            <td><span class="tag tag-active">有効</span></td>
+            <td style="color:var(--color-gray-500)">2026/01/10 11:30</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <span>全12件（全件表示）</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+
+    <!-- Note: ロック解除確認ダイアログ（モックアップ参考用） -->
+    <div style="margin-top:24px;padding:16px;background:var(--color-warning-bg);border:1px solid #FFE082;border-radius:var(--border-radius-lg);font-size:12px;color:var(--color-warning)">
+      <strong>モックアップ注記:</strong>
+      [🔓 ロック解除] クリック時は確認ダイアログ表示:
+      「佐藤 三郎（mgr_osaka01）のアカウントロックを解除します。よろしいですか？」
+      → [キャンセル] [OK]
+    </div>
+
+  </main>
+
+</body>
+</html>

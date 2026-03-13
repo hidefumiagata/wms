@@ -1,24 +1,63 @@
 # インフラアーキテクチャ
 
-→ 図：[diagrams/infrastructure-architecture.drawio](diagrams/infrastructure-architecture.drawio)（作成予定）
+## 構成図
+
+→ [dev環境インフラ構成図（Japan East - Single Region）](diagrams/dev-infrastructure.drawio)
+
+→ [prd環境インフラ構成図（Multi-Region Active-Passive）](diagrams/prd-infrastructure.drawio)
 
 ## 基本方針
 
 | 項目 | 内容 |
 |------|------|
 | **クラウド** | Microsoft Azure |
-| **リージョン** | Japan East |
-| **IaC** | Terraform |
+| **IaC** | Terraform（Deploy/Destroy運用） |
 | **環境分離** | Azureサブスクリプション単位で分離 |
 | **ネットワーク** | VNet（プライベートネットワーク構成） |
 
+## 運用方針（Terraform Deploy/Destroy）
+
+常時稼働させず、必要な時だけデプロイして使い終わったらDestroyする運用。
+
+| 状態 | 月額概算 |
+|------|---------|
+| **常時維持コスト** | ~$5/月（ACR + tfstate Blob のみ） |
+| **dev稼働中** | +$9/月（日割り） |
+| **prd稼働中** | +$80/月（日割り） |
+
+> 常時稼働させる場合: dev ~$9/月、prd ~$80/月
+
+### Destroyしない常設リソース
+
+| リソース | 理由 |
+|---------|------|
+| wms-terraform サブスク の Blob Storage | Terraform state保管（数KB、ほぼ無料） |
+| acrwms（ACR） | イメージを毎回ビルド＆プッシュするコスト回避 |
+
+## 環境構成の違い
+
+| 項目 | dev | prd |
+|------|-----|-----|
+| **リージョン** | Japan East のみ | Japan East（Primary）+ Japan West（Standby） |
+| **Azure Front Door** | なし | あり（自動フェイルオーバー / WAF） |
+| **Container Apps** | min:0 max:3 | East: min:1 max:5 / West: min:0 max:5 |
+| **PostgreSQL** | B1ms 単一構成 | B1ms + Geo-redundant backup |
+| **Storage** | LRS | GRS（Japan West へ自動レプリケーション） |
+| **ACR** | Basic SKU（East） | Basic SKU + Geo-replication（East + West） |
+| **ネットワーク** | vnet-wms-dev (10.0.0.0/16) | vnet-wms-prd-east (10.1.0.0/16) + vnet-wms-prd-west (10.2.0.0/16) |
+
 ## サブスクリプション構成
 
-```
-Azure Tenant
-├── サブスクリプション: wms-terraform    ← Terraform state専用
-├── サブスクリプション: wms-dev          ← 開発環境
-└── サブスクリプション: wms-prd          ← 本番環境
+```mermaid
+graph TD
+    T["☁️ Azure Tenant"]
+    TF["wms-terraform\nTerraform state専用"]
+    DEV["wms-dev\n開発環境（Single Region）"]
+    PRD["wms-prd\n本番環境（Multi Region）"]
+
+    T --> TF
+    T --> DEV
+    T --> PRD
 ```
 
 ## Terraform State 管理
@@ -31,98 +70,30 @@ Azure Tenant
 | **Blobコンテナ** | tfstate |
 | **State ファイル** | dev/terraform.tfstate、prd/terraform.tfstate |
 
-## 各環境のリソース構成
+## prd環境 フェイルオーバー仕様
 
-### 開発環境（wms-dev サブスクリプション）
-
-```
-リソースグループ: rg-wms-dev (Japan East)
-│
-├── ネットワーク
-│   ├── VNet: vnet-wms-dev (10.0.0.0/16)
-│   │   ├── Subnet: snet-app-dev (10.0.1.0/24)  ← Container Apps
-│   │   └── Subnet: snet-db-dev  (10.0.2.0/24)  ← PostgreSQL
-│   └── NSG: nsg-wms-dev
-│
-├── コンピューティング
-│   ├── Container Apps Environment: cae-wms-dev (VNet統合)
-│   └── Container App: ca-wms-backend-dev
-│       ├── min replicas: 0
-│       └── max replicas: 3
-│
-├── データベース
-│   └── PostgreSQL Flexible Server: psql-wms-dev
-│       ├── SKU: B1ms (1vCore, 2GB)
-│       └── VNet統合（snet-db-devに配置）
-│
-├── ストレージ
-│   └── Storage Account: stwmsdev
-│       ├── Blob Container: $web       ← フロントエンド（静的Webホスティング）
-│       └── Blob Container: iffiles   ← I/Fファイル（入荷予定CSV・受注CSV）
-│
-└── コンテナレジストリ
-    └── Azure Container Registry: acrwms  ← dev/prd共用
-```
-
-### 本番環境（wms-prd サブスクリプション）
-
-dev環境と同構成。ACRはdev環境のものを共用する。
-
-```
-リソースグループ: rg-wms-prd (Japan East)
-│
-├── ネットワーク
-│   ├── VNet: vnet-wms-prd (10.1.0.0/16)
-│   │   ├── Subnet: snet-app-prd (10.1.1.0/24)
-│   │   └── Subnet: snet-db-prd  (10.1.2.0/24)
-│   └── NSG: nsg-wms-prd
-│
-├── コンピューティング
-│   ├── Container Apps Environment: cae-wms-prd (VNet統合)
-│   └── Container App: ca-wms-backend-prd
-│       ├── min replicas: 0
-│       └── max replicas: 3
-│
-├── データベース
-│   └── PostgreSQL Flexible Server: psql-wms-prd
-│       ├── SKU: B1ms (1vCore, 2GB)
-│       └── VNet統合（snet-db-prdに配置）
-│
-└── ストレージ
-    └── Storage Account: stwmsprd
-        ├── Blob Container: $web
-        └── Blob Container: iffiles
-```
-
-## Container Apps スケーリング設定
-
-| 設定 | 値 |
-|------|---|
-| **min replicas** | 0（未使用時ゼロコスト） |
-| **max replicas** | 3 |
-| **スケールトリガー** | HTTPリクエスト数 |
+| 項目 | 内容 |
+|------|-----|
+| **フェイルオーバートリガー** | Front Door ヘルスプローブ失敗 |
+| **フェイルオーバー方式** | Active-Passive（East障害時にWestへ自動切替） |
+| **フロントエンド** | GRS により Japan West に自動レプリカ済み |
+| **バックエンド** | CA West (min:0) が自動スケールアウト |
+| **DB** | Japan East のプライマリのみ（West からもクロスリージョン接続） |
+| **RPO** | 最大1時間（Geo-redundant backup基点） |
+| **RTO** | フロント/API: 数分（Front Doorの自動切替） / DB復旧: 数時間（手動） |
 
 ## DNS / エンドポイント
-
-デフォルトAzure URLを使用（独自ドメインなし）
 
 | コンポーネント | URL形式 |
 |--------------|--------|
 | **フロントエンド（dev）** | `https://stwmsdev.z11.web.core.windows.net` |
-| **フロントエンド（prd）** | `https://stwmsprd.z11.web.core.windows.net` |
+| **フロントエンド（prd）** | Azure Front Door のエンドポイント URL |
 | **バックエンドAPI（dev）** | `https://ca-wms-backend-dev.*.japaneast.azurecontainerapps.io` |
-| **バックエンドAPI（prd）** | `https://ca-wms-backend-prd.*.japaneast.azurecontainerapps.io` |
+| **バックエンドAPI（prd）** | Azure Front Door 経由（Front Door URL /api/v1/ でルーティング） |
 
-## コスト概算
+> ⚠️ Terraform Destroy/Apply でURLが変わるため、フロントエンドのAPI URL設定はTerraform output から動的に注入する
 
-| 状態 | 月額概算 |
-|------|---------|
-| **稼働時** | ~$18/月（dev + prd） |
-| **停止時** | ~$4/月（Blob Storageのみ） |
-
-> ⚠️ PostgreSQL Flexible Serverは7日間で自動再起動されるため定期的な停止操作が必要
-
-## Terraform ディレクトリ構成（案）
+## Terraform ディレクトリ構成
 
 ```
 infra/
@@ -131,7 +102,8 @@ infra/
 │   ├── postgresql/
 │   ├── storage/
 │   ├── vnet/
-│   └── acr/
+│   ├── acr/
+│   └── front-door/         ← prd のみ使用
 ├── environments/
 │   ├── dev/
 │   │   ├── main.tf
@@ -142,5 +114,15 @@ infra/
 │       ├── variables.tf
 │       └── terraform.tfvars
 └── terraform-state/
-    └── main.tf    ← tfstate用ストレージアカウント作成
+    └── main.tf              ← tfstate用ストレージアカウント作成（一度だけ実行）
 ```
+
+## Container Apps スケーリング設定
+
+| 環境 | min replicas | max replicas | スケールトリガー |
+|------|-------------|-------------|---------------|
+| **dev** | 0（未使用時ゼロコスト） | 3 | HTTPリクエスト数 |
+| **prd East** | 1（常時1台待機） | 5 | HTTPリクエスト数 |
+| **prd West** | 0（Standby） | 5 | HTTPリクエスト数 |
+
+> ⚠️ PostgreSQL Flexible Server は7日間で自動再起動されるため定期的な停止操作が必要

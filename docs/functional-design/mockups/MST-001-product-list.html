@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MST-001 商品一覧 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #000; color: #888; font-size: 11px;
+      height: 32px; display: flex; align-items: center;
+      padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      cursor: pointer; padding: 4px 10px;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-sub { list-style: none; padding-left: 8px; }
+    .sidebar-sub li a { padding: 8px 20px 8px 28px; font-size: 12px; }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Filter Bar === */
+    .filter-bar {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select {
+      padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-warning   { background: transparent; color: var(--color-warning); border: 1.5px solid var(--color-warning-bg); }
+    .btn-warning:hover { background: var(--color-warning-bg); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* === Toolbar === */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-left { display: flex; gap: 8px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+
+    /* === Table === */
+    .table-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    tbody tr.row-disabled { opacity: 0.55; background: var(--color-gray-50); }
+
+    /* === Tags === */
+    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .tag-normal  { background: var(--color-gray-100); color: var(--color-gray-600); }
+    .tag-cold    { background: #EDF5FF; color: var(--color-info); }
+    .tag-freeze  { background: #E8F4FF; color: #005B9C; }
+    .tag-enabled  { background: var(--color-success-bg); color: var(--color-success); }
+    .tag-disabled { background: var(--color-gray-100); color: var(--color-gray-500); }
+    .tag-danger  { background: var(--color-error-bg); color: var(--color-error); }
+    .dot-flag { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); }
+    .dash-flag { color: var(--color-gray-300); font-weight: 700; }
+
+    /* === Action buttons === */
+    .action-group { display: flex; gap: 6px; }
+
+    /* === Pagination === */
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-top: 1px solid var(--color-gray-200);
+      background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500);
+    }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius);
+      background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700);
+    }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">MST-001</span>
+    <span>商品一覧</span>
+    <span style="color:#444">|</span>
+    <span>URL: /master/products</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>管理者 花子</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">マスタ管理</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="background:rgba(161,0,255,0.08); color: var(--color-gray-200); border-left: 3px solid var(--color-primary-mid);">
+          <span class="icon">📦</span> 商品
+        </a>
+        <ul class="sidebar-sub">
+          <li><a href="#" class="active"><span class="icon">◾</span> 商品一覧</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">🏢</span> 取引先</a></li>
+      <li><a href="#"><span class="icon">🏭</span> 倉庫</a></li>
+      <li><a href="#"><span class="icon">🏗</span> 棟</a></li>
+      <li><a href="#"><span class="icon">📐</span> エリア</a></li>
+      <li><a href="#"><span class="icon">📍</span> ロケーション</a></li>
+      <li><a href="#"><span class="icon">👤</span> ユーザー</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📥</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> マスタ管理 <span class="sep">›</span> 商品一覧
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">商品一覧</h1>
+      <button class="btn btn-primary">＋ 新規登録</button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">商品コード</label>
+          <input type="text" class="filter-input" placeholder="例: PRD-001" style="width:160px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">商品名</label>
+          <input type="text" class="filter-input" placeholder="部分一致" style="width:200px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">カテゴリ</label>
+          <select class="filter-select" style="width:130px">
+            <option value="">すべて</option>
+            <option>飲料</option>
+            <option>食品</option>
+            <option>日用品</option>
+            <option>その他</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">保管条件</label>
+          <select class="filter-select" style="width:120px">
+            <option value="">すべて</option>
+            <option>常温</option>
+            <option>冷蔵</option>
+            <option>冷凍</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">有効/無効</label>
+          <select class="filter-select" style="width:120px">
+            <option value="enabled" selected>有効のみ</option>
+            <option value="">すべて</option>
+            <option value="disabled">無効のみ</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left"></div>
+      <div class="record-count">全 <strong>42</strong> 件（1〜20件表示）</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>商品コード</th>
+            <th>商品名</th>
+            <th>商品名カナ</th>
+            <th>カテゴリ</th>
+            <th>単位</th>
+            <th>保管条件</th>
+            <th style="text-align:center">危険物</th>
+            <th style="text-align:center">ロット</th>
+            <th style="text-align:center">有効</th>
+            <th style="min-width:160px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">1</td>
+            <td style="font-weight:600;font-family:monospace">PRD-001</td>
+            <td>キリン 生茶 2L×6本</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">キリン ナマチャ 2エル×6ポン</td>
+            <td><span class="tag tag-normal">飲料</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">2</td>
+            <td style="font-weight:600;font-family:monospace">PRD-002</td>
+            <td>コカ・コーラ 500ml×24本</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">コカコーラ 500ミリリットル×24ホン</td>
+            <td><span class="tag tag-normal">飲料</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">3</td>
+            <td style="font-weight:600;font-family:monospace">PRD-003</td>
+            <td>明治プロビオヨーグルト R-1 112g×12個</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">メイジプロビオヨーグルト アールワン 112グラム×12コ</td>
+            <td><span class="tag tag-normal">食品</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-cold">冷蔵</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dot-flag"></span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">4</td>
+            <td style="font-weight:600;font-family:monospace">PRD-004</td>
+            <td>日清フーズ スパゲッティ 1.6mm 500g×20袋</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">ニッシンフーズ スパゲッティ 1.6ミリ 500グラム×20フクロ</td>
+            <td><span class="tag tag-normal">食品</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">5</td>
+            <td style="font-weight:600;font-family:monospace">PRD-005</td>
+            <td>アサヒスーパードライ 350ml×24缶</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">アサヒスーパードライ 350ミリリットル×24カン</td>
+            <td><span class="tag tag-normal">飲料</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dot-flag"></span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">6</td>
+            <td style="font-weight:600;font-family:monospace">PRD-006</td>
+            <td>ハーゲンダッツ バニラ 110ml×8個</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">ハーゲンダッツ バニラ 110ミリリットル×8コ</td>
+            <td><span class="tag tag-normal">食品</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-freeze">冷凍</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dot-flag"></span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">7</td>
+            <td style="font-weight:600;font-family:monospace">PRD-007</td>
+            <td>カゴメ トマトジュース 190g×30缶</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">カゴメ トマトジュース 190グラム×30カン</td>
+            <td><span class="tag tag-normal">飲料</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">8</td>
+            <td style="font-weight:600;font-family:monospace">PRD-015</td>
+            <td>花王 キュキュット 詰替用 700ml</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">カオウ キュキュット ツメカエヨウ 700ミリリットル</td>
+            <td><span class="tag tag-normal">日用品</span></td>
+            <td>個</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="tag tag-danger" style="font-size:10px;padding:1px 7px">●</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr class="row-disabled">
+            <td style="color:var(--color-gray-400);font-size:12px">9</td>
+            <td style="font-weight:600;font-family:monospace;color:var(--color-gray-400)">PRD-009</td>
+            <td style="color:var(--color-gray-500)">サントリー 天然水 2L×6本（廃番）</td>
+            <td style="font-size:12px;color:var(--color-gray-400)">サントリー テンネンスイ 2エル×6ポン</td>
+            <td><span class="tag tag-normal">飲料</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-normal">常温</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="tag tag-disabled">無効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-secondary btn-sm">有効化</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-400);font-size:12px">10</td>
+            <td style="font-weight:600;font-family:monospace">PRD-022</td>
+            <td>雪印メグミルク 牛乳 1L×6本</td>
+            <td style="font-size:12px;color:var(--color-gray-500)">ユキジルシメグミルク ギュウニュウ 1リットル×6ホン</td>
+            <td><span class="tag tag-normal">食品</span></td>
+            <td>ケース</td>
+            <td><span class="tag tag-cold">冷蔵</span></td>
+            <td style="text-align:center"><span class="dash-flag">—</span></td>
+            <td style="text-align:center"><span class="dot-flag"></span></td>
+            <td style="text-align:center"><span class="tag tag-enabled">有効</span></td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn-ghost btn-sm">編集</button>
+                <button class="btn btn-warning btn-sm">無効化</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <span>全42件中 1〜20件を表示</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INV-012 棚卸開始 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* Mockup meta bar */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px;
+      border: 1px solid #333; border-radius: var(--border-radius);
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-sub { padding-left: 12px; }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* === Alert === */
+    .alert { display: flex; align-items: flex-start; gap: 10px; padding: 14px 18px; border-radius: var(--border-radius-lg); font-size: 13px; margin-bottom: 20px; }
+    .alert-warning { background: var(--color-warning-bg); border: 1px solid #FFE082; color: var(--color-warning); }
+    .alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* === Card Form === */
+    .form-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 28px 32px; max-width: 680px;
+    }
+    .form-section-title {
+      font-size: 14px; font-weight: 700; color: var(--color-gray-700);
+      margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .form-row { display: flex; gap: 24px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+    .form-group.full-width { flex: none; width: 100%; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label.required::after { content: ' *'; color: var(--color-error); }
+    .form-input, .form-select, .form-textarea {
+      padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.12); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-input[disabled], .form-select[disabled] { background: var(--color-gray-100); color: var(--color-gray-500); cursor: not-allowed; }
+
+    /* === Preview Card === */
+    .preview-card {
+      background: var(--color-info-bg); border: 1px solid #BAE6FF;
+      border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 20px;
+    }
+    .preview-card .preview-count {
+      font-size: 22px; font-weight: 800; color: var(--color-info);
+    }
+    .preview-card .preview-label {
+      font-size: 12px; color: var(--color-info); font-weight: 600; margin-bottom: 6px;
+    }
+    .preview-card .preview-detail { font-size: 12px; color: var(--color-gray-600); margin-top: 4px; }
+
+    /* === Form Footer === */
+    .form-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--color-gray-200);
+    }
+    .form-footer-right { display: flex; gap: 10px; }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">INV-012</span>
+    <span>棚卸開始</span>
+    <span style="color:#555">|</span>
+    <span>URL: /inventory/stocktakes/new</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>田中 花子</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li>
+        <a href="#" style="background:rgba(161,0,255,0.08);color:var(--color-primary-light);">
+          <span class="icon">📊</span> 在庫管理
+        </a>
+        <ul class="sidebar-menu sidebar-sub">
+          <li><a href="#"><span class="icon">◾</span> 在庫照会</a></li>
+          <li><a href="#"><span class="icon">◾</span> 在庫移動</a></li>
+          <li><a href="#"><span class="icon">◾</span> ばらし登録</a></li>
+          <li><a href="#"><span class="icon">◾</span> 在庫訂正</a></li>
+          <li><a href="#" class="active"><span class="icon">◾</span> 棚卸</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 在庫管理 <span class="sep">›</span>
+      <a href="#" style="color:var(--color-primary)">棚卸一覧</a>
+      <span class="sep">›</span> 棚卸開始
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">棚卸開始</h1>
+    </div>
+
+    <!-- Warning Banner -->
+    <div class="alert alert-warning">
+      <span class="alert-icon">⚠️</span>
+      <div>
+        <strong>注意:</strong> 棚卸中のロケーションへの入出庫（入庫指示・出荷確定・在庫移動）は制限されます。<br>
+        棚卸を開始する前に、対象ロケーションの入出庫作業が完了していることを確認してください。
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+      <div class="form-section-title">棚卸対象の設定</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">棟</label>
+          <select class="form-select">
+            <option value="">選択してください</option>
+            <option selected>A棟</option>
+            <option>B棟</option>
+            <option>C棟</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">エリア</label>
+          <select class="form-select">
+            <option value="">すべてのエリア</option>
+            <option>エリア1</option>
+            <option>エリア2</option>
+            <option>エリア3</option>
+            <option>エリア4</option>
+            <option>エリア5</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Preview Card -->
+      <div class="preview-card">
+        <div class="preview-label">対象ロケーション数</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span class="preview-count">42</span>
+          <span style="font-size:14px;color:var(--color-info);font-weight:600">件</span>
+        </div>
+        <div class="preview-detail">棟: A棟 ／ エリア: エリア1〜3 全体（ロケーション番号: A-01-01-01 〜 A-03-06-06）</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label required">実施日</label>
+          <input type="date" class="form-input" value="2026-03-13" style="max-width:200px">
+        </div>
+      </div>
+
+      <div class="form-group full-width" style="margin-bottom:0">
+        <label class="form-label">備考</label>
+        <textarea class="form-textarea" placeholder="例: 月次定期棚卸 / 年次決算棚卸">月次定期棚卸（2026年3月）</textarea>
+        <span style="font-size:11px;color:var(--color-gray-400);margin-top:3px;text-align:right">12 / 200文字</span>
+      </div>
+
+      <!-- Form Footer -->
+      <div class="form-footer">
+        <button class="btn btn-secondary">📄 棚卸リスト出力</button>
+        <div class="form-footer-right">
+          <button class="btn btn-ghost">キャンセル</button>
+          <button class="btn btn-primary">棚卸開始</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

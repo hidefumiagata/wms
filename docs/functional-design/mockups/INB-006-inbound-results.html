@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INB-006 入荷実績照会 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius); cursor: pointer; padding: 4px 10px;
+    }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    /* === Main === */
+    .app-main { margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-secondary:hover { background: var(--color-primary-bg); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* === Filter Bar === */
+    .filter-bar {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px;
+    }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select {
+      padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    /* === Toolbar === */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-left { display: flex; gap: 8px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+
+    /* === Table === */
+    .table-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    thead th.right { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    tbody td.right { text-align: right; }
+    .td-link { color: var(--color-primary); font-weight: 600; cursor: pointer; text-decoration: none; }
+    .td-link:hover { text-decoration: underline; }
+    .diff-negative { color: var(--color-error); font-weight: 700; }
+    .diff-positive { color: var(--color-success); font-weight: 700; }
+    .diff-zero { color: var(--color-gray-400); }
+
+    /* === Pagination === */
+    .pagination-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-top: 1px solid var(--color-gray-200);
+      background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500);
+    }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn {
+      padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius);
+      background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700);
+    }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+
+    /* === Summary Cards === */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .kpi-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 16px 20px;
+    }
+    .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-gray-500); margin-bottom: 6px; }
+    .kpi-value { font-size: 24px; font-weight: 800; color: var(--color-gray-900); }
+    .kpi-sub { font-size: 12px; color: var(--color-gray-500); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">INB-006</span>
+    <span>入荷実績照会</span>
+    <span style="color:#444">|</span>
+    <span>URL: /inbound/results</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="color:var(--color-primary-light);font-weight:600;border-left:3px solid var(--color-primary);background:rgba(161,0,255,0.08)">
+          <span class="icon">📦</span> 入荷管理
+        </a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#"><span class="icon">◾</span> 入荷予定一覧</a></li>
+          <li><a href="#" class="active"><span class="icon">◾</span> 入荷実績照会</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 入荷管理 <span class="sep">›</span> 入荷実績照会
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">入荷実績照会</h1>
+    </div>
+
+    <!-- KPI Summary -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">総入庫件数（明細）</div>
+        <div class="kpi-value">42</div>
+        <div class="kpi-sub">2026/03/01 〜 2026/03/13</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">予定数量 合計</div>
+        <div class="kpi-value">12,480</div>
+        <div class="kpi-sub">点</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">検品数 合計</div>
+        <div class="kpi-value">12,235</div>
+        <div class="kpi-sub">点</div>
+      </div>
+      <div class="kpi-card" style="border-left:3px solid var(--color-error)">
+        <div class="kpi-label">差異数 合計</div>
+        <div class="kpi-value" style="color:var(--color-error)">-245</div>
+        <div class="kpi-sub">差異あり明細: 8件</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">入庫日（From）</label>
+          <input type="date" class="filter-input" value="2026-03-01" style="width:150px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">入庫日（To）</label>
+          <input type="date" class="filter-input" value="2026-03-13" style="width:150px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">仕入先</label>
+          <select class="filter-select" style="width:180px">
+            <option value="">すべて</option>
+            <option selected>株式会社ABC商事</option>
+            <option>XYZサプライヤー株式会社</option>
+            <option>株式会社DEF物流</option>
+            <option>山田食品工業株式会社</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">伝票番号</label>
+          <input type="text" class="filter-input" placeholder="INB-20260313-001" style="width:200px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">商品コード</label>
+          <input type="text" class="filter-input" placeholder="PRD-" style="width:140px">
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-secondary btn-sm">📄 入庫実績レポート出力</button>
+      </div>
+      <div class="record-count">全 <strong>42</strong> 件（1〜20件表示）</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>伝票番号</th>
+            <th>入庫完了日</th>
+            <th>仕入先</th>
+            <th style="width:110px">商品コード</th>
+            <th>商品名</th>
+            <th class="right" style="width:90px">予定数量</th>
+            <th class="right" style="width:90px">検品数</th>
+            <th class="right" style="width:90px">差異数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260313-001</a></td>
+            <td>2026/03/13</td>
+            <td>株式会社ABC商事</td>
+            <td style="font-family:monospace;font-size:12px">PRD-1001</td>
+            <td>アルコール消毒液 500ml</td>
+            <td class="right">200</td>
+            <td class="right">200</td>
+            <td class="right diff-zero">0</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260313-001</a></td>
+            <td>2026/03/13</td>
+            <td>株式会社ABC商事</td>
+            <td style="font-family:monospace;font-size:12px">PRD-1002</td>
+            <td>使い捨て手袋（M）100枚入</td>
+            <td class="right">500</td>
+            <td class="right">480</td>
+            <td class="right diff-negative">-20</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260313-001</a></td>
+            <td>2026/03/13</td>
+            <td>株式会社ABC商事</td>
+            <td style="font-family:monospace;font-size:12px">PRD-1005</td>
+            <td>マスク（不織布）50枚入</td>
+            <td class="right">300</td>
+            <td class="right">300</td>
+            <td class="right diff-zero">0</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260310-005</a></td>
+            <td>2026/03/11</td>
+            <td>株式会社ABC商事</td>
+            <td style="font-family:monospace;font-size:12px">PRD-2003</td>
+            <td>体温計（非接触）</td>
+            <td class="right">100</td>
+            <td class="right">100</td>
+            <td class="right diff-zero">0</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260308-012</a></td>
+            <td>2026/03/09</td>
+            <td>XYZサプライヤー株式会社</td>
+            <td style="font-family:monospace;font-size:12px">PRD-3001</td>
+            <td>プロテインバー（バニラ）24本入</td>
+            <td class="right">1,000</td>
+            <td class="right">995</td>
+            <td class="right diff-negative">-5</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260308-012</a></td>
+            <td>2026/03/09</td>
+            <td>XYZサプライヤー株式会社</td>
+            <td style="font-family:monospace;font-size:12px">PRD-3002</td>
+            <td>プロテインバー（チョコ）24本入</td>
+            <td class="right">1,000</td>
+            <td class="right">1,002</td>
+            <td class="right diff-positive">+2</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260305-020</a></td>
+            <td>2026/03/06</td>
+            <td>株式会社DEF物流</td>
+            <td style="font-family:monospace;font-size:12px">PRD-4010</td>
+            <td>紙おむつ（Mサイズ）50枚入</td>
+            <td class="right">2,000</td>
+            <td class="right">2,000</td>
+            <td class="right diff-zero">0</td>
+          </tr>
+          <tr>
+            <td><a class="td-link" href="#">INB-20260305-020</a></td>
+            <td>2026/03/06</td>
+            <td>株式会社DEF物流</td>
+            <td style="font-family:monospace;font-size:12px">PRD-4011</td>
+            <td>紙おむつ（Lサイズ）50枚入</td>
+            <td class="right">1,500</td>
+            <td class="right">1,450</td>
+            <td class="right diff-negative">-50</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <span>全42件中 1〜20件</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

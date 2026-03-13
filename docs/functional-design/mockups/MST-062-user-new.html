@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MST-062 ユーザー登録 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 4px 10px; cursor: pointer;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; text-decoration: none;
+      border-left: 3px solid transparent; transition: all 0.12s;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .breadcrumb a { color: var(--color-primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .page-header { margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Form Card === */
+    .form-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px;
+      max-width: 720px;
+    }
+    .form-card-title {
+      font-size: 15px; font-weight: 700; color: var(--color-gray-800);
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--color-gray-200);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-card-title .icon { color: var(--color-primary); }
+
+    /* === Form Grid === */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+    .form-grid.single-col { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label.required::after { content: ' *'; color: var(--color-error); }
+    .form-input, .form-select {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--color-gray-300);
+      border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px;
+      color: var(--color-gray-900); background: var(--color-white); outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.12); }
+    .form-input::placeholder { color: var(--color-gray-400); }
+    .form-hint { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+    .form-error-msg { font-size: 11px; color: var(--color-error); margin-top: 2px; }
+
+    /* === Password Field === */
+    .pw-field-wrap { position: relative; }
+    .pw-field-wrap .form-input { padding-right: 44px; }
+    .pw-toggle {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; color: var(--color-gray-500); font-size: 14px;
+    }
+    .pw-toggle:hover { color: var(--color-gray-800); }
+
+    /* === Info Banner === */
+    .info-banner {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 16px; background: var(--color-info-bg);
+      border: 1px solid #BAE6FF; border-radius: var(--border-radius);
+      font-size: 12px; color: #003A6D; margin-top: 16px;
+    }
+    .info-banner .info-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+
+    /* === Form Actions === */
+    .form-actions {
+      display: flex; justify-content: flex-end; gap: 12px;
+      max-width: 720px; padding-top: 8px;
+    }
+
+    /* === Validation Sample === */
+    .form-input.error { border-color: var(--color-error); }
+    .form-input.error:focus { box-shadow: 0 0 0 2px rgba(218,30,40,0.12); }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">MST-062</span>
+    <span>ユーザー登録</span>
+    <span style="color:#444">|</span>
+    <span>URL: /master/users/new</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>田中 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-gray-200);font-weight:600"><span class="icon">🗂</span> マスタ管理</a>
+        <ul class="sidebar-submenu">
+          <li><a href="#">商品マスタ</a></li>
+          <li><a href="#">取引先マスタ</a></li>
+          <li><a href="#">倉庫マスタ</a></li>
+          <li><a href="#">ロケーションマスタ</a></li>
+          <li><a href="#" class="active">ユーザーマスタ</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> マスタ管理 <span class="sep">›</span>
+      <a href="#">ユーザー一覧</a> <span class="sep">›</span> ユーザー登録
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">ユーザー登録</h1>
+    </div>
+
+    <!-- Basic Info Card -->
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="icon">👤</span> 基本情報
+      </div>
+      <div class="form-grid">
+        <!-- ユーザーコード -->
+        <div class="form-group">
+          <label class="form-label required">ユーザーコード</label>
+          <input type="text" class="form-input" placeholder="例: staff_t010" value="">
+          <span class="form-hint">ログインIDとして使用します。半角英数字・アンダースコアのみ使用可（登録後変更不可）</span>
+        </div>
+        <!-- 氏名 -->
+        <div class="form-group">
+          <label class="form-label required">氏名</label>
+          <input type="text" class="form-input" placeholder="例: 山田 太郎" value="">
+        </div>
+        <!-- メールアドレス -->
+        <div class="form-group">
+          <label class="form-label required">メールアドレス</label>
+          <input type="email" class="form-input" placeholder="例: yamada.taro@example.com" value="">
+          <span class="form-hint">通知・連絡先として使用します（ログインIDとは別）</span>
+        </div>
+        <!-- ロール -->
+        <div class="form-group">
+          <label class="form-label required">ロール</label>
+          <select class="form-select">
+            <option value="" disabled selected>選択してください</option>
+            <option value="SYSTEM_ADMIN">SYSTEM_ADMIN（システム管理者）</option>
+            <option value="WAREHOUSE_MANAGER">WAREHOUSE_MANAGER（倉庫管理者）</option>
+            <option value="WAREHOUSE_STAFF">WAREHOUSE_STAFF（倉庫スタッフ）</option>
+            <option value="VIEWER">VIEWER（閲覧者）</option>
+          </select>
+          <span class="form-hint">ロールに応じてアクセスできる機能が決まります</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Card -->
+    <div class="form-card">
+      <div class="form-card-title">
+        <span class="icon">🔑</span> 初期パスワード設定
+      </div>
+      <div class="form-grid" style="max-width:480px">
+        <!-- 初期パスワード -->
+        <div class="form-group">
+          <label class="form-label required">初期パスワード</label>
+          <div class="pw-field-wrap">
+            <input type="password" class="form-input" placeholder="8文字以上" value="">
+            <button class="pw-toggle" type="button" title="表示/非表示">👁</button>
+          </div>
+        </div>
+        <!-- パスワード確認 -->
+        <div class="form-group">
+          <label class="form-label required">パスワード確認</label>
+          <div class="pw-field-wrap">
+            <input type="password" class="form-input" placeholder="再入力してください" value="">
+            <button class="pw-toggle" type="button" title="表示/非表示">👁</button>
+          </div>
+        </div>
+      </div>
+      <div class="info-banner">
+        <span class="info-icon">ℹ️</span>
+        <div>
+          <strong>初期パスワードについて</strong><br>
+          設定したパスワードを登録後にユーザーへ通知してください。<br>
+          ユーザーは<strong>初回ログイン時にパスワード変更が必須</strong>です（変更完了まで他操作は行えません）。<br>
+          パスワードポリシー: 8文字以上
+        </div>
+      </div>
+    </div>
+
+    <!-- バリデーションエラー表示サンプル（コメント参考） -->
+    <!-- 以下はバリデーションエラー表示のモックアップ参考例 -->
+    <div style="max-width:720px;margin-bottom:16px">
+      <details style="font-size:12px;color:var(--color-gray-500);background:var(--color-gray-50);border:1px solid var(--color-gray-200);border-radius:var(--border-radius-lg);padding:12px">
+        <summary style="cursor:pointer;font-weight:600;color:var(--color-gray-700)">バリデーションエラー表示サンプル（展開してプレビュー）</summary>
+        <div style="margin-top:12px">
+          <div class="form-group" style="max-width:300px">
+            <label class="form-label required">ユーザーコード</label>
+            <input type="text" class="form-input error" value="user 01!">
+            <span class="form-error-msg">ユーザーコードは半角英数字・アンダースコアのみ使用できます</span>
+          </div>
+          <div class="form-group" style="max-width:300px;margin-top:12px">
+            <label class="form-label required">メールアドレス</label>
+            <input type="text" class="form-input error" value="invalid-email">
+            <span class="form-error-msg">メールアドレスの形式が正しくありません</span>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button class="btn btn-ghost">キャンセル</button>
+      <button class="btn btn-primary">登録</button>
+    </div>
+
+  </main>
+
+</body>
+</html>

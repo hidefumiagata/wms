@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OUT-011 ピッキング指示一覧 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--color-black); display: flex; align-items: center; padding: 0 24px; gap: 24px; z-index: 100; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge { display: flex; align-items: center; gap: 8px; background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius); padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer; }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout { font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px; border: 1px solid #333; border-radius: var(--border-radius); }
+
+    .app-sidebar { position: fixed; top: var(--header-height); left: 0; width: var(--sidebar-width); bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90; }
+    .sidebar-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500); }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--color-gray-400); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent; }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); font-weight: 600; }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    .app-main { margin-top: var(--header-height); margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    .filter-bar { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); padding: 16px 20px; margin-bottom: 16px; }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select { padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900); background: var(--color-white); outline: none; }
+    .filter-input:focus, .filter-select:focus { border-color: var(--color-primary); }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-left { display: flex; gap: 8px; }
+    .record-count { font-size: 13px; color: var(--color-gray-500); }
+    .record-count strong { color: var(--color-gray-900); }
+
+    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-inprogress { background: var(--color-warning-bg); color: var(--color-warning); }
+    .tag-done       { background: var(--color-success-bg); color: var(--color-success); }
+
+    .table-card { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+    .td-link { color: var(--color-primary); font-weight: 600; cursor: pointer; }
+    .td-link:hover { text-decoration: underline; }
+    .action-group { display: flex; gap: 6px; }
+
+    .pagination-bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--color-gray-200); background: var(--color-gray-50); font-size: 12px; color: var(--color-gray-500); }
+    .page-btns { display: flex; gap: 4px; }
+    .page-btn { padding: 5px 10px; border: 1px solid var(--color-gray-300); border-radius: var(--border-radius); background: var(--color-white); font-size: 12px; cursor: pointer; color: var(--color-gray-700); }
+    .page-btn.active { background: var(--color-primary); color: white; border-color: var(--color-primary); font-weight: 700; }
+    .page-btn:hover:not(.active) { background: var(--color-primary-bg); }
+
+    .progress-bar-wrap { width: 100px; height: 8px; background: var(--color-gray-200); border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .progress-bar-fill { height: 100%; background: var(--color-primary); border-radius: 4px; }
+
+    .mockup-meta { position: fixed; top: 0; left: 0; right: 0; background: #1A1A2E; color: #AAA; font-size: 11px; padding: 4px 16px; display: flex; gap: 24px; align-items: center; z-index: 999; }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 24px; }
+    .app-header { top: 24px; }
+    .app-sidebar { top: calc(var(--header-height) + 24px); }
+    .app-main { margin-top: calc(var(--header-height) + 24px); }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">OUT-011</span>
+    <span>ピッキング指示一覧</span>
+    <span style="color:#555">|</span>
+    <span>URL: /outbound/picking</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</span>
+  </div>
+
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span><span>東京DC</span><span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>鈴木 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#" style="background:rgba(161,0,255,0.08);color:#ccc;border-left:3px solid #555;"><span class="icon">🚚</span> 出荷管理</a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#"><span class="icon">◾</span> 受注一覧</a></li>
+          <li><a href="#" class="active"><span class="icon">◾</span> ピッキング指示一覧</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 出荷管理 <span class="sep">›</span> ピッキング指示一覧
+    </div>
+    <div class="page-header">
+      <h1 class="page-title">ピッキング指示一覧</h1>
+      <button class="btn btn-primary">＋ ピッキング指示作成</button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label class="filter-label">作成日（From）</label>
+          <input type="date" class="filter-input" value="2026-03-06" style="width:150px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">作成日（To）</label>
+          <input type="date" class="filter-input" value="2026-03-13" style="width:150px">
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">ステータス</label>
+          <select class="filter-select" style="width:130px">
+            <option value="">すべて</option>
+            <option>作業中</option>
+            <option>完了</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">対象エリア</label>
+          <select class="filter-select" style="width:160px">
+            <option value="">すべて</option>
+            <option>A棟 — 1F（常温）</option>
+            <option>A棟 — 2F（常温）</option>
+            <option>B棟 — 1F（冷蔵）</option>
+            <option>C棟 — 1F（冷凍）</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary">🔍 検索</button>
+          <button class="btn btn-ghost">クリア</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn btn-ghost btn-sm">📄 ピッキング指示書出力</button>
+      </div>
+      <div class="record-count">全 <strong>12</strong> 件（1〜12件表示）</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>指示番号</th>
+            <th>作成日時</th>
+            <th>対象エリア</th>
+            <th>対象受注数</th>
+            <th>明細行数</th>
+            <th>進捗</th>
+            <th>ステータス</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-link">PIC-20260313-005</td>
+            <td>2026/03/13 14:22</td>
+            <td>A棟 — 1F（常温）</td>
+            <td style="text-align:center">3</td>
+            <td style="text-align:center">8</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:25%"></div></div>
+                <span style="font-size:12px;color:var(--color-gray-600)">2/8</span>
+              </div>
+            </td>
+            <td><span class="tag tag-inprogress">作業中</span></td>
+            <td><div class="action-group">
+              <button class="btn btn-primary btn-sm">ピッキング続行</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td class="td-link">PIC-20260313-004</td>
+            <td>2026/03/13 10:05</td>
+            <td>B棟 — 1F（冷蔵）</td>
+            <td style="text-align:center">2</td>
+            <td style="text-align:center">5</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%"></div></div>
+                <span style="font-size:12px;color:var(--color-gray-600)">0/5</span>
+              </div>
+            </td>
+            <td><span class="tag tag-inprogress">作業中</span></td>
+            <td><div class="action-group">
+              <button class="btn btn-primary btn-sm">ピッキング開始</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td class="td-link">PIC-20260312-003</td>
+            <td>2026/03/12 16:45</td>
+            <td>A棟 — 2F（常温）</td>
+            <td style="text-align:center">4</td>
+            <td style="text-align:center">11</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%;background:var(--color-success)"></div></div>
+                <span style="font-size:12px;color:var(--color-success);font-weight:700">11/11</span>
+              </div>
+            </td>
+            <td><span class="tag tag-done">完了</span></td>
+            <td><div class="action-group">
+              <button class="btn btn-ghost btn-sm">詳細</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td class="td-link">PIC-20260312-002</td>
+            <td>2026/03/12 09:30</td>
+            <td>C棟 — 1F（冷凍）</td>
+            <td style="text-align:center">1</td>
+            <td style="text-align:center">3</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%;background:var(--color-success)"></div></div>
+                <span style="font-size:12px;color:var(--color-success);font-weight:700">3/3</span>
+              </div>
+            </td>
+            <td><span class="tag tag-done">完了</span></td>
+            <td><div class="action-group">
+              <button class="btn btn-ghost btn-sm">詳細</button>
+            </div></td>
+          </tr>
+          <tr>
+            <td class="td-link">PIC-20260311-001</td>
+            <td>2026/03/11 13:10</td>
+            <td>A棟 — 1F（常温）</td>
+            <td style="text-align:center">5</td>
+            <td style="text-align:center">14</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:100%;background:var(--color-success)"></div></div>
+                <span style="font-size:12px;color:var(--color-success);font-weight:700">14/14</span>
+              </div>
+            </td>
+            <td><span class="tag tag-done">完了</span></td>
+            <td><div class="action-group">
+              <button class="btn btn-ghost btn-sm">詳細</button>
+            </div></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination-bar">
+        <span>全12件中 1〜12件</span>
+        <div class="page-btns">
+          <button class="page-btn">‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">›</button>
+        </div>
+        <span style="display:flex;align-items:center;gap:8px">
+          表示件数:
+          <select style="padding:4px 8px;border:1px solid #D4D4D4;border-radius:4px;font-size:12px">
+            <option>20件</option><option>50件</option><option>100件</option>
+          </select>
+        </span>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>

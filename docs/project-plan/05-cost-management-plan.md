@@ -10,25 +10,34 @@
 
 ## 2. Azure リソースコスト概算
 
-### 稼働状態別コスト
+### 運用方針
+
+Terraform Deploy/Destroy 運用により、必要な時だけインフラを立ち上げる。
 
 | 状態 | 月額概算 | 備考 |
 |------|---------|------|
-| **稼働時（dev + prd両方）** | ~$18/月 | PostgreSQL B1ms × 2 + Container Apps + Blob |
-| **停止時（Blob Storageのみ）** | ~$4/月 | PostgreSQL手動停止後 |
+| **常時維持コスト** | ~$5/月 | ACR + tfstate Blob のみ（常設） |
+| **dev稼働中** | +$9/月（日割り） | シングルリージョン Japan East |
+| **prd稼働中** | +$80/月（日割り） | マルチリージョン Japan East + West + Front Door |
+
+> 例：月10日devのみ稼働の場合 → ~$5 + $3 = ~$8/月
 
 ### リソース別コスト内訳
 
-| リソース | SKU/プラン | 月額概算 |
-|---------|-----------|---------|
-| **Azure Container Apps（バックエンド）** | min replicas=0 | ~$0〜3（リクエスト量次第） |
-| **Azure Database for PostgreSQL Flexible Server（dev）** | B1ms | ~$5/月 |
-| **Azure Database for PostgreSQL Flexible Server（prd）** | B1ms | ~$5/月 |
-| **Azure Blob Storage（dev + prd）** | LRS | ~$1/月（数GB以下） |
-| **Azure Container Registry** | Basic | ~$5/月 |
-| **Log Analytics Workspace** | 従量課金（5GB/日まで無料） | ~$0（無料枠内想定） |
+| リソース | 環境 | SKU/プラン | 月額概算 |
+|---------|------|-----------|---------|
+| **Azure Container Registry** | dev/prd共用 | Basic | ~$5/月（常設） |
+| **Terraform State Blob** | terraform | LRS | ~$0（常設） |
+| **Container Apps（バックエンド）** | dev | min:0 max:3 | ~$0〜3 |
+| **PostgreSQL Flexible Server** | dev | B1ms | ~$5/月 |
+| **Blob Storage** | dev | LRS | ~$1/月 |
+| **Azure Front Door Standard** | prd | Standard | ~$35/月 |
+| **Container Apps（East + West）** | prd | min:1/0 max:5 | ~$10〜20 |
+| **PostgreSQL Flexible Server** | prd | B1ms + Geo-redundant backup | ~$16/月 |
+| **Blob Storage** | prd | GRS | ~$2/月 |
+| **Log Analytics Workspace** | dev/prd | 従量課金（5GB/日まで無料） | ~$0（無料枠内想定） |
 
-> Container Apps は min replicas=0 のため、未使用時は課金なし。
+> Container Apps は min replicas=0（dev）のため未使用時は課金なし。
 
 ## 3. コスト削減施策
 

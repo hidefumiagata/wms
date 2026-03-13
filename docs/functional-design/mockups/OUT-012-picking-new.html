@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OUT-012 ピッキング指示作成 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--color-black); display: flex; align-items: center; padding: 0 24px; gap: 24px; z-index: 100; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge { display: flex; align-items: center; gap: 8px; background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius); padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer; }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout { font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px; border: 1px solid #333; border-radius: var(--border-radius); }
+
+    .app-sidebar { position: fixed; top: var(--header-height); left: 0; width: var(--sidebar-width); bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90; }
+    .sidebar-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500); }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--color-gray-400); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent; }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); font-weight: 600; }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    .app-main { margin-top: var(--header-height); margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    .card { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px; }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--color-gray-800); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--color-gray-200); }
+
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 0; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label .req { color: var(--color-error); margin-left: 2px; }
+    .form-select { padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900); background: var(--color-white); outline: none; }
+    .form-select:focus { border-color: var(--color-primary); }
+    .form-input { padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900); background: var(--color-white); outline: none; }
+    .form-input:focus { border-color: var(--color-primary); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .filter-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .filter-input, .filter-select-sm { padding: 8px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; background: var(--color-white); outline: none; }
+    .filter-actions { display: flex; gap: 8px; align-self: flex-end; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); font-size: 12px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: #fdf0ff; }
+    tbody tr.selected { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 10px 14px; vertical-align: middle; }
+    input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--color-primary); }
+
+    .tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .tag-normal { background: #F0F0F0; color: #444; }
+    .tag-transfer { background: var(--color-primary-bg); color: var(--color-primary-mid); }
+
+    .selection-summary { background: var(--color-primary-bg); border: 1px solid var(--color-primary-light); border-radius: var(--border-radius); padding: 12px 20px; display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--color-primary-dark); margin-top: 14px; }
+    .selection-count { font-size: 18px; font-weight: 800; color: var(--color-primary); }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-gray-200); }
+
+    .area-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--color-primary-bg); border: 1.5px solid var(--color-primary-light); border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--color-primary-dark); cursor: pointer; }
+    .chip .remove { color: var(--color-primary); font-size: 14px; font-weight: 700; }
+
+    .mockup-meta { position: fixed; top: 0; left: 0; right: 0; background: #1A1A2E; color: #AAA; font-size: 11px; padding: 4px 16px; display: flex; gap: 24px; align-items: center; z-index: 999; }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 24px; }
+    .app-header { top: 24px; }
+    .app-sidebar { top: calc(var(--header-height) + 24px); }
+    .app-main { margin-top: calc(var(--header-height) + 24px); }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">OUT-012</span>
+    <span>ピッキング指示作成</span>
+    <span style="color:#555">|</span>
+    <span>URL: /outbound/picking/new</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span><span>東京DC</span><span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>鈴木 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#" style="background:rgba(161,0,255,0.08);color:#ccc;border-left:3px solid #555;"><span class="icon">🚚</span> 出荷管理</a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#"><span class="icon">◾</span> 受注一覧</a></li>
+          <li><a href="#" class="active"><span class="icon">◾</span> ピッキング指示一覧</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 出荷管理 <span class="sep">›</span> <a href="#">ピッキング指示一覧</a> <span class="sep">›</span> ピッキング指示作成
+    </div>
+    <div class="page-header">
+      <h1 class="page-title">ピッキング指示作成</h1>
+    </div>
+
+    <!-- Step 1: Area Selection -->
+    <div class="card">
+      <div class="card-title">STEP 1 — 対象エリアを選択</div>
+      <div class="form-group" style="max-width:400px">
+        <label class="form-label">対象エリア <span class="req">*</span>（複数選択可）</label>
+        <select class="form-select">
+          <option value="">エリアを追加...</option>
+          <option>A棟 — 1F（常温）</option>
+          <option>A棟 — 2F（常温）</option>
+          <option>B棟 — 1F（冷蔵）</option>
+          <option>C棟 — 1F（冷凍）</option>
+        </select>
+      </div>
+      <div class="area-chips">
+        <span class="chip">A棟 — 1F（常温）<span class="remove">×</span></span>
+        <span class="chip">B棟 — 1F（冷蔵）<span class="remove">×</span></span>
+      </div>
+    </div>
+
+    <!-- Step 2: Order Selection -->
+    <div class="card">
+      <div class="card-title">STEP 2 — 引当済み受注を選択</div>
+
+      <!-- Sub filter -->
+      <div style="background:var(--color-gray-50);border:1px solid var(--color-gray-200);border-radius:var(--border-radius);padding:12px 16px;margin-bottom:16px">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label class="filter-label">出荷予定日（From）</label>
+            <input type="date" class="filter-input" value="2026-03-13" style="width:150px">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">出荷予定日（To）</label>
+            <input type="date" class="filter-input" value="2026-03-20" style="width:150px">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">出荷先</label>
+            <select class="filter-input" style="width:170px">
+              <option value="">すべて</option>
+              <option>株式会社東西商事</option>
+              <option>南北物流株式会社</option>
+              <option>中央トレーディング</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-ghost btn-sm">🔍 絞り込み</button>
+            <button class="btn btn-ghost btn-sm">クリア</button>
+          </div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px"><input type="checkbox" title="全選択"></th>
+            <th>伝票番号</th>
+            <th>出荷予定日</th>
+            <th>出荷先</th>
+            <th>種別</th>
+            <th style="text-align:center">明細数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="selected">
+            <td><input type="checkbox" checked></td>
+            <td style="color:var(--color-primary);font-weight:600">OUT-20260313-005</td>
+            <td>2026/03/18</td>
+            <td>中央トレーディング</td>
+            <td><span class="tag tag-normal">通常</span></td>
+            <td style="text-align:center">5</td>
+          </tr>
+          <tr class="selected">
+            <td><input type="checkbox" checked></td>
+            <td style="color:var(--color-primary);font-weight:600">OUT-20260313-006</td>
+            <td>2026/03/19</td>
+            <td>南北物流株式会社</td>
+            <td><span class="tag tag-normal">通常</span></td>
+            <td style="text-align:center">2</td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td style="color:var(--color-primary);font-weight:600">OUT-20260313-007</td>
+            <td>2026/03/20</td>
+            <td>株式会社東西商事</td>
+            <td><span class="tag tag-normal">通常</span></td>
+            <td style="text-align:center">3</td>
+          </tr>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td style="color:var(--color-primary);font-weight:600">OUT-20260314-001</td>
+            <td>2026/03/20</td>
+            <td>中央トレーディング</td>
+            <td><span class="tag tag-transfer">振替</span></td>
+            <td style="text-align:center">4</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Selection Summary -->
+      <div class="selection-summary">
+        <span class="selection-count">2</span>
+        <span>件選択中（合計 <strong>7</strong> 明細行）</span>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost">キャンセル</button>
+      <button class="btn btn-primary">📋 ピッキング指示を作成</button>
+    </div>
+  </main>
+
+</body>
+</html>

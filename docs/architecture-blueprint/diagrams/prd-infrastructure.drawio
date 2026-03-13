@@ -1,0 +1,201 @@
+<mxfile host="app.diagrams.net" version="21.0.0">
+  <diagram name="prd-infrastructure" id="wms-prd-infra">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1260" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="2" value="WMS prd環境 — Active-Passive Multi-Region（Japan East Primary / Japan West Standby）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=15;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="18" width="1080" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Client -->
+        <mxCell id="3" value="ブラウザ / クライアント" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="540" y="72" width="165" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Azure Front Door (Global) -->
+        <mxCell id="fd" value="&lt;b&gt;Azure Front Door Standard&lt;/b&gt;（Global）&lt;br&gt;自動フェイルオーバー / ヘルスプローブ / WAF / URLルーティング" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#005A9E;fontColor=#FFFFFF;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="145" width="585" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Azure Subscription background -->
+        <mxCell id="sub" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3FB;strokeColor=#0078D4;dashed=1;dashPattern=8 4;opacity=35;" vertex="1" parent="1">
+          <mxGeometry x="20" y="230" width="1220" height="580" as="geometry"/>
+        </mxCell>
+        <mxCell id="sub-lbl" value="Azure Subscription: wms-prd" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="36" y="238" width="400" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== JAPAN EAST (PRIMARY) ===== -->
+        <mxCell id="east-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF8EF;strokeColor=#4CAF50;dashed=1;dashPattern=6 3;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="40" y="268" width="565" height="430" as="geometry"/>
+        </mxCell>
+        <mxCell id="east-lbl" value="🗼  Japan East — Primary（Active）" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=12;align=left;fontColor=#2E7D32;" vertex="1" parent="1">
+          <mxGeometry x="56" y="275" width="450" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- RG East -->
+        <mxCell id="rg-east" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#8BC34A;dashed=1;dashPattern=4 2;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="58" y="305" width="530" height="360" as="geometry"/>
+        </mxCell>
+        <mxCell id="rg-east-lbl" value="rg-wms-prd-east" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;align=left;fontColor=#558B2F;" vertex="1" parent="1">
+          <mxGeometry x="72" y="312" width="250" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Storage East -->
+        <mxCell id="stg-east" value="&lt;b&gt;Storage Account&lt;/b&gt;&lt;br&gt;stwmsprd（GRS）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="75" y="338" width="185" height="155" as="geometry"/>
+        </mxCell>
+        <mxCell id="web-east" value="$web&lt;br&gt;フロントエンド静的ホスティング&lt;br&gt;&lt;font color=&quot;#999999&quot; style=&quot;font-size:9px&quot;&gt;stwmsprd.z11.web.core.windows.net&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="88" y="375" width="158" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="iff-east" value="iffiles&lt;br&gt;I/Fファイル（CSV）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="88" y="440" width="158" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- CAE East -->
+        <mxCell id="cae-east" value="Container Apps Environment&lt;br&gt;cae-wms-prd-east" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="330" y="330" width="240" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="ca-east" value="ca-wms-backend-prd-east&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Spring Boot 3.x / Java 21&lt;/font&gt;&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size:10px&quot;&gt;min:1 / max:5 replicas&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#2E7D32&quot; style=&quot;font-size:9px&quot;&gt;● Active&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4E8;strokeColor=#82B366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="343" y="370" width="213" height="97" as="geometry"/>
+        </mxCell>
+
+        <!-- PostgreSQL East (Primary) -->
+        <mxCell id="pg-east" value="psql-wms-prd&lt;br&gt;PostgreSQL Flexible Server&lt;br&gt;B1ms (1vCore, 2GB)&lt;br&gt;&lt;b&gt;Primary&lt;/b&gt; + Geo-redundant backup" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;size=12;" vertex="1" parent="1">
+          <mxGeometry x="75" y="510" width="490" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- VNet East -->
+        <mxCell id="vnet-east" value="🌐  vnet-wms-prd-east (10.1.0.0/16)　　snet-app-prd-east: 10.1.1.0/24　　snet-db-prd-east: 10.1.2.0/24　　nsg-wms-prd-east" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#9B8AE0;fontSize=9;align=left;" vertex="1" parent="1">
+          <mxGeometry x="75" y="613" width="490" height="33" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== JAPAN WEST (SECONDARY) ===== -->
+        <mxCell id="west-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFA726;dashed=1;dashPattern=6 3;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="635" y="268" width="565" height="430" as="geometry"/>
+        </mxCell>
+        <mxCell id="west-lbl" value="🌊  Japan West — Secondary（Standby）" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=12;align=left;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="651" y="275" width="450" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- RG West -->
+        <mxCell id="rg-west" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#FFB300;dashed=1;dashPattern=4 2;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="653" y="305" width="530" height="360" as="geometry"/>
+        </mxCell>
+        <mxCell id="rg-west-lbl" value="rg-wms-prd-west" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;align=left;fontColor=#F57F17;" vertex="1" parent="1">
+          <mxGeometry x="667" y="312" width="250" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Storage West (GRS replicated) -->
+        <mxCell id="stg-west" value="&lt;b&gt;Storage Account&lt;/b&gt;&lt;br&gt;stwmsprd（GRS 自動レプリカ）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="670" y="338" width="195" height="155" as="geometry"/>
+        </mxCell>
+        <mxCell id="web-west" value="$web&lt;br&gt;フロントエンド静的ホスティング&lt;br&gt;&lt;font color=&quot;#999999&quot; style=&quot;font-size:9px&quot;&gt;GRS 自動レプリケーション&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="683" y="375" width="167" height="53" as="geometry"/>
+        </mxCell>
+        <mxCell id="iff-west" value="iffiles&lt;br&gt;I/Fファイル（CSV）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="683" y="440" width="167" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- CAE West -->
+        <mxCell id="cae-west" value="Container Apps Environment&lt;br&gt;cae-wms-prd-west" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE0B2;strokeColor=#FB8C00;fontSize=11;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="935" y="330" width="225" height="150" as="geometry"/>
+        </mxCell>
+        <mxCell id="ca-west" value="ca-wms-backend-prd-west&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Spring Boot 3.x / Java 21&lt;/font&gt;&lt;br&gt;&lt;b&gt;&lt;font style=&quot;font-size:10px&quot;&gt;min:0 / max:5 replicas&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#E65100&quot; style=&quot;font-size:9px&quot;&gt;⏸ Standby（障害時に自動スケール）&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FB8C00;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="948" y="370" width="199" height="97" as="geometry"/>
+        </mxCell>
+
+        <!-- PostgreSQL info (West - no DB here) -->
+        <mxCell id="pg-west-info" value="⚠️  DB は Japan East に集約&lt;br&gt;Geo-redundant backup により保護&lt;br&gt;（RPO: 最大1時間 / RTO: 数時間）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFB300;fontSize=10;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="670" y="510" width="490" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- VNet West -->
+        <mxCell id="vnet-west" value="🌐  vnet-wms-prd-west (10.2.0.0/16)　　snet-app-prd-west: 10.2.1.0/24　　nsg-wms-prd-west" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#9B8AE0;fontSize=9;align=left;" vertex="1" parent="1">
+          <mxGeometry x="670" y="597" width="490" height="33" as="geometry"/>
+        </mxCell>
+
+        <!-- Divider label -->
+        <mxCell id="div-lbl" value="🔄  フェイルオーバー" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontStyle=2;fontColor=#555555;align=center;" vertex="1" parent="1">
+          <mxGeometry x="601" y="430" width="42" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ACR (geo-replication) -->
+        <mxCell id="acr" value="&lt;b&gt;acrwms — Azure Container Registry&lt;/b&gt;（Geo-replication: Japan East + Japan West）　Basic SKU + Geo-replication" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="720" width="1200" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Terraform state -->
+        <mxCell id="tfstate" value="📦  Terraform State: wms-terraform サブスク / stwmsterraform / tfstate / prd/terraform.tfstate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#AAAAAA;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="785" width="1200" height="32" as="geometry"/>
+        </mxCell>
+
+        <!-- Cost note -->
+        <mxCell id="cost" value="💰  稼働時: ~$80/月（prd単体）　|　Destroy後: ~$5/月（ACR geo-replication + tfstate Blob のみ）" style="text;html=1;strokeColor=#E0E0E0;fillColor=#FAFAFA;align=center;fontSize=10;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="832" width="1200" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== EDGES ===== -->
+
+        <!-- Client → Front Door -->
+        <mxCell id="e-c-fd" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="3" target="fd" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Front Door → $web East (primary) -->
+        <mxCell id="e-fd-web-e" value="フロントエンド配信" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="fd" target="web-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Front Door → CA East (primary API) -->
+        <mxCell id="e-fd-ca-e" value="API /api/v1/（Primary）" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="fd" target="ca-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Front Door → $web West (failover, dashed) -->
+        <mxCell id="e-fd-web-w" value="フェイルオーバー時" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;strokeColor=#FB8C00;" edge="1" source="fd" target="web-west" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Front Door → CA West (failover, dashed) -->
+        <mxCell id="e-fd-ca-w" value="API フェイルオーバー時" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;strokeColor=#FB8C00;" edge="1" source="fd" target="ca-west" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CA East → PostgreSQL East -->
+        <mxCell id="e-ca-e-pg" value="JPA / JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;" edge="1" source="ca-east" target="pg-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CA West → PostgreSQL East (cross-region, dashed) -->
+        <mxCell id="e-ca-w-pg" value="JPA / JDBC（クロスリージョン）" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=9;strokeColor=#FB8C00;" edge="1" source="ca-west" target="pg-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ACR → CA East (docker pull) -->
+        <mxCell id="e-acr-east" value="docker pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;" edge="1" source="acr" target="cae-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ACR → CA West (docker pull) -->
+        <mxCell id="e-acr-west" value="docker pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;" edge="1" source="acr" target="cae-west" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Storage East → Storage West (GRS) -->
+        <mxCell id="e-grs" value="GRS 自動レプリケーション" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=9;strokeColor=#D9A520;" edge="1" source="stg-east" target="stg-west" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CA East → iffiles East -->
+        <mxCell id="e-ca-iff" value="読み書き" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;fontSize=10;" edge="1" source="ca-east" target="iff-east" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

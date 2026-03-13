@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INV-004 在庫訂正登録 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      padding: 0 16px; display: flex; gap: 24px; align-items: center; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px;
+      border: 1px solid #333; border-radius: var(--border-radius);
+    }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 10px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; font-weight: 400;
+      text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+
+    /* === Main === */
+    .app-main { margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Form === */
+    .form-container { max-width: 760px; }
+    .form-section {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px;
+    }
+    .form-section-title {
+      font-size: 14px; font-weight: 700; color: var(--color-gray-700);
+      margin-bottom: 16px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--color-gray-200);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+    .form-row.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label .req { color: var(--color-error); margin-left: 2px; }
+    .form-input, .form-select, .form-number, .form-textarea {
+      padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-number:focus, .form-textarea:focus { border-color: var(--color-primary); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-hint { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+    .form-error { font-size: 11px; color: var(--color-error); margin-top: 2px; }
+
+    /* === Loc Search Group === */
+    .loc-search-group { display: flex; gap: 8px; }
+    .loc-search-group .form-input { flex: 1; }
+
+    /* === Stock Display === */
+    .stock-display {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; background: var(--color-gray-100); border: 1.5px solid var(--color-gray-200);
+      border-radius: var(--border-radius); font-size: 13px;
+    }
+    .stock-display .qty { font-size: 18px; font-weight: 700; color: var(--color-primary); }
+    .stock-display .unit { color: var(--color-gray-600); }
+
+    /* === Diff Display === */
+    .diff-display {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; border-radius: var(--border-radius); font-size: 13px; font-weight: 700;
+    }
+    .diff-display.negative { background: var(--color-error-bg); border: 1.5px solid #FFB3B8; color: var(--color-error); }
+    .diff-display.positive { background: var(--color-info-bg); border: 1.5px solid #BAE6FF; color: var(--color-info); }
+    .diff-display.zero { background: var(--color-gray-100); border: 1.5px solid var(--color-gray-200); color: var(--color-gray-500); }
+
+    /* === Correction Summary === */
+    .correction-summary {
+      display: flex; align-items: center; gap: 12px; justify-content: center;
+      padding: 16px; background: var(--color-gray-50); border-radius: var(--border-radius-lg);
+      border: 1px dashed var(--color-gray-300); margin-bottom: 14px;
+    }
+    .corr-box { text-align: center; }
+    .corr-box .corr-label { font-size: 11px; color: var(--color-gray-500); margin-bottom: 4px; }
+    .corr-box .corr-val { font-size: 22px; font-weight: 800; }
+    .corr-arrow { font-size: 24px; color: var(--color-error); }
+
+    /* === History Table === */
+    .history-table-wrap { border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 9px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; }
+    thead th.num { text-align: right; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 9px 14px; vertical-align: middle; }
+    tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .diff-cell-neg { color: var(--color-error); font-weight: 700; }
+    .diff-cell-pos { color: var(--color-info); font-weight: 700; }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-lg { padding: 12px 32px; font-size: 14px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">INV-004</span>
+    <span>在庫訂正登録</span>
+    <span style="color:#555">|</span>
+    <span>URL: /inventory/correction</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>鈴木 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">📦</span> 入荷管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-primary-light);font-weight:600"><span style="width:16px;text-align:center">📊</span> 在庫管理</a>
+        <ul class="sidebar-submenu">
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 在庫一覧照会</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 在庫移動登録</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> ばらし登録</a></li>
+          <li><a href="#" class="active"><span style="width:16px;text-align:center">◾</span> 在庫訂正登録</a></li>
+          <li><a href="#"><span style="width:16px;text-align:center">◾</span> 棚卸</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span style="width:16px;text-align:center;opacity:.7">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 在庫管理 <span class="sep">›</span> 在庫訂正登録
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">在庫訂正登録</h1>
+      <button class="btn btn-ghost btn-sm">📄 訂正一覧レポート</button>
+    </div>
+
+    <div class="form-container">
+
+      <!-- 対象在庫選択 -->
+      <div class="form-section">
+        <div class="form-section-title">① 対象在庫の選択</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ロケーション<span class="req">*</span></label>
+            <div class="loc-search-group">
+              <input type="text" class="form-input" value="A-01-A-01-01-01" placeholder="例: A-01-A-01-01-01">
+              <button class="btn btn-ghost btn-sm" style="white-space:nowrap">検索</button>
+            </div>
+            <span class="form-hint">Enterキーまたは[検索]で在庫を取得します</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品<span class="req">*</span></label>
+            <select class="form-select">
+              <option>-- ロケーションを入力してください --</option>
+              <option selected>10001 ドライカレー 200g</option>
+              <option>10002 レトルトシチュー 180g</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row single" style="max-width:240px">
+          <div class="form-group">
+            <label class="form-label">荷姿<span class="req">*</span></label>
+            <select class="form-select">
+              <option selected>ケース</option>
+              <option>ボール</option>
+              <option>バラ</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 訂正情報 -->
+      <div class="form-section">
+        <div class="form-section-title">② 訂正内容の入力</div>
+
+        <!-- Summary -->
+        <div class="correction-summary">
+          <div class="corr-box">
+            <div class="corr-label">現在在庫数</div>
+            <div class="corr-val" style="color:var(--color-gray-800)">5 <span style="font-size:14px;font-weight:400;color:var(--color-gray-500)">ケース</span></div>
+          </div>
+          <div class="corr-arrow">→</div>
+          <div class="corr-box">
+            <div class="corr-label">訂正後数量</div>
+            <div class="corr-val" style="color:var(--color-error)">3 <span style="font-size:14px;font-weight:400;color:var(--color-gray-500)">ケース</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="font-size:11px;color:var(--color-gray-500)">差異</div>
+            <div style="font-size:20px;font-weight:800;color:var(--color-error)">−2</div>
+            <div style="font-size:11px;color:var(--color-error)">減少</div>
+          </div>
+        </div>
+
+        <div class="form-row triple">
+          <div class="form-group">
+            <label class="form-label">現在在庫数</label>
+            <div class="stock-display">
+              <span class="qty">5</span>
+              <span class="unit">ケース</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">訂正後数量<span class="req">*</span></label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" class="form-number" value="3" min="0" style="width:90px">
+              <span style="font-size:13px;color:var(--color-gray-600)">ケース</span>
+            </div>
+            <span class="form-hint">0以上の整数を入力</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">差異（自動計算）</label>
+            <div class="diff-display negative">
+              −2 ケース（減少）
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="form-group">
+            <label class="form-label">訂正理由<span class="req">*</span></label>
+            <textarea class="form-textarea" placeholder="訂正理由を入力してください（例: 棚卸差異により数量修正。実地確認の結果3ケースが正しい数量）">棚卸差異により数量修正。実地確認の結果3ケースが正しい数量であることを確認。</textarea>
+            <span class="form-hint">1文字以上200文字以内（現在: 39文字）</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 訂正履歴（参考） -->
+      <div class="form-section">
+        <div class="form-section-title" style="margin-bottom:12px">
+          過去の訂正履歴（参考 — 直近5件）
+          <span style="font-size:11px;font-weight:400;color:var(--color-gray-500)">A-01-A-01-01-01 / ドライカレー 200g / ケース</span>
+        </div>
+        <div class="history-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>訂正日時</th>
+                <th class="num">訂正前</th>
+                <th class="num">訂正後</th>
+                <th class="num">差異</th>
+                <th>訂正理由</th>
+                <th>実施者</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2026/03/10 14:23</td>
+                <td class="num">5</td>
+                <td class="num">3</td>
+                <td class="num diff-cell-neg">−2</td>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">棚卸差異により修正（実地確認済）</td>
+                <td>鈴木 一郎</td>
+              </tr>
+              <tr>
+                <td>2026/02/15 09:05</td>
+                <td class="num">3</td>
+                <td class="num">5</td>
+                <td class="num diff-cell-pos">+2</td>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">入荷検品漏れ分を追加訂正</td>
+                <td>鈴木 一郎</td>
+              </tr>
+              <tr>
+                <td>2026/01/20 16:48</td>
+                <td class="num">4</td>
+                <td class="num">3</td>
+                <td class="num diff-cell-neg">−1</td>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">破損品1ケース廃棄処理</td>
+                <td>鈴木 一郎</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Warning Notice -->
+      <div style="background:var(--color-warning-bg);border:1px solid #FFE082;border-radius:var(--border-radius-lg);padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--color-warning)">
+        ⚠ 在庫訂正は履歴として記録され、削除・修正はできません。内容を十分に確認してから登録してください。
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-lg">キャンセル</button>
+        <button class="btn btn-primary btn-lg">登録</button>
+      </div>
+
+    </div>
+
+  </main>
+</body>
+</html>

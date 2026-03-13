@@ -64,6 +64,7 @@ sequenceDiagram
 | **ロック状態** | `users` テーブルの `locked` フラグで管理 |
 | **ロック解除** | SYSTEM_ADMINが手動解除（管理画面から操作） |
 | **失敗カウンタ** | `users` テーブルの `failed_login_count` で管理。ログイン成功時にリセット |
+| **パスワード変更APIのロック** | `POST /api/v1/auth/change-password` の連続5回失敗でも同様にアカウントロック。失敗カウンタ・ロック条件・解除方法はログイン失敗ロックと同一 |
 
 ## 通信セキュリティ
 

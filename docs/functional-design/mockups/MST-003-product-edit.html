@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MST-003 商品編集 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #000; color: #888; font-size: 11px;
+      height: 32px; display: flex; align-items: center;
+      padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      cursor: pointer; padding: 4px 10px;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-sub { list-style: none; padding-left: 8px; }
+    .sidebar-sub li a { padding: 8px 20px 8px 28px; font-size: 12px; }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .breadcrumb a { color: var(--color-primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .page-header { margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Info Alert === */
+    .info-alert {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 16px; background: var(--color-info-bg);
+      border: 1px solid #BAE6FF; border-radius: var(--border-radius-lg);
+      margin-bottom: 16px; font-size: 13px; color: #003A6D;
+    }
+
+    /* === Form Card === */
+    .form-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 16px;
+    }
+    .form-card-header {
+      padding: 14px 20px; background: var(--color-gray-50);
+      border-bottom: 1px solid var(--color-gray-200);
+      font-size: 13px; font-weight: 700; color: var(--color-gray-700);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .form-card-header .section-icon { color: var(--color-primary); font-size: 14px; }
+    .form-card-body { padding: 20px; }
+
+    /* === Form Grid === */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-label {
+      font-size: 12px; font-weight: 600; color: var(--color-gray-600);
+    }
+    .form-label .req { color: var(--color-error); margin-left: 2px; font-size: 11px; }
+    .form-input, .form-select {
+      padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.12); }
+    .form-input[readonly] {
+      background: var(--color-gray-100); color: var(--color-gray-600);
+      border-color: var(--color-gray-200); cursor: not-allowed;
+    }
+    .form-hint { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+
+    /* === Readonly badge === */
+    .readonly-badge {
+      display: inline-flex; align-items: center; padding: 2px 8px;
+      background: var(--color-gray-100); border: 1px solid var(--color-gray-200);
+      border-radius: 999px; font-size: 10px; font-weight: 600;
+      color: var(--color-gray-500); margin-left: 6px;
+    }
+
+    /* === Radio Group === */
+    .radio-group { display: flex; gap: 20px; padding-top: 6px; align-items: center; height: 38px; }
+    .radio-item { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--color-gray-700); }
+    .radio-item input[type="radio"] { accent-color: var(--color-primary); width: 15px; height: 15px; cursor: pointer; }
+
+    /* === Checkbox Group === */
+    .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; padding: 4px 0; }
+    .checkbox-item { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+    .checkbox-item.disabled { opacity: 0.5; cursor: not-allowed; }
+    .checkbox-item input[type="checkbox"] { accent-color: var(--color-primary); width: 15px; height: 15px; margin-top: 1px; cursor: pointer; flex-shrink: 0; }
+    .checkbox-item.disabled input[type="checkbox"] { cursor: not-allowed; }
+    .checkbox-item .check-label { font-size: 13px; color: var(--color-gray-700); line-height: 1.4; }
+    .checkbox-item .check-desc { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+    .lock-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--color-warning-bg); color: var(--color-warning);
+      border: 1px solid #FFE082; border-radius: 3px;
+      font-size: 10px; font-weight: 600; padding: 1px 6px; margin-top: 3px;
+    }
+
+    /* === Form Footer === */
+    .form-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 12px; padding: 20px 24px; background: var(--color-gray-50);
+      border-top: 1px solid var(--color-gray-200); border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+    }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-lg { padding: 11px 28px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">MST-003</span>
+    <span>商品編集</span>
+    <span style="color:#444">|</span>
+    <span>URL: /master/products/:id/edit</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>管理者 花子</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">マスタ管理</div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="#" style="background:rgba(161,0,255,0.08); color: var(--color-gray-200); border-left: 3px solid var(--color-primary-mid);">
+          <span class="icon">📦</span> 商品
+        </a>
+        <ul class="sidebar-sub">
+          <li><a href="#" class="active"><span class="icon">◾</span> 商品一覧</a></li>
+        </ul>
+      </li>
+      <li><a href="#"><span class="icon">🏢</span> 取引先</a></li>
+      <li><a href="#"><span class="icon">🏭</span> 倉庫</a></li>
+      <li><a href="#"><span class="icon">🏗</span> 棟</a></li>
+      <li><a href="#"><span class="icon">📐</span> エリア</a></li>
+      <li><a href="#"><span class="icon">📍</span> ロケーション</a></li>
+      <li><a href="#"><span class="icon">👤</span> ユーザー</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📥</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span>
+      <a href="#">マスタ管理</a> <span class="sep">›</span>
+      <a href="#">商品一覧</a> <span class="sep">›</span>
+      商品編集
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">商品編集</h1>
+    </div>
+
+    <!-- Info Alert: Stock exists -->
+    <div class="info-alert">
+      <span style="font-size:16px;flex-shrink:0">ℹ</span>
+      <span>この商品には現在在庫が存在します。<strong>ロット管理フラグ</strong>および<strong>賞味/使用期限管理フラグ</strong>は在庫がなくなるまで変更できません。</span>
+    </div>
+
+    <!-- Section 1: 基本情報 -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <span class="section-icon">📋</span>
+        基本情報
+      </div>
+      <div class="form-card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">
+              商品コード
+              <span class="readonly-badge">変更不可</span>
+            </label>
+            <input type="text" class="form-input" value="PRD-003" readonly>
+            <span class="form-hint">商品コードは登録後に変更できません</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品名 <span class="req">*</span></label>
+            <input type="text" class="form-input" value="明治プロビオヨーグルト R-1 112g×12個" maxlength="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">商品名カナ <span class="req">*</span></label>
+            <input type="text" class="form-input" value="メイジプロビオヨーグルト アールワン 112グラム×12コ" maxlength="100">
+            <span class="form-hint">全角カタカナで入力</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">単位 <span class="req">*</span></label>
+            <input type="text" class="form-input" value="ケース" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label class="form-label">カテゴリ <span class="req">*</span></label>
+            <select class="form-select">
+              <option>飲料</option>
+              <option selected>食品</option>
+              <option>日用品</option>
+              <option>その他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">バーコード / JANコード</label>
+            <input type="text" class="form-input" value="4902777058511" maxlength="20">
+            <span class="form-hint">半角数字、任意入力</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: 保管・管理設定 -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <span class="section-icon">🌡</span>
+        保管・管理設定
+      </div>
+      <div class="form-card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">保管条件 <span class="req">*</span></label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" name="storage" value="normal">
+                常温
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="storage" value="cold" checked>
+                冷蔵
+              </label>
+              <label class="radio-item">
+                <input type="radio" name="storage" value="freeze">
+                冷凍
+              </label>
+            </div>
+          </div>
+          <div></div>
+          <div class="form-group">
+            <label class="form-label">ケース入数</label>
+            <input type="number" class="form-input" value="12" min="1" max="9999" style="width:140px">
+            <span class="form-hint">1ケースに含まれるボール数（任意）</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ボール入数</label>
+            <input type="number" class="form-input" value="4" min="1" max="9999" style="width:140px">
+            <span class="form-hint">1ボールに含まれるバラ数（任意）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: フラグ設定 -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <span class="section-icon">🚩</span>
+        フラグ設定
+      </div>
+      <div class="form-card-body">
+        <div class="checkbox-grid" style="margin-bottom:20px">
+          <label class="checkbox-item">
+            <input type="checkbox" name="dangerous">
+            <div>
+              <div class="check-label">危険物フラグ</div>
+              <div class="check-desc">危険物に該当する商品の場合にONにする</div>
+            </div>
+          </label>
+          <!-- ロット管理フラグ: 在庫あり = disabled -->
+          <div class="checkbox-item disabled" title="在庫が存在するため変更できません">
+            <input type="checkbox" name="lot" checked disabled>
+            <div>
+              <div class="check-label">ロット管理フラグ</div>
+              <div class="check-desc">ONの場合、入荷時にロット番号の入力が必須</div>
+              <div class="lock-badge">🔒 在庫あり・変更不可</div>
+            </div>
+          </div>
+          <!-- 賞味/使用期限管理フラグ: 在庫あり = disabled -->
+          <div class="checkbox-item disabled" title="在庫が存在するため変更できません">
+            <input type="checkbox" name="expiry" checked disabled>
+            <div>
+              <div class="check-label">賞味/使用期限管理フラグ</div>
+              <div class="check-desc">ONの場合、入荷時に期限日の入力が必須</div>
+              <div class="lock-badge">🔒 在庫あり・変更不可</div>
+            </div>
+          </div>
+          <label class="checkbox-item">
+            <input type="checkbox" name="shippingBan">
+            <div>
+              <div class="check-label">出荷禁止フラグ</div>
+              <div class="check-desc">ONの場合、出荷指示・ピッキングで選択不可</div>
+            </div>
+          </label>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--color-gray-200);margin:16px 0">
+
+        <div class="form-group">
+          <label class="form-label">有効/無効フラグ <span class="req">*</span></label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="enabled" value="true" checked>
+              有効
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="enabled" value="false">
+              無効
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Footer -->
+      <div class="form-footer">
+        <button class="btn btn-ghost btn-lg">キャンセル</button>
+        <button class="btn btn-primary btn-lg">更新</button>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

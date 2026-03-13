@@ -29,10 +29,10 @@
 
 ## ドキュメント構成
 - docs/project-plan/           - プロジェクト計画書（全12セクション完成）
-- docs/architecture-blueprint/ - アーキテクチャブループリント（全12セクション完成）
+- docs/architecture-blueprint/ - アーキテクチャブループリント（全13セクション完成）
 - docs/functional-requirements/ - 機能要件定義書（全7セクション完成）
-- docs/data-model/             - データモデル定義（作成予定）
-- docs/functional-design/      - 機能設計書（作成予定）
+- docs/data-model/             - データモデル定義（全4ファイル完成）
+- docs/functional-design/      - 機能設計書（画面設計完成: 01〜07, mockups/全45画面, review-records.md）
 - docs/architecture-design/    - アーキテクチャ設計書（作成予定）
 - docs/test-specifications/    - テスト仕様書（作成予定）
 

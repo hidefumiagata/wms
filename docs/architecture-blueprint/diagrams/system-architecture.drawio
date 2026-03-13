@@ -1,206 +1,247 @@
-<mxfile host="Claude Code" modified="2026-03-12" agent="Claude" version="21.0.0">
-  <diagram id="system-architecture" name="システム構成図">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+<mxfile host="app.diagrams.net" version="21.0.0">
+  <diagram name="system-architecture" id="wms-system-arch">
+    <mxGraphModel dx="1422" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1500" pageHeight="1060" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
 
-        <!-- Title -->
-        <mxCell id="title" value="WMS システム構成図（Azure）" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=18;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
-          <mxGeometry x="300" y="20" width="800" height="40" as="geometry" />
-        </mxCell>
-
-        <!-- ===== USER ===== -->
-        <mxCell id="user" value="👤 ユーザー&#xa;（ブラウザ）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="60" y="220" width="120" height="60" as="geometry" />
+        <!-- ===== TITLE ===== -->
+        <mxCell id="title" value="WMS システム概念図" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=18;fontStyle=1;fontColor=#1A1A2E;" vertex="1" parent="1">
+          <mxGeometry x="400" y="18" width="700" height="40" as="geometry"/>
         </mxCell>
 
-        <!-- ===== AZURE CLOUD BOUNDARY ===== -->
-        <mxCell id="azure-cloud" value="Microsoft Azure" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];shape=mxgraph.azure2.group;strokeColor=#0078D4;fillColor=#EFF6FC;verticalAlign=top;align=center;spacingTop=25;fontSize=14;fontStyle=1;fontColor=#0078D4;dashed=0;" vertex="1" parent="1">
-          <mxGeometry x="240" y="70" width="1200" height="900" as="geometry" />
+        <!-- ===== USER / EXTERNAL AREA (band) ===== -->
+        <mxCell id="user-band" value="" style="rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;dashed=1;dashPattern=6 3;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="20" y="68" width="1460" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="user-band-lbl" value="ユーザー / 外部システム" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;align=left;fontColor=#888888;" vertex="1" parent="1">
+          <mxGeometry x="34" y="74" width="220" height="18" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Blob Storage: Frontend ($web) ===== -->
-        <mxCell id="blob-frontend" value="Azure Blob Storage&#xa;($web コンテナ)&#xa;&#xa;フロントエンド（SPA）&#xa;HTML / CSS / JS&#xa;静的Webサイトホスティング" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;fontColor=#ffffff;strokeColor=#005A9E;fontSize=11;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="270" y="160" width="180" height="130" as="geometry" />
+        <mxCell id="browser" value="ブラウザ / クライアント&#xa;（倉庫スタッフ / 管理者）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#333333;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="155" y="96" width="180" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext" value="外部システム（ERP / EC 等）&#xa;※モック（手動CSV配置）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontColor=#AAAAAA;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="96" width="210" height="52" as="geometry"/>
         </mxCell>
 
-        <!-- ===== VNet Boundary ===== -->
-        <mxCell id="vnet" value="Azure Virtual Network (VNet)" style="swimlane;startSize=30;fillColor=#f0f8ff;strokeColor=#0078D4;fontSize=12;fontStyle=1;fontColor=#0078D4;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="550" y="110" width="820" height="660" as="geometry" />
+        <!-- ===== AZURE RUNTIME AREA ===== -->
+        <mxCell id="azure-bg" value="" style="rounded=1;fillColor=#E6F3FB;strokeColor=#0078D4;dashed=1;dashPattern=8 4;opacity=35;" vertex="1" parent="1">
+          <mxGeometry x="20" y="175" width="1460" height="580" as="geometry"/>
+        </mxCell>
+        <mxCell id="azure-lbl" value="Microsoft Azure — 実行・運用領域" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="36" y="182" width="500" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Subnet: Container Apps ===== -->
-        <mxCell id="subnet-aca" value="snet-aca（Container Apps サブネット）" style="swimlane;startSize=30;fillColor=#fff9e6;strokeColor=#d6b656;fontSize=11;fontStyle=0;" vertex="1" parent="vnet">
-          <mxGeometry x="20" y="50" width="500" height="460" as="geometry" />
+        <!-- ===== FRONTEND LAYER ===== -->
+        <mxCell id="fe-layer" value="" style="rounded=1;fillColor=#DBEEFF;strokeColor=#0078D4;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="40" y="218" width="230" height="215" as="geometry"/>
+        </mxCell>
+        <mxCell id="fe-layer-lbl" value="フロントエンド層" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#0078D4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="223" width="230" height="18" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Azure Container Apps ===== -->
-        <mxCell id="aca" value="Azure Container Apps&#xa;Spring Boot 3.x / Java 21&#xa;（min 0 / max 3 replicas）" style="swimlane;startSize=40;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="subnet-aca">
-          <mxGeometry x="30" y="50" width="440" height="370" as="geometry" />
+        <mxCell id="fe-blob" value="Azure Blob Storage（$web）&#xa;静的Webサイトホスティング" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#005A9E;fontColor=#FFFFFF;fontSize=11;fontStyle=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="56" y="246" width="198" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="fe-stack" value="Vue 3 + TypeScript&#xa;Element Plus / Pinia&#xa;vue-i18n（日英）/ Vite" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0078D4;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="56" y="326" width="198" height="92" as="geometry"/>
         </mxCell>
 
-        <!-- API Gateway Layer -->
-        <mxCell id="api-gateway-layer" value="API Gateway Layer&#xa;認証・ルーティング・CORS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="50" width="400" height="40" as="geometry" />
+        <!-- ===== BACKEND LAYER ===== -->
+        <mxCell id="be-layer" value="" style="rounded=1;fillColor=#EFF8EF;strokeColor=#4CAF50;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="320" y="218" width="680" height="330" as="geometry"/>
+        </mxCell>
+        <mxCell id="be-layer-lbl" value="バックエンド層" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#2E7D32;" vertex="1" parent="1">
+          <mxGeometry x="320" y="223" width="680" height="18" as="geometry"/>
         </mxCell>
 
-        <!-- Modules -->
-        <mxCell id="mod-inbound" value="inbound" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="110" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-inventory" value="inventory" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="115" y="110" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-allocation" value="allocation" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=1;" vertex="1" parent="aca">
-          <mxGeometry x="210" y="110" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-outbound" value="outbound" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="305" y="110" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-master" value="master" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="158" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-report" value="report" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="115" y="158" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-batch" value="batch" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="210" y="158" width="85" height="35" as="geometry" />
-        </mxCell>
-        <mxCell id="mod-interface" value="interface" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="aca">
-          <mxGeometry x="305" y="158" width="85" height="35" as="geometry" />
+        <!-- Container Apps outer box -->
+        <mxCell id="ca-box" value="Azure Container Apps　—　Spring Boot 3.x / Java 21　—　Gradle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontStyle=1;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="336" y="245" width="648" height="290" as="geometry"/>
         </mxCell>
 
-        <!-- Shared Layer -->
-        <mxCell id="shared-layer" value="Shared Layer（共通基盤：ロギング・エラー処理）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="210" width="400" height="35" as="geometry" />
+        <!-- API Gateway / Auth layer -->
+        <mxCell id="api-gw" value="API Gateway Layer　—　認証・ルーティング・CORS　|　ベースパス: /api/v1/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="352" y="272" width="616" height="33" as="geometry"/>
         </mxCell>
 
-        <!-- Batch note -->
-        <mxCell id="batch-note" value="バッチ実行：POST /api/v1/batch/{name}（手動）" style="text;html=1;strokeColor=none;fillColor=#fffde7;align=left;fontSize=10;fontColor=#7a6000;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="260" width="400" height="25" as="geometry" />
+        <!-- Business modules background -->
+        <mxCell id="mod-bg" value="業務モジュール" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4E8;strokeColor=#82B366;fontSize=10;fontStyle=2;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="352" y="316" width="616" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-inbound" value="入荷管理&#xa;inbound" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="368" y="340" width="90" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-inventory" value="在庫管理&#xa;inventory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="468" y="340" width="90" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-allocation" value="在庫引当&#xa;allocation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="568" y="340" width="90" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-outbound" value="出荷管理&#xa;outbound" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="668" y="340" width="90" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-master" value="マスタ管理&#xa;master" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="368" y="388" width="90" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-report" value="レポート&#xa;report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="468" y="388" width="90" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-batch" value="バッチ処理&#xa;batch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="568" y="388" width="90" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="m-if" value="外部連携I/F&#xa;interfacing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="668" y="388" width="90" height="36" as="geometry"/>
         </mxCell>
 
-        <!-- Auth note -->
-        <mxCell id="auth-note" value="認証：JWT + httpOnly Cookie&#xa;アクセストークン1時間 / リフレッシュトークン1時間スライディング" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;align=left;" vertex="1" parent="aca">
-          <mxGeometry x="20" y="300" width="400" height="40" as="geometry" />
+        <!-- Shared layer -->
+        <mxCell id="shared" value="Shared 共通基盤　—　認証（JWT + httpOnly Cookie）/ ロギング / エラー処理 / バリデーション" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="352" y="434" width="616" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="ca-tech" value="Spring Data JPA + Flyway　/　Spring Security　/　Springdoc OpenAPI　/　JUnit 5 + Mockito" style="text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#666666;align=center;" vertex="1" parent="1">
+          <mxGeometry x="352" y="477" width="616" height="20" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Subnet: DB ===== -->
-        <mxCell id="subnet-db" value="snet-db（DB サブネット）" style="swimlane;startSize=30;fillColor=#f0fff0;strokeColor=#82b366;fontSize=11;fontStyle=0;" vertex="1" parent="vnet">
-          <mxGeometry x="550" y="50" width="240" height="220" as="geometry" />
+        <!-- ===== DATA / INTEGRATION LAYER ===== -->
+        <mxCell id="data-layer" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FFA726;opacity=60;" vertex="1" parent="1">
+          <mxGeometry x="1058" y="218" width="262" height="275" as="geometry"/>
+        </mxCell>
+        <mxCell id="data-lbl" value="データ・連携層" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#E65100;" vertex="1" parent="1">
+          <mxGeometry x="1058" y="223" width="262" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="pg" value="Azure Database for&#xa;PostgreSQL Flexible Server&#xa;B1ms (1vCore, 2GB)&#xa;VNet プライベートエンドポイント" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontStyle=1;size=12;" vertex="1" parent="1">
+          <mxGeometry x="1076" y="246" width="226" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="blob-if" value="Azure Blob Storage（iffiles）&#xa;入荷予定CSV / 受注CSV&#xa;pending/ → processed/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1076" y="380" width="226" height="80" as="geometry"/>
         </mxCell>
 
-        <!-- ===== PostgreSQL Flexible Server ===== -->
-        <mxCell id="postgres" value="Azure Database for&#xa;PostgreSQL Flexible Server&#xa;B1ms&#xa;（プライベートエンドポイント）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="subnet-db">
-          <mxGeometry x="20" y="50" width="200" height="130" as="geometry" />
+        <!-- ===== MONITORING LAYER ===== -->
+        <mxCell id="mon-layer" value="" style="rounded=1;fillColor=#F3E5F5;strokeColor=#9C27B0;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="1058" y="508" width="262" height="162" as="geometry"/>
+        </mxCell>
+        <mxCell id="mon-lbl" value="監視・運用層" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="1058" y="513" width="262" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="law" value="Log Analytics Workspace&#xa;アプリログ保存（30日）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1074" y="538" width="230" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="azmon" value="Azure Monitor&#xa;アラート → メール通知" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1074" y="598" width="230" height="50" as="geometry"/>
         </mxCell>
 
-        <!-- ===== ACR ===== -->
-        <mxCell id="acr" value="Azure Container Registry&#xa;（ACR）&#xa;&#xa;Dockerイメージ管理&#xa;sha-{hash} / v1.0.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;fontColor=#ffffff;strokeColor=#005A9E;fontSize=11;fontStyle=1;" vertex="1" parent="vnet">
-          <mxGeometry x="560" y="310" width="200" height="130" as="geometry" />
+        <!-- ===== DEV / DEPLOY AREA ===== -->
+        <mxCell id="dev-area" value="" style="rounded=1;fillColor=#263238;strokeColor=#546E7A;opacity=12;" vertex="1" parent="1">
+          <mxGeometry x="20" y="778" width="1460" height="250" as="geometry"/>
+        </mxCell>
+        <mxCell id="dev-area-lbl" value="開発・デプロイ領域" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#546E7A;" vertex="1" parent="1">
+          <mxGeometry x="36" y="784" width="350" height="25" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Monitoring ===== -->
-        <mxCell id="monitoring" value="監視基盤" style="swimlane;startSize=30;fillColor=#f5f0ff;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="vnet">
-          <mxGeometry x="560" y="480" width="230" height="170" as="geometry" />
-        </mxCell>
-        <mxCell id="law" value="Log Analytics Workspace&#xa;（ログ保存 30日）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="monitoring">
-          <mxGeometry x="10" y="40" width="210" height="45" as="geometry" />
-        </mxCell>
-        <mxCell id="azure-monitor" value="Azure Monitor&#xa;（アラート→メール通知）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="monitoring">
-          <mxGeometry x="10" y="95" width="210" height="45" as="geometry" />
+        <!-- GitHub Repository -->
+        <mxCell id="gh-repo" value="GitHub Repository&#xa;&#xa;frontend/　backend/&#xa;infra/（Terraform）&#xa;docs/（ドキュメント）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#24292E;strokeColor=#444D56;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="55" y="820" width="185" height="130" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Blob Storage: iffiles ===== -->
-        <mxCell id="blob-iffiles" value="Azure Blob Storage&#xa;(iffiles コンテナ)&#xa;&#xa;入荷予定CSV / 受注CSV&#xa;pending/ → processed/" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;fontColor=#ffffff;strokeColor=#005A9E;fontSize=11;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="270" y="560" width="180" height="130" as="geometry" />
+        <!-- GitHub Actions -->
+        <mxCell id="gh-actions" value="GitHub Actions — CI/CD&#xa;&#xa;CI: Lint / Test / Build / Docker Build&#xa;CD (dev): push to main → 自動デプロイ&#xa;CD (prd): 手動承認 → デプロイ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2088FF;strokeColor=#0068D6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="310" y="820" width="300" height="130" as="geometry"/>
         </mxCell>
 
-        <!-- ===== External System ===== -->
-        <mxCell id="ext-system" value="外部システム&#xa;（ERP・EC等）&#xa;※モック（手動配置）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666;fontSize=11;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="60" y="560" width="140" height="80" as="geometry" />
+        <!-- ACR -->
+        <mxCell id="acr" value="Azure Container Registry&#xa;（acrwms）&#xa;&#xa;Dockerイメージ管理&#xa;sha-{hash} / v1.0.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="690" y="820" width="200" height="130" as="geometry"/>
         </mxCell>
 
-        <!-- ===== GitHub Actions (Azure外：GitHubホスティング) ===== -->
-        <mxCell id="github-label" value="GitHub" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontColor=#888;fontStyle=2;" vertex="1" parent="1">
-          <mxGeometry x="50" y="355" width="160" height="16" as="geometry" />
-        </mxCell>
-        <mxCell id="github-actions" value="GitHub Actions&#xa;（CI/CD）&#xa;&#xa;CI: Lint/Test/Build&#xa;CD: dev自動 / prd手動" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#24292e;fontColor=#ffffff;strokeColor=#000;fontSize=11;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="50" y="371" width="160" height="130" as="geometry" />
+        <!-- Terraform -->
+        <mxCell id="tf" value="Terraform IaC&#xa;&#xa;terraform apply　→　インフラ一式構築&#xa;terraform destroy　→　全削除&#xa;State: wms-terraform サブスク" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#623CE4;strokeColor=#4B2DB5;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="820" width="265" height="130" as="geometry"/>
         </mxCell>
 
-        <!-- ===== ARROWS ===== -->
-
-        <!-- User → Blob Frontend (HTTPS) -->
-        <mxCell id="arr-user-blob-fe" value="HTTPS&#xa;静的ファイル取得" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0078D4;fontColor=#666;fontSize=10;" edge="1" parent="1" source="user" target="blob-frontend">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- ===== LEGEND ===== -->
+        <mxCell id="leg-bg" value="" style="rounded=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;" vertex="1" parent="1">
+          <mxGeometry x="1305" y="820" width="170" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg-title" value="凡例" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1365" y="828" width="50" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg1" value="業務モジュール" style="rounded=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="852" width="150" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg2" value="在庫引当（独立モジュール）" style="rounded=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=9;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="880" width="150" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg3" value="外部連携（モック）" style="rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontSize=9;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="908" width="150" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg4" value="Azure サービス" style="rounded=1;fillColor=#0078D4;fontColor=#FFFFFF;strokeColor=#005A9E;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="936" width="150" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg5" value="開発・デプロイ" style="rounded=1;fillColor=#24292E;fontColor=#FFFFFF;strokeColor=#444D56;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1315" y="964" width="150" height="22" as="geometry"/>
         </mxCell>
 
-        <!-- User → Container Apps (REST API) -->
-        <mxCell id="arr-user-aca" value="HTTPS / REST API&#xa;JWT Cookie" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;fontColor=#666;fontSize=10;" edge="1" parent="1" source="user" target="api-gateway-layer">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="120" y="200" />
-              <mxPoint x="120" y="130" />
-              <mxPoint x="620" y="130" />
-            </Array>
-          </mxGeometry>
+        <!-- ===== EDGES ===== -->
+
+        <!-- Browser → Frontend (HTTPS) -->
+        <mxCell id="e-br-fe" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0078D4;" edge="1" source="browser" target="fe-blob" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Container Apps → PostgreSQL -->
-        <mxCell id="arr-aca-pg" value="SQL&#xa;（VNet内通信）" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;fontColor=#666;fontSize=10;" edge="1" parent="1" source="aca" target="postgres">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- Browser → API GW (REST API) -->
+        <mxCell id="e-br-api" value="HTTPS / REST API / JWT Cookie" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;" edge="1" source="browser" target="api-gw" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Container Apps → Blob iffiles -->
-        <mxCell id="arr-aca-blob-if" value="CSVファイル読取&#xa;（pending→processed）" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#0078D4;fontColor=#666;fontSize=10;" edge="1" parent="1" source="aca" target="blob-iffiles">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- Frontend SPA → API GW (API呼び出し) -->
+        <mxCell id="e-fe-api" value="API呼び出し" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#4CAF50;" edge="1" source="fe-stack" target="api-gw" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Container Apps → Log Analytics -->
-        <mxCell id="arr-aca-law" value="ログ送信" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;fontColor=#666;fontSize=10;" edge="1" parent="1" source="aca" target="law">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- External → Blob iffiles (CSV配置) -->
+        <mxCell id="e-ext-if" value="CSV配置" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#AAAAAA;dashed=1;" edge="1" source="ext" target="blob-if" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- External System → Blob iffiles (CSV配置) -->
-        <mxCell id="arr-ext-blob" value="CSV配置&#xa;（手動 / 外部）" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666;fontColor=#666;fontSize=10;dashed=1;" edge="1" parent="1" source="ext-system" target="blob-iffiles">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- Backend → PostgreSQL -->
+        <mxCell id="e-be-pg" value="JPA / JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#6C8EBF;" edge="1" source="ca-box" target="pg" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- GitHub Actions → ACR (push) -->
-        <mxCell id="arr-ga-acr" value="docker push" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#24292e;fontColor=#666;fontSize=10;" edge="1" parent="1" source="github-actions" target="acr">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- interfacing → Blob iffiles (CSV読取) -->
+        <mxCell id="e-if-blob" value="CSV読取" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D9A520;dashed=1;" edge="1" source="m-if" target="blob-if" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- GitHub Actions → Container Apps (deploy) -->
-        <mxCell id="arr-ga-aca" value="デプロイ" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#24292e;fontColor=#666;fontSize=10;" edge="1" parent="1" source="github-actions" target="aca">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- Backend → Log Analytics -->
+        <mxCell id="e-be-law" value="ログ送信" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#9673A6;" edge="1" source="ca-box" target="law" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- GitHub Actions → Blob Frontend (deploy) -->
-        <mxCell id="arr-ga-blob-fe" value="フロントデプロイ" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#24292e;fontColor=#666;fontSize=10;" edge="1" parent="1" source="github-actions" target="blob-frontend">
-          <mxGeometry relative="1" as="geometry" />
+        <!-- GitHub Repo → GitHub Actions -->
+        <mxCell id="e-gh-ga" value="push / PR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#24292E;" edge="1" source="gh-repo" target="gh-actions" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ===== Legend ===== -->
-        <mxCell id="legend-bg" value="" style="rounded=1;fillColor=#f5f5f5;strokeColor=#ccc;" vertex="1" parent="1">
-          <mxGeometry x="60" y="700" width="200" height="150" as="geometry" />
+        <!-- GitHub Actions → ACR (docker push) -->
+        <mxCell id="e-ga-acr" value="docker push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;" edge="1" source="gh-actions" target="acr" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="legend-title" value="凡例" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="130" y="710" width="60" height="20" as="geometry" />
+
+        <!-- GitHub Actions → Frontend (az storage upload) -->
+        <mxCell id="e-ga-fe" value="az storage upload" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;" edge="1" source="gh-actions" target="fe-blob" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="leg1" value="コアモジュール" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="70" y="735" width="140" height="25" as="geometry" />
+
+        <!-- ACR → Container Apps (docker pull) -->
+        <mxCell id="e-acr-ca" value="docker pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;dashed=1;" edge="1" source="acr" target="ca-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
-        <mxCell id="leg2" value="在庫引当（独立モジュール）" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="70" y="766" width="180" height="25" as="geometry" />
-        </mxCell>
-        <mxCell id="leg3" value="外部連携（モック）" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666;fontSize=10;dashed=1;" vertex="1" parent="1">
-          <mxGeometry x="70" y="797" width="140" height="25" as="geometry" />
-        </mxCell>
-        <mxCell id="leg4" value="Azure サービス" style="rounded=1;fillColor=#0078D4;fontColor=#ffffff;strokeColor=#005A9E;fontSize=10;" vertex="1" parent="1">
-          <mxGeometry x="70" y="828" width="140" height="25" as="geometry" />
+
+        <!-- Terraform → Azure (manage) -->
+        <mxCell id="e-tf-az" value="インフラ管理&#xa;Deploy / Destroy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#623CE4;dashed=1;" edge="1" source="tf" target="azure-bg" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
       </root>

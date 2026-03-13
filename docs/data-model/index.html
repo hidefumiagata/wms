@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>データモデル定義 - WMS ShowCase</title>
+  <title>データモデル定義 — WMS ShowCase</title>
   <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
@@ -14,41 +14,35 @@
   nav.breadcrumb a { color: #0f3460; text-decoration: none; }
   nav.breadcrumb a:hover { text-decoration: underline; }
   main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-top: 32px; }
-  .card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; border: 1px solid #eee; }
-  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-color: #0f3460; }
-  .card .icon { font-size: 2.5rem; margin-bottom: 16px; }
-  .card h2 { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
-  .card .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
-  .card .file-count { font-size: 0.8rem; color: #aaa; }
-  .badge { display: inline-block; background: #e8f0fe; color: #0f3460; font-size: 0.75rem; padding: 2px 10px; border-radius: 20px; }
-  .badge.empty { background: #f5f5f5; color: #aaa; }
-  .section-header { margin-bottom: 32px; }
-  .section-header h1 { font-size: 1.6rem; color: #1a1a2e; display: flex; align-items: center; gap: 12px; }
-  .doc-list { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
-  .doc-item { padding: 20px 28px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
-  .doc-item:last-child { border-bottom: none; }
-  .doc-item a { text-decoration: none; color: #0f3460; font-weight: 500; font-size: 1rem; }
-  .doc-item a:hover { text-decoration: underline; }
-  .doc-item .meta { font-size: 0.8rem; color: #aaa; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
   .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
   .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
   .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
   .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
   .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
   .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
   .markdown-body tr:hover td { background: #f8f9ff; }
-  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', 'Monaco', monospace; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
   .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
-  .markdown-body pre code { background: none; color: inherit; padding: 0; font-size: 0.88em; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
   .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
   .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
   .markdown-body li { margin: 4px 0; }
   .markdown-body p { margin: 12px 0; }
-  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
-  .drawio-wrapper { margin: 20px 0; }
-  .drawio-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
   footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
 </style>
 </head>
@@ -57,13 +51,775 @@
   <h1>🏭 WMS ShowCase</h1>
   <p>Warehouse Management System — Built with Claude Code</p>
 </header>
-<nav class="breadcrumb"><a href="../index.html">Home</a> &rsaquo; データモデル定義</nav>
+<nav class="breadcrumb">
+  <a href="../index.html">Home</a> &rsaquo; データモデル定義
+</nav>
 <main>
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:1.6rem;color:#1a1a2e;">🗄️ データモデル定義</h1>
+    <p style="color:#888;margin-top:8px;font-size:0.9rem;">Data Model</p>
+  </div>
+  
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#01-overview">1. データモデル定義 — 概要・設計方針</a></li>
+        <li><a href="#02-master-tables">2. データモデル定義 — マスタ系テーブル</a></li>
+        <li><a href="#03-transaction-tables">3. </a></li>
+        <li><a href="#04-batch-tables">4. データモデル定義 — バッチ・集計・バックアップ系テーブル</a></li>
+    </ol>
+  </div>
 
-      <div class="section-header"><h1>🗄️ データモデル定義</h1></div>
-      <p style="color:#aaa">ドキュメントはまだ作成されていません。</p>
+<hr class="doc-separator">
+<div class="markdown-body" id="01-overview">
+<h1>データモデル定義 — 概要・設計方針</h1>
+<h2>設計方針</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>RDBMS</strong></td><td>Azure Database for PostgreSQL Flexible Server</td></tr>
+<tr><td><strong>文字コード</strong></td><td>UTF-8</td></tr>
+<tr><td><strong>タイムゾーン</strong></td><td>Asia/Tokyo（アプリ層で変換。DB保存はUTC）</td></tr>
+<tr><td><strong>主キー</strong></td><td>全テーブル <code>id bigserial PRIMARY KEY</code>（サロゲートキー）</td></tr>
+<tr><td><strong>論理削除</strong></td><td>マスタテーブルは <code>is_active boolean</code> フラグで管理。物理削除は行わない</td></tr>
+<tr><td><strong>スキーマ管理</strong></td><td>Flyway マイグレーション</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>命名規則</h2>
+<table>
+<thead><tr><th>対象</th><th>ルール</th><th>例</th></tr></thead>
+<tbody>
+<tr><td>テーブル名</td><td>スネークケース・複数形</td><td><code>products</code>, <code>inbound_slips</code></td></tr>
+<tr><td>カラム名</td><td>スネークケース</td><td><code>product_code</code>, <code>created_at</code></td></tr>
+<tr><td>外部キー</td><td><code>{参照テーブル単数形}_id</code></td><td><code>product_id</code>, <code>warehouse_id</code></td></tr>
+<tr><td>フラグ系</td><td><code>is_xxx</code> または <code>xxx_flag</code></td><td><code>is_active</code>, <code>lot_manage_flag</code></td></tr>
+<tr><td>日時</td><td><code>xxx_at</code> (timestamp with time zone)</td><td><code>created_at</code>, <code>shipped_at</code></td></tr>
+<tr><td>日付</td><td><code>xxx_date</code> (date)</td><td><code>planned_date</code>, <code>business_date</code></td></tr>
+<tr><td>実行者</td><td><code>xxx_by</code> (bigint FK → users.id)</td><td><code>created_by</code>, <code>executed_by</code></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>共通カラムパターン</h2>
+<h3>マスタテーブル共通カラム</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>PK</td></tr>
+<tr><td><code>is_active</code></td><td>boolean NOT NULL DEFAULT true</td><td>有効/無効フラグ（論理削除）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz NOT NULL DEFAULT now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint FK → users.id</td><td>作成者</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz NOT NULL DEFAULT now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint FK → users.id</td><td>更新者</td></tr>
+<p></tbody><br></table></p>
+<h3>トランザクションテーブル共通カラム</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>PK</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz NOT NULL DEFAULT now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint FK → users.id</td><td>作成者</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz NOT NULL DEFAULT now()</td><td>最終更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint FK → users.id</td><td>最終更新者</td></tr>
+<p></tbody><br></table></p>
+<h3>マスタ情報のコピー保持</h3>
+<p>トランザクションデータ（入荷・出荷等）は、マスタIDの外部キーに加え、登録時点の名称等をコピーカラムとして保持する。マスタの変更・無効化後もトランデータは登録時の情報を維持するため。</p>
+<pre><code class="lang-">-- 例：入荷明細における商品情報の保持
+product_id      bigint FK → products.id  -- 参照用
+product_code    varchar NOT NULL          -- 登録時コピー
+product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
+<hr>
+<h2>在庫管理の粒度</h2>
+<p>在庫は以下の5軸の組み合わせで1レコードを管理する。</p>
+<table>
+<thead><tr><th>軸</th><th>カラム</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>ロケーション</td><td><code>location_id</code></td><td>必須</td></tr>
+<tr><td>商品</td><td><code>product_id</code></td><td>必須</td></tr>
+<tr><td>荷姿</td><td><code>unit_type</code></td><td>CASE / BALL / PIECE</td></tr>
+<tr><td>ロット番号</td><td><code>lot_number</code></td><td>ロット管理フラグOFFの場合 NULL</td></tr>
+<tr><td>期限日</td><td><code>expiry_date</code></td><td>賞味/使用期限管理フラグOFFの場合 NULL</td></tr>
+<p></tbody><br></table></p>
+<blockquote>PostgreSQL 15 以降の <code>NULLS NOT DISTINCT</code> を使用し、NULL を含む5軸の一意制約を実現する。</blockquote>
+<hr>
+<h2>荷姿（unit_type）の定義</h2>
+<table>
+<thead><tr><th>値</th><th>意味</th><th>収容上限（システムパラメータ）</th></tr></thead>
+<tbody>
+<tr><td><code>CASE</code></td><td>ケース</td><td><code>LOCATION_CAPACITY_CASE</code>（デフォルト: 1）</td></tr>
+<tr><td><code>BALL</code></td><td>ボール</td><td><code>LOCATION_CAPACITY_BALL</code>（デフォルト: 6）</td></tr>
+<tr><td><code>PIECE</code></td><td>バラ</td><td><code>LOCATION_CAPACITY_PIECE</code>（デフォルト: 100）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>テーブル一覧</h2>
+<h3>マスタ系</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>products</code></td><td>商品マスタ</td><td>商品情報。ロット・期限管理フラグを持つ</td></tr>
+<tr><td><code>partners</code></td><td>取引先マスタ</td><td>仕入先・出荷先・両方の区分あり</td></tr>
+<tr><td><code>warehouses</code></td><td>倉庫マスタ</td><td>倉庫の基本情報</td></tr>
+<tr><td><code>buildings</code></td><td>棟マスタ</td><td>倉庫配下の棟</td></tr>
+<tr><td><code>areas</code></td><td>エリアマスタ</td><td>棟配下のエリア。在庫/入荷/出荷/返品の種別あり</td></tr>
+<tr><td><code>locations</code></td><td>ロケーションマスタ</td><td>エリア配下の棚番。在庫管理の最小単位</td></tr>
+<tr><td><code>users</code></td><td>ユーザーマスタ</td><td>ログインユーザー。ロール・ロック状態を管理</td></tr>
+<tr><td><code>refresh_tokens</code></td><td>リフレッシュトークン</td><td>JWT リフレッシュトークン管理</td></tr>
+<tr><td><code>system_parameters</code></td><td>システムパラメータ</td><td>ロケーション収容上限等の可変設定値</td></tr>
+<p></tbody><br></table></p>
+<h3>トランザクション系（入荷）</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>inbound_slips</code></td><td>入荷ヘッダ</td><td>入荷予定の伝票ヘッダ</td></tr>
+<tr><td><code>inbound_slip_lines</code></td><td>入荷明細</td><td>商品明細。検品数・入庫先ロケーション等を保持</td></tr>
+<p></tbody><br></table></p>
+<h3>トランザクション系（出荷）</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>outbound_slips</code></td><td>出荷ヘッダ</td><td>受注の伝票ヘッダ</td></tr>
+<tr><td><code>outbound_slip_lines</code></td><td>出荷明細</td><td>商品明細</td></tr>
+<tr><td><code>picking_instructions</code></td><td>ピッキング指示ヘッダ</td><td>複数受注をまとめたピッキング指示</td></tr>
+<tr><td><code>picking_instruction_lines</code></td><td>ピッキング指示明細</td><td>ロケーション単位のピッキング明細。出荷明細の分割ピッキングに対応</td></tr>
+<p></tbody><br></table></p>
+<h3>トランザクション系（在庫）</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>inventories</code></td><td>在庫</td><td>現在在庫数量。5軸（ロケーション・商品・荷姿・ロット・期限日）で管理</td></tr>
+<tr><td><code>inventory_movements</code></td><td>在庫変動履歴</td><td>入庫・出庫・移動・ばらし・訂正・棚卸の全変動履歴</td></tr>
+<tr><td><code>stocktake_headers</code></td><td>棚卸ヘッダ</td><td>棚卸セッションのヘッダ</td></tr>
+<tr><td><code>stocktake_lines</code></td><td>棚卸明細</td><td>ロケーション・商品単位の実数と差異</td></tr>
+<p></tbody><br></table></p>
+<h3>バッチ・集計系</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>business_date</code></td><td>営業日管理</td><td>システムの現在営業日（単一レコード）</td></tr>
+<tr><td><code>batch_execution_logs</code></td><td>バッチ実行履歴</td><td>日替処理の実行履歴と各ステップの結果</td></tr>
+<tr><td><code>inbound_summaries</code></td><td>入荷実績サマリー</td><td>営業日別の入荷集計</td></tr>
+<tr><td><code>outbound_summaries</code></td><td>出荷実績サマリー</td><td>営業日別の出荷集計</td></tr>
+<tr><td><code>inventory_snapshots</code></td><td>在庫スナップショット</td><td>営業日末時点の在庫数量サマリー</td></tr>
+<tr><td><code>unreceived_list_records</code></td><td>未入荷リスト（確定）</td><td>日替処理で確定した未入荷リスト</td></tr>
+<tr><td><code>unshipped_list_records</code></td><td>未出荷リスト（確定）</td><td>日替処理で確定した未出荷リスト</td></tr>
+<p></tbody><br></table></p>
+<h3>バックアップ系</h3>
+<table>
+<thead><tr><th>テーブル名</th><th>論理名</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>inbound_slips_backup</code></td><td>入荷ヘッダバックアップ</td><td>完了済み・2か月超の入荷ヘッダのアーカイブ</td></tr>
+<tr><td><code>inbound_slip_lines_backup</code></td><td>入荷明細バックアップ</td><td>同上・明細</td></tr>
+<tr><td><code>outbound_slips_backup</code></td><td>出荷ヘッダバックアップ</td><td>完了済み・2か月超の出荷ヘッダのアーカイブ</td></tr>
+<tr><td><code>outbound_slip_lines_backup</code></td><td>出荷明細バックアップ</td><td>同上・明細</td></tr>
+<tr><td><code>inventory_movements_backup</code></td><td>在庫変動履歴バックアップ</td><td>完了済み・2か月超の変動履歴のアーカイブ</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="02-master-tables">
+<h1>データモデル定義 — マスタ系テーブル</h1>
+<h2><code>products</code>（商品マスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード。システム全体で一意。登録後変更不可</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名</td></tr>
+<tr><td><code>product_name_kana</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>商品名カナ</td></tr>
+<tr><td><code>case_quantity</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>ケース入数（1ケース＝何ボール）</td></tr>
+<tr><td><code>ball_quantity</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>ボール入数（1ボール＝何バラ）</td></tr>
+<tr><td><code>barcode</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>バーコード / JANコード</td></tr>
+<tr><td><code>storage_condition</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>保管条件: <code>AMBIENT</code>(常温) / <code>REFRIGERATED</code>(冷蔵) / <code>FROZEN</code>(冷凍)</td></tr>
+<tr><td><code>is_hazardous</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>危険物フラグ</td></tr>
+<tr><td><code>lot_manage_flag</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>ロット管理フラグ。ONの場合、入荷時にロット番号必須</td></tr>
+<tr><td><code>expiry_manage_flag</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>賞味/使用期限管理フラグ。ONの場合、入荷時に期限日必須</td></tr>
+<tr><td><code>shipment_stop_flag</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>出荷禁止フラグ。ONの場合、出荷指示・ピッキングで選択不可</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (product_code)</code></li><li style="margin-left:0px"><code>lot_manage_flag</code> または <code>expiry_manage_flag</code> が true の場合、その商品の在庫が存在する間は変更不可（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>partners</code>（取引先マスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>partner_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>取引先コード。システム全体で一意。登録後変更不可</td></tr>
+<tr><td><code>partner_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>取引先名</td></tr>
+<tr><td><code>partner_name_kana</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>取引先名カナ</td></tr>
+<tr><td><code>partner_type</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>種別: <code>SUPPLIER</code>(仕入先) / <code>CUSTOMER</code>(出荷先) / <code>BOTH</code>(両方)</td></tr>
+<tr><td><code>address</code></td><td>varchar(500)</td><td>NULL</td><td>—</td><td>住所</td></tr>
+<tr><td><code>phone</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>電話番号</td></tr>
+<tr><td><code>contact_person</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>担当者名</td></tr>
+<tr><td><code>email</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>メールアドレス</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (partner_code)</code></li><li style="margin-left:0px"><code>partner_type IN ('SUPPLIER', 'CUSTOMER', 'BOTH')</code></li><li style="margin-left:0px">入荷予定の仕入先として選択可能: <code>partner_type IN ('SUPPLIER', 'BOTH')</code></li><li style="margin-left:0px">受注の出荷先として選択可能: <code>partner_type IN ('CUSTOMER', 'BOTH')</code></li></ul>
+<hr>
+<h2><code>warehouses</code>（倉庫マスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード。システム全体で一意。登録後変更不可</td></tr>
+<tr><td><code>warehouse_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>倉庫名</td></tr>
+<tr><td><code>warehouse_name_kana</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>倉庫名カナ</td></tr>
+<tr><td><code>address</code></td><td>varchar(500)</td><td>NULL</td><td>—</td><td>住所</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (warehouse_code)</code></li><li style="margin-left:0px">在庫が存在する倉庫は無効化不可（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>buildings</code>（棟マスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>building_code</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>棟コード（A, B, C 等）。倉庫内で一意。登録後変更不可</td></tr>
+<tr><td><code>building_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>棟名称</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (warehouse_id, building_code)</code></li><li style="margin-left:0px">配下にエリアが存在する棟は無効化不可（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>areas</code>（エリアマスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>area_code</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>エリアコード。棟内で一意。登録後変更不可</td></tr>
+<tr><td><code>area_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>エリア名称</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id（冗長保持）</td></tr>
+<tr><td><code>building_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → buildings.id</td></tr>
+<tr><td><code>storage_condition</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>保管条件: <code>AMBIENT</code> / <code>REFRIGERATED</code> / <code>FROZEN</code></td></tr>
+<tr><td><code>area_type</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>エリア種別: <code>STOCK</code>(在庫) / <code>INBOUND</code>(入荷) / <code>OUTBOUND</code>(出荷) / <code>RETURN</code>(返品)</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (building_id, area_code)</code></li><li style="margin-left:0px">配下にロケーションが存在するエリアは無効化不可（アプリ層で制御）</li><li style="margin-left:0px"><code>INBOUND</code> / <code>OUTBOUND</code> / <code>RETURN</code> エリアにはロケーションを1件のみ登録可能（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>locations</code>（ロケーションマスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>location_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ロケーションコード。倉庫内で一意。登録後変更不可。在庫エリアは <code>棟-フロア-エリア-棚-段-並び</code>形式（例: <code>A-01-A-01-01-01</code>）</td></tr>
+<tr><td><code>location_name</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>ロケーション名称（任意の説明的な名前）</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id（冗長保持）</td></tr>
+<tr><td><code>area_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → areas.id</td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (warehouse_id, location_code)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, location_code)</code> — 前方一致絞り込みに使用</li><li style="margin-left:0px">在庫が存在するロケーションは無効化不可（アプリ層で制御）</li><li style="margin-left:0px">棚卸中のロケーションは無効化不可（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>users</code>（ユーザーマスタ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>user_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ユーザーコード（ログインID）。システム全体で一意。登録後変更不可</td></tr>
+<tr><td><code>full_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>氏名</td></tr>
+<tr><td><code>email</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>メールアドレス（通知・連絡先。ログインIDとは別）</td></tr>
+<tr><td><code>password_hash</code></td><td>varchar(255)</td><td>NOT NULL</td><td>—</td><td>BCrypt ハッシュ化パスワード</td></tr>
+<tr><td><code>role</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>ロール: <code>SYSTEM_ADMIN</code> / <code>WAREHOUSE_MANAGER</code> / <code>WAREHOUSE_STAFF</code> / <code>VIEWER</code></td></tr>
+<tr><td><code>is_active</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>有効/無効フラグ</td></tr>
+<tr><td><code>password_change_required</code></td><td>boolean</td><td>NOT NULL</td><td>true</td><td>初回ログインフラグ。ONの間はパスワード変更を強制</td></tr>
+<tr><td><code>failed_login_count</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>連続ログイン失敗回数。ログイン成功時にリセット</td></tr>
+<tr><td><code>locked</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>アカウントロックフラグ（連続5回失敗でON）</td></tr>
+<tr><td><code>locked_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>ロック発生日時</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>作成者（FK → users.id。最初のSYSTEM_ADMINのみNULL可）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (user_code)</code></li><li style="margin-left:0px"><code>role IN ('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')</code></li><li style="margin-left:0px">自身のロール変更・無効化は不可（アプリ層で制御）</li></ul>
+<hr>
+<h2><code>refresh_tokens</code>（リフレッシュトークン）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>user_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → users.id</td></tr>
+<tr><td><code>token_hash</code></td><td>varchar(255)</td><td>NOT NULL</td><td>—</td><td>トークンのBCryptハッシュ</td></tr>
+<tr><td><code>expires_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>—</td><td>トークン有効期限</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>発行日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (token_hash)</code></li><li style="margin-left:0px"><code>INDEX (user_id)</code></li><li style="margin-left:0px">リフレッシュ時にトークンローテーション（旧トークン削除・新トークン発行）</li></ul>
+<hr>
+<h2><code>system_parameters</code>（システムパラメータ）</h2>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>param_key</code></td><td>varchar(100)</td><td>NOT NULL</td><td>—</td><td>パラメータキー</td></tr>
+<tr><td><code>param_value</code></td><td>varchar(500)</td><td>NOT NULL</td><td>—</td><td>パラメータ値</td></tr>
+<tr><td><code>description</code></td><td>varchar(500)</td><td>NULL</td><td>—</td><td>説明</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (param_key)</code></li></ul>
+<p><strong>初期データ（Flyway）</strong>:</p>
+<table>
+<thead><tr><th>param_key</th><th>param_value</th><th>description</th></tr></thead>
+<tbody>
+<tr><td><code>LOCATION_CAPACITY_CASE</code></td><td><code>1</code></td><td>ロケーションあたりのケース収容上限</td></tr>
+<tr><td><code>LOCATION_CAPACITY_BALL</code></td><td><code>6</code></td><td>ロケーションあたりのボール収容上限</td></tr>
+<tr><td><code>LOCATION_CAPACITY_PIECE</code></td><td><code>100</code></td><td>ロケーションあたりのバラ収容上限</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="03-transaction-tables">
+<h1>データモデル定義 — トランザクション系テーブル</h1>
+<h2>入荷系</h2>
+<h3><code>inbound_slips</code>（入荷ヘッダ）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>slip_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>伝票番号。システム全体で一意。自動採番</td></tr>
+<tr><td><code>slip_type</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>入荷種別: <code>NORMAL</code>(通常入荷) / <code>WAREHOUSE_TRANSFER</code>(倉庫振替入荷)</td></tr>
+<tr><td><code>transfer_slip_number</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>振替伝票番号。倉庫振替入荷の場合、振替元の出荷伝票番号を保持（参照用）</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（登録時コピー）</td></tr>
+<tr><td><code>warehouse_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>倉庫名（登録時コピー）</td></tr>
+<tr><td><code>partner_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>FK → partners.id（仕入先。倉庫振替入荷の場合NULL可）</td></tr>
+<tr><td><code>partner_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>取引先コード（登録時コピー）</td></tr>
+<tr><td><code>partner_name</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>取引先名（登録時コピー）</td></tr>
+<tr><td><code>planned_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>入荷予定日</td></tr>
+<tr><td><code>status</code></td><td>varchar(30)</td><td>NOT NULL</td><td><code>PLANNED</code></td><td>ステータス: <code>PLANNED</code>(入荷予定) / <code>CONFIRMED</code>(入荷確認済) / <code>INSPECTING</code>(検品中) / <code>PARTIAL_STORED</code>(一部入庫) / <code>STORED</code>(入庫完了) / <code>CANCELLED</code>(キャンセル)</td></tr>
+<tr><td><code>cancelled_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>キャンセル日時</td></tr>
+<tr><td><code>cancelled_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>キャンセル者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (slip_number)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, planned_date)</code> — 一覧検索用</li><li style="margin-left:0px"><code>INDEX (warehouse_id, status)</code></li><li style="margin-left:0px"><code>INDEX (transfer_slip_number)</code> — 振替伝票照会用</li></ul>
+<hr>
+<h3><code>inbound_slip_lines</code>（入荷明細）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>inbound_slip_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → inbound_slips.id</td></tr>
+<tr><td><code>line_no</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>明細行番号</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（登録時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（登録時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿: <code>CASE</code>(ケース) / <code>BALL</code>(ボール) / <code>PIECE</code>(バラ)</td></tr>
+<tr><td><code>planned_qty</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>入荷予定数</td></tr>
+<tr><td><code>inspected_qty</code></td><td>int</td><td>NULL</td><td>—</td><td>検品数（検品完了後にセット）</td></tr>
+<tr><td><code>lot_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>ロット番号（lot_manage_flag=true の商品の入荷時に必須）</td></tr>
+<tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>賞味/使用期限日（expiry_manage_flag=true の商品の入荷時に必須）</td></tr>
+<tr><td><code>putaway_location_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>FK → locations.id（入庫確定後にセット）</td></tr>
+<tr><td><code>putaway_location_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>入庫先ロケーションコード（入庫確定時コピー）</td></tr>
+<tr><td><code>line_status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>PENDING</code></td><td>明細ステータス: <code>PENDING</code>(未処理) / <code>INSPECTED</code>(検品済) / <code>STORED</code>(入庫済)</td></tr>
+<tr><td><code>inspected_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>検品日時</td></tr>
+<tr><td><code>inspected_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>検品者（FK → users.id）</td></tr>
+<tr><td><code>stored_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>入庫確定日時</td></tr>
+<tr><td><code>stored_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>入庫確定者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (inbound_slip_id, line_no)</code></li><li style="margin-left:0px"><code>unit_type IN ('CASE', 'BALL', 'PIECE')</code></li></ul>
+<hr>
+<h2>出荷系</h2>
+<h3><code>outbound_slips</code>（出荷ヘッダ / 受注）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>slip_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>伝票番号（受注番号）。システム全体で一意</td></tr>
+<tr><td><code>slip_type</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>出荷種別: <code>NORMAL</code>(通常出荷) / <code>WAREHOUSE_TRANSFER</code>(倉庫振替出荷)</td></tr>
+<tr><td><code>transfer_slip_number</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>振替伝票番号（倉庫振替出荷の場合、振替先入荷伝票との照会用）</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（登録時コピー）</td></tr>
+<tr><td><code>warehouse_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>倉庫名（登録時コピー）</td></tr>
+<tr><td><code>partner_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>FK → partners.id（出荷先）</td></tr>
+<tr><td><code>partner_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>取引先コード（登録時コピー）</td></tr>
+<tr><td><code>partner_name</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>取引先名（登録時コピー）</td></tr>
+<tr><td><code>planned_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>出荷予定日</td></tr>
+<tr><td><code>carrier</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>配送業者</td></tr>
+<tr><td><code>tracking_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>送り状番号（出荷完了後にセット）</td></tr>
+<tr><td><code>status</code></td><td>varchar(30)</td><td>NOT NULL</td><td><code>ORDERED</code></td><td>ステータス: <code>ORDERED</code>(受注) / <code>PICKING_INSTRUCTED</code>(ピッキング指示済) / <code>PICKING_COMPLETED</code>(ピッキング完了) / <code>INSPECTING</code>(出荷検品中) / <code>SHIPPED</code>(出荷完了) / <code>CANCELLED</code>(キャンセル)</td></tr>
+<tr><td><code>shipped_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>出荷完了日時</td></tr>
+<tr><td><code>shipped_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>出荷完了者（FK → users.id）</td></tr>
+<tr><td><code>cancelled_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>キャンセル日時</td></tr>
+<tr><td><code>cancelled_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>キャンセル者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (slip_number)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, planned_date)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, status)</code></li><li style="margin-left:0px"><code>INDEX (transfer_slip_number)</code></li></ul>
+<hr>
+<h3><code>outbound_slip_lines</code>（出荷明細）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>outbound_slip_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → outbound_slips.id</td></tr>
+<tr><td><code>line_no</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>明細行番号</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（登録時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（登録時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿: <code>CASE</code> / <code>BALL</code> / <code>PIECE</code></td></tr>
+<tr><td><code>ordered_qty</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>受注数量</td></tr>
+<tr><td><code>shipped_qty</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>出荷済み数量（ピッキング完了後に集計）</td></tr>
+<tr><td><code>line_status</code></td><td>varchar(30)</td><td>NOT NULL</td><td><code>ORDERED</code></td><td>明細ステータス: <code>ORDERED</code> / <code>PICKING_INSTRUCTED</code> / <code>PICKING_COMPLETED</code> / <code>SHIPPED</code></td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (outbound_slip_id, line_no)</code></li></ul>
+<hr>
+<h3><code>picking_instructions</code>（ピッキング指示ヘッダ）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>instruction_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ピッキング指示番号。一意。自動採番</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>area_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>FK → areas.id（指定エリア。NULL の場合は倉庫全体）</td></tr>
+<tr><td><code>status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>CREATED</code></td><td>ステータス: <code>CREATED</code>(作成済) / <code>IN_PROGRESS</code>(作業中) / <code>COMPLETED</code>(完了)</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
+<tr><td><code>completed_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>完了日時</td></tr>
+<tr><td><code>completed_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>完了者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (instruction_number)</code></li></ul>
+<hr>
+<h3><code>picking_instruction_lines</code>（ピッキング指示明細）</h3>
+<p>1出荷明細（<code>outbound_slip_lines</code>）が複数ロケーションに分割される場合、複数レコードとして登録する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>picking_instruction_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → picking_instructions.id</td></tr>
+<tr><td><code>line_no</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>明細行番号</td></tr>
+<tr><td><code>outbound_slip_line_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → outbound_slip_lines.id（対応する出荷明細）</td></tr>
+<tr><td><code>location_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → locations.id（ピッキング元ロケーション）</td></tr>
+<tr><td><code>location_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ロケーションコード（作成時コピー）</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（作成時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（作成時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿: <code>CASE</code> / <code>BALL</code> / <code>PIECE</code></td></tr>
+<tr><td><code>lot_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>ロット番号（在庫から引き当て時にセット）</td></tr>
+<tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>期限日（在庫から引き当て時にセット）</td></tr>
+<tr><td><code>qty_to_pick</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>ピッキング指示数量</td></tr>
+<tr><td><code>qty_picked</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>ピッキング完了数量</td></tr>
+<tr><td><code>line_status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>PENDING</code></td><td>明細ステータス: <code>PENDING</code>(未完了) / <code>COMPLETED</code>(完了)</td></tr>
+<tr><td><code>completed_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>完了日時</td></tr>
+<tr><td><code>completed_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>完了者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (picking_instruction_id, line_no)</code></li><li style="margin-left:0px"><code>INDEX (outbound_slip_line_id)</code> — 出荷明細からの検索用</li><li style="margin-left:0px"><code>INDEX (picking_instruction_id, location_code)</code> — ロケーション順ソート（ピッキング指示書出力）</li></ul>
+<hr>
+<h2>在庫系</h2>
+<h3><code>inventories</code>（在庫）</h3>
+<p>現在の在庫数量を保持する。5軸（ロケーション・商品・荷姿・ロット番号・期限日）の組み合わせで1レコード。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id（冗長保持。検索高速化）</td></tr>
+<tr><td><code>location_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → locations.id</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿: <code>CASE</code> / <code>BALL</code> / <code>PIECE</code></td></tr>
+<tr><td><code>lot_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>ロット番号。ロット管理フラグOFFの場合 NULL</td></tr>
+<tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>期限日。期限管理フラグOFFの場合 NULL</td></tr>
+<tr><td><code>quantity</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>在庫数量（0以上）</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>最終更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約・インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (location_id, product_id, unit_type, lot_number, expiry_date) NULLS NOT DISTINCT</code> — PostgreSQL 15以降</li><li style="margin-left:0px"><code>CHECK (quantity &gt;= 0)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, product_id)</code> — 商品別在庫検索</li><li style="margin-left:0px"><code>INDEX (warehouse_id, location_id)</code> — ロケーション別在庫検索</li></ul>
+<blockquote>在庫数量は直接UPDATE。楽観的ロック（バージョン番号）を使用して並行更新の整合性を保証する（Javaエンティティ側で <code>@Version</code> アノテーション）。</blockquote>
+<hr>
+<h3><code>inventory_movements</code>（在庫変動履歴）</h3>
+<p>在庫の全増減を記録する追記専用テーブル。更新・削除は行わない。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>location_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → locations.id</td></tr>
+<tr><td><code>location_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ロケーションコード（記録時コピー）</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（記録時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（記録時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿</td></tr>
+<tr><td><code>lot_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>ロット番号</td></tr>
+<tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>期限日</td></tr>
+<tr><td><code>movement_type</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>変動種別（下記参照）</td></tr>
+<tr><td><code>quantity</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>変動数量（入庫方向は正、出庫方向は負）</td></tr>
+<tr><td><code>quantity_after</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>変動後の在庫数量</td></tr>
+<tr><td><code>reference_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>関連レコードID（入荷明細ID・出荷明細ID等）</td></tr>
+<tr><td><code>reference_type</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>関連テーブル種別（<code>INBOUND_LINE</code> / <code>PICKING_LINE</code> / <code>STOCKTAKE_LINE</code> 等）</td></tr>
+<tr><td><code>correction_reason</code></td><td>varchar(500)</td><td>NULL</td><td>—</td><td>在庫訂正理由（<code>movement_type = CORRECTION</code> の場合）</td></tr>
+<tr><td><code>executed_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>変動発生日時</td></tr>
+<tr><td><code>executed_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>実行者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>movement_type の値</strong>:</p>
+<table>
+<thead><tr><th>値</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>INBOUND</code></td><td>入庫（入荷確定）</td></tr>
+<tr><td><code>OUTBOUND</code></td><td>出庫（ピッキング完了）</td></tr>
+<tr><td><code>MOVE_OUT</code></td><td>在庫移動（移動元ロケーション）</td></tr>
+<tr><td><code>MOVE_IN</code></td><td>在庫移動（移動先ロケーション）</td></tr>
+<tr><td><code>BREAKDOWN_OUT</code></td><td>ばらし（上位荷姿の減少）</td></tr>
+<tr><td><code>BREAKDOWN_IN</code></td><td>ばらし（下位荷姿の増加）</td></tr>
+<tr><td><code>CORRECTION</code></td><td>在庫訂正（手動）</td></tr>
+<tr><td><code>STOCKTAKE_ADJUSTMENT</code></td><td>棚卸調整（棚卸確定時の差異反映）</td></tr>
+<tr><td><code>INBOUND_CANCEL</code></td><td>入荷キャンセルによる在庫戻し</td></tr>
+<p></tbody><br></table></p>
+<p><strong>インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>INDEX (warehouse_id, product_id, executed_at)</code> — 在庫推移レポート用</li><li style="margin-left:0px"><code>INDEX (warehouse_id, location_id, executed_at)</code> — ロケーション別履歴用</li></ul>
+<hr>
+<h3><code>stocktake_headers</code>（棚卸ヘッダ）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>stocktake_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>棚卸番号。一意。自動採番</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>target_description</code></td><td>varchar(500)</td><td>NULL</td><td>—</td><td>対象ロケーション範囲の説明（例: <code>A棟 1F全エリア</code>）</td></tr>
+<tr><td><code>status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>STARTED</code></td><td>ステータス: <code>STARTED</code>(棚卸中) / <code>CONFIRMED</code>(棚卸確定)</td></tr>
+<tr><td><code>started_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>棚卸開始日時</td></tr>
+<tr><td><code>started_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>開始者（FK → users.id）</td></tr>
+<tr><td><code>confirmed_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>棚卸確定日時</td></tr>
+<tr><td><code>confirmed_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>確定者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (stocktake_number)</code></li><li style="margin-left:0px">棚卸中（<code>STARTED</code>）のロケーションは無効化不可（アプリ層で制御）</li></ul>
+<hr>
+<h3><code>stocktake_lines</code>（棚卸明細）</h3>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>stocktake_header_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → stocktake_headers.id</td></tr>
+<tr><td><code>location_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → locations.id</td></tr>
+<tr><td><code>location_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>ロケーションコード（作成時コピー）</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（作成時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（作成時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿</td></tr>
+<tr><td><code>lot_number</code></td><td>varchar(100)</td><td>NULL</td><td>—</td><td>ロット番号</td></tr>
+<tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>期限日</td></tr>
+<tr><td><code>quantity_before</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>棚卸前在庫数量（棚卸開始時点の在庫数）</td></tr>
+<tr><td><code>quantity_counted</code></td><td>int</td><td>NULL</td><td>—</td><td>実数（棚卸入力値）</td></tr>
+<tr><td><code>quantity_diff</code></td><td>int</td><td>NULL</td><td>—</td><td>差異数（<code>quantity_counted - quantity_before</code>。確定時に算出）</td></tr>
+<tr><td><code>is_counted</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>実数入力済みフラグ</td></tr>
+<tr><td><code>counted_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>実数入力日時</td></tr>
+<tr><td><code>counted_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>実数入力者（FK → users.id）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>INDEX (stocktake_header_id, location_code)</code> — ロケーションコード順ソート（棚卸リスト出力）</li></ul>
+<hr>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="04-batch-tables">
+<h1>データモデル定義 — バッチ・集計・バックアップ系テーブル</h1>
+<h2>バッチ管理系</h2>
+<h3><code>business_date</code>（営業日管理）</h3>
+<p>システムの現在営業日を管理する単一レコードテーブル。日替処理の「営業日更新」ステップで更新される。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>int</td><td>NOT NULL</td><td>1</td><td>PK（常に1のみ存在）</td></tr>
+<tr><td><code>current_business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>現在の営業日</td></tr>
+<tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>updated_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>更新者（FK → users.id。バッチ実行者）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>レコードは1件のみ。<code>SELECT ... FOR UPDATE</code> で排他制御して更新する。</blockquote>
+<hr>
+<h3><code>batch_execution_logs</code>（バッチ実行履歴）</h3>
+<p>日替処理の実行履歴を全て記録する。成功・失敗を問わず保持。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>target_business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>処理対象営業日</td></tr>
+<tr><td><code>status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>RUNNING</code></td><td>実行状態: <code>RUNNING</code>(実行中) / <code>SUCCESS</code>(成功) / <code>FAILED</code>(失敗)</td></tr>
+<tr><td><code>step1_status</code></td><td>varchar(20)</td><td>NULL</td><td>—</td><td>営業日更新: <code>SUCCESS</code> / <code>FAILED</code> / <code>SKIPPED</code></td></tr>
+<tr><td><code>step2_status</code></td><td>varchar(20)</td><td>NULL</td><td>—</td><td>入荷実績集計: <code>SUCCESS</code> / <code>FAILED</code> / <code>SKIPPED</code></td></tr>
+<tr><td><code>step3_status</code></td><td>varchar(20)</td><td>NULL</td><td>—</td><td>出荷実績集計: <code>SUCCESS</code> / <code>FAILED</code> / <code>SKIPPED</code></td></tr>
+<tr><td><code>step4_status</code></td><td>varchar(20)</td><td>NULL</td><td>—</td><td>在庫集計: <code>SUCCESS</code> / <code>FAILED</code> / <code>SKIPPED</code></td></tr>
+<tr><td><code>step5_status</code></td><td>varchar(20)</td><td>NULL</td><td>—</td><td>トランデータバックアップ: <code>SUCCESS</code> / <code>FAILED</code> / <code>SKIPPED</code></td></tr>
+<tr><td><code>error_message</code></td><td>text</td><td>NULL</td><td>—</td><td>エラー発生時のメッセージ</td></tr>
+<tr><td><code>started_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>実行開始日時</td></tr>
+<tr><td><code>completed_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>実行完了日時（成功・失敗問わず処理終了時にセット）</td></tr>
+<tr><td><code>executed_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>実行者（FK → users.id）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (target_business_date)</code> — 同一営業日の二重実行防止</li><li style="margin-left:20px">ただし <code>status = 'FAILED'</code> のレコードが存在する場合は再実行可能（アプリ層で制御：FAILED のレコードを削除してから再登録）</li></ul>
+<blockquote><strong>二重実行防止の仕組み</strong>: 実行開始時に <code>INSERT INTO batch_execution_logs</code> で RUNNING レコードを挿入。既にレコードが存在すれば UNIQUE 制約違反でエラー。ただし <code>FAILED</code> レコードの場合は削除して再実行可能。</blockquote>
+<hr>
+<h2>集計系</h2>
+<h3><code>inbound_summaries</code>（入荷実績サマリー）</h3>
+<p>日替処理の「入荷実績集計」ステップで生成。対象営業日の入庫完了データを集計する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>対象営業日</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（集計時コピー）</td></tr>
+<tr><td><code>inbound_count</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>入庫完了件数（入荷ヘッダ単位）</td></tr>
+<tr><td><code>inbound_line_count</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>入庫完了明細件数</td></tr>
+<tr><td><code>inbound_quantity_total</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>入庫数量合計</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (business_date, warehouse_id)</code></li></ul>
+<hr>
+<h3><code>outbound_summaries</code>（出荷実績サマリー）</h3>
+<p>日替処理の「出荷実績集計」ステップで生成。対象営業日の出荷完了データを集計する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>対象営業日</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（集計時コピー）</td></tr>
+<tr><td><code>outbound_count</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>出荷完了件数（出荷ヘッダ単位）</td></tr>
+<tr><td><code>outbound_line_count</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>出荷完了明細件数</td></tr>
+<tr><td><code>outbound_quantity_total</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>出荷数量合計</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (business_date, warehouse_id)</code></li></ul>
+<hr>
+<h3><code>inventory_snapshots</code>（在庫スナップショット）</h3>
+<p>日替処理の「在庫集計」ステップで生成。営業日末時点の在庫数量サマリー。商品・倉庫・荷姿単位で集計。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>対象営業日</td></tr>
+<tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（集計時コピー）</td></tr>
+<tr><td><code>product_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → products.id</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（集計時コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（集計時コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿</td></tr>
+<tr><td><code>total_quantity</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>在庫数量合計</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>制約</strong>:</p>
+<ul><li style="margin-left:0px"><code>UNIQUE (business_date, warehouse_id, product_id, unit_type)</code></li></ul>
+<hr>
+<h3><code>unreceived_list_records</code>（未入荷リスト確定）</h3>
+<p>日替処理で自動生成。入荷予定日が対象営業日以前で入庫完了していない入荷予定を記録する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>batch_business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>日替処理の対象営業日</td></tr>
+<tr><td><code>inbound_slip_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → inbound_slips.id</td></tr>
+<tr><td><code>slip_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>伝票番号（コピー）</td></tr>
+<tr><td><code>planned_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>入荷予定日（コピー）</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（コピー）</td></tr>
+<tr><td><code>partner_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>仕入先コード（コピー）</td></tr>
+<tr><td><code>partner_name</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>仕入先名（コピー）</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿（コピー）</td></tr>
+<tr><td><code>planned_qty</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>入荷予定数（コピー）</td></tr>
+<tr><td><code>current_status</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>記録時点のステータス（コピー）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>INDEX (batch_business_date, warehouse_code)</code></li></ul>
+<hr>
+<h3><code>unshipped_list_records</code>（未出荷リスト確定）</h3>
+<p>日替処理で自動生成。出荷予定日が対象営業日以前で出荷完了していない受注を記録する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>NULL</th><th>デフォルト</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>bigserial</td><td>NOT NULL</td><td>—</td><td>PK</td></tr>
+<tr><td><code>batch_business_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>日替処理の対象営業日</td></tr>
+<tr><td><code>outbound_slip_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → outbound_slips.id</td></tr>
+<tr><td><code>slip_number</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>伝票番号（コピー）</td></tr>
+<tr><td><code>planned_date</code></td><td>date</td><td>NOT NULL</td><td>—</td><td>出荷予定日（コピー）</td></tr>
+<tr><td><code>warehouse_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>倉庫コード（コピー）</td></tr>
+<tr><td><code>partner_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>出荷先コード（コピー）</td></tr>
+<tr><td><code>partner_name</code></td><td>varchar(200)</td><td>NULL</td><td>—</td><td>出荷先名（コピー）</td></tr>
+<tr><td><code>product_code</code></td><td>varchar(50)</td><td>NOT NULL</td><td>—</td><td>商品コード（コピー）</td></tr>
+<tr><td><code>product_name</code></td><td>varchar(200)</td><td>NOT NULL</td><td>—</td><td>商品名（コピー）</td></tr>
+<tr><td><code>unit_type</code></td><td>varchar(10)</td><td>NOT NULL</td><td>—</td><td>荷姿（コピー）</td></tr>
+<tr><td><code>ordered_qty</code></td><td>int</td><td>NOT NULL</td><td>—</td><td>受注数量（コピー）</td></tr>
+<tr><td><code>current_status</code></td><td>varchar(30)</td><td>NOT NULL</td><td>—</td><td>記録時点のステータス（コピー）</td></tr>
+<tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
+<p></tbody><br></table></p>
+<p><strong>インデックス</strong>:</p>
+<ul><li style="margin-left:0px"><code>INDEX (batch_business_date, warehouse_code)</code></li></ul>
+<hr>
+<h2>バックアップ系</h2>
+<p>日替処理の「トランデータバックアップ」ステップで、ステータスが完了状態かつ2か月以上前のトランザクションデータを複製する。元テーブルとスキーマを同一とし、<code>_backup</code> サフィックスを付与する。</p>
+<h3>バックアップ対象テーブル一覧</h3>
+<table>
+<thead><tr><th>バックアップテーブル名</th><th>元テーブル</th><th>バックアップ条件</th></tr></thead>
+<tbody>
+<tr><td><code>inbound_slips_backup</code></td><td><code>inbound_slips</code></td><td><code>status = 'STORED'</code> かつ <code>updated_at &lt; 現在 - 2ヶ月</code></td></tr>
+<tr><td><code>inbound_slip_lines_backup</code></td><td><code>inbound_slip_lines</code></td><td>親の <code>inbound_slips</code> がバックアップ対象</td></tr>
+<tr><td><code>outbound_slips_backup</code></td><td><code>outbound_slips</code></td><td><code>status = 'SHIPPED'</code> かつ <code>updated_at &lt; 現在 - 2ヶ月</code></td></tr>
+<tr><td><code>outbound_slip_lines_backup</code></td><td><code>outbound_slip_lines</code></td><td>親の <code>outbound_slips</code> がバックアップ対象</td></tr>
+<tr><td><code>inventory_movements_backup</code></td><td><code>inventory_movements</code></td><td><code>executed_at &lt; 現在 - 2ヶ月</code></td></tr>
+<p></tbody><br></table></p>
+<h3>バックアップテーブルの追加カラム</h3>
+<p>元テーブルの全カラムに加え、以下のカラムを追加する。</p>
+<table>
+<thead><tr><th>カラム名</th><th>型</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>backed_up_at</code></td><td>timestamptz NOT NULL DEFAULT now()</td><td>バックアップ実行日時</td></tr>
+<tr><td><code>batch_execution_log_id</code></td><td>bigint NOT NULL</td><td>FK → batch_execution_logs.id（どの日替処理でバックアップされたか）</td></tr>
+<p></tbody><br></table></p>
+<h3>バックアップ処理の方針</h3>
+<ul><li style="margin-left:0px"><strong>複製方式</strong>: <code>INSERT INTO xxx_backup SELECT ... FROM xxx WHERE [条件]</code></li><li style="margin-left:0px"><strong>元データの扱い</strong>: バックアップ後も元テーブルのデータは削除しない（参照整合性を維持）</li><li style="margin-left:0px"><strong>保持期間</strong>: 無期限（Azure PostgreSQL の自動バックアップとは別の業務データアーカイブ）</li><li style="margin-left:0px"><strong>重複防止</strong>: 既にバックアップ済みのレコードは <code>ON CONFLICT DO NOTHING</code> で重複挿入をスキップ（ただし元テーブルには <code>backed_up_at</code> カラムなし。バックアップテーブル側の <code>id</code> + <code>batch_execution_log_id</code> の一意制約で管理）</li></ul>
+</div>
 </main>
-<footer>Generated by Claude Code — 2026/3/12 23:28:08</footer>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
 
 </body>
 </html>

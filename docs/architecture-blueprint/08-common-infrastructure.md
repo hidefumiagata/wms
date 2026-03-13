@@ -111,3 +111,4 @@ WMS-I-SHP-001  → 情報 / 出荷 / 001
 | **バリデーション** | Jakarta Bean Validation（Controller層）+ ビジネスルール（Service層） |
 | **トランザクション** | `@Transactional` をService層に付与 |
 | **トレースID** | リクエストごとにUUIDを付与、全ログに埋め込み |
+| **営業日** | `system_parameters` テーブルから都度取得（キャッシュなし）。全業務処理は営業日を基準とする。詳細は [01-overall-architecture.md](01-overall-architecture.md) 参照 |

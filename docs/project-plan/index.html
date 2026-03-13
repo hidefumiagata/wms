@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>プロジェクト計画書 - WMS ShowCase</title>
+  <title>プロジェクト計画書 — WMS ShowCase</title>
   <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
@@ -14,41 +14,35 @@
   nav.breadcrumb a { color: #0f3460; text-decoration: none; }
   nav.breadcrumb a:hover { text-decoration: underline; }
   main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-top: 32px; }
-  .card { background: white; border-radius: 12px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; border: 1px solid #eee; }
-  .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-color: #0f3460; }
-  .card .icon { font-size: 2.5rem; margin-bottom: 16px; }
-  .card h2 { font-size: 1.1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
-  .card .subtitle { font-size: 0.85rem; color: #888; margin-bottom: 12px; }
-  .card .file-count { font-size: 0.8rem; color: #aaa; }
-  .badge { display: inline-block; background: #e8f0fe; color: #0f3460; font-size: 0.75rem; padding: 2px 10px; border-radius: 20px; }
-  .badge.empty { background: #f5f5f5; color: #aaa; }
-  .section-header { margin-bottom: 32px; }
-  .section-header h1 { font-size: 1.6rem; color: #1a1a2e; display: flex; align-items: center; gap: 12px; }
-  .doc-list { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
-  .doc-item { padding: 20px 28px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
-  .doc-item:last-child { border-bottom: none; }
-  .doc-item a { text-decoration: none; color: #0f3460; font-weight: 500; font-size: 1rem; }
-  .doc-item a:hover { text-decoration: underline; }
-  .doc-item .meta { font-size: 0.8rem; color: #aaa; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
   .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
   .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
   .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
   .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
   .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
   .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
   .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
   .markdown-body tr:hover td { background: #f8f9ff; }
-  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', 'Monaco', monospace; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
   .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
-  .markdown-body pre code { background: none; color: inherit; padding: 0; font-size: 0.88em; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
   .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
   .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
   .markdown-body li { margin: 4px 0; }
   .markdown-body p { margin: 12px 0; }
-  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
-  .drawio-wrapper { margin: 20px 0; }
-  .drawio-label { font-size: 0.85rem; color: #888; margin-bottom: 8px; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
   footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
 </style>
 </head>
@@ -57,235 +51,116 @@
   <h1>🏭 WMS ShowCase</h1>
   <p>Warehouse Management System — Built with Claude Code</p>
 </header>
-<nav class="breadcrumb"><a href="../index.html">Home</a> &rsaquo; プロジェクト計画書</nav>
+<nav class="breadcrumb">
+  <a href="../index.html">Home</a> &rsaquo; プロジェクト計画書
+</nav>
 <main>
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 プロジェクト計画書</h1>
+    <p style="color:#888;margin-top:8px;font-size:0.9rem;">Project Plan</p>
+  </div>
+  
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#01-project-charter">1. プロジェクト憲章 (Project Charter)</a></li>
+        <li><a href="#02-wbs-draft">2. WBS（作業分解構造）ドラフト</a></li>
+        <li><a href="#03-requirements-management-plan">3. 要件管理計画 (Requirements Management Plan)</a></li>
+        <li><a href="#05-cost-management-plan">4. コスト管理計画書 (Cost Management Plan)</a></li>
+        <li><a href="#06-quality-management-plan">5. 品質管理計画 (Quality Management Plan)</a></li>
+        <li><a href="#07-resource-management-plan">6. リソース管理計画 (Resource Management Plan)</a></li>
+        <li><a href="#08-communication-management-plan">7. コミュニケーション管理計画 (Communication Management Plan)</a></li>
+        <li><a href="#09-risk-management-plan">8. リスク管理計画 (Risk Management Plan)</a></li>
+        <li><a href="#10-procurement-management-plan">9. 調達管理計画 (Procurement Management Plan)</a></li>
+        <li><a href="#11-stakeholder-management-plan">10. ステークホルダー管理計画 (Stakeholder Management Plan)</a></li>
+        <li><a href="#12-change-management-plan">11. 変更管理計画 (Change Management Plan)</a></li>
+    </ol>
+  </div>
 
-    <div class="section-header">
-      <h1>📋 プロジェクト計画書</h1>
-      <p style="color:#888;margin-top:8px;font-size:0.9rem">Project Plan</p>
-    </div>
-    <div style="background:white;border-radius:12px;padding:20px 28px;margin-bottom:32px;box-shadow:0 2px 12px rgba(0,0,0,0.08)">
-      <strong style="color:#1a1a2e">目次</strong>
-      <ul style="margin-top:12px;padding-left:24px"><li><a href="#01-project-charter">01-project-charter</a></li><li><a href="#02-wbs-draft">02-wbs-draft</a></li><li><a href="#03-requirements-management-plan">03-requirements-management-plan</a></li><li><a href="#05-cost-management-plan">05-cost-management-plan</a></li><li><a href="#06-quality-management-plan">06-quality-management-plan</a></li><li><a href="#07-resource-management-plan">07-resource-management-plan</a></li><li><a href="#08-communication-management-plan">08-communication-management-plan</a></li><li><a href="#09-risk-management-plan">09-risk-management-plan</a></li><li><a href="#10-procurement-management-plan">10-procurement-management-plan</a></li><li><a href="#11-stakeholder-management-plan">11-stakeholder-management-plan</a></li><li><a href="#12-change-management-plan">12-change-management-plan</a></li></ul>
-    </div>
-    <div class="markdown-body" id="01-project-charter"><h1>プロジェクト憲章 (Project Charter)</h1>
+<hr class="doc-separator">
+<div class="markdown-body" id="01-project-charter">
+<h1>プロジェクト憲章 (Project Charter)</h1>
 <h2>1. プロジェクト概要</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>プロジェクト名</strong></td>
-<td>WMS ShowCase - Claude Code による本格業務システム開発</td>
-</tr>
-<tr>
-<td><strong>作成日</strong></td>
-<td>2026-03-12</td>
-</tr>
-<tr>
-<td><strong>バージョン</strong></td>
-<td>1.0</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>プロジェクト名</strong></td><td>WMS ShowCase - Claude Code による本格業務システム開発</td></tr>
+<tr><td><strong>作成日</strong></td><td>2026-03-12</td></tr>
+<tr><td><strong>バージョン</strong></td><td>1.0</td></tr>
+<p></tbody><br></table></p>
 <h2>2. プロジェクト目的</h2>
 <table>
-<thead>
-<tr>
-<th>#</th>
-<th>目的</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>汎用WMSパッケージソフトウェアの構築（業種・規模を問わず運用可能）</td>
-</tr>
-<tr>
-<td>2</td>
-<td>Claude Code ShowCase（Claude Codeで本格業務システムが作れることの実証）</td>
-</tr>
-</tbody></table>
+<thead><tr><th>#</th><th>目的</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>汎用WMSパッケージソフトウェアの構築（業種・規模を問わず運用可能）</td></tr>
+<tr><td>2</td><td>Claude Code ShowCase（Claude Codeで本格業務システムが作れることの実証）</td></tr>
+<p></tbody><br></table></p>
 <h2>3. 機能スコープ</h2>
 <h3>対象機能（In Scope）</h3>
 <table>
-<thead>
-<tr>
-<th>カテゴリ</th>
-<th>機能</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>入荷管理</strong></td>
-<td>入荷予定取り込み・入荷検品・入庫指示</td>
-</tr>
-<tr>
-<td><strong>在庫管理</strong></td>
-<td>ロケーション管理・棚卸・在庫照会</td>
-</tr>
-<tr>
-<td><strong>出荷管理</strong></td>
-<td>受注取り込み・ピッキング指示・出荷検品・配送指示</td>
-</tr>
-<tr>
-<td><strong>マスタ管理</strong></td>
-<td>商品・取引先・ロケーション・ユーザ</td>
-</tr>
-<tr>
-<td><strong>レポート</strong></td>
-<td>入荷予定・入庫実績・未入荷リスト・在庫一覧・在庫推移・在庫訂正一覧・棚卸リスト・棚卸結果・ピッキング指示書・出荷検品・配送リスト・未出荷リスト・日次集計（全13種、詳細は機能要件定義書参照）</td>
-</tr>
-<tr>
-<td><strong>外部連携I/F</strong></td>
-<td>入荷予定取り込みI/F・受注取り込みI/F</td>
-</tr>
-<tr>
-<td><strong>バッチ処理</strong></td>
-<td>日替処理（営業日更新・入荷実績集計・出荷実績集計・在庫集計・トランデータバックアップ）</td>
-</tr>
-</tbody></table>
+<thead><tr><th>カテゴリ</th><th>機能</th></tr></thead>
+<tbody>
+<tr><td><strong>入荷管理</strong></td><td>入荷予定取り込み・入荷検品・入庫指示</td></tr>
+<tr><td><strong>在庫管理</strong></td><td>ロケーション管理・棚卸・在庫照会</td></tr>
+<tr><td><strong>出荷管理</strong></td><td>受注取り込み・ピッキング指示・出荷検品・配送指示</td></tr>
+<tr><td><strong>マスタ管理</strong></td><td>商品・取引先・倉庫・棟・エリア・ロケーション・ユーザ</td></tr>
+<tr><td><strong>レポート</strong></td><td>入荷検品・入荷予定・入庫実績・未入荷リスト（リアルタイム）・未入荷リスト（確定）・在庫一覧・在庫推移・在庫訂正一覧・棚卸リスト・棚卸結果・ピッキング指示書・出荷検品・配送リスト・未出荷リスト（リアルタイム）・未出荷リスト（確定）・日次集計（全16種、詳細は機能要件定義書参照）</td></tr>
+<tr><td><strong>外部連携I/F</strong></td><td>入荷予定取り込みI/F・受注取り込みI/F</td></tr>
+<tr><td><strong>バッチ処理</strong></td><td>日替処理（営業日更新・入荷実績集計・出荷実績集計・在庫集計・トランデータバックアップ）</td></tr>
+<p></tbody><br></table></p>
 <h3>対象外機能（Out of Scope）</h3>
 <table>
-<thead>
-<tr>
-<th>カテゴリ</th>
-<th>理由</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>外部設備連携</strong></td>
-<td>バーコードリーダー・RFID・自動倉庫等は対象外</td>
-</tr>
-</tbody></table>
-<h2>4. ステークホルダー &amp; 体制</h2>
+<thead><tr><th>カテゴリ</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td><strong>外部設備連携</strong></td><td>バーコードリーダー・RFID・自動倉庫等は対象外</td></tr>
+<p></tbody><br></table></p>
+<h2>4. ステークホルダー & 体制</h2>
 <table>
-<thead>
-<tr>
-<th>役割</th>
-<th>担当</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>プロジェクトオーナー / PM</strong></td>
-<td>プロジェクトオーナー</td>
-</tr>
-<tr>
-<td><strong>開発者</strong></td>
-<td>プロジェクトオーナー ＋ Claude Code</td>
-</tr>
-<tr>
-<td><strong>想定エンドユーザー</strong></td>
-<td>社内の同僚（倉庫業務担当者・管理者）</td>
-</tr>
-<tr>
-<td><strong>ShowCase閲覧者</strong></td>
-<td>GitHubを通じた外部エンジニア・企業</td>
-</tr>
-<tr>
-<td><strong>成果物公開先</strong></td>
-<td>GitHub（Public リポジトリ）</td>
-</tr>
-</tbody></table>
-<h2>5. 制約条件 &amp; 前提条件</h2>
+<thead><tr><th>役割</th><th>担当</th></tr></thead>
+<tbody>
+<tr><td><strong>プロジェクトオーナー / PM</strong></td><td>プロジェクトオーナー</td></tr>
+<tr><td><strong>開発者</strong></td><td>プロジェクトオーナー ＋ Claude Code</td></tr>
+<tr><td><strong>想定エンドユーザー</strong></td><td>社内の同僚（倉庫業務担当者・管理者）</td></tr>
+<tr><td><strong>ShowCase閲覧者</strong></td><td>GitHubを通じた外部エンジニア・企業</td></tr>
+<tr><td><strong>成果物公開先</strong></td><td>GitHub（Public リポジトリ）</td></tr>
+<p></tbody><br></table></p>
+<h2>5. 制約条件 & 前提条件</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>クラウド</strong></td>
-<td>Azure</td>
-</tr>
-<tr>
-<td><strong>フロントエンド</strong></td>
-<td>Vue 3 + TypeScript + Element Plus + Vite + Pinia + vue-i18n（日英対応）</td>
-</tr>
-<tr>
-<td><strong>バックエンド</strong></td>
-<td>Spring Boot 3.x + Java 21 + Gradle</td>
-</tr>
-<tr>
-<td><strong>データベース</strong></td>
-<td>Azure Database for PostgreSQL Flexible Server（B1ms）</td>
-</tr>
-<tr>
-<td><strong>コンテナ</strong></td>
-<td>Azure Container Apps（min replicas=0）</td>
-</tr>
-<tr>
-<td><strong>ストレージ</strong></td>
-<td>Azure Blob Storage（フロントエンド静的ホスティング + I/Fファイル）</td>
-</tr>
-<tr>
-<td><strong>IaC</strong></td>
-<td>Terraform</td>
-</tr>
-<tr>
-<td><strong>認証</strong></td>
-<td>Spring Security + JWT + httpOnly Cookie</td>
-</tr>
-<tr>
-<td><strong>開発期間</strong></td>
-<td>約1週間（Claude Code並列開発でアグレッシブに進める）</td>
-</tr>
-<tr>
-<td><strong>コスト</strong></td>
-<td>極力ゼロ（Azureの無料枠・低コストプラン、OSSのみ使用を原則とする）</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p><strong>注記</strong>：1週間でフル機能WMSを完成させるのは通常不可能だが、Claude Codeのマルチエージェント並列開発をフル活用することでこれを実現することがShowCaseの核心部分である。</p>
-</blockquote>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>クラウド</strong></td><td>Azure</td></tr>
+<tr><td><strong>フロントエンド</strong></td><td>Vue 3 + TypeScript + Element Plus + Vite + Pinia + vue-i18n（日英対応）</td></tr>
+<tr><td><strong>バックエンド</strong></td><td>Spring Boot 3.x + Java 21 + Gradle</td></tr>
+<tr><td><strong>データベース</strong></td><td>Azure Database for PostgreSQL Flexible Server（B1ms）</td></tr>
+<tr><td><strong>コンテナ</strong></td><td>Azure Container Apps（min replicas=0）</td></tr>
+<tr><td><strong>ストレージ</strong></td><td>Azure Blob Storage（フロントエンド静的ホスティング + I/Fファイル）</td></tr>
+<tr><td><strong>IaC</strong></td><td>Terraform</td></tr>
+<tr><td><strong>認証</strong></td><td>Spring Security + JWT + httpOnly Cookie</td></tr>
+<tr><td><strong>開発期間</strong></td><td>約1週間（Claude Code並列開発でアグレッシブに進める）</td></tr>
+<tr><td><strong>コスト</strong></td><td>極力ゼロ（Azureの無料枠・低コストプラン、OSSのみ使用を原則とする）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>注記</strong>：1週間でフル機能WMSを完成させるのは通常不可能だが、Claude Codeのマルチエージェント並列開発をフル活用することでこれを実現することがShowCaseの核心部分である。</blockquote>
 <h2>6. 成功基準（Definition of Done）</h2>
 <table>
-<thead>
-<tr>
-<th>レベル</th>
-<th>内容</th>
-<th>実現方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>A</strong></td>
-<td>全機能が画面から操作できる（テストデータあり）</td>
-<td>完全実装</td>
-</tr>
-<tr>
-<td><strong>B</strong></td>
-<td>外部連携I/Fによるファイル取り込み</td>
-<td>モック実装</td>
-</tr>
-<tr>
-<td><strong>C</strong></td>
-<td>バッチ処理の実行</td>
-<td>手動実行（スケジューリングなし）</td>
-</tr>
-<tr>
-<td><strong>D</strong></td>
-<td>本番同等データ量での動作</td>
-<td>完全実装（パフォーマンステスト含む）</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="02-wbs-draft"><h1>WBS（作業分解構造）ドラフト</h1>
-<blockquote>
-<p><strong>ステータス</strong>: ドラフト（暫定）
-<strong>注記</strong>: アーキテクチャ設計・運用設計が確定した後に拡充する。
-現時点では機能スコープの骨格のみ定義。</p>
-</blockquote>
+<thead><tr><th>レベル</th><th>内容</th><th>実現方式</th></tr></thead>
+<tbody>
+<tr><td><strong>A</strong></td><td>全機能が画面から操作できる（テストデータあり）</td><td>完全実装</td></tr>
+<tr><td><strong>B</strong></td><td>外部連携I/Fによるファイル取り込み</td><td>モック実装</td></tr>
+<tr><td><strong>C</strong></td><td>バッチ処理の実行</td><td>手動実行（スケジューリングなし）</td></tr>
+<tr><td><strong>D</strong></td><td>本番同等データ量での動作</td><td>完全実装（パフォーマンステスト含む）</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="02-wbs-draft">
+<h1>WBS（作業分解構造）ドラフト</h1>
+<blockquote><strong>ステータス</strong>: ドラフト（暫定）
+<p><strong>注記</strong>: アーキテクチャ設計・運用設計が確定した後に拡充する。<br>現時点では機能スコープの骨格のみ定義。</blockquote></p>
 <h2>未決定・後で追加が必要な領域</h2>
-<ul>
-<li>インフラ詳細（Terraformベース確定、具体的リソース構成はアーキテクチャで決定）</li>
-<li>アプリ共通機能（ログ出力方式・保存先・エラーハンドリング等）</li>
-<li>運用設計（ITILベースの業務フロー・インシデント管理方法）</li>
-<li>セキュリティ設計</li>
-<li>監視・アラート設計</li>
-</ul>
+<ul><li style="margin-left:0px">インフラ詳細（Terraformベース確定、具体的リソース構成はアーキテクチャで決定）</li><li style="margin-left:0px">アプリ共通機能（ログ出力方式・保存先・エラーハンドリング等）</li><li style="margin-left:0px">運用設計（ITILベースの業務フロー・インシデント管理方法）</li><li style="margin-left:0px">セキュリティ設計</li><li style="margin-left:0px">監視・アラート設計</li></ul>
 <hr>
 <h2>WBS 骨格（ドラフト）</h2>
-<pre><code>1. WMS Project
+<pre><code class="lang-">1. WMS Project
 ├── 1.1 プロジェクト管理
 │   ├── 1.1.1 計画書作成
 │   ├── 1.1.2 進捗管理
@@ -342,736 +217,323 @@
     ├── 1.10.1 統合テスト
     ├── 1.10.2 パフォーマンステスト
     ├── 1.10.3 本番デプロイ
-    └── 1.10.4 GitHub公開・README整備
-</code></pre>
-</div><hr class="doc-separator"><div class="markdown-body" id="03-requirements-management-plan"><h1>要件管理計画 (Requirements Management Plan)</h1>
+    └── 1.10.4 GitHub公開・README整備</code></pre>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="03-requirements-management-plan">
+<h1>要件管理計画 (Requirements Management Plan)</h1>
 <h2>1. 変更管理方針</h2>
-<ul>
-<li>要件変更は議論→合意のうえ、ドキュメントを即時更新する（軽量変更管理）</li>
-<li>変更履歴はGitのコミット履歴で管理する</li>
-</ul>
+<ul><li style="margin-left:0px">要件変更は議論→合意のうえ、ドキュメントを即時更新する（軽量変更管理）</li><li style="margin-left:0px">変更履歴はGitのコミット履歴で管理する</li></ul>
 <h2>2. トレーサビリティ</h2>
 <p>すべての要件は <strong>機能ID</strong> と <strong>GitHub Issue ID</strong> で紐付け、以下の経路を追跡可能にする。</p>
-<pre><code>要件（機能ID）
+<pre><code class="lang-">要件（機能ID）
   └── 設計ドキュメント（機能ID参照）
         └── 実装（GitHub Issue ID参照）
-              └── テストケース（機能ID + Issue ID参照）
-</code></pre>
+              └── テストケース（機能ID + Issue ID参照）</code></pre>
 <h2>3. 機能IDの体系（暫定）</h2>
 <table>
-<thead>
-<tr>
-<th>プレフィックス</th>
-<th>カテゴリ</th>
-<th>例</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><code>WMS-MST</code></td>
-<td>マスタ管理</td>
-<td>WMS-MST-001</td>
-</tr>
-<tr>
-<td><code>WMS-INB</code></td>
-<td>入荷管理</td>
-<td>WMS-INB-001</td>
-</tr>
-<tr>
-<td><code>WMS-INV</code></td>
-<td>在庫管理</td>
-<td>WMS-INV-001</td>
-</tr>
-<tr>
-<td><code>WMS-SHP</code></td>
-<td>出荷管理</td>
-<td>WMS-SHP-001</td>
-</tr>
-<tr>
-<td><code>WMS-RPT</code></td>
-<td>レポート</td>
-<td>WMS-RPT-001</td>
-</tr>
-<tr>
-<td><code>WMS-IFX</code></td>
-<td>外部連携I/F</td>
-<td>WMS-IFX-001</td>
-</tr>
-<tr>
-<td><code>WMS-BAT</code></td>
-<td>バッチ処理</td>
-<td>WMS-BAT-001</td>
-</tr>
-<tr>
-<td><code>WMS-INF</code></td>
-<td>インフラ/基盤</td>
-<td>WMS-INF-001</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p><strong>注記</strong>: 機能IDの詳細は機能要件定義書作成時に確定する。</p>
-</blockquote>
+<thead><tr><th>プレフィックス</th><th>カテゴリ</th><th>例</th></tr></thead>
+<tbody>
+<tr><td><code>WMS-MST</code></td><td>マスタ管理</td><td>WMS-MST-001</td></tr>
+<tr><td><code>WMS-INB</code></td><td>入荷管理</td><td>WMS-INB-001</td></tr>
+<tr><td><code>WMS-INV</code></td><td>在庫管理</td><td>WMS-INV-001</td></tr>
+<tr><td><code>WMS-SHP</code></td><td>出荷管理</td><td>WMS-SHP-001</td></tr>
+<tr><td><code>WMS-RPT</code></td><td>レポート</td><td>WMS-RPT-001</td></tr>
+<tr><td><code>WMS-IFX</code></td><td>外部連携I/F</td><td>WMS-IFX-001</td></tr>
+<tr><td><code>WMS-BAT</code></td><td>バッチ処理</td><td>WMS-BAT-001</td></tr>
+<tr><td><code>WMS-INF</code></td><td>インフラ/基盤</td><td>WMS-INF-001</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>注記</strong>: 機能IDの詳細は機能要件定義書作成時に確定する。</blockquote>
 <h2>4. 要件フォーマット</h2>
 <p>機能仕様書形式で記述し、各機能について以下を明記する：</p>
-<ul>
-<li><strong>機能ID</strong></li>
-<li><strong>機能名</strong></li>
-<li><strong>概要</strong></li>
-<li><strong>画面仕様</strong>（画面レイアウト・操作フロー）</li>
-<li><strong>API仕様</strong>（エンドポイント・リクエスト/レスポンス）</li>
-<li><strong>DB仕様</strong>（テーブル・カラム・制約）</li>
-<li><strong>関連GitHub Issue ID</strong></li>
-</ul>
-</div><hr class="doc-separator"><div class="markdown-body" id="05-cost-management-plan"><h1>コスト管理計画書 (Cost Management Plan)</h1>
+<ul><li style="margin-left:0px"><strong>機能ID</strong></li><li style="margin-left:0px"><strong>機能名</strong></li><li style="margin-left:0px"><strong>概要</strong></li><li style="margin-left:0px"><strong>画面仕様</strong>（画面レイアウト・操作フロー）</li><li style="margin-left:0px"><strong>API仕様</strong>（エンドポイント・リクエスト/レスポンス）</li><li style="margin-left:0px"><strong>DB仕様</strong>（テーブル・カラム・制約）</li><li style="margin-left:0px"><strong>関連GitHub Issue ID</strong></li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="05-cost-management-plan">
+<h1>コスト管理計画書 (Cost Management Plan)</h1>
 <h2>1. コスト方針</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>基本方針</strong></td>
-<td>極力ゼロ（Azure低コストプラン・無料枠・OSSのみ）</td>
-</tr>
-<tr>
-<td><strong>対象期間</strong></td>
-<td>開発期間 + ShowCase公開期間</td>
-</tr>
-<tr>
-<td><strong>コスト管理者</strong></td>
-<td>プロジェクトオーナー</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>基本方針</strong></td><td>極力ゼロ（Azure低コストプラン・無料枠・OSSのみ）</td></tr>
+<tr><td><strong>対象期間</strong></td><td>開発期間 + ShowCase公開期間</td></tr>
+<tr><td><strong>コスト管理者</strong></td><td>プロジェクトオーナー</td></tr>
+<p></tbody><br></table></p>
 <h2>2. Azure リソースコスト概算</h2>
-<h3>稼働状態別コスト</h3>
+<h3>運用方針</h3>
+<p>Terraform Deploy/Destroy 運用により、必要な時だけインフラを立ち上げる。</p>
 <table>
-<thead>
-<tr>
-<th>状態</th>
-<th>月額概算</th>
-<th>備考</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>稼働時（dev + prd両方）</strong></td>
-<td>~$18/月</td>
-<td>PostgreSQL B1ms × 2 + Container Apps + Blob</td>
-</tr>
-<tr>
-<td><strong>停止時（Blob Storageのみ）</strong></td>
-<td>~$4/月</td>
-<td>PostgreSQL手動停止後</td>
-</tr>
-</tbody></table>
+<thead><tr><th>状態</th><th>月額概算</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td><strong>常時維持コスト</strong></td><td>~$5/月</td><td>ACR + tfstate Blob のみ（常設）</td></tr>
+<tr><td><strong>dev稼働中</strong></td><td>+$9/月（日割り）</td><td>シングルリージョン Japan East</td></tr>
+<tr><td><strong>prd稼働中</strong></td><td>+$80/月（日割り）</td><td>マルチリージョン Japan East + West + Front Door</td></tr>
+<p></tbody><br></table></p>
+<blockquote>例：月10日devのみ稼働の場合 → ~$5 + $3 = ~$8/月</blockquote>
 <h3>リソース別コスト内訳</h3>
 <table>
-<thead>
-<tr>
-<th>リソース</th>
-<th>SKU/プラン</th>
-<th>月額概算</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Azure Container Apps（バックエンド）</strong></td>
-<td>min replicas=0</td>
-<td>~$0〜3（リクエスト量次第）</td>
-</tr>
-<tr>
-<td><strong>Azure Database for PostgreSQL Flexible Server（dev）</strong></td>
-<td>B1ms</td>
-<td>~$5/月</td>
-</tr>
-<tr>
-<td><strong>Azure Database for PostgreSQL Flexible Server（prd）</strong></td>
-<td>B1ms</td>
-<td>~$5/月</td>
-</tr>
-<tr>
-<td><strong>Azure Blob Storage（dev + prd）</strong></td>
-<td>LRS</td>
-<td>~$1/月（数GB以下）</td>
-</tr>
-<tr>
-<td><strong>Azure Container Registry</strong></td>
-<td>Basic</td>
-<td>~$5/月</td>
-</tr>
-<tr>
-<td><strong>Log Analytics Workspace</strong></td>
-<td>従量課金（5GB/日まで無料）</td>
-<td>~$0（無料枠内想定）</td>
-</tr>
-</tbody></table>
-<blockquote>
-<p>Container Apps は min replicas=0 のため、未使用時は課金なし。</p>
-</blockquote>
+<thead><tr><th>リソース</th><th>環境</th><th>SKU/プラン</th><th>月額概算</th></tr></thead>
+<tbody>
+<tr><td><strong>Azure Container Registry</strong></td><td>dev/prd共用</td><td>Basic</td><td>~$5/月（常設）</td></tr>
+<tr><td><strong>Terraform State Blob</strong></td><td>terraform</td><td>LRS</td><td>~$0（常設）</td></tr>
+<tr><td><strong>Container Apps（バックエンド）</strong></td><td>dev</td><td>min:0 max:3</td><td>~$0〜3</td></tr>
+<tr><td><strong>PostgreSQL Flexible Server</strong></td><td>dev</td><td>B1ms</td><td>~$5/月</td></tr>
+<tr><td><strong>Blob Storage</strong></td><td>dev</td><td>LRS</td><td>~$1/月</td></tr>
+<tr><td><strong>Azure Front Door Standard</strong></td><td>prd</td><td>Standard</td><td>~$35/月</td></tr>
+<tr><td><strong>Container Apps（East + West）</strong></td><td>prd</td><td>min:1/0 max:5</td><td>~$10〜20</td></tr>
+<tr><td><strong>PostgreSQL Flexible Server</strong></td><td>prd</td><td>B1ms + Geo-redundant backup</td><td>~$16/月</td></tr>
+<tr><td><strong>Blob Storage</strong></td><td>prd</td><td>GRS</td><td>~$2/月</td></tr>
+<tr><td><strong>Log Analytics Workspace</strong></td><td>dev/prd</td><td>従量課金（5GB/日まで無料）</td><td>~$0（無料枠内想定）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>Container Apps は min replicas=0（dev）のため未使用時は課金なし。</blockquote>
 <h2>3. コスト削減施策</h2>
 <h3>PostgreSQL 停止運用</h3>
 <p>未使用時（開発・デモ以外）はPostgreSQL Flexible Serverを手動停止する。</p>
 <table>
-<thead>
-<tr>
-<th>操作</th>
-<th>コマンド</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>停止</strong></td>
-<td><code>az postgres flexible-server stop --resource-group &lt;rg&gt; --name &lt;server&gt;</code></td>
-</tr>
-<tr>
-<td><strong>起動</strong></td>
-<td><code>az postgres flexible-server start --resource-group &lt;rg&gt; --name &lt;server&gt;</code></td>
-</tr>
-</tbody></table>
-<blockquote>
-<p>⚠️ Azure Flexible Serverは7日間連続停止で自動再起動。長期未使用時は定期的な手動停止が必要。</p>
-</blockquote>
+<thead><tr><th>操作</th><th>コマンド</th></tr></thead>
+<tbody>
+<tr><td><strong>停止</strong></td><td><code>az postgres flexible-server stop --resource-group &lt;rg&gt; --name &lt;server&gt;</code></td></tr>
+<tr><td><strong>起動</strong></td><td><code>az postgres flexible-server start --resource-group &lt;rg&gt; --name &lt;server&gt;</code></td></tr>
+<p></tbody><br></table></p>
+<blockquote>⚠️ Azure Flexible Serverは7日間連続停止で自動再起動。長期未使用時は定期的な手動停止が必要。</blockquote>
 <h3>開発環境の運用方針</h3>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>dev環境</strong></td>
-<td>開発・テスト時のみ起動。未使用時はDB停止</td>
-</tr>
-<tr>
-<td><strong>prd環境</strong></td>
-<td>ShowCase公開期間のみ常時起動。それ以外はDB停止</td>
-</tr>
-<tr>
-<td><strong>Container Apps</strong></td>
-<td>min replicas=0 のため自動ゼロスケール。停止操作不要</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>dev環境</strong></td><td>開発・テスト時のみ起動。未使用時はDB停止</td></tr>
+<tr><td><strong>prd環境</strong></td><td>ShowCase公開期間のみ常時起動。それ以外はDB停止</td></tr>
+<tr><td><strong>Container Apps</strong></td><td>min replicas=0 のため自動ゼロスケール。停止操作不要</td></tr>
+<p></tbody><br></table></p>
 <h2>4. 開発ツールコスト</h2>
 <table>
-<thead>
-<tr>
-<th>ツール</th>
-<th>コスト</th>
-<th>備考</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Claude Code</strong></td>
-<td>使用量課金</td>
-<td>Anthropic API</td>
-</tr>
-<tr>
-<td><strong>GitHub</strong></td>
-<td>無料</td>
-<td>Publicリポジトリ</td>
-</tr>
-<tr>
-<td><strong>GitHub Actions</strong></td>
-<td>無料</td>
-<td>Public リポジトリは無料枠 2,000分/月</td>
-</tr>
-<tr>
-<td><strong>Terraform</strong></td>
-<td>無料</td>
-<td>OSS版</td>
-</tr>
-<tr>
-<td><strong>IDE（VSCode）</strong></td>
-<td>無料</td>
-<td></td>
-</tr>
-</tbody></table>
+<thead><tr><th>ツール</th><th>コスト</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td><strong>Claude Code</strong></td><td>使用量課金</td><td>Anthropic API</td></tr>
+<tr><td><strong>GitHub</strong></td><td>無料</td><td>Publicリポジトリ</td></tr>
+<tr><td><strong>GitHub Actions</strong></td><td>無料</td><td>Public リポジトリは無料枠 2,000分/月</td></tr>
+<tr><td><strong>Terraform</strong></td><td>無料</td><td>OSS版</td></tr>
+<tr><td><strong>IDE（VSCode）</strong></td><td>無料</td><td></td></tr>
+<p></tbody><br></table></p>
 <h2>5. コスト監視</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>設定</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>Azure Cost Management</strong></td>
-<td>サブスクリプション単位でコストアラート設定（月$20超過で通知）</td>
-</tr>
-<tr>
-<td><strong>確認頻度</strong></td>
-<td>月次（開発期間中は週次）</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="06-quality-management-plan"><h1>品質管理計画 (Quality Management Plan)</h1>
+<thead><tr><th>項目</th><th>設定</th></tr></thead>
+<tbody>
+<tr><td><strong>Azure Cost Management</strong></td><td>サブスクリプション単位でコストアラート設定（月$20超過で通知）</td></tr>
+<tr><td><strong>確認頻度</strong></td><td>月次（開発期間中は週次）</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="06-quality-management-plan">
+<h1>品質管理計画 (Quality Management Plan)</h1>
 <h2>1. コーディング規約・コード品質</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>コーディング規約</strong></td>
-<td>技術スタック確定後に選定（Airbnb / Google等の標準規約を参照）</td>
-</tr>
-<tr>
-<td><strong>Linter</strong></td>
-<td>採用言語に対応したLinterを使用、規約に沿った設定を行う</td>
-</tr>
-<tr>
-<td><strong>Formatter</strong></td>
-<td>採用言語に対応したFormatterを使用</td>
-</tr>
-<tr>
-<td><strong>適用タイミング</strong></td>
-<td>コミット時（pre-commitフック）</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>コーディング規約</strong></td><td>技術スタック確定後に選定（Airbnb / Google等の標準規約を参照）</td></tr>
+<tr><td><strong>Linter</strong></td><td>採用言語に対応したLinterを使用、規約に沿った設定を行う</td></tr>
+<tr><td><strong>Formatter</strong></td><td>採用言語に対応したFormatterを使用</td></tr>
+<tr><td><strong>適用タイミング</strong></td><td>コミット時（pre-commitフック）</td></tr>
+<p></tbody><br></table></p>
 <h2>2. コードレビュー</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>プロセス</strong></td>
-<td>Claude CodeがレビューしたコードをGitHub Pull Requestでレビュー依頼</td>
-</tr>
-<tr>
-<td><strong>PR内容</strong></td>
-<td>テスト結果 + レビュー指摘内容をPRコメントに記載</td>
-</tr>
-<tr>
-<td><strong>承認者</strong></td>
-<td>プロジェクトオーナー（最終承認）</td>
-</tr>
-<tr>
-<td><strong>マージ条件</strong></td>
-<td>CI全通過 + オーナー承認</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>プロセス</strong></td><td>Claude CodeがレビューしたコードをGitHub Pull Requestでレビュー依頼</td></tr>
+<tr><td><strong>PR内容</strong></td><td>テスト結果 + レビュー指摘内容をPRコメントに記載</td></tr>
+<tr><td><strong>承認者</strong></td><td>プロジェクトオーナー（最終承認）</td></tr>
+<tr><td><strong>マージ条件</strong></td><td>CI全通過 + オーナー承認</td></tr>
+<p></tbody><br></table></p>
 <h2>3. テスト方針</h2>
 <h3>3.1 単体テスト</h3>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>対象</strong></td>
-<td>フロントエンド・バックエンド各コンポーネント</td>
-</tr>
-<tr>
-<td><strong>カバレッジ基準</strong></td>
-<td>C0 / C1 / C2 すべて100%</td>
-</tr>
-<tr>
-<td><strong>外部接続</strong></td>
-<td>すべてモック / スタブで代替</td>
-</tr>
-<tr>
-<td><strong>実行環境</strong></td>
-<td>ローカル / CI自動実行</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>対象</strong></td><td>フロントエンド・バックエンド各コンポーネント</td></tr>
+<tr><td><strong>カバレッジ基準</strong></td><td>C0 / C1 / C2 すべて100%</td></tr>
+<tr><td><strong>外部接続</strong></td><td>すべてモック / スタブで代替</td></tr>
+<tr><td><strong>実行環境</strong></td><td>ローカル / CI自動実行</td></tr>
+<p></tbody><br></table></p>
 <h3>3.2 結合テスト</h3>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>対象</strong></td>
-<td>画面 〜 API 〜 DB の結合</td>
-</tr>
-<tr>
-<td><strong>テストシナリオ</strong></td>
-<td>機能設計書のユースケースごとに作成</td>
-</tr>
-<tr>
-<td><strong>テストデータ</strong></td>
-<td>ユースケース整理後に整備・事前投入</td>
-</tr>
-<tr>
-<td><strong>実行環境</strong></td>
-<td>ローカル</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>対象</strong></td><td>画面 〜 API 〜 DB の結合</td></tr>
+<tr><td><strong>テストシナリオ</strong></td><td>機能設計書のユースケースごとに作成</td></tr>
+<tr><td><strong>テストデータ</strong></td><td>ユースケース整理後に整備・事前投入</td></tr>
+<tr><td><strong>実行環境</strong></td><td>ローカル</td></tr>
+<p></tbody><br></table></p>
 <h3>3.3 E2Eテスト</h3>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>対象</strong></td>
-<td>本番相当データ量での結合テスト相当シナリオ</td>
-</tr>
-<tr>
-<td><strong>テストシナリオ</strong></td>
-<td>結合テストと同等のユースケース</td>
-</tr>
-<tr>
-<td><strong>実行環境</strong></td>
-<td>本番環境（デプロイ後）</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>対象</strong></td><td>本番相当データ量での結合テスト相当シナリオ</td></tr>
+<tr><td><strong>テストシナリオ</strong></td><td>結合テストと同等のユースケース</td></tr>
+<tr><td><strong>実行環境</strong></td><td>本番環境（デプロイ後）</td></tr>
+<p></tbody><br></table></p>
 <h3>3.4 パフォーマンステスト</h3>
 <p>スコープ外（コスト上の理由）</p>
 <h2>4. CI/CD パイプライン</h2>
 <h3>4.1 CI（継続的インテグレーション）</h3>
 <p><strong>実装タイミング：一通りの機能構築完了後（ShowCase用途として実装）</strong></p>
 <table>
-<thead>
-<tr>
-<th>チェック項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Linterチェック</td>
-<td>規約違反の検出</td>
-</tr>
-<tr>
-<td>Formatterチェック</td>
-<td>フォーマット違反の検出</td>
-</tr>
-<tr>
-<td>単体テスト全通過</td>
-<td>全テストケースのPass確認</td>
-</tr>
-<tr>
-<td>カバレッジチェック</td>
-<td>C0 / C1 / C2 100%確認</td>
-</tr>
-<tr>
-<td>ビルドチェック</td>
-<td>ビルド成功確認</td>
-</tr>
-</tbody></table>
+<thead><tr><th>チェック項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>Linterチェック</td><td>規約違反の検出</td></tr>
+<tr><td>Formatterチェック</td><td>フォーマット違反の検出</td></tr>
+<tr><td>単体テスト全通過</td><td>全テストケースのPass確認</td></tr>
+<tr><td>カバレッジチェック</td><td>C0 / C1 / C2 100%確認</td></tr>
+<tr><td>ビルドチェック</td><td>ビルド成功確認</td></tr>
+<p></tbody><br></table></p>
 <h3>4.2 CD（継続的デプロイメント）</h3>
 <table>
-<thead>
-<tr>
-<th>環境</th>
-<th>トリガー</th>
-<th>デプロイ方式</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>dev環境</strong></td>
-<td>mainブランチへのマージ</td>
-<td>自動デプロイ</td>
-</tr>
-<tr>
-<td><strong>prd環境</strong></td>
-<td>手動実行</td>
-<td>手動デプロイ</td>
-</tr>
-</tbody></table>
+<thead><tr><th>環境</th><th>トリガー</th><th>デプロイ方式</th></tr></thead>
+<tbody>
+<tr><td><strong>dev環境</strong></td><td>mainブランチへのマージ</td><td>自動デプロイ</td></tr>
+<tr><td><strong>prd環境</strong></td><td>手動実行</td><td>手動デプロイ</td></tr>
+<p></tbody><br></table></p>
 <h3>4.3 実行環境</h3>
 <p>GitHub Actionsを使用。開発フェーズ中はコスト抑制のためローカル実行を基本とし、機能完成後にGitHub Actionsとして整備する。</p>
 <h2>5. バージョン管理</h2>
 <p><strong>セマンティックバージョニング（SemVer）</strong> を採用する。</p>
-<pre><code>MAJOR.MINOR.PATCH
-例: 1.0.0 → 1.1.0（機能追加）→ 1.1.1（バグ修正）
-</code></pre>
+<pre><code class="lang-">MAJOR.MINOR.PATCH
+例: 1.0.0 → 1.1.0（機能追加）→ 1.1.1（バグ修正）</code></pre>
 <table>
-<thead>
-<tr>
-<th>バージョン</th>
-<th>更新条件</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>MAJOR</td>
-<td>後方互換性のない変更</td>
-</tr>
-<tr>
-<td>MINOR</td>
-<td>後方互換性のある機能追加</td>
-</tr>
-<tr>
-<td>PATCH</td>
-<td>バグ修正</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="07-resource-management-plan"><h1>リソース管理計画 (Resource Management Plan)</h1>
+<thead><tr><th>バージョン</th><th>更新条件</th></tr></thead>
+<tbody>
+<tr><td>MAJOR</td><td>後方互換性のない変更</td></tr>
+<tr><td>MINOR</td><td>後方互換性のある機能追加</td></tr>
+<tr><td>PATCH</td><td>バグ修正</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="07-resource-management-plan">
+<h1>リソース管理計画 (Resource Management Plan)</h1>
 <h2>1. プロジェクト体制</h2>
 <table>
-<thead>
-<tr>
-<th>役割</th>
-<th>担当</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>プロジェクトオーナー / PM / レビュアー</strong></td>
-<td>プロジェクトオーナー</td>
-</tr>
-<tr>
-<td><strong>開発者</strong></td>
-<td>プロジェクトオーナー ＋ Claude Code</td>
-</tr>
-</tbody></table>
+<thead><tr><th>役割</th><th>担当</th></tr></thead>
+<tbody>
+<tr><td><strong>プロジェクトオーナー / PM / レビュアー</strong></td><td>プロジェクトオーナー</td></tr>
+<tr><td><strong>開発者</strong></td><td>プロジェクトオーナー ＋ Claude Code</td></tr>
+<p></tbody><br></table></p>
 <h2>2. 開発環境</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>開発マシン</strong></td>
-<td>WSL2（Ubuntu on Windows）</td>
-</tr>
-<tr>
-<td><strong>ローカル実行環境</strong></td>
-<td>Docker Compose（DB・依存サービスをローカルで起動）</td>
-</tr>
-<tr>
-<td><strong>ソースコード管理</strong></td>
-<td>Git / GitHub</td>
-</tr>
-<tr>
-<td><strong>IDE</strong></td>
-<td>VSCode（Claude Code拡張含む）</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>開発マシン</strong></td><td>WSL2（Ubuntu on Windows）</td></tr>
+<tr><td><strong>ローカル実行環境</strong></td><td>Docker Compose（DB・依存サービスをローカルで起動）</td></tr>
+<tr><td><strong>ソースコード管理</strong></td><td>Git / GitHub</td></tr>
+<tr><td><strong>IDE</strong></td><td>VSCode（Claude Code拡張含む）</td></tr>
+<p></tbody><br></table></p>
 <h2>3. Claude Code 活用方針</h2>
 <p>ShowCaseシナリオ設計フェーズで別途定義する。</p>
-</div><hr class="doc-separator"><div class="markdown-body" id="08-communication-management-plan"><h1>コミュニケーション管理計画 (Communication Management Plan)</h1>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="08-communication-management-plan">
+<h1>コミュニケーション管理計画 (Communication Management Plan)</h1>
 <h2>1. ドキュメント管理</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>言語</strong></td>
-<td>日本語で作成し、後から英語翻訳して両方保管</td>
-</tr>
-<tr>
-<td><strong>保管場所</strong></td>
-<td><code>docs/</code> フォルダ（Markdown形式）</td>
-</tr>
-<tr>
-<td><strong>ファイル命名</strong></td>
-<td>日本語版：<code>xxx.md</code>、英語版：<code>xxx.en.md</code></td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>言語</strong></td><td>日本語で作成し、後から英語翻訳して両方保管</td></tr>
+<tr><td><strong>保管場所</strong></td><td><code>docs/</code> フォルダ（Markdown形式）</td></tr>
+<tr><td><strong>ファイル命名</strong></td><td>日本語版：<code>xxx.md</code>、英語版：<code>xxx.en.md</code></td></tr>
+<p></tbody><br></table></p>
 <h2>2. 図・ダイアグラムのフォーマット</h2>
 <table>
-<thead>
-<tr>
-<th>種別</th>
-<th>フォーマット</th>
-<th>用途</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>構成図</strong></td>
-<td>draw.io（<code>.drawio</code>）</td>
-<td>システム構成図・インフラ図・アーキテクチャ図</td>
-</tr>
-<tr>
-<td><strong>フローチャート</strong></td>
-<td>Mermaid（Markdownに埋め込み）</td>
-<td>業務フロー・処理フロー・シーケンス図</td>
-</tr>
-</tbody></table>
+<thead><tr><th>種別</th><th>フォーマット</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><strong>構成図</strong></td><td>draw.io（<code>.drawio</code>）</td><td>システム構成図・インフラ図・アーキテクチャ図</td></tr>
+<tr><td><strong>フローチャート</strong></td><td>Mermaid（Markdownに埋め込み）</td><td>業務フロー・処理フロー・シーケンス図</td></tr>
+<p></tbody><br></table></p>
 <h2>3. コミットメッセージ</h2>
 <p>日英併記で記述する。</p>
-<pre><code>feat: ユーザマスタ登録機能を追加 / Add user master registration feature
+<pre><code class="lang-">feat: ユーザマスタ登録機能を追加 / Add user master registration feature
 
 - ユーザ登録・編集・削除APIを実装 / Implement user CRUD API
-- ユーザ一覧画面を実装 / Implement user list screen
-</code></pre>
+- ユーザ一覧画面を実装 / Implement user list screen</code></pre>
 <h2>4. Pull Request</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>タイトル</strong></td>
-<td>日英併記</td>
-</tr>
-<tr>
-<td><strong>本文</strong></td>
-<td>テスト結果・レビュー指摘内容を記載（Claude Codeが作成）</td>
-</tr>
-<tr>
-<td><strong>承認者</strong></td>
-<td>プロジェクトオーナー</td>
-</tr>
-</tbody></table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>タイトル</strong></td><td>日英併記</td></tr>
+<tr><td><strong>本文</strong></td><td>テスト結果・レビュー指摘内容を記載（Claude Codeが作成）</td></tr>
+<tr><td><strong>承認者</strong></td><td>プロジェクトオーナー</td></tr>
+<p></tbody><br></table></p>
 <h2>5. Issue管理</h2>
 <table>
-<thead>
-<tr>
-<th>項目</th>
-<th>方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>管理ツール</strong></td>
-<td>GitHub Issues</td>
-</tr>
-<tr>
-<td><strong>言語</strong></td>
-<td>日本語</td>
-</tr>
-<tr>
-<td><strong>紐付け</strong></td>
-<td>機能ID（例：WMS-INB-001）をタイトルに含める</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="09-risk-management-plan"><h1>リスク管理計画 (Risk Management Plan)</h1>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>管理ツール</strong></td><td>GitHub Issues</td></tr>
+<tr><td><strong>言語</strong></td><td>日本語</td></tr>
+<tr><td><strong>紐付け</strong></td><td>機能ID（例：WMS-INB-001）をタイトルに含める</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="09-risk-management-plan">
+<h1>リスク管理計画 (Risk Management Plan)</h1>
 <h2>リスク一覧</h2>
 <table>
-<thead>
-<tr>
-<th>ID</th>
-<th>リスク</th>
-<th>影響</th>
-<th>対応策</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>R1</td>
-<td>技術スタック選定の失敗（無料枠に収まらない等）</td>
-<td>コスト超過</td>
-<td>アーキテクチャ設計時に事前検証</td>
-</tr>
-<tr>
-<td>R2</td>
-<td>Claude Codeのコンテキスト切れによる開発中断</td>
-<td>作業ロス</td>
-<td>グランドルール通り記録保存して新セッションで継続</td>
-</tr>
-<tr>
-<td>R3</td>
-<td>スコープクリープ（機能が膨らむ）</td>
-<td>完成しない</td>
-<td>変更管理計画に従い都度承認</td>
-</tr>
-<tr>
-<td>R4</td>
-<td>Azureの無料枠・低コストプラン超過</td>
-<td>予期せぬコスト</td>
-<td>設計段階でリソース試算、Azureコストアラート設定</td>
-</tr>
-<tr>
-<td>R5</td>
-<td>1週間で完成しない</td>
-<td>ShowCase未達</td>
-<td>MVP優先、機能は段階的リリース</td>
-</tr>
-<tr>
-<td>R6</td>
-<td>GitHubへの誤ったコードや認証情報の公開</td>
-<td>セキュリティ事故</td>
-<td>.gitignore徹底、シークレット管理ルール徹底</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="10-procurement-management-plan"><h1>調達管理計画 (Procurement Management Plan)</h1>
+<thead><tr><th>ID</th><th>リスク</th><th>影響</th><th>対応策</th></tr></thead>
+<tbody>
+<tr><td>R1</td><td>技術スタック選定の失敗（無料枠に収まらない等）</td><td>コスト超過</td><td>アーキテクチャ設計時に事前検証</td></tr>
+<tr><td>R2</td><td>Claude Codeのコンテキスト切れによる開発中断</td><td>作業ロス</td><td>グランドルール通り記録保存して新セッションで継続</td></tr>
+<tr><td>R3</td><td>スコープクリープ（機能が膨らむ）</td><td>完成しない</td><td>変更管理計画に従い都度承認</td></tr>
+<tr><td>R4</td><td>Azureの無料枠・低コストプラン超過</td><td>予期せぬコスト</td><td>設計段階でリソース試算、Azureコストアラート設定</td></tr>
+<tr><td>R5</td><td>1週間で完成しない</td><td>ShowCase未達</td><td>MVP優先、機能は段階的リリース</td></tr>
+<tr><td>R6</td><td>GitHubへの誤ったコードや認証情報の公開</td><td>セキュリティ事故</td><td>.gitignore徹底、シークレット管理ルール徹底</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="10-procurement-management-plan">
+<h1>調達管理計画 (Procurement Management Plan)</h1>
 <h2>技術・ライブラリ選定基準</h2>
 <table>
-<thead>
-<tr>
-<th>基準</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>ライセンス</strong></td>
-<td>MIT / Apache 2.0 / BSD など商用利用可能なOSSのみ</td>
-</tr>
-<tr>
-<td><strong>コスト</strong></td>
-<td>無料枠または無償OSSのみ（有料サービスは都度議論・承認）</td>
-</tr>
-<tr>
-<td><strong>メンテナンス状況</strong></td>
-<td>直近1年以内に更新があるアクティブなプロジェクト</td>
-</tr>
-<tr>
-<td><strong>実績</strong></td>
-<td>業界標準または広く採用されているもの優先</td>
-</tr>
-</tbody></table>
+<thead><tr><th>基準</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>ライセンス</strong></td><td>MIT / Apache 2.0 / BSD など商用利用可能なOSSのみ</td></tr>
+<tr><td><strong>コスト</strong></td><td>無料枠または無償OSSのみ（有料サービスは都度議論・承認）</td></tr>
+<tr><td><strong>メンテナンス状況</strong></td><td>直近1年以内に更新があるアクティブなプロジェクト</td></tr>
+<tr><td><strong>実績</strong></td><td>業界標準または広く採用されているもの優先</td></tr>
+<p></tbody><br></table></p>
 <h2>具体的な技術スタック</h2>
 <p>アーキテクチャ設計フェーズで選定する。</p>
-</div><hr class="doc-separator"><div class="markdown-body" id="11-stakeholder-management-plan"><h1>ステークホルダー管理計画 (Stakeholder Management Plan)</h1>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="11-stakeholder-management-plan">
+<h1>ステークホルダー管理計画 (Stakeholder Management Plan)</h1>
 <h2>ステークホルダー一覧と関与方針</h2>
 <table>
-<thead>
-<tr>
-<th>ステークホルダー</th>
-<th>期待事項</th>
-<th>関与方針</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>プロジェクトオーナー</strong></td>
-<td>プロジェクト成功・ShowCase完成</td>
-<td>全意思決定に参加、PRレビュー承認</td>
-</tr>
-<tr>
-<td><strong>社内同僚（エンドユーザー）</strong></td>
-<td>使いやすいWMS</td>
-<td>機能要件定義時にヒアリング（任意）</td>
-</tr>
-<tr>
-<td><strong>GitHub閲覧者</strong></td>
-<td>Claude CodeによるShowCaseを見たい</td>
-<td>README・ドキュメントで分かりやすく公開</td>
-</tr>
-</tbody></table>
-</div><hr class="doc-separator"><div class="markdown-body" id="12-change-management-plan"><h1>変更管理計画 (Change Management Plan)</h1>
+<thead><tr><th>ステークホルダー</th><th>期待事項</th><th>関与方針</th></tr></thead>
+<tbody>
+<tr><td><strong>プロジェクトオーナー</strong></td><td>プロジェクト成功・ShowCase完成</td><td>全意思決定に参加、PRレビュー承認</td></tr>
+<tr><td><strong>社内同僚（エンドユーザー）</strong></td><td>使いやすいWMS</td><td>機能要件定義時にヒアリング（任意）</td></tr>
+<tr><td><strong>GitHub閲覧者</strong></td><td>Claude CodeによるShowCaseを見たい</td><td>README・ドキュメントで分かりやすく公開</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="12-change-management-plan">
+<h1>変更管理計画 (Change Management Plan)</h1>
 <h2>変更分類と承認プロセス</h2>
 <table>
-<thead>
-<tr>
-<th>変更種別</th>
-<th>定義</th>
-<th>プロセス</th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>軽微な変更</strong></td>
-<td>画面レイアウト・項目追加・バリデーション変更など</td>
-<td>議論 → 合意 → ドキュメント即更新</td>
-</tr>
-<tr>
-<td><strong>重大な変更</strong></td>
-<td>スコープ追加・削除、成功基準の変更、アーキテクチャ変更</td>
-<td>議論 → 合意 → プロジェクト憲章・WBS・関連計画書を合わせて更新</td>
-</tr>
-</tbody></table>
+<thead><tr><th>変更種別</th><th>定義</th><th>プロセス</th></tr></thead>
+<tbody>
+<tr><td><strong>軽微な変更</strong></td><td>画面レイアウト・項目追加・バリデーション変更など</td><td>議論 → 合意 → ドキュメント即更新</td></tr>
+<tr><td><strong>重大な変更</strong></td><td>スコープ追加・削除、成功基準の変更、アーキテクチャ変更</td><td>議論 → 合意 → プロジェクト憲章・WBS・関連計画書を合わせて更新</td></tr>
+<p></tbody><br></table></p>
 <h2>変更履歴管理</h2>
-<ul>
-<li>すべての変更はGitのコミット履歴で追跡する</li>
-<li>重大な変更はGitHub Issueに記録し、機能IDで紐付ける</li>
-</ul>
+<ul><li style="margin-left:0px">すべての変更はGitのコミット履歴で追跡する</li><li style="margin-left:0px">重大な変更はGitHub Issueに記録し、機能IDで紐付ける</li></ul>
 </div>
 </main>
-<footer>Generated by Claude Code — 2026/3/12 23:28:08</footer>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
 
 </body>
 </html>

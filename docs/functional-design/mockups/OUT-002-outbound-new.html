@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OUT-002 受注登録 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    .app-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); background: var(--color-black); display: flex; align-items: center; padding: 0 24px; gap: 24px; z-index: 100; }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge { display: flex; align-items: center; gap: 8px; background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius); padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer; }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout { font-size: 12px; color: var(--color-gray-500); background: none; cursor: pointer; padding: 4px 10px; border: 1px solid #333; border-radius: var(--border-radius); }
+
+    .app-sidebar { position: fixed; top: var(--header-height); left: 0; width: var(--sidebar-width); bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90; }
+    .sidebar-section { padding: 16px 20px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500); }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: var(--color-gray-400); font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.12s; border-left: 3px solid transparent; }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active { background: rgba(161,0,255,0.15); color: var(--color-primary-light); border-left-color: var(--color-primary); font-weight: 600; }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+
+    .app-main { margin-top: var(--header-height); margin-left: var(--sidebar-width); padding: 24px; min-height: calc(100vh - var(--header-height)); }
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    .card { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 2px solid var(--color-gray-200); }
+    .card-title { font-size: 15px; font-weight: 700; color: var(--color-gray-800); }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px 24px; }
+    .form-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--color-gray-600); }
+    .form-label .req { color: var(--color-error); margin-left: 2px; }
+    .form-input, .form-select, .form-textarea { padding: 9px 12px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900); background: var(--color-white); outline: none; transition: border-color 0.15s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.12); }
+    .form-input[readonly] { background: var(--color-gray-100); color: var(--color-gray-600); }
+    .form-textarea { resize: vertical; min-height: 72px; }
+
+    .radio-group { display: flex; gap: 20px; align-items: center; padding: 9px 0; }
+    .radio-option { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+    .radio-option input[type="radio"] { width: 15px; height: 15px; accent-color: var(--color-primary); cursor: pointer; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .btn-primary { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-secondary { background: transparent; color: var(--color-primary); border: 1.5px solid var(--color-primary); }
+    .btn-ghost { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-danger-ghost { background: transparent; color: var(--color-error); border: 1.5px solid var(--color-error); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--color-gray-700); font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); }
+    tbody td { padding: 8px 14px; vertical-align: middle; }
+    tfoot tr { border-top: 2px solid var(--color-gray-200); }
+    tfoot td { padding: 10px 14px; }
+
+    .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .detail-title { font-size: 15px; font-weight: 700; color: var(--color-gray-800); }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-gray-200); }
+
+    .mockup-meta { position: fixed; top: 0; left: 0; right: 0; background: #1A1A2E; color: #AAA; font-size: 11px; padding: 4px 16px; display: flex; gap: 24px; align-items: center; z-index: 999; }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 24px; }
+    .app-header { top: 24px; }
+    .app-sidebar { top: calc(var(--header-height) + 24px); }
+    .app-main { margin-top: calc(var(--header-height) + 24px); }
+
+    .note-box { background: var(--color-info-bg); border: 1px solid #BAE6FF; border-radius: var(--border-radius); padding: 8px 14px; font-size: 12px; color: #003A6D; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+  <div class="mockup-meta">
+    <span class="screen-id">OUT-002</span>
+    <span>受注登録</span>
+    <span style="color:#555">|</span>
+    <span>URL: /outbound/slips/new</span>
+    <span style="color:#555">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/13</strong></div>
+      <div class="user-info">ログイン中: <strong>鈴木 一郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#" style="background:rgba(161,0,255,0.08);color:#ccc;border-left:3px solid #555;"><span class="icon">🚚</span> 出荷管理</a>
+        <ul class="sidebar-menu" style="padding-left:8px">
+          <li><a href="#" class="active"><span class="icon">◾</span> 受注一覧</a></li>
+          <li><a href="#"><span class="icon">◾</span> ピッキング指示一覧</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+    </ul>
+  </aside>
+
+  <main class="app-main">
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> 出荷管理 <span class="sep">›</span> <a href="#">受注一覧</a> <span class="sep">›</span> 受注登録
+    </div>
+    <div class="page-header">
+      <h1 class="page-title">受注登録</h1>
+    </div>
+
+    <!-- Basic Info Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">基本情報</span>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">種別 <span class="req">*</span></label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="slip-type" value="normal" checked>
+              通常出荷
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="slip-type" value="transfer">
+              倉庫振替出荷
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">出荷予定日 <span class="req">*</span></label>
+          <input type="date" class="form-input" value="2026-03-20">
+        </div>
+        <div class="form-group" id="partner-group">
+          <label class="form-label">出荷先（取引先）<span class="req">*</span></label>
+          <select class="form-select">
+            <option value="">取引先を選択</option>
+            <option selected>株式会社東西商事</option>
+            <option>南北物流株式会社</option>
+            <option>中央トレーディング</option>
+            <option>株式会社ひまわり食品</option>
+          </select>
+        </div>
+        <!-- 倉庫振替時のみ表示（非表示状態を示すためコメントアウト） -->
+        <!-- <div class="form-group" id="transfer-wh-group">
+          <label class="form-label">振替先倉庫 <span class="req">*</span></label>
+          <select class="form-select">
+            <option value="">倉庫を選択</option>
+            <option>大阪DC</option>
+            <option>名古屋DC</option>
+          </select>
+        </div> -->
+        <div class="form-group full">
+          <label class="form-label">備考</label>
+          <textarea class="form-textarea" placeholder="備考・特記事項（任意）"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail Lines Card -->
+    <div class="card">
+      <div class="detail-header">
+        <span class="detail-title">明細</span>
+        <button class="btn btn-secondary btn-sm">＋ 行追加</button>
+      </div>
+      <div class="note-box">
+        💡 商品コードを入力後、フォーカスを外すと商品名が自動補完されます。
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px">No</th>
+            <th style="width:160px">商品コード <span style="color:var(--color-error)">*</span></th>
+            <th>商品名</th>
+            <th style="width:120px">荷姿 <span style="color:var(--color-error)">*</span></th>
+            <th style="width:100px">数量 <span style="color:var(--color-error)">*</span></th>
+            <th style="width:60px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">1</td>
+            <td><input type="text" class="form-input" value="PRD-0042" style="width:100%"></td>
+            <td><input type="text" class="form-input" value="冷凍たこ焼き 20個入" readonly style="width:100%;background:var(--color-gray-100);color:var(--color-gray-600)"></td>
+            <td><select class="form-select" style="width:100%">
+              <option>ケース</option><option>ボール</option><option>バラ</option>
+            </select></td>
+            <td><input type="number" class="form-input" value="10" min="1" style="width:100%"></td>
+            <td><button class="btn btn-danger-ghost btn-sm">削除</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">2</td>
+            <td><input type="text" class="form-input" value="PRD-0087" style="width:100%"></td>
+            <td><input type="text" class="form-input" value="有機野菜ジュース 1L×6本" readonly style="width:100%;background:var(--color-gray-100);color:var(--color-gray-600)"></td>
+            <td><select class="form-select" style="width:100%">
+              <option>ケース</option><option selected>ボール</option><option>バラ</option>
+            </select></td>
+            <td><input type="number" class="form-input" value="20" min="1" style="width:100%"></td>
+            <td><button class="btn btn-danger-ghost btn-sm">削除</button></td>
+          </tr>
+          <tr>
+            <td style="color:var(--color-gray-500);font-size:12px">3</td>
+            <td><input type="text" class="form-input" placeholder="商品コード" style="width:100%"></td>
+            <td><input type="text" class="form-input" placeholder="（自動補完）" readonly style="width:100%;background:var(--color-gray-100);color:var(--color-gray-600)"></td>
+            <td><select class="form-select" style="width:100%">
+              <option value="">選択</option><option>ケース</option><option>ボール</option><option>バラ</option>
+            </select></td>
+            <td><input type="number" class="form-input" placeholder="0" min="1" style="width:100%"></td>
+            <td><button class="btn btn-danger-ghost btn-sm">削除</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost">キャンセル</button>
+      <button class="btn btn-primary">登録</button>
+    </div>
+  </main>
+
+</body>
+</html>
