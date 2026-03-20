@@ -17,6 +17,7 @@ import com.wms.system.service.AuthService;
 import com.wms.system.service.PasswordService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -139,7 +140,9 @@ public class AuthController implements AuthApi {
     }
 
     private HttpServletResponse getHttpServletResponse() {
-        return ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
-                .getResponse();
+        return Objects.requireNonNull(
+                ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
+                        .getResponse(),
+                "HttpServletResponse is not available in current request context");
     }
 }

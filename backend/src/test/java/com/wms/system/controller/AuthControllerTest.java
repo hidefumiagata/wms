@@ -34,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -146,6 +147,32 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("異常系: リクエストボディが不正JSONの場合は400を返す")
+        void login_invalidJson_returns400() throws Exception {
+            mockMvc.perform(post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{invalid json"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("異常系: 認証失敗時に401を返す")
+        void login_badCredentials_returns401() throws Exception {
+            when(rateLimiterService.tryConsumeLogin(anyString())).thenReturn(true);
+            when(authService.login(anyString(), anyString(), any()))
+                    .thenThrow(new org.springframework.security.authentication.BadCredentialsException("invalid"));
+
+            LoginRequest request = new LoginRequest()
+                    .userCode("USR001")
+                    .password("wrong");
+
+            mockMvc.perform(post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
         @DisplayName("正常系: X-Forwarded-Forが空文字の場合はremoteAddrを使用する")
         void login_withBlankXForwardedFor_usesRemoteAddr() throws Exception {
             User user = createTestUser();
@@ -240,6 +267,58 @@ class AuthControllerTest {
                 SecurityContextHolder.clearContext();
             }
         }
+
+        @Test
+        @DisplayName("異常系: 現在のパスワードが不正の場合は401を返す")
+        void changePassword_wrongCurrent_returns401() throws Exception {
+            WmsUserDetails userDetails = new WmsUserDetails(
+                    1L, "USR001", "password", null,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
+
+            doThrow(new org.springframework.security.authentication.BadCredentialsException("wrong"))
+                    .when(passwordService).changePassword(eq(1L), eq("wrongPass"), eq("newPass123!"));
+
+            ChangePasswordRequest request = new ChangePasswordRequest()
+                    .currentPassword("wrongPass")
+                    .newPassword("newPass123!");
+
+            try {
+                mockMvc.perform(post("/api/v1/auth/change-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isUnauthorized());
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("異常系: 同一パスワードの場合は409を返す")
+        void changePassword_samePassword_returns409() throws Exception {
+            WmsUserDetails userDetails = new WmsUserDetails(
+                    1L, "USR001", "password", null,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
+
+            doThrow(new com.wms.shared.exception.DuplicateResourceException("SAME_PASSWORD", "同一パスワード"))
+                    .when(passwordService).changePassword(eq(1L), eq("samePass"), eq("samePass"));
+
+            ChangePasswordRequest request = new ChangePasswordRequest()
+                    .currentPassword("samePass")
+                    .newPassword("samePass");
+
+            try {
+                mockMvc.perform(post("/api/v1/auth/change-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                        .andExpect(status().isConflict());
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
     }
 
     // ========== requestPasswordReset ==========
@@ -323,6 +402,23 @@ class AuthControllerTest {
                             .value("Password has been reset successfully."));
 
             verify(passwordService).confirmPasswordReset("valid-token", "newPass123!");
+        }
+
+        @Test
+        @DisplayName("異常系: 無効なトークンの場合は422を返す")
+        void confirmPasswordReset_invalidToken_returns422() throws Exception {
+            doThrow(new com.wms.shared.exception.BusinessRuleViolationException("INVALID_TOKEN", "無効"))
+                    .when(passwordService).confirmPasswordReset(eq("bad-token"), anyString());
+
+            PasswordResetConfirmRequest request = new PasswordResetConfirmRequest()
+                    .token("bad-token")
+                    .newPassword("newPass123!");
+
+            mockMvc.perform(post("/api/v1/auth/password-reset/confirm")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
         }
     }
 }
