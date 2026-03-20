@@ -12,9 +12,9 @@ spring:
     enabled: false
 
 jwt:
-  secret: test-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
-  access-token-expiration: 900000
-  refresh-token-expiration: 604800000
+  secret-key: test-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
+  access-token-expiration: 3600000
+  refresh-token-expiration: 86400000
 
 cookie:
   secure: false

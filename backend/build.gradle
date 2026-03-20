@@ -73,7 +73,6 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
     // OpenAPI Generator runtime dependencies
-    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
     implementation 'io.swagger.core.v3:swagger-annotations:2.2.25'
 
     // PDF generation (Thymeleaf HTML -> PDF)
