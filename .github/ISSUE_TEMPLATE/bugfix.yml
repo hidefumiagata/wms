@@ -31,10 +31,10 @@ body:
     validations:
       required: true
   - type: textarea
-    id: acceptance-criteria
+    id: tasks
     attributes:
-      label: 受入条件
-      description: 修正完了とみなす条件をチェックリスト形式で記載
+      label: タスク一覧
+      description: 修正タスクをチェックリスト形式で記載
       value: |
         - [ ]
     validations:
