@@ -703,7 +703,7 @@ flowchart TD
 | # | ルール | エラーコード |
 |---|--------|------------|
 | 1 | `newQty` は 0 以上の整数であること | `VALIDATION_ERROR` |
-| 2 | `reason` は 1 文字以上 500 文字以下であること | `VALIDATION_ERROR` |
+| 2 | `reason` は 1 文字以上 200 文字以下であること | `VALIDATION_ERROR` |
 | 3 | 実行者のロールが `SYSTEM_ADMIN` または `WAREHOUSE_MANAGER` であること | `FORBIDDEN` |
 | 4 | 対象ロケーションが棚卸ロック中でないこと | `INVENTORY_STOCKTAKE_IN_PROGRESS` |
 | 5 | 対象在庫レコード（5軸一致）が存在すること | `INVENTORY_NOT_FOUND` |
