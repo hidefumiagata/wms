@@ -6,4 +6,8 @@ public final class BusinessRuleViolationException extends WmsException {
     public BusinessRuleViolationException(String errorCode, String message) {
         super(errorCode, message);
     }
+
+    public BusinessRuleViolationException(String errorCode, String message, Throwable cause) {
+        super(errorCode, message, cause);
+    }
 }
