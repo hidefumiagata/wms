@@ -28,6 +28,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 @ExtendWith(MockitoExtension.class)
 class GlobalExceptionHandlerTest {
@@ -121,7 +122,8 @@ class GlobalExceptionHandlerTest {
         FieldError fieldError2 = new FieldError("obj", "code", "コードは必須です");
         when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError1, fieldError2));
 
-        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
+        org.springframework.core.MethodParameter methodParam = mock(org.springframework.core.MethodParameter.class, withSettings().lenient());
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(methodParam, bindingResult);
 
         ResponseEntity<ErrorResponse> response = handler.handleValidation(ex);
 
@@ -160,7 +162,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("HttpMessageNotReadableException -> 400 BAD_REQUEST")
     void handleMessageNotReadable_returns400() {
-        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("parse error");
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException("parse error", (org.springframework.http.HttpInputMessage) null);
 
         ResponseEntity<ErrorResponse> response = handler.handleMessageNotReadable(ex);
 
