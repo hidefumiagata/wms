@@ -42,6 +42,8 @@ tags:
     description: システムパラメータ
   - name: allocation
     description: 在庫引当
+  - name: returns
+    description: 返品管理
 
 paths:
   # ============================================================
@@ -4961,6 +4963,119 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # ============================================================
+  # RETURNS - 返品管理
+  # ============================================================
+  /api/v1/returns:
+    post:
+      operationId: createReturn
+      summary: 返品登録
+      description: 返品伝票を登録する。1伝票1商品。返品種別に応じて在庫操作（在庫返品の場合のみ即時減算）を行い、ステータスはCOMPLETEDで確定する
+      tags: [returns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReturnRequest'
+      responses:
+        '201':
+          description: 返品伝票登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 商品・ロケーション・取引先・在庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 業務ルール違反（引当済み在庫・棚卸ロック中・数量超過）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: getReturns
+      summary: 返品一覧取得
+      description: 指定倉庫の返品伝票をページング形式で取得する。返品種別・返品日・商品・取引先・返品理由等の条件で絞り込みが可能
+      tags: [returns]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: returnType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReturnType'
+          description: 返品種別
+        - name: returnDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 返品日From
+        - name: returnDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 返品日To
+        - name: productId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 取引先ID
+        - name: returnReason
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReturnReason'
+          description: 返品理由コード
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: returnDate,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: 返品一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReturnSlipPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   # ============================================================
   # Security Schemes
@@ -8982,6 +9097,228 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReleasedSlipDetail'
+
+    # ----------------------------------------------------------
+    # Returns - 返品管理
+    # ----------------------------------------------------------
+    ReturnSlipStatus:
+      type: string
+      enum: [REGISTERED, COMPLETED]
+      description: 返品伝票ステータス
+
+    CreateReturnRequest:
+      type: object
+      required:
+        - returnType
+        - productId
+        - quantity
+        - unitType
+        - returnReason
+      properties:
+        returnType:
+          $ref: '#/components/schemas/ReturnType'
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 999999
+          description: 返品数量
+        unitType:
+          type: string
+          enum: [CASE, BALL, PIECE]
+          description: 荷姿
+        locationId:
+          type: ['integer', 'null']
+          format: int64
+          description: ロケーションID（在庫返品の場合必須）
+        partnerId:
+          type: ['integer', 'null']
+          format: int64
+          description: 取引先ID（任意）
+        returnReason:
+          $ref: '#/components/schemas/ReturnReason'
+        returnReasonNote:
+          type: ['string', 'null']
+          maxLength: 500
+          description: 返品理由備考（OTHER選択時は必須）
+        relatedSlipNumber:
+          type: ['string', 'null']
+          maxLength: 50
+          description: 関連伝票番号
+        lotNumber:
+          type: ['string', 'null']
+          maxLength: 100
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限日
+
+    ReturnSlipDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 返品伝票ID
+        slipNumber:
+          type: string
+          description: 返品伝票番号
+        returnType:
+          $ref: '#/components/schemas/ReturnType'
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseCode:
+          type: string
+          description: 倉庫コード
+        warehouseName:
+          type: string
+          description: 倉庫名
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        quantity:
+          type: integer
+          description: 返品数量
+        unitType:
+          type: string
+          description: 荷姿
+        locationId:
+          type: ['integer', 'null']
+          format: int64
+          description: ロケーションID
+        locationCode:
+          type: ['string', 'null']
+          description: ロケーションコード
+        partnerId:
+          type: ['integer', 'null']
+          format: int64
+          description: 取引先ID
+        partnerCode:
+          type: ['string', 'null']
+          description: 取引先コード
+        partnerName:
+          type: ['string', 'null']
+          description: 取引先名
+        returnReason:
+          $ref: '#/components/schemas/ReturnReason'
+        returnReasonNote:
+          type: ['string', 'null']
+          description: 返品理由備考
+        relatedSlipNumber:
+          type: ['string', 'null']
+          description: 関連伝票番号
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限日
+        returnDate:
+          type: string
+          format: date
+          description: 返品日（営業日）
+        status:
+          $ref: '#/components/schemas/ReturnSlipStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時
+        createdBy:
+          type: integer
+          format: int64
+          description: 登録者ID
+        createdByName:
+          type: string
+          description: 登録者名
+
+    ReturnSlipSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 返品伝票ID
+        slipNumber:
+          type: string
+          description: 返品伝票番号
+        returnType:
+          $ref: '#/components/schemas/ReturnType'
+        warehouseCode:
+          type: string
+          description: 倉庫コード
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        quantity:
+          type: integer
+          description: 返品数量
+        unitType:
+          type: string
+          description: 荷姿
+        locationCode:
+          type: ['string', 'null']
+          description: ロケーションコード
+        partnerCode:
+          type: ['string', 'null']
+          description: 取引先コード
+        partnerName:
+          type: ['string', 'null']
+          description: 取引先名
+        returnReason:
+          $ref: '#/components/schemas/ReturnReason'
+        returnReasonNote:
+          type: ['string', 'null']
+          description: 返品理由備考
+        relatedSlipNumber:
+          type: ['string', 'null']
+          description: 関連伝票番号
+        returnDate:
+          type: string
+          format: date
+          description: 返品日
+        status:
+          $ref: '#/components/schemas/ReturnSlipStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時
+        createdByName:
+          type: string
+          description: 登録者名
+
+    ReturnSlipPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReturnSlipSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
 
   # ============================================================
   # Parameters
