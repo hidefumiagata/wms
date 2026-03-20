@@ -76,6 +76,9 @@
 3. **レビューで矛盾を見つけた時**: SSOT側を正とし、複製側を参照リンクに置き換える
 4. **例外**: 画面設計書のイベント一覧にはAPIエンドポイントパス（`POST /api/v1/xxx`）を記載してよい（開発時の利便性のため）。ただしリクエスト/レスポンスの詳細は複製しない
 
+## 過去の学び
+詳細は [CLAUDE-LESSONS-LEARNED.md](CLAUDE-LESSONS-LEARNED.md) を参照。新しいセッション開始時に必ず読み込むこと。
+
 ## 開発ルール（実装フェーズ）
 - 作業前にGitHub Issueを作成する
 - ブランチ命名規則: `feature/[Issue#]_短い説明`（例: `feature/12_inventory-management`）
