@@ -22,6 +22,8 @@ tags:
     description: システム共通
   - name: master-facility
     description: 施設マスタ（倉庫・棟・エリア・ロケーション）
+  - name: master-partner
+    description: 取引先マスタ
 
 paths:
   # ============================================================
@@ -1217,6 +1219,249 @@ paths:
                     errorCode: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS
                     message: 棚卸中のため無効化できません
 
+  # ============================================================
+  # MASTER-PARTNER - 取引先マスタ
+  # ============================================================
+
+  /api/v1/master/partners:
+    get:
+      operationId: listPartners
+      summary: 取引先一覧取得
+      description: 取引先マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能。`partnerType=SUPPLIER`指定時はBOTH種別も含む
+      tags: [master-partner]
+      parameters:
+        - name: partnerCode
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: 取引先コード（前方一致）
+        - name: partnerName
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+          description: 取引先名（部分一致、カナ名も検索対象）
+        - name: partnerType
+          in: query
+          schema:
+            $ref: '#/components/schemas/PartnerType'
+          description: 種別フィルタ。SUPPLIER指定時はBOTHも含む、CUSTOMER指定時もBOTHも含む
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ。省略時は全件
+        - name: all
+          in: query
+          schema:
+            type: boolean
+          description: trueの場合ページングなしで全件返却（プルダウン用）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: partnerCode,asc
+          description: ソート条件
+      responses:
+        '200':
+          description: 取引先一覧取得成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/PartnerPageResponse'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/PartnerSimple'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createPartner
+      summary: 取引先登録
+      description: 新規取引先を登録する
+      tags: [master-partner]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePartnerRequest'
+      responses:
+        '201':
+          description: 取引先登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 取引先コード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 指定された取引先コードは既に使用されています
+
+  /api/v1/master/partners/{id}:
+    get:
+      operationId: getPartner
+      summary: 取引先取得
+      description: 指定IDの取引先を1件取得する
+      tags: [master-partner]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 取引先取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 取引先が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: PARTNER_NOT_FOUND
+                    message: 指定された取引先が見つかりません
+    put:
+      operationId: updatePartner
+      summary: 取引先更新
+      description: 指定IDの取引先情報を更新する。取引先コードは変更不可
+      tags: [master-partner]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePartnerRequest'
+      responses:
+        '200':
+          description: 取引先更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 取引先が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+
+  /api/v1/master/partners/{id}/deactivate:
+    patch:
+      operationId: togglePartnerActive
+      summary: 取引先無効化／有効化
+      description: 指定IDの取引先の有効/無効を切り替える。処理中の入荷予定・受注がある取引先は無効化不可
+      tags: [master-partner]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 取引先が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 処理中の入荷予定または受注が存在するため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasActiveInbound:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND
+                    message: 処理中の入荷予定が存在するため無効化できません
+                hasActiveOutbound:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND
+                    message: 処理中の受注が存在するため無効化できません
+
+  /api/v1/master/partners/exists:
+    get:
+      operationId: checkPartnerCodeExists
+      summary: 取引先コード存在確認
+      description: 指定された取引先コードがすでに登録されているか確認する
+      tags: [master-partner]
+      parameters:
+        - name: partnerCode
+          in: query
+          required: true
+          schema:
+            type: string
+          description: チェック対象の取引先コード
+      responses:
+        '200':
+          description: 存在確認結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   # ============================================================
   # Security Schemes
@@ -2082,6 +2327,156 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    # --- Partner Master ---
+
+    PartnerType:
+      type: string
+      enum: [SUPPLIER, CUSTOMER, BOTH]
+      description: 取引先種別（仕入先・出荷先・両方）
+
+    CreatePartnerRequest:
+      type: object
+      required: [partnerCode, partnerName, partnerNameKana, partnerType]
+      properties:
+        partnerCode:
+          type: string
+          maxLength: 50
+          pattern: '^[A-Za-z0-9\-]+$'
+          description: 取引先コード（登録後変更不可）
+          example: P-001
+        partnerName:
+          type: string
+          maxLength: 200
+          minLength: 1
+          description: 取引先名
+          example: 株式会社ABC商事
+        partnerNameKana:
+          type: string
+          maxLength: 200
+          description: 取引先名カナ
+          example: カブシキガイシャエービーシーショウジ
+        partnerType:
+          $ref: '#/components/schemas/PartnerType'
+        address:
+          type: string
+          maxLength: 500
+          description: 住所
+        phone:
+          type: string
+          maxLength: 50
+          pattern: '^[\d\-\(\)]+$'
+          description: 電話番号
+        contactPerson:
+          type: string
+          maxLength: 100
+          description: 担当者名
+        email:
+          type: string
+          maxLength: 200
+          format: email
+          description: メールアドレス
+
+    UpdatePartnerRequest:
+      type: object
+      required: [partnerName, partnerNameKana, partnerType, version]
+      properties:
+        partnerName:
+          type: string
+          maxLength: 200
+          minLength: 1
+          description: 取引先名
+        partnerNameKana:
+          type: string
+          maxLength: 200
+          description: 取引先名カナ
+        partnerType:
+          $ref: '#/components/schemas/PartnerType'
+        address:
+          type: string
+          maxLength: 500
+          description: 住所
+        phone:
+          type: string
+          maxLength: 50
+          pattern: '^[\d\-\(\)]+$'
+          description: 電話番号
+        contactPerson:
+          type: string
+          maxLength: 100
+          description: 担当者名
+        email:
+          type: string
+          maxLength: 200
+          format: email
+          description: メールアドレス
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    PartnerDetail:
+      type: object
+      required: [id, partnerCode, partnerName, partnerType, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        partnerCode:
+          type: string
+        partnerName:
+          type: string
+        partnerNameKana:
+          type: string
+        partnerType:
+          $ref: '#/components/schemas/PartnerType'
+        address:
+          type: string
+        phone:
+          type: string
+        contactPerson:
+          type: string
+        email:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PartnerSimple:
+      type: object
+      required: [id, partnerCode, partnerName]
+      properties:
+        id:
+          type: integer
+          format: int64
+        partnerCode:
+          type: string
+        partnerName:
+          type: string
+
+    PartnerPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PartnerDetail'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
 
   # ============================================================
   # Parameters
