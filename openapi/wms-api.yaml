@@ -30,6 +30,8 @@ tags:
     description: ユーザーマスタ
   - name: inbound
     description: 入荷管理
+  - name: inventory
+    description: 在庫管理
 
 paths:
   # ============================================================
@@ -2567,6 +2569,570 @@ paths:
                     errorCode: WAREHOUSE_NOT_FOUND
                     message: 指定された倉庫が見つかりません
 
+  # ============================================================
+  # INVENTORY - 在庫管理
+  # ============================================================
+
+  /api/v1/inventory:
+    get:
+      operationId: listInventory
+      summary: 在庫一覧照会
+      description: |
+        倉庫の在庫を多軸条件で絞り込んで一覧取得する。
+        ロケーション別明細表示（LOCATION）と商品別集計表示（PRODUCT_SUMMARY）の2モードを提供する。
+      tags: [inventory]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: locationCodePrefix
+          in: query
+          schema:
+            type: string
+          description: ロケーションコード前方一致フィルタ
+        - name: productId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: unitType
+          in: query
+          schema:
+            $ref: '#/components/schemas/UnitType'
+          description: 荷姿
+        - name: storageCondition
+          in: query
+          schema:
+            $ref: '#/components/schemas/StorageCondition'
+          description: 保管条件
+        - name: viewType
+          in: query
+          schema:
+            type: string
+            enum: [LOCATION, PRODUCT_SUMMARY]
+            default: LOCATION
+          description: 表示モード
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: locationCode,asc
+          description: ソート指定
+      responses:
+        '200':
+          description: |
+            在庫一覧。viewTypeにより返却スキーマが異なる。
+            LOCATION: InventoryLocationPageResponse
+            PRODUCT_SUMMARY: InventoryProductSummaryPageResponse
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InventoryLocationPageResponse'
+                  - $ref: '#/components/schemas/InventoryProductSummaryPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
+  /api/v1/inventory/move:
+    post:
+      operationId: moveInventory
+      summary: 在庫移動登録
+      description: 指定した在庫を移動元ロケーションから移動先ロケーションへ移動する。
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveInventoryRequest'
+      responses:
+        '200':
+          description: 移動成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveInventoryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: リソースが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                locationNotFound:
+                  value:
+                    errorCode: LOCATION_NOT_FOUND
+                    message: 指定されたロケーションが見つかりません
+                inventoryNotFound:
+                  value:
+                    errorCode: INVENTORY_NOT_FOUND
+                    message: 移動元に対象在庫が存在しません
+        '409':
+          description: 棚卸ロック中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stocktakeLock:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_IN_PROGRESS
+                    message: 棚卸ロック中のため操作できません
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficient:
+                  value:
+                    errorCode: INVENTORY_INSUFFICIENT
+                    message: 在庫数が不足しています
+                capacityExceeded:
+                  value:
+                    errorCode: INVENTORY_CAPACITY_EXCEEDED
+                    message: 移動先ロケーションの収容数を超過します
+                productMismatch:
+                  value:
+                    errorCode: LOCATION_PRODUCT_MISMATCH
+                    message: 移動先ロケーションに既に別商品の在庫が存在します
+
+  /api/v1/inventory/breakdown:
+    post:
+      operationId: breakdownInventory
+      summary: ばらし登録
+      description: |
+        ケースをボール/バラへ、ボールをバラへ変換（ばらし）する。
+        変換レートは商品マスタのcase_quantity/ball_quantityを参照する。
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BreakdownInventoryRequest'
+      responses:
+        '200':
+          description: ばらし成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BreakdownInventoryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: リソースが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                locationNotFound:
+                  value:
+                    errorCode: LOCATION_NOT_FOUND
+                    message: 指定されたロケーションが見つかりません
+                inventoryNotFound:
+                  value:
+                    errorCode: INVENTORY_NOT_FOUND
+                    message: ばらし元に対象在庫が存在しません
+        '409':
+          description: 棚卸ロック中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stocktakeLock:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_IN_PROGRESS
+                    message: 棚卸ロック中のため操作できません
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficient:
+                  value:
+                    errorCode: INVENTORY_INSUFFICIENT
+                    message: 在庫数が不足しています
+                capacityExceeded:
+                  value:
+                    errorCode: INVENTORY_CAPACITY_EXCEEDED
+                    message: ばらし先ロケーションの収容数を超過します
+                conversionFraction:
+                  value:
+                    errorCode: BREAKDOWN_CONVERSION_FRACTION
+                    message: 変換後数量に端数が発生しました
+
+  /api/v1/inventory/correction:
+    post:
+      operationId: correctInventory
+      summary: 在庫訂正登録
+      description: |
+        指定した在庫の数量を直接指定の数量に訂正する。訂正理由の記録が必須。
+        SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionInventoryRequest'
+      responses:
+        '200':
+          description: 訂正成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionInventoryResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: リソースが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                locationNotFound:
+                  value:
+                    errorCode: LOCATION_NOT_FOUND
+                    message: 指定されたロケーションが見つかりません
+                inventoryNotFound:
+                  value:
+                    errorCode: INVENTORY_NOT_FOUND
+                    message: 対象在庫レコードが存在しません
+        '409':
+          description: 棚卸ロック中
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stocktakeLock:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_IN_PROGRESS
+                    message: 棚卸ロック中のため操作できません
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                belowAllocated:
+                  value:
+                    errorCode: CORRECTION_BELOW_ALLOCATED
+                    message: 訂正後の数量が引当数を下回っています
+
+  /api/v1/inventory/stocktakes:
+    get:
+      operationId: listStocktakes
+      summary: 棚卸一覧取得
+      description: 棚卸の一覧を取得する。ステータスや倉庫で絞り込み可能。
+      tags: [inventory]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/StocktakeStatus'
+          description: ステータス絞り込み
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 棚卸開始日From
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 棚卸開始日To
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: startedAt,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: 棚卸一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StocktakeSummaryPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
+    post:
+      operationId: startStocktake
+      summary: 棚卸開始
+      description: |
+        指定した棟・エリア範囲の在庫スナップショットを取得して棚卸を開始する。
+        棚卸開始と同時に対象ロケーションに棚卸ロックをかける。
+        SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。
+      tags: [inventory]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartStocktakeRequest'
+      responses:
+        '201':
+          description: 棚卸開始成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartStocktakeResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: マスタが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+                buildingNotFound:
+                  value:
+                    errorCode: BUILDING_NOT_FOUND
+                    message: 指定された棟が見つかりません
+                areaNotFound:
+                  value:
+                    errorCode: AREA_NOT_FOUND
+                    message: 指定されたエリアが見つかりません
+        '409':
+          description: 棚卸ロック競合
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stocktakeInProgress:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_IN_PROGRESS
+                    message: 同一ロケーション範囲に実施中の棚卸が存在します
+
+  /api/v1/inventory/stocktakes/{id}:
+    get:
+      operationId: getStocktake
+      summary: 棚卸詳細取得
+      description: 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
+      tags: [inventory]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+        - name: isCounted
+          in: query
+          schema:
+            type: boolean
+          description: 実数入力済み絞り込み（true=入力済み, false=未入力）
+        - name: locationCodePrefix
+          in: query
+          schema:
+            type: string
+          description: ロケーションコード前方一致
+        - $ref: '#/components/parameters/PageParam'
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: 棚卸詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StocktakeDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 棚卸が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: STOCKTAKE_NOT_FOUND
+                    message: 指定された棚卸が見つかりません
+
+  /api/v1/inventory/stocktakes/{id}/lines:
+    put:
+      operationId: saveStocktakeLines
+      summary: 棚卸実数入力・一時保存
+      description: |
+        棚卸実施中（STARTED）の棚卸に対して、実測した在庫数（実数）を入力・保存する。
+        複数明細を一括保存可能。確定（API-INV-015）までは在庫数量は変更されない。
+      tags: [inventory]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveStocktakeLinesRequest'
+      responses:
+        '200':
+          description: 保存成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveStocktakeLinesResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 棚卸または明細が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                stocktakeNotFound:
+                  value:
+                    errorCode: STOCKTAKE_NOT_FOUND
+                    message: 指定された棚卸が見つかりません
+                lineNotFound:
+                  value:
+                    errorCode: STOCKTAKE_LINE_NOT_FOUND
+                    message: 指定された棚卸明細が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: STOCKTAKE_INVALID_STATUS
+                    message: 棚卸が実施中ではないため操作できません
+
+  /api/v1/inventory/stocktakes/{id}/confirm:
+    post:
+      operationId: confirmStocktake
+      summary: 棚卸確定
+      description: |
+        棚卸（STARTED）を確定する。全明細の実数入力済みを確認した上で、
+        在庫数量を実数に更新し、差異をinventory_movementsに記録する。棚卸ロックを解除する。
+        SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。
+      tags: [inventory]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 棚卸確定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmStocktakeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 棚卸が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: STOCKTAKE_NOT_FOUND
+                    message: 指定された棚卸が見つかりません
+        '409':
+          description: ステータスエラーまたは未入力あり
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: STOCKTAKE_INVALID_STATUS
+                    message: 棚卸が実施中ではないため操作できません
+                notAllCounted:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_NOT_ALL_COUNTED
+                    message: 未入力の実数があります
+
 components:
   # ============================================================
   # Security Schemes
@@ -4260,6 +4826,611 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InboundResultItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Inventory schemas
+    # ----------------------------------------------------------
+
+    StocktakeStatus:
+      type: string
+      enum: [STARTED, CONFIRMED]
+      description: 棚卸ステータス
+
+    InventoryLocationItem:
+      type: object
+      required: [id, locationId, locationCode, productId, productCode, productName, unitType, quantity, allocatedQty, availableQty, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 在庫レコードID
+        locationId:
+          type: integer
+          format: int64
+          description: ロケーションID
+        locationCode:
+          type: string
+          description: ロケーションコード
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限
+        quantity:
+          type: integer
+          description: 在庫数量
+        allocatedQty:
+          type: integer
+          description: 引当数量
+        availableQty:
+          type: integer
+          description: 有効在庫数（quantity - allocatedQty）
+        updatedAt:
+          type: string
+          format: date-time
+          description: 最終更新日時
+
+    InventoryProductSummaryItem:
+      type: object
+      required: [productId, productCode, productName, storageCondition, caseQuantity, ballQuantity, pieceQuantity, totalAllocatedQty, totalAvailableQty, totalPieceEquivalent]
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        caseQuantity:
+          type: integer
+          description: ケース在庫合計数
+        ballQuantity:
+          type: integer
+          description: ボール在庫合計数
+        pieceQuantity:
+          type: integer
+          description: バラ在庫合計数
+        totalAllocatedQty:
+          type: integer
+          description: 引当数量合計
+        totalAvailableQty:
+          type: integer
+          description: 有効在庫数合計
+        totalPieceEquivalent:
+          type: integer
+          format: int64
+          description: 総バラ換算数
+
+    MoveInventoryRequest:
+      type: object
+      required: [fromLocationId, productId, unitType, toLocationId, moveQty]
+      properties:
+        fromLocationId:
+          type: integer
+          format: int64
+          description: 移動元ロケーションID
+        productId:
+          type: integer
+          format: int64
+          description: 移動対象商品ID
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限
+        toLocationId:
+          type: integer
+          format: int64
+          description: 移動先ロケーションID
+        moveQty:
+          type: integer
+          minimum: 1
+          description: 移動数量
+
+    MoveInventoryResponse:
+      type: object
+      required: [fromInventoryId, toInventoryId, fromLocationCode, toLocationCode, productCode, productName, unitType, movedQty, fromQuantityAfter, toQuantityAfter]
+      properties:
+        fromInventoryId:
+          type: integer
+          format: int64
+          description: 移動元の在庫レコードID
+        toInventoryId:
+          type: integer
+          format: int64
+          description: 移動先の在庫レコードID
+        fromLocationCode:
+          type: string
+          description: 移動元ロケーションコード
+        toLocationCode:
+          type: string
+          description: 移動先ロケーションコード
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        movedQty:
+          type: integer
+          description: 移動数量
+        fromQuantityAfter:
+          type: integer
+          description: 移動後の移動元在庫数
+        toQuantityAfter:
+          type: integer
+          description: 移動後の移動先在庫数
+
+    BreakdownInventoryRequest:
+      type: object
+      required: [fromLocationId, productId, fromUnitType, breakdownQty, toUnitType, toLocationId]
+      properties:
+        fromLocationId:
+          type: integer
+          format: int64
+          description: ばらし元ロケーションID
+        productId:
+          type: integer
+          format: int64
+          description: ばらし対象商品ID
+        fromUnitType:
+          type: string
+          enum: [CASE, BALL]
+          description: ばらし元荷姿（PIECEは不可）
+        breakdownQty:
+          type: integer
+          minimum: 1
+          description: ばらし数量（fromUnitType単位）
+        toUnitType:
+          type: string
+          enum: [BALL, PIECE]
+          description: ばらし先荷姿
+        toLocationId:
+          type: integer
+          format: int64
+          description: ばらし先ロケーションID（ばらし元と同一可）
+
+    BreakdownInventoryResponse:
+      type: object
+      required: [fromInventoryId, toInventoryId, productCode, productName, fromUnitType, toUnitType, breakdownQty, convertedQty, fromQuantityAfter, toQuantityAfter]
+      properties:
+        fromInventoryId:
+          type: integer
+          format: int64
+          description: ばらし元の在庫レコードID
+        toInventoryId:
+          type: integer
+          format: int64
+          description: ばらし先の在庫レコードID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        fromUnitType:
+          type: string
+          description: ばらし元荷姿
+        toUnitType:
+          type: string
+          description: ばらし先荷姿
+        breakdownQty:
+          type: integer
+          description: ばらした数量（fromUnitType単位）
+        convertedQty:
+          type: integer
+          description: ばらし後の生成数量（toUnitType単位）
+        fromQuantityAfter:
+          type: integer
+          description: ばらし後のばらし元在庫数
+        toQuantityAfter:
+          type: integer
+          description: ばらし後のばらし先在庫数
+
+    CorrectionInventoryRequest:
+      type: object
+      required: [locationId, productId, unitType, newQty, reason]
+      properties:
+        locationId:
+          type: integer
+          format: int64
+          description: 訂正対象ロケーションID
+        productId:
+          type: integer
+          format: int64
+          description: 訂正対象商品ID
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限
+        newQty:
+          type: integer
+          minimum: 0
+          description: 訂正後の在庫数量
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: 訂正理由
+
+    CorrectionInventoryResponse:
+      type: object
+      required: [inventoryId, locationCode, productCode, productName, unitType, quantityBefore, quantityAfter, reason]
+      properties:
+        inventoryId:
+          type: integer
+          format: int64
+          description: 在庫レコードID
+        locationCode:
+          type: string
+          description: ロケーションコード
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        quantityBefore:
+          type: integer
+          description: 訂正前在庫数
+        quantityAfter:
+          type: integer
+          description: 訂正後在庫数
+        reason:
+          type: string
+          description: 訂正理由
+
+    StocktakeSummary:
+      type: object
+      required: [id, stocktakeNumber, warehouseId, warehouseName, targetDescription, status, totalLines, countedLines, startedAt, startedByName]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 棚卸ヘッダID
+        stocktakeNumber:
+          type: string
+          description: 棚卸番号
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseName:
+          type: string
+          description: 倉庫名
+        targetDescription:
+          type: string
+          description: 棚卸対象説明
+        status:
+          $ref: '#/components/schemas/StocktakeStatus'
+        totalLines:
+          type: integer
+          description: 棚卸明細総件数
+        countedLines:
+          type: integer
+          description: 実数入力済み件数
+        startedAt:
+          type: string
+          format: date-time
+          description: 棚卸開始日時
+        startedByName:
+          type: string
+          description: 棚卸開始者氏名
+        confirmedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 棚卸確定日時
+        confirmedByName:
+          type: ['string', 'null']
+          description: 棚卸確定者氏名
+
+    StartStocktakeRequest:
+      type: object
+      required: [warehouseId, buildingId, stocktakeDate]
+      properties:
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        buildingId:
+          type: integer
+          format: int64
+          description: 棟ID
+        areaId:
+          type: ['integer', 'null']
+          format: int64
+          description: エリアID（null=棟全体が対象）
+        stocktakeDate:
+          type: string
+          format: date
+          description: 棚卸実施日
+        note:
+          type: ['string', 'null']
+          maxLength: 500
+          description: 備考
+
+    StartStocktakeResponse:
+      type: object
+      required: [id, stocktakeNumber, targetDescription, status, totalLines, startedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 棚卸ヘッダID
+        stocktakeNumber:
+          type: string
+          description: 採番された棚卸番号
+        targetDescription:
+          type: string
+          description: 棚卸対象説明
+        status:
+          $ref: '#/components/schemas/StocktakeStatus'
+        totalLines:
+          type: integer
+          description: 作成された棚卸明細件数
+        startedAt:
+          type: string
+          format: date-time
+          description: 棚卸開始日時
+
+    StocktakeLineItem:
+      type: object
+      required: [lineId, locationId, locationCode, productId, productCode, productName, unitType, quantityBefore, isCounted]
+      properties:
+        lineId:
+          type: integer
+          format: int64
+          description: 棚卸明細ID
+        locationId:
+          type: integer
+          format: int64
+          description: ロケーションID
+        locationCode:
+          type: string
+          description: ロケーションコード
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限
+        quantityBefore:
+          type: integer
+          description: 棚卸開始時在庫数
+        quantityCounted:
+          type: ['integer', 'null']
+          description: 実数（null=未入力）
+        quantityDiff:
+          type: ['integer', 'null']
+          description: 差異数（null=棚卸確定前）
+        isCounted:
+          type: boolean
+          description: 実数入力済みフラグ
+        countedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 実数入力日時
+        countedByName:
+          type: ['string', 'null']
+          description: 実数入力者氏名
+
+    StocktakeDetail:
+      type: object
+      required: [id, stocktakeNumber, warehouseId, warehouseName, targetDescription, status, totalLines, countedLines, startedAt, startedByName, lines]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 棚卸ヘッダID
+        stocktakeNumber:
+          type: string
+          description: 棚卸番号
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseName:
+          type: string
+          description: 倉庫名
+        targetDescription:
+          type: string
+          description: 棚卸対象説明
+        status:
+          $ref: '#/components/schemas/StocktakeStatus'
+        totalLines:
+          type: integer
+          description: 棚卸明細総件数
+        countedLines:
+          type: integer
+          description: 実数入力済み件数
+        startedAt:
+          type: string
+          format: date-time
+          description: 棚卸開始日時
+        startedByName:
+          type: string
+          description: 棚卸開始者氏名
+        confirmedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 棚卸確定日時
+        confirmedByName:
+          type: ['string', 'null']
+          description: 棚卸確定者氏名
+        lines:
+          type: object
+          required: [content, page, size, totalElements, totalPages]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/StocktakeLineItem'
+            page:
+              type: integer
+            size:
+              type: integer
+            totalElements:
+              type: integer
+              format: int64
+            totalPages:
+              type: integer
+
+    SaveStocktakeLinesRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [lineId, actualQty]
+            properties:
+              lineId:
+                type: integer
+                format: int64
+                description: 棚卸明細ID
+              actualQty:
+                type: integer
+                minimum: 0
+                description: 実測数量
+
+    SaveStocktakeLinesResponse:
+      type: object
+      required: [updatedCount, totalLines, countedLines]
+      properties:
+        updatedCount:
+          type: integer
+          description: 今回更新した明細件数
+        totalLines:
+          type: integer
+          description: 棚卸明細総件数
+        countedLines:
+          type: integer
+          description: 実数入力済み件数
+
+    ConfirmStocktakeResponse:
+      type: object
+      required: [id, stocktakeNumber, status, totalLines, adjustedLines, confirmedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 棚卸ヘッダID
+        stocktakeNumber:
+          type: string
+          description: 棚卸番号
+        status:
+          $ref: '#/components/schemas/StocktakeStatus'
+        totalLines:
+          type: integer
+          description: 棚卸明細総件数
+        adjustedLines:
+          type: integer
+          description: 差異が発生して在庫調整が行われた明細件数
+        confirmedAt:
+          type: string
+          format: date-time
+          description: 確定日時
+
+    InventoryLocationPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryLocationItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    InventoryProductSummaryPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryProductSummaryItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    StocktakeSummaryPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/StocktakeSummary'
         page:
           type: integer
         size:
