@@ -24,6 +24,8 @@ tags:
     description: 施設マスタ（倉庫・棟・エリア・ロケーション）
   - name: master-partner
     description: 取引先マスタ
+  - name: master-product
+    description: 商品マスタ
 
 paths:
   # ============================================================
@@ -1462,6 +1464,265 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  # ============================================================
+  # MASTER-PRODUCT - 商品マスタ
+  # ============================================================
+
+  /api/v1/master/products:
+    get:
+      operationId: listProducts
+      summary: 商品一覧取得
+      description: 商品マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
+      tags: [master-product]
+      parameters:
+        - name: productCode
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: 商品コード（前方一致）
+        - name: productName
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+          description: 商品名（部分一致）
+        - name: storageCondition
+          in: query
+          schema:
+            $ref: '#/components/schemas/StorageCondition'
+          description: 保管条件フィルタ
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ
+        - name: shipmentStopFlag
+          in: query
+          schema:
+            type: boolean
+          description: 出荷禁止フラグフィルタ
+        - name: all
+          in: query
+          schema:
+            type: boolean
+          description: trueの場合ページングなしで全件返却（プルダウン用）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: productCode,asc
+          description: ソート条件
+      responses:
+        '200':
+          description: 商品一覧取得成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ProductPageResponse'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSimple'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createProduct
+      summary: 商品登録
+      description: 新規商品をマスタに登録する
+      tags: [master-product]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+      responses:
+        '201':
+          description: 商品登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 商品コード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 指定された商品コードは既に使用されています
+
+  /api/v1/master/products/{id}:
+    get:
+      operationId: getProduct
+      summary: 商品取得
+      description: 指定IDの商品を1件取得する
+      tags: [master-product]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 商品取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 商品が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: PRODUCT_NOT_FOUND
+                    message: 指定された商品が見つかりません
+    put:
+      operationId: updateProduct
+      summary: 商品更新
+      description: 指定IDの商品情報を更新する。商品コードは変更不可。在庫存在時はロット管理・期限管理フラグ変更不可
+      tags: [master-product]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: 商品更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 商品が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 在庫存在時のフラグ変更不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                cannotChangeLotFlag:
+                  value:
+                    errorCode: CANNOT_CHANGE_LOT_MANAGE_FLAG
+                    message: 在庫が存在するため、ロット管理フラグは変更できません
+                cannotChangeExpiryFlag:
+                  value:
+                    errorCode: CANNOT_CHANGE_EXPIRY_MANAGE_FLAG
+                    message: 在庫が存在するため、賞味/使用期限管理フラグは変更できません
+
+  /api/v1/master/products/{id}/deactivate:
+    patch:
+      operationId: toggleProductActive
+      summary: 商品無効化／有効化
+      description: 指定IDの商品の有効/無効を切り替える。在庫が存在する商品は無効化不可
+      tags: [master-product]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 商品が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 在庫が存在するため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasInventory:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_INVENTORY
+                    message: 在庫が存在するため無効化できません
+
+  /api/v1/master/products/exists:
+    get:
+      operationId: checkProductCodeExists
+      summary: 商品コード存在確認
+      description: 指定された商品コードがすでに登録されているか確認する
+      tags: [master-product]
+      parameters:
+        - name: productCode
+          in: query
+          required: true
+          schema:
+            type: string
+          description: チェック対象の商品コード
+      responses:
+        '200':
+          description: 存在確認結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   # ============================================================
   # Security Schemes
@@ -2468,6 +2729,175 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PartnerDetail'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    # --- Product Master ---
+
+    CreateProductRequest:
+      type: object
+      required: [productCode, productName, caseQuantity, ballQuantity, storageCondition, isHazardous, lotManageFlag, expiryManageFlag, shipmentStopFlag, isActive]
+      properties:
+        productCode:
+          type: string
+          maxLength: 50
+          pattern: '^[A-Za-z0-9\-]+$'
+          description: 商品コード（登録後変更不可）
+          example: P-001
+        productName:
+          type: string
+          maxLength: 200
+          description: 商品名
+          example: テスト商品A
+        productNameKana:
+          type: string
+          maxLength: 200
+          description: 商品名カナ
+        caseQuantity:
+          type: integer
+          minimum: 1
+          description: ケース入数
+          example: 6
+        ballQuantity:
+          type: integer
+          minimum: 1
+          description: ボール入数
+          example: 10
+        barcode:
+          type: string
+          maxLength: 100
+          description: バーコード / JANコード
+          example: '4901234567890'
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        isHazardous:
+          type: boolean
+          description: 危険物フラグ
+        lotManageFlag:
+          type: boolean
+          description: ロット管理フラグ
+        expiryManageFlag:
+          type: boolean
+          description: 賞味/使用期限管理フラグ
+        shipmentStopFlag:
+          type: boolean
+          description: 出荷禁止フラグ
+        isActive:
+          type: boolean
+          description: 有効フラグ
+
+    UpdateProductRequest:
+      type: object
+      required: [productName, caseQuantity, ballQuantity, storageCondition, isHazardous, lotManageFlag, expiryManageFlag, shipmentStopFlag, isActive, version]
+      properties:
+        productName:
+          type: string
+          maxLength: 200
+          description: 商品名
+        productNameKana:
+          type: string
+          maxLength: 200
+          description: 商品名カナ
+        caseQuantity:
+          type: integer
+          minimum: 1
+          description: ケース入数
+        ballQuantity:
+          type: integer
+          minimum: 1
+          description: ボール入数
+        barcode:
+          type: string
+          maxLength: 100
+          description: バーコード / JANコード
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        isHazardous:
+          type: boolean
+          description: 危険物フラグ
+        lotManageFlag:
+          type: boolean
+          description: ロット管理フラグ（在庫存在時は変更不可）
+        expiryManageFlag:
+          type: boolean
+          description: 賞味/使用期限管理フラグ（在庫存在時は変更不可）
+        shipmentStopFlag:
+          type: boolean
+          description: 出荷禁止フラグ
+        isActive:
+          type: boolean
+          description: 有効フラグ
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    ProductDetail:
+      type: object
+      required: [id, productCode, productName, caseQuantity, ballQuantity, storageCondition, isHazardous, lotManageFlag, expiryManageFlag, shipmentStopFlag, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        productCode:
+          type: string
+        productName:
+          type: string
+        productNameKana:
+          type: string
+        caseQuantity:
+          type: integer
+        ballQuantity:
+          type: integer
+        barcode:
+          type: string
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        isHazardous:
+          type: boolean
+        lotManageFlag:
+          type: boolean
+        expiryManageFlag:
+          type: boolean
+        shipmentStopFlag:
+          type: boolean
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductSimple:
+      type: object
+      required: [id, productCode, productName]
+      properties:
+        id:
+          type: integer
+          format: int64
+        productCode:
+          type: string
+        productName:
+          type: string
+
+    ProductPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductDetail'
         page:
           type: integer
         size:
