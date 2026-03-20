@@ -97,8 +97,8 @@ public class PasswordService {
         passwordResetTokenRepository.save(resetToken);
 
         // TODO: メール送信（Azure Communication Services）— 現時点ではログ出力のみ
-        log.info("Password reset token generated: userId={}, token={} (DEV ONLY - remove in production)",
-                user.getId(), rawToken);
+        log.info("Password reset token generated: userId={}", user.getId());
+        log.debug("Password reset token (DEV ONLY): token={}", rawToken);
 
         return rawToken;
     }
