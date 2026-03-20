@@ -35,8 +35,9 @@ public class AuthService {
     private final CookieUtil cookieUtil;
     private final SystemParameterService systemParameterService;
 
-    // BCryptダミーハッシュ（タイミング攻撃対策）
-    private static final String DUMMY_HASH = "$2a$12$00000000000000000000000000000000000000000000000000000";
+    // BCryptダミーハッシュ（タイミング攻撃対策）— 有効なBCryptハッシュを使用する
+    // echo -n "dummy-for-timing-attack-mitigation" | BCrypt(strength=12)
+    private static final String DUMMY_HASH = "$2a$12$K4G0PXpOSGVlhPsmHXveNOYPenMdDBTMDO1YBr8Em5aFKTjCx4wHa";
 
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
