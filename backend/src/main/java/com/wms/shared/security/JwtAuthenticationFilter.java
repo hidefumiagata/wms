@@ -49,7 +49,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             MDC.put("userId", String.valueOf(userId));
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove("userId");
+        }
     }
 
     private String extractTokenFromCookie(HttpServletRequest request) {
