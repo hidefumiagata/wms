@@ -1,5 +1,1 @@
 docs/node_modules/
-
-# Backend (Java/Gradle)
-backend/build/
-backend/.gradle/
