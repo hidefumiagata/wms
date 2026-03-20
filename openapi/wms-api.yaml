@@ -38,6 +38,8 @@ tags:
     description: バッチ管理
   - name: report
     description: レポート出力
+  - name: system-parameter
+    description: システムパラメータ
 
 paths:
   # ============================================================
@@ -4664,6 +4666,73 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  # ============================================================
+  # SYSTEM PARAMETER - システムパラメータ
+  # ============================================================
+  /api/v1/system/parameters:
+    get:
+      tags: [system-parameter]
+      summary: パラメータ一覧取得
+      operationId: getSystemParameters
+      description: システムパラメータの一覧を取得する。SYSTEM_ADMIN専用。
+      responses:
+        '200':
+          description: パラメータ一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SystemParameterDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/system/parameters/{paramKey}:
+    put:
+      tags: [system-parameter]
+      summary: パラメータ値更新
+      operationId: updateSystemParameter
+      description: 指定したパラメータキーの値を更新する。SYSTEM_ADMIN専用。
+      parameters:
+        - name: paramKey
+          in: path
+          required: true
+          schema:
+            type: string
+          description: パラメータキー
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSystemParameterRequest'
+      responses:
+        '200':
+          description: 更新後のパラメータ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemParameterDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: パラメータが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: PARAM_NOT_FOUND
+                    message: 指定されたパラメータキーが見つかりません
+
 components:
   # ============================================================
   # Security Schemes
@@ -8279,6 +8348,65 @@ components:
           format: date
         createdByName:
           type: string
+
+    # ----------------------------------------------------------
+    # システムパラメータ (System Parameter) schemas
+    # ----------------------------------------------------------
+    SystemParameterCategory:
+      type: string
+      enum:
+        - INVENTORY
+        - OUTBOUND
+        - INBOUND
+        - SYSTEM
+      description: パラメータカテゴリ
+
+    SystemParameterValueType:
+      type: string
+      enum:
+        - INTEGER
+        - STRING
+      description: パラメータ値の型
+
+    SystemParameterDetail:
+      type: object
+      properties:
+        paramKey:
+          type: string
+          description: パラメータキー（一意識別子）
+        paramValue:
+          type: string
+          description: 現在の設定値
+        defaultValue:
+          type: string
+          description: デフォルト値
+        displayName:
+          type: string
+          description: パラメータの表示名
+        category:
+          $ref: '#/components/schemas/SystemParameterCategory'
+        valueType:
+          $ref: '#/components/schemas/SystemParameterValueType'
+        description:
+          type: string
+          description: パラメータの説明文
+        updatedAt:
+          type: string
+          format: date-time
+          description: 最終更新日時
+        updatedBy:
+          type: integer
+          format: int64
+          description: 最終更新者ID
+
+    UpdateSystemParameterRequest:
+      type: object
+      required:
+        - paramValue
+      properties:
+        paramValue:
+          type: string
+          description: 更新後の値（文字列で送信）
 
   # ============================================================
   # Parameters
