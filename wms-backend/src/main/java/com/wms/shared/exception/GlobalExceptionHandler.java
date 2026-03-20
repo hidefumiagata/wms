@@ -7,10 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 
 @RestControllerAdvice
@@ -57,6 +59,32 @@ public class GlobalExceptionHandler {
                 "入力内容にエラーがあります",
                 TraceContext.getCurrentTraceId(),
                 details);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    // --- @Validated パス/クエリパラメータ ---
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        List<ErrorResponse.FieldError> details = ex.getConstraintViolations().stream()
+                .map(cv -> new ErrorResponse.FieldError(
+                        cv.getPropertyPath().toString(), cv.getMessage()))
+                .toList();
+
+        ErrorResponse body = ErrorResponse.validation(
+                "入力内容にエラーがあります",
+                TraceContext.getCurrentTraceId(),
+                details);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    // --- 不正リクエスト ---
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {
+        ErrorResponse body = ErrorResponse.of(
+                "INVALID_REQUEST_BODY", "リクエストボディの形式が不正です",
+                TraceContext.getCurrentTraceId());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
