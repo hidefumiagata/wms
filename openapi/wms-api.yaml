@@ -40,6 +40,8 @@ tags:
     description: レポート出力
   - name: system-parameter
     description: システムパラメータ
+  - name: allocation
+    description: 在庫引当
 
 paths:
   # ============================================================
@@ -4733,6 +4735,232 @@ paths:
                     errorCode: PARAM_NOT_FOUND
                     message: 指定されたパラメータキーが見つかりません
 
+  # ============================================================
+  # ALLOCATION - 在庫引当
+  # ============================================================
+  /api/v1/allocation/orders:
+    get:
+      operationId: getAllocationOrders
+      summary: 引当対象受注一覧取得
+      description: 引当対象となる受注（ステータスがORDEREDまたはPARTIAL_ALLOCATED）をページング形式で取得する
+      tags: [allocation]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ORDERED, PARTIAL_ALLOCATED]
+          description: ステータス（複数指定可）
+        - name: shippingDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日の開始日
+        - name: shippingDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日の終了日
+        - name: partnerName
+          in: query
+          schema:
+            type: string
+          description: 出荷先名（部分一致）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: plannedDate,asc
+          description: ソート指定
+      responses:
+        '200':
+          description: 引当対象受注一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationOrderPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/allocation/execute:
+    post:
+      operationId: executeAllocation
+      summary: 引当実行
+      description: 選択された受注に対して在庫引当を実行する。FIFO/FEFO方式で在庫を引き当て、荷姿変換が必要な場合はばらし指示を自動生成する
+      tags: [allocation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteAllocationRequest'
+      responses:
+        '200':
+          description: 引当実行結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationExecutionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 出荷伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/allocation/unpack-instructions:
+    get:
+      operationId: getUnpackInstructions
+      summary: ばらし指示一覧取得
+      description: ばらし指示の一覧を取得する。出荷伝票IDやステータスでの絞り込みが可能
+      tags: [allocation]
+      parameters:
+        - name: outboundSlipId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 出荷伝票IDで絞り込み
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [INSTRUCTED, COMPLETED]
+          description: ステータス
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: ばらし指示一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnpackInstructionPageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/allocation/unpack-instructions/{id}/complete:
+    put:
+      operationId: completeUnpackInstruction
+      summary: ばらし完了
+      description: ばらし指示を完了し、在庫の荷姿変換を確定する。元荷姿の在庫を減算し、先荷姿の在庫を加算する
+      tags: [allocation]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: ばらし完了結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnpackCompletionResult'
+        '400':
+          description: 既に完了済みのばらし指示
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: ばらし指示が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/allocation/allocated-orders:
+    get:
+      operationId: getAllocatedOrders
+      summary: 引当済み受注一覧取得
+      description: 引当済み（ALLOCATEDまたはPARTIAL_ALLOCATED）の受注一覧をページング形式で取得する
+      tags: [allocation]
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: plannedDate,asc
+          description: ソート指定
+      responses:
+        '200':
+          description: 引当済み受注一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocatedOrderPageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/allocation/release:
+    post:
+      operationId: releaseAllocation
+      summary: 引当解放
+      description: 引当済みの受注から引当を解放する。引当済み在庫を元に戻し、受注ステータスをORDEREDに戻す
+      tags: [allocation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseAllocationRequest'
+      responses:
+        '200':
+          description: 引当解放結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationReleaseResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 出荷伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: ピッキング指示済み以降のため引当解放不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   # ============================================================
   # Security Schemes
@@ -8407,6 +8635,353 @@ components:
         paramValue:
           type: string
           description: 更新後の値（文字列で送信）
+
+    # ----------------------------------------------------------
+    # Allocation - 在庫引当
+    # ----------------------------------------------------------
+    AllocationOrderSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        plannedDate:
+          type: string
+          format: date
+          description: 出荷予定日
+        partnerName:
+          type: string
+          description: 出荷先取引先名
+        lineCount:
+          type: integer
+          description: 明細件数
+        status:
+          type: string
+          enum: [ORDERED, PARTIAL_ALLOCATED]
+          description: 受注ステータス
+
+    AllocationOrderPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocationOrderSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    ExecuteAllocationRequest:
+      type: object
+      required:
+        - outboundSlipIds
+      properties:
+        outboundSlipIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          description: 引当対象の出荷伝票IDリスト
+
+    AllocatedLineDetail:
+      type: object
+      properties:
+        lineNo:
+          type: integer
+          description: 明細行番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        orderedQty:
+          type: integer
+          description: 受注数量
+        allocatedQty:
+          type: integer
+          description: 引当数量
+
+    AllocatedSlipDetail:
+      type: object
+      properties:
+        outboundSlipId:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        status:
+          type: string
+          enum: [ALLOCATED, PARTIAL_ALLOCATED]
+          description: 引当後ステータス
+        allocatedLines:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocatedLineDetail'
+
+    UnpackInstructionItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ばらし指示ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        fromUnitType:
+          type: string
+          description: 元荷姿（CASE / BALL）
+        toUnitType:
+          type: string
+          description: 先荷姿（BALL / PIECE）
+        quantity:
+          type: integer
+          description: ばらし数量
+        status:
+          type: string
+          enum: [INSTRUCTED]
+          description: ステータス
+
+    UnallocatedLineDetail:
+      type: object
+      properties:
+        outboundSlipId:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        lineNo:
+          type: integer
+          description: 明細行番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        shortageQty:
+          type: integer
+          description: 不足数量
+
+    AllocationExecutionResult:
+      type: object
+      properties:
+        allocatedCount:
+          type: integer
+          description: 引当成功件数
+        allocatedSlips:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocatedSlipDetail'
+        unpackInstructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnpackInstructionItem'
+        unallocatedLines:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnallocatedLineDetail'
+
+    UnpackInstructionSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ばらし指示ID
+        outboundSlipId:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 出荷伝票番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        fromUnitType:
+          type: string
+          description: 元荷姿
+        toUnitType:
+          type: string
+          description: 先荷姿
+        quantity:
+          type: integer
+          description: ばらし数量
+        status:
+          type: string
+          enum: [INSTRUCTED, COMPLETED]
+          description: ステータス
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+
+    UnpackInstructionPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnpackInstructionSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    InventoryMovement:
+      type: object
+      properties:
+        movementType:
+          type: string
+          enum: [BREAKDOWN_OUT, BREAKDOWN_IN]
+          description: 変動種別
+        productCode:
+          type: string
+          description: 商品コード
+        unitType:
+          type: string
+          description: 荷姿
+        quantity:
+          type: integer
+          description: 数量（減算はマイナス）
+        locationCode:
+          type: string
+          description: ロケーションコード
+
+    UnpackCompletionResult:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ばらし指示ID
+        status:
+          type: string
+          enum: [COMPLETED]
+          description: 完了後ステータス
+        completedAt:
+          type: string
+          format: date-time
+          description: 完了日時
+        inventoryMovements:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryMovement'
+
+    AllocatedOrderSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        plannedDate:
+          type: string
+          format: date
+          description: 出荷予定日
+        partnerName:
+          type: string
+          description: 出荷先取引先名
+        lineCount:
+          type: integer
+          description: 全明細件数
+        allocatedLineCount:
+          type: integer
+          description: 引当済み明細件数
+        status:
+          type: string
+          enum: [ALLOCATED, PARTIAL_ALLOCATED]
+          description: ステータス
+
+    AllocatedOrderPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocatedOrderSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    ReleaseAllocationRequest:
+      type: object
+      required:
+        - outboundSlipIds
+      properties:
+        outboundSlipIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          minItems: 1
+          description: 引当解放対象の出荷伝票IDリスト
+
+    ReleasedSlipDetail:
+      type: object
+      properties:
+        outboundSlipId:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        previousStatus:
+          type: string
+          description: 解放前ステータス
+        newStatus:
+          type: string
+          enum: [ORDERED]
+          description: 解放後ステータス
+
+    AllocationReleaseResult:
+      type: object
+      properties:
+        releasedCount:
+          type: integer
+          description: 解放成功件数
+        releasedSlips:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReleasedSlipDetail'
 
   # ============================================================
   # Parameters
