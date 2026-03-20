@@ -65,6 +65,13 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    void parseTokenAllowExpired_validToken_returnsClaims() {
+        String token = jwtTokenProvider.generateAccessToken(1L, "admin001", "SYSTEM_ADMIN", false);
+        Claims claims = jwtTokenProvider.parseTokenAllowExpired(token);
+        assertThat(claims.getSubject()).isEqualTo("1");
+    }
+
+    @Test
     void getUserIdFromClaims() {
         String token = jwtTokenProvider.generateAccessToken(42L, "user42", "VIEWER", true);
         Claims claims = jwtTokenProvider.parseToken(token);
