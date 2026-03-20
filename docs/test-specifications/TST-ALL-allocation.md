@@ -22,6 +22,7 @@
 | SC-002 | 正常系: 部分引当（在庫不足時に引当可能分のみ引当） | 高 | 同上 | ○ | ○ |
 | SC-003 | 正常系: FEFO引当（賞味期限管理品は期限短い順） | 高 | 期限管理フラグONの商品在庫が複数ロケーションに存在 | ○ | ○ |
 | SC-004 | 正常系: ばらし指示自動生成（ボール→バラ） | 高 | バラ在庫不足・ボール在庫ありの状態 | ○ | ○ |
+| SC-004a | 正常系: ばらし指示自動生成（ケース→バラ） | 高 | バラ・ボール在庫不足・ケース在庫ありの状態 | ○ | ○ |
 | SC-005 | 正常系: ばらし完了（在庫変動確認） | 高 | SC-004実行後、ばらし指示がINSTRUCTED状態 | ○ | ○ |
 | SC-006 | 正常系: 引当済み一覧表示 | 中 | 引当済み受注が存在する状態 | ○ | ○ |
 | SC-007 | 正常系: 引当解放（受注単位） | 高 | 引当済み受注が存在する状態 | ○ | ○ |
@@ -148,6 +149,35 @@
 | 2 | inventories（バラ） | `allocated_qty` += 5 |
 | 3 | inventories（ボール） | `allocated_qty` += 1（仮確保） |
 | 4 | allocation_details | バラ在庫からの引当5 + ばらし予定分の引当5 = 合計10が記録 |
+
+---
+
+### SC-004a: 正常系: ばらし指示自動生成（ケース→バラ）
+
+| 項目 | 内容 |
+|------|------|
+| シナリオID | SC-004a |
+| シナリオ名 | バラ・ボール在庫不足時にケース→バラのばらし指示が自動生成される |
+| 前提条件 | WAREHOUSE_MANAGERでログイン済み。受注OUT-TEST-004a（バラ50個, 商品PRD-004a, ケース入数=6, ボール入数=5）がORDERED状態。PRD-004aのバラ有効在庫が10、ボール有効在庫が0、ケース有効在庫が3 |
+| テストデータ | `R__004a_allocation_unpack_case.sql` |
+
+**テストステップ:**
+
+| # | 操作 | 期待結果 | 確認方法 |
+|:-:|------|---------|---------|
+| 1 | ALL-001画面を開く | 受注一覧にOUT-TEST-004aが表示される | — |
+| 2 | OUT-TEST-004aを選択し [選択した受注を引当実行] をクリック | 引当成功1件が表示される | MSG-S-ALL001-001 |
+| 3 | 引当結果のばらし指示一覧を確認 | ばらし指示1件: PRD-004a, 元荷姿CASE, 先荷姿PIECE, 数量2ケース（2×6×5=60バラ）, ステータスINSTRUCTED | ばらし指示テーブルに1行表示 |
+| 4 | 引当結果のallocatedSlipsを確認 | バラ10は直接引当済み。残り40はばらし待ち（仮引当） | status = ALLOCATED（全量引当計画済み） |
+
+**DB検証（結合テストのみ）:**
+
+| # | 検証対象テーブル | 検証内容 |
+|:-:|---------------|---------|
+| 1 | unpack_instructions | 1件作成。product_id=PRD-004aに対応するID, from_unit_type=CASE, to_unit_type=PIECE, from_qty=2, to_qty=60, status=INSTRUCTED |
+| 2 | inventories（バラ） | `allocated_qty` += 10 |
+| 3 | inventories（ケース） | `allocated_qty` += 2（仮確保） |
+| 4 | allocation_details | バラ在庫からの引当10 + ばらし予定分の引当40 = 合計50が記録 |
 
 ---
 
@@ -417,6 +447,29 @@ test('SC-004: ばらし指示自動生成（ボール→バラ）', async ({ pag
   const unpackRow = page.locator('[data-testid="unpack-instructions"] tr', { hasText: 'PRD-004' });
   await expect(unpackRow).toBeVisible();
   await expect(unpackRow.locator('td:nth-child(2)')).toContainText('BALL');  // 元荷姿
+  await expect(unpackRow.locator('td:nth-child(3)')).toContainText('PIECE'); // 先荷姿
+  await expect(unpackRow.locator('td:nth-child(5)')).toContainText('INSTRUCTED');
+});
+```
+
+### SC-004a: ばらし指示自動生成（ケース→バラ）
+
+```typescript
+test('SC-004a: ばらし指示自動生成（ケース→バラ）', async ({ page }) => {
+  await loginAs(page, 'WAREHOUSE_MANAGER');
+
+  await page.goto('/allocation');
+
+  // 受注を選択して引当実行
+  const row = page.locator('tr', { hasText: 'OUT-TEST-004a' });
+  await row.locator('input[type="checkbox"]').check();
+  await page.click('button:has-text("選択した受注を引当実行")');
+  await expect(page.locator('.el-message--success')).toBeVisible();
+
+  // ばらし指示一覧を確認
+  const unpackRow = page.locator('[data-testid="unpack-instructions"] tr', { hasText: 'PRD-004a' });
+  await expect(unpackRow).toBeVisible();
+  await expect(unpackRow.locator('td:nth-child(2)')).toContainText('CASE');  // 元荷姿
   await expect(unpackRow.locator('td:nth-child(3)')).toContainText('PIECE'); // 先荷姿
   await expect(unpackRow.locator('td:nth-child(5)')).toContainText('INSTRUCTED');
 });

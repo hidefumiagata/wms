@@ -28,23 +28,6 @@
 - コミットメッセージ：日英併記
 - HTMLポータル：draw.ioファイルをインライン表示する（diagrams.net viewer JS使用）※build-docs.js要対応
 
-## ドキュメント構成
-- docs/project-plan/           - プロジェクト計画書（全12セクション完成）
-- docs/architecture-blueprint/ - アーキテクチャブループリント（全13セクション完成）
-- docs/functional-requirements/ - 機能要件定義書（全11セクション完成: 00認証〜08返品管理）
-- docs/data-model/             - データモデル定義（全4ファイル完成）
-- docs/functional-design/      - 機能設計書
-  - 画面設計: SCR-01〜SCR-15（15ファイル）
-  - API設計: API-01〜API-13（13ファイル）
-  - IF設計: IF-01〜IF-02（2ファイル）
-  - BAT設計: BAT-01（1ファイル）
-  - RPT設計: RPT-01〜RPT-18（17ファイル）
-  - モックアップ: mockups/（55画面）
-  - 標準テンプレート: _standard-screen.md, _standard-api.md, _standard-report.md
-- openapi/                     - OpenAPI定義（wms-api.yaml）
-- docs/architecture-design/    - アーキテクチャ設計書（全13セクション完成）
-- docs/test-specifications/    - テスト仕様書（テスト計画書+テンプレート完成、個別テスト仕様書は実装後に作成）
-
 ## ドキュメントSSOT（Single Source of Truth）ルール
 
 **1つの事実は1箇所にだけ定義する。** 他のドキュメントは参照リンクで示す。
@@ -80,27 +63,22 @@
 詳細は [CLAUDE-LESSONS-LEARNED.md](CLAUDE-LESSONS-LEARNED.md) を参照。新しいセッション開始時に必ず読み込むこと。
 
 ## 開発ルール（実装フェーズ）
-- 作業前にGitHub Issueを作成する
-- ブランチ命名規則: `feature/[Issue#]_短い説明`（例: `feature/12_inventory-management`）
-- mainへの直接コミット不可（ドキュメント整備フェーズ完了後）
 
-### ブランチ戦略の詳細
-- 新しい実装タスクを始める前に GitHub Issue を作成する
-- Issue番号を使ったブランチを作成してから作業を開始する
-- PRはmainブランチへ向けて作成する
+### 作業の流れ
+1. GitHub Issue を作成する
+2. Issue番号を使ったブランチを作成する
+3. 作業を実施する
+4. ブランチをpushしてPRを作成する（mainブランチへ向けて）
+5. 1 Issue = 1ブランチ = 1 PR の粒度を守る
 
-**Why:** ドキュメント整備フェーズ完了後、実装フェーズからはIssueとブランチで作業単位を管理したい。
+### Issueルール
+- **タイトル**: 簡潔な日本語
+- **言語**: 日本語
+- **ラベル**: `feature`（新機能）/ `bugfix`（バグ修正）/ `docs`（ドキュメント）
+- **テンプレート**: `.github/ISSUE_TEMPLATE/` にYAML形式で定義済み
+- **記載項目**: 概要、目的、受入条件（チェックリスト形式）、関連ドキュメント
 
-## プロジェクト計画書 進捗
-- [x] セクション1: プロジェクト憲章
-- [x] セクション2: スコープ管理計画（WBS）
-- [x] セクション3: 要件管理計画
-- [x] セクション4: スケジュール管理計画 ※管理外（サンデープログラミングのため）
-- [x] セクション5: コスト管理計画
-- [x] セクション6: 品質管理計画
-- [x] セクション7: リソース管理計画
-- [x] セクション8: コミュニケーション管理計画
-- [x] セクション9: リスク管理計画
-- [x] セクション10: 調達管理計画
-- [x] セクション11: ステークホルダー管理計画
-- [x] セクション12: 変更管理計画
+### ブランチ命名規則
+- `feature/[Issue#]_短い説明`（例: `feature/12_inventory-management`）
+- mainへの直接コミット不可
+

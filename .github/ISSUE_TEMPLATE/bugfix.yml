@@ -1,0 +1,47 @@
+name: バグ修正
+description: バグの報告と修正
+labels: ["bugfix"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何が起きているか簡潔に記載
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 再現手順
+      description: バグを再現するための手順
+      value: |
+        1.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する動作
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 受入条件
+      description: 修正完了とみなす条件をチェックリスト形式で記載
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: 備考
+    validations:
+      required: false

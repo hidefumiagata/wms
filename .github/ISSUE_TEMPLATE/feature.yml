@@ -1,0 +1,41 @@
+name: 機能追加
+description: 新機能の追加
+labels: ["feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何を実装するか簡潔に記載
+    validations:
+      required: true
+  - type: textarea
+    id: purpose
+    attributes:
+      label: 目的
+      description: なぜこの機能が必要か
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 受入条件
+      description: 完了とみなす条件をチェックリスト形式で記載
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: related-docs
+    attributes:
+      label: 関連ドキュメント
+      description: 関連する設計書・仕様書へのパス
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: 備考
+      description: 補足事項があれば記載
+    validations:
+      required: false
