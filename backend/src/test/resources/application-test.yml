@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wms_test
+    username: wms
+    password: wms
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+  flyway:
+    enabled: false
+
+jwt:
+  secret: test-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000
+
+cors:
+  allowed-origins: http://localhost:5173
