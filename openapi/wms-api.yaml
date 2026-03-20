@@ -32,6 +32,8 @@ tags:
     description: 入荷管理
   - name: inventory
     description: 在庫管理
+  - name: outbound
+    description: 出荷管理
 
 paths:
   # ============================================================
@@ -3133,6 +3135,584 @@ paths:
                     errorCode: INVENTORY_STOCKTAKE_NOT_ALL_COUNTED
                     message: 未入力の実数があります
 
+  # ============================================================
+  # OUTBOUND - 出荷管理
+  # ============================================================
+
+  /api/v1/outbound/slips:
+    get:
+      operationId: listOutboundSlips
+      summary: 受注一覧取得
+      description: 出荷伝票（受注）の一覧をページング形式で取得する。倉庫ID必須。
+      tags: [outbound]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: slipNumber
+          in: query
+          schema:
+            type: string
+          description: 伝票番号（前方一致）
+        - name: plannedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日From
+        - name: plannedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日To
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 出荷先取引先ID
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/OutboundSlipStatus'
+          description: ステータス（複数指定可）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: plannedDate,asc
+          description: ソート指定
+      responses:
+        '200':
+          description: 受注一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlipPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
+    post:
+      operationId: createOutboundSlip
+      summary: 受注登録
+      description: |
+        新規の出荷受注を登録する。登録時のステータスはORDERED固定。
+        伝票番号は自動採番される。
+      tags: [outbound]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOutboundSlipRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: マスタ未存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+                partnerNotFound:
+                  value:
+                    errorCode: PARTNER_NOT_FOUND
+                    message: 指定された取引先が見つかりません
+                productNotFound:
+                  value:
+                    errorCode: PRODUCT_NOT_FOUND
+                    message: 指定された商品が見つかりません
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                partnerNotCustomer:
+                  value:
+                    errorCode: OUTBOUND_PARTNER_NOT_CUSTOMER
+                    message: 取引先種別が出荷先ではありません
+                shipmentStopped:
+                  value:
+                    errorCode: OUTBOUND_PRODUCT_SHIPMENT_STOPPED
+                    message: 出荷禁止フラグが設定された商品です
+
+  /api/v1/outbound/slips/{id}:
+    get:
+      operationId: getOutboundSlip
+      summary: 受注詳細取得
+      description: 出荷伝票IDを指定して受注ヘッダ・全明細を取得する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 受注詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlipDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+
+    delete:
+      operationId: deleteOutboundSlip
+      summary: 受注削除
+      description: ORDERED状態の受注伝票を物理削除する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/outbound/slips/{id}/cancel:
+    post:
+      operationId: cancelOutboundSlip
+      summary: 受注キャンセル
+      description: |
+        ORDERED、PARTIAL_ALLOCATED、またはALLOCATED状態の受注をキャンセルする。
+        引当済みの場合は引当情報も取り消す。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOutboundRequest'
+      responses:
+        '200':
+          description: キャンセル成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundCancelResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/outbound/slips/{id}/inspect:
+    post:
+      operationId: inspectOutboundSlip
+      summary: 出荷検品登録
+      description: |
+        ピッキング完了済みまたは検品中の出荷伝票に対して出荷検品数量を登録する。
+        ステータスをINSPECTINGに更新する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectOutboundRequest'
+      responses:
+        '200':
+          description: 検品登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/outbound/slips/{id}/ship:
+    post:
+      operationId: shipOutboundSlip
+      summary: 出荷完了登録
+      description: |
+        出荷検品済みの伝票に対して出荷完了処理を行う。
+        在庫の実減算・移動履歴の記録・伝票ステータス更新をトランザクションで一括処理する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipOutboundRequest'
+      responses:
+        '200':
+          description: 出荷完了成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OutboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+        '422':
+          description: 在庫不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficient:
+                  value:
+                    errorCode: INVENTORY_INSUFFICIENT
+                    message: 在庫が不足しており出荷できません
+
+  /api/v1/outbound/picking:
+    get:
+      operationId: listPickingInstructions
+      summary: ピッキング指示一覧取得
+      description: ピッキング指示の一覧をページング形式で取得する。倉庫ID必須。
+      tags: [outbound]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: instructionNumber
+          in: query
+          schema:
+            type: string
+          description: 指示番号（前方一致）
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PickingInstructionStatus'
+          description: ステータス（複数指定可）
+        - name: createdDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 作成日From
+        - name: createdDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 作成日To
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: createdAt,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: ピッキング指示一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PickingInstructionPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
+    post:
+      operationId: createPickingInstruction
+      summary: ピッキング指示作成
+      description: |
+        在庫引当済みの受注（ALLOCATED状態）からピッキング指示書を作成する。
+        複数の受注を束ねて1つのピッキング指示にまとめることができる。
+      tags: [outbound]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePickingInstructionRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PickingInstructionDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: リソースが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                slipNotFound:
+                  value:
+                    errorCode: OUTBOUND_SLIP_NOT_FOUND
+                    message: 指定された出荷伝票が見つかりません
+                areaNotFound:
+                  value:
+                    errorCode: AREA_NOT_FOUND
+                    message: 指定されたエリアが見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: ALLOCATED以外の伝票が含まれています
+                unpackNotCompleted:
+                  value:
+                    errorCode: UNPACK_NOT_COMPLETED
+                    message: 未完了のばらし指示が存在します
+
+  /api/v1/outbound/picking/{id}:
+    get:
+      operationId: getPickingInstruction
+      summary: ピッキング指示詳細取得
+      description: ピッキング指示IDを指定してヘッダ・全明細を取得する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: ピッキング指示詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PickingInstructionDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: ピッキング指示が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: PICKING_NOT_FOUND
+                    message: 指定されたピッキング指示が見つかりません
+
+  /api/v1/outbound/picking/{id}/complete:
+    put:
+      operationId: completePickingInstruction
+      summary: ピッキング完了登録
+      description: |
+        ピッキング作業者がピッキングした数量を登録する。
+        全明細完了時に指示ステータスをCOMPLETEDに更新し、
+        関連する受注ステータスをPICKING_COMPLETEDに変更する。
+      tags: [outbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompletePickingRequest'
+      responses:
+        '200':
+          description: ピッキング完了登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PickingInstructionDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: ピッキング指示が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: PICKING_NOT_FOUND
+                    message: 指定されたピッキング指示が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: OUTBOUND_INVALID_STATUS
+                    message: 既に完了済みのピッキング指示です
+
 components:
   # ============================================================
   # Security Schemes
@@ -5431,6 +6011,710 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StocktakeSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    # ----------------------------------------------------------
+    # 出荷管理 (Outbound) schemas
+    # ----------------------------------------------------------
+    OutboundSlipStatus:
+      type: string
+      enum:
+        - ORDERED
+        - PARTIAL_ALLOCATED
+        - ALLOCATED
+        - PICKING_COMPLETED
+        - INSPECTING
+        - SHIPPED
+        - CANCELLED
+      description: |
+        受注ステータス
+        - ORDERED: 受注済み
+        - PARTIAL_ALLOCATED: 一部引当済み
+        - ALLOCATED: 引当完了
+        - PICKING_COMPLETED: ピッキング完了
+        - INSPECTING: 検品中
+        - SHIPPED: 出荷完了
+        - CANCELLED: キャンセル
+
+    OutboundSlipType:
+      type: string
+      enum:
+        - NORMAL
+        - WAREHOUSE_TRANSFER
+      description: |
+        出荷伝票種別
+        - NORMAL: 通常出荷
+        - WAREHOUSE_TRANSFER: 倉庫間移動
+
+    OutboundLineStatus:
+      type: string
+      enum:
+        - ORDERED
+        - ALLOCATED
+        - PICKING_COMPLETED
+        - SHIPPED
+        - CANCELLED
+      description: |
+        出荷明細ステータス
+        - ORDERED: 受注済み
+        - ALLOCATED: 引当完了
+        - PICKING_COMPLETED: ピッキング完了
+        - SHIPPED: 出荷完了
+        - CANCELLED: キャンセル
+
+    PickingInstructionStatus:
+      type: string
+      enum:
+        - CREATED
+        - IN_PROGRESS
+        - COMPLETED
+      description: |
+        ピッキング指示ステータス
+        - CREATED: 作成済み
+        - IN_PROGRESS: 作業中
+        - COMPLETED: 完了
+
+    PickingLineStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+      description: |
+        ピッキング明細ステータス
+        - PENDING: 未ピッキング
+        - COMPLETED: ピッキング完了
+
+    CreateOutboundSlipRequest:
+      type: object
+      required:
+        - warehouseId
+        - slipType
+        - plannedDate
+        - lines
+      properties:
+        warehouseId:
+          type: integer
+          format: int64
+          description: 出荷元倉庫ID
+        slipType:
+          $ref: '#/components/schemas/OutboundSlipType'
+        partnerId:
+          type: ['integer', 'null']
+          format: int64
+          description: 出荷先取引先ID（NORMAL時は必須）
+        plannedDate:
+          type: string
+          format: date
+          description: 出荷予定日（yyyy-MM-dd）
+        note:
+          type: ['string', 'null']
+          maxLength: 500
+          description: 備考
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateOutboundLineRequest'
+
+    CreateOutboundLineRequest:
+      type: object
+      required:
+        - productId
+        - unitType
+        - orderedQty
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        orderedQty:
+          type: integer
+          minimum: 1
+          maximum: 999999
+          description: 受注数量
+
+    OutboundSlipSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        slipType:
+          $ref: '#/components/schemas/OutboundSlipType'
+        partnerName:
+          type: ['string', 'null']
+          description: 出荷先取引先名（振替の場合はnull）
+        plannedDate:
+          type: string
+          format: date
+          description: 出荷予定日
+        status:
+          $ref: '#/components/schemas/OutboundSlipStatus'
+        lineCount:
+          type: integer
+          description: 明細件数
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+
+    OutboundSlipDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        slipType:
+          $ref: '#/components/schemas/OutboundSlipType'
+        transferSlipNumber:
+          type: ['string', 'null']
+          description: 振替伝票番号
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseCode:
+          type: string
+          description: 倉庫コード
+        warehouseName:
+          type: string
+          description: 倉庫名
+        partnerId:
+          type: ['integer', 'null']
+          format: int64
+          description: 出荷先取引先ID
+        partnerCode:
+          type: ['string', 'null']
+          description: 取引先コード
+        partnerName:
+          type: ['string', 'null']
+          description: 取引先名
+        plannedDate:
+          type: string
+          format: date
+          description: 出荷予定日
+        carrier:
+          type: ['string', 'null']
+          description: 配送業者名
+        trackingNumber:
+          type: ['string', 'null']
+          description: 送り状番号
+        status:
+          $ref: '#/components/schemas/OutboundSlipStatus'
+        note:
+          type: ['string', 'null']
+          description: 備考
+        shippedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 出荷日時
+        shippedBy:
+          type: ['integer', 'null']
+          format: int64
+          description: 出荷実行者ID
+        cancelledAt:
+          type: ['string', 'null']
+          format: date-time
+          description: キャンセル日時
+        cancelledBy:
+          type: ['integer', 'null']
+          format: int64
+          description: キャンセル実行者ID
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutboundSlipLineDetail'
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+        createdBy:
+          type: integer
+          format: int64
+          description: 作成者ID
+        updatedBy:
+          type: integer
+          format: int64
+          description: 更新者ID
+
+    OutboundSlipLineDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 行番号
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        orderedQty:
+          type: integer
+          description: 受注数量
+        shippedQty:
+          type: ['integer', 'null']
+          description: 出荷数量
+        inspectedQty:
+          type: ['integer', 'null']
+          description: 検品数量
+        lineStatus:
+          $ref: '#/components/schemas/OutboundLineStatus'
+
+    CancelOutboundRequest:
+      type: object
+      properties:
+        reason:
+          type: ['string', 'null']
+          maxLength: 500
+          description: キャンセル理由
+
+    OutboundCancelResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        status:
+          $ref: '#/components/schemas/OutboundSlipStatus'
+        cancelledAt:
+          type: string
+          format: date-time
+          description: キャンセル日時
+        cancelledBy:
+          type: integer
+          format: int64
+          description: キャンセル実行者ID
+
+    CreatePickingInstructionRequest:
+      type: object
+      required:
+        - slipIds
+      properties:
+        slipIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+          description: 対象の出荷伝票IDリスト（ALLOCATED状態のもののみ）
+        areaId:
+          type: ['integer', 'null']
+          format: int64
+          description: 対象エリアID（省略時は全エリア対象）
+
+    PickingInstructionSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ピッキング指示ID
+        instructionNumber:
+          type: string
+          description: 指示番号
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseName:
+          type: string
+          description: 倉庫名
+        areaId:
+          type: ['integer', 'null']
+          format: int64
+          description: エリアID
+        areaName:
+          type: ['string', 'null']
+          description: エリア名
+        status:
+          $ref: '#/components/schemas/PickingInstructionStatus'
+        lineCount:
+          type: integer
+          description: 明細件数
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        createdByName:
+          type: string
+          description: 作成者名
+
+    PickingInstructionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ピッキング指示ID
+        instructionNumber:
+          type: string
+          description: 指示番号
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseName:
+          type: string
+          description: 倉庫名
+        areaId:
+          type: ['integer', 'null']
+          format: int64
+          description: エリアID
+        areaName:
+          type: ['string', 'null']
+          description: エリア名
+        status:
+          $ref: '#/components/schemas/PickingInstructionStatus'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PickingInstructionLineDetail'
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        createdBy:
+          type: integer
+          format: int64
+          description: 作成者ID
+        completedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 完了日時
+        completedBy:
+          type: ['integer', 'null']
+          format: int64
+          description: 完了者ID
+
+    PickingInstructionLineDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ピッキング指示明細ID
+        lineNo:
+          type: integer
+          description: 行番号
+        outboundSlipNumber:
+          type: string
+          description: 出荷伝票番号
+        outboundSlipLineId:
+          type: integer
+          format: int64
+          description: 出荷明細ID
+        locationId:
+          type: integer
+          format: int64
+          description: ロケーションID
+        locationCode:
+          type: string
+          description: ロケーションコード
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 有効期限
+        qtyToPick:
+          type: integer
+          description: ピッキング予定数量
+        qtyPicked:
+          type: ['integer', 'null']
+          description: ピッキング実績数量
+        lineStatus:
+          $ref: '#/components/schemas/PickingLineStatus'
+
+    CompletePickingRequest:
+      type: object
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CompletePickingLineRequest'
+
+    CompletePickingLineRequest:
+      type: object
+      required:
+        - lineId
+        - qtyPicked
+      properties:
+        lineId:
+          type: integer
+          format: int64
+          description: ピッキング指示明細ID
+        qtyPicked:
+          type: integer
+          minimum: 0
+          description: ピッキング完了数量
+
+    CompletePickingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ピッキング指示ID
+        instructionNumber:
+          type: string
+          description: 指示番号
+        status:
+          $ref: '#/components/schemas/PickingInstructionStatus'
+        completedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 完了日時
+        completedBy:
+          type: ['integer', 'null']
+          format: int64
+          description: 完了者ID
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompletePickingLineResponse'
+
+    CompletePickingLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 行番号
+        qtyToPick:
+          type: integer
+          description: ピッキング予定数量
+        qtyPicked:
+          type: integer
+          description: ピッキング実績数量
+        lineStatus:
+          $ref: '#/components/schemas/PickingLineStatus'
+
+    InspectOutboundRequest:
+      type: object
+      required:
+        - lines
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InspectOutboundLineRequest'
+
+    InspectOutboundLineRequest:
+      type: object
+      required:
+        - lineId
+        - inspectedQty
+      properties:
+        lineId:
+          type: integer
+          format: int64
+          description: 出荷明細ID
+        inspectedQty:
+          type: integer
+          minimum: 0
+          description: 検品数量
+
+    InspectOutboundResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        status:
+          $ref: '#/components/schemas/OutboundSlipStatus'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InspectOutboundLineResponse'
+
+    InspectOutboundLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 行番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        orderedQty:
+          type: integer
+          description: 受注数量
+        inspectedQty:
+          type: integer
+          description: 検品数量
+        lineStatus:
+          $ref: '#/components/schemas/OutboundLineStatus'
+
+    ShipOutboundRequest:
+      type: object
+      required:
+        - shippedDate
+      properties:
+        carrier:
+          type: ['string', 'null']
+          maxLength: 100
+          description: 配送業者名
+        trackingNumber:
+          type: ['string', 'null']
+          maxLength: 100
+          description: 送り状番号
+        shippedDate:
+          type: string
+          format: date
+          description: 実際の出荷日（yyyy-MM-dd）
+        note:
+          type: ['string', 'null']
+          maxLength: 500
+          description: 備考
+
+    ShipOutboundResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 出荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        status:
+          $ref: '#/components/schemas/OutboundSlipStatus'
+        carrier:
+          type: ['string', 'null']
+          description: 配送業者名
+        trackingNumber:
+          type: ['string', 'null']
+          description: 送り状番号
+        shippedAt:
+          type: string
+          format: date-time
+          description: 出荷日時
+        shippedBy:
+          type: integer
+          format: int64
+          description: 出荷実行者ID
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShipOutboundLineResponse'
+
+    ShipOutboundLineResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 行番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        orderedQty:
+          type: integer
+          description: 受注数量
+        shippedQty:
+          type: integer
+          description: 出荷数量
+        lineStatus:
+          $ref: '#/components/schemas/OutboundLineStatus'
+
+    OutboundSlipPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutboundSlipSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    PickingInstructionPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PickingInstructionSummary'
         page:
           type: integer
         size:
