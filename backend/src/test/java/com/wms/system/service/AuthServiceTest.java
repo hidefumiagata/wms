@@ -223,6 +223,18 @@ class AuthServiceTest {
     }
 
     @Test
+    void refresh_blankAccessToken_throwsBadCredentials() {
+        assertThatThrownBy(() -> authService.refresh("raw", "  ", response))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void refresh_emptyRefreshToken_throwsBadCredentials() {
+        assertThatThrownBy(() -> authService.refresh("", "jwt", response))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
     void refresh_noStoredToken_throwsBadCredentials() {
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
