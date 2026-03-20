@@ -17,6 +17,9 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class TraceIdFilter extends OncePerRequestFilter {
 
+    public static final String TRACE_ID_KEY = "traceId";
+    public static final String TRACE_ID_HEADER = "X-Trace-Id";
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                      HttpServletResponse response,
@@ -24,12 +27,12 @@ public class TraceIdFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String traceId = UUID.randomUUID().toString().replace("-", "");
-            MDC.put("traceId", traceId);
-            response.setHeader("X-Trace-Id", traceId);
+            MDC.put(TRACE_ID_KEY, traceId);
+            response.setHeader(TRACE_ID_HEADER, traceId);
 
             filterChain.doFilter(request, response);
         } finally {
-            MDC.clear();
+            MDC.remove(TRACE_ID_KEY);
         }
     }
 }

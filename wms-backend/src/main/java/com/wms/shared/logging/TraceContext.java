@@ -10,7 +10,7 @@ public final class TraceContext {
     private TraceContext() {}
 
     public static String getCurrentTraceId() {
-        String traceId = MDC.get("traceId");
+        String traceId = MDC.get(TraceIdFilter.TRACE_ID_KEY);
         return traceId != null ? traceId : "unknown";
     }
 }
