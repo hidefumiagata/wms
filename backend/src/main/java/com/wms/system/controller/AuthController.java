@@ -1,5 +1,7 @@
 package com.wms.system.controller;
 
+import com.wms.shared.exception.RateLimitExceededException;
+import com.wms.shared.security.RateLimiterService;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.system.entity.User;
 import com.wms.system.service.AuthService;
@@ -27,6 +29,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final PasswordService passwordService;
+    private final RateLimiterService rateLimiterService;
 
     // --- DTOs ---
 
@@ -81,7 +84,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
             HttpServletResponse response) {
+        // レート制限: 同一IPから15分間に20回まで
+        if (!rateLimiterService.tryConsumeLogin(getClientIp(httpRequest))) {
+            throw new RateLimitExceededException();
+        }
         User user = authService.login(request.userCode(), request.password(), response);
         return ResponseEntity.ok(LoginResponse.from(user));
     }
@@ -115,7 +123,14 @@ public class AuthController {
 
     @PostMapping("/password-reset/request")
     public ResponseEntity<Map<String, String>> requestPasswordReset(
-            @Valid @RequestBody PasswordResetRequest request) {
+            @Valid @RequestBody PasswordResetRequest request,
+            HttpServletRequest httpRequest) {
+        // レート制限: 同一IPから15分間に5回、同一identifierから15分間に3回
+        String clientIp = getClientIp(httpRequest);
+        if (!rateLimiterService.tryConsumePasswordResetByIp(clientIp)
+                || !rateLimiterService.tryConsumePasswordResetByIdentifier(request.identifier())) {
+            throw new RateLimitExceededException();
+        }
         passwordService.requestPasswordReset(request.identifier());
         // ユーザー列挙防止: 常に同じレスポンスを返す
         return ResponseEntity.ok(Map.of(
@@ -128,5 +143,16 @@ public class AuthController {
         passwordService.confirmPasswordReset(request.token(), request.newPassword());
         return ResponseEntity.ok(Map.of(
                 "message", "Password has been reset successfully."));
+    }
+
+    // --- Helper ---
+
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            // 最初のIPがクライアントIP
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
