@@ -20,6 +20,8 @@ tags:
     description: 認証・認可
   - name: system
     description: システム共通
+  - name: master-facility
+    description: 施設マスタ（倉庫・棟・エリア・ロケーション）
 
 paths:
   # ============================================================
@@ -302,6 +304,919 @@ paths:
                     errorCode: INTERNAL_SERVER_ERROR
                     message: システムエラーが発生しました
 
+  # ============================================================
+  # MASTER-FACILITY - 施設マスタ
+  # ============================================================
+
+  # --- Warehouses ---
+
+  /api/v1/master/warehouses:
+    get:
+      operationId: listWarehouses
+      summary: 倉庫一覧取得
+      description: 倉庫マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
+      tags: [master-facility]
+      parameters:
+        - name: warehouseCode
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: 倉庫コード（前方一致）
+        - name: warehouseName
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+          description: 倉庫名（部分一致）
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ。省略時は全件
+        - name: all
+          in: query
+          schema:
+            type: boolean
+          description: trueの場合ページングなしで全件返却（プルダウン用）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: warehouseCode,asc
+          description: ソート条件
+      responses:
+        '200':
+          description: 倉庫一覧取得成功
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/WarehousePageResponse'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/WarehouseSimple'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createWarehouse
+      summary: 倉庫登録
+      description: 倉庫マスタに新規倉庫を登録する
+      tags: [master-facility]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWarehouseRequest'
+      responses:
+        '201':
+          description: 倉庫登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 倉庫コード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 指定された倉庫コードは既に使用されています
+
+  /api/v1/master/warehouses/{id}:
+    get:
+      operationId: getWarehouse
+      summary: 倉庫取得
+      description: 指定IDの倉庫マスタを1件取得する
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 倉庫取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+    put:
+      operationId: updateWarehouse
+      summary: 倉庫更新
+      description: 指定IDの倉庫マスタを更新する。倉庫コードは変更不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWarehouseRequest'
+      responses:
+        '200':
+          description: 倉庫更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+
+  /api/v1/master/warehouses/{id}/deactivate:
+    patch:
+      operationId: toggleWarehouseActive
+      summary: 倉庫無効化／有効化
+      description: 指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WarehouseToggleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 在庫が存在するため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasInventory:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_INVENTORY
+                    message: 在庫が存在するため無効化できません
+
+  /api/v1/master/warehouses/exists:
+    get:
+      operationId: checkWarehouseCodeExists
+      summary: 倉庫コード存在確認
+      description: 指定された倉庫コードがすでに登録されているか確認する
+      tags: [master-facility]
+      parameters:
+        - name: warehouseCode
+          in: query
+          required: true
+          schema:
+            type: string
+          description: チェック対象の倉庫コード
+      responses:
+        '200':
+          description: 存在確認結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExistsResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # --- Buildings ---
+
+  /api/v1/master/buildings:
+    get:
+      operationId: listBuildings
+      summary: 棟一覧取得
+      description: 指定倉庫に属する棟の一覧を取得する
+      tags: [master-facility]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: 対象の倉庫ID
+        - name: buildingCode
+          in: query
+          schema:
+            type: string
+            maxLength: 10
+          description: 棟コード（前方一致）
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: 棟一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingPageResponse'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 指定倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: createBuilding
+      summary: 棟登録
+      description: 棟マスタに新規棟を登録する
+      tags: [master-facility]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildingRequest'
+      responses:
+        '201':
+          description: 棟登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 指定倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 棟コード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 同一倉庫内に同じ棟コードが既に存在します
+
+  /api/v1/master/buildings/{id}:
+    get:
+      operationId: getBuilding
+      summary: 棟取得
+      description: 指定IDの棟マスタを1件取得する
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 棟取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 棟が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: BUILDING_NOT_FOUND
+                    message: 指定された棟が見つかりません
+    put:
+      operationId: updateBuilding
+      summary: 棟更新
+      description: 指定IDの棟マスタを更新する。棟コード・倉庫IDは変更不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBuildingRequest'
+      responses:
+        '200':
+          description: 棟更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 棟が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+
+  /api/v1/master/buildings/{id}/deactivate:
+    patch:
+      operationId: toggleBuildingActive
+      summary: 棟無効化／有効化
+      description: 指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingToggleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 棟が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 配下にエリアが存在するため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasChildren:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_CHILDREN
+                    message: 配下にエリアが存在するため無効化できません
+
+  # --- Areas ---
+
+  /api/v1/master/areas:
+    get:
+      operationId: listAreas
+      summary: エリア一覧取得
+      description: エリアマスタの一覧を取得する
+      tags: [master-facility]
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: 倉庫IDで絞り込み
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: 棟IDで絞り込み
+        - name: storageCondition
+          in: query
+          schema:
+            $ref: '#/components/schemas/StorageCondition'
+          description: 保管条件フィルタ
+        - name: areaType
+          in: query
+          schema:
+            $ref: '#/components/schemas/AreaType'
+          description: エリア種別フィルタ
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+      responses:
+        '200':
+          description: エリア一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaPageResponse'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createArea
+      summary: エリア登録
+      description: エリアマスタに新規エリアを登録する
+      tags: [master-facility]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAreaRequest'
+      responses:
+        '201':
+          description: エリア登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 指定棟が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: エリアコード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 同一棟内に同じエリアコードが既に存在します
+
+  /api/v1/master/areas/{id}:
+    get:
+      operationId: getArea
+      summary: エリア取得
+      description: 指定IDのエリアマスタを1件取得する
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: エリア取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: エリアが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: AREA_NOT_FOUND
+                    message: 指定されたエリアが見つかりません
+    put:
+      operationId: updateArea
+      summary: エリア更新
+      description: 指定IDのエリアマスタを更新する。エリアコード・棟ID・エリア種別は変更不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAreaRequest'
+      responses:
+        '200':
+          description: エリア更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaUpdateResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: エリアが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+
+  /api/v1/master/areas/{id}/deactivate:
+    patch:
+      operationId: toggleAreaActive
+      summary: エリア無効化／有効化
+      description: 指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AreaToggleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: エリアが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 配下にロケーションが存在するため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasChildren:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_CHILDREN
+                    message: 配下にロケーションが存在するため無効化できません
+
+  # --- Locations ---
+
+  /api/v1/master/locations:
+    get:
+      operationId: listLocations
+      summary: ロケーション一覧取得
+      description: ロケーションマスタの一覧を取得する
+      tags: [master-facility]
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: 倉庫IDで絞り込み
+        - name: codePrefix
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: ロケーションコード前方一致
+        - name: areaId
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+          description: エリアIDで絞り込み
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 有効/無効フィルタ
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: locationCode,asc
+          description: ソート条件
+      responses:
+        '200':
+          description: ロケーション一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationPageResponse'
+        '400':
+          $ref: '#/components/responses/InvalidParameter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createLocation
+      summary: ロケーション登録
+      description: ロケーションマスタに新規ロケーションを登録する。エリア種別に応じた制約チェックを行う
+      tags: [master-facility]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLocationRequest'
+      responses:
+        '201':
+          description: ロケーション登録成功
+          headers:
+            Location:
+              description: 作成されたリソースのURL
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 指定エリアが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: ロケーションコード重複
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateCode:
+                  value:
+                    errorCode: DUPLICATE_CODE
+                    message: 同一倉庫内に同じロケーションコードが既に存在します
+        '422':
+          description: エリアのロケーション上限超過
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                limitExceeded:
+                  value:
+                    errorCode: AREA_LOCATION_LIMIT_EXCEEDED
+                    message: このエリアにはこれ以上ロケーションを登録できません
+
+  /api/v1/master/locations/count:
+    get:
+      operationId: countLocations
+      summary: ロケーション件数取得
+      description: 棚卸開始プレビュー用のロケーション件数を取得する
+      tags: [master-facility]
+      parameters:
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫IDで絞り込み
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 棟IDで絞り込み
+        - name: areaId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: エリアIDで絞り込み
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: 省略時は有効件数のみカウント（true固定）
+      responses:
+        '200':
+          description: カウント取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/master/locations/{id}:
+    get:
+      operationId: getLocation
+      summary: ロケーション取得
+      description: 指定IDのロケーションマスタを1件取得する
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: ロケーション取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationFullDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: ロケーションが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: LOCATION_NOT_FOUND
+                    message: 指定されたロケーションが見つかりません
+    put:
+      operationId: updateLocation
+      summary: ロケーション更新
+      description: 指定IDのロケーションマスタを更新する。ロケーションコード・エリアIDは変更不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationRequest'
+      responses:
+        '200':
+          description: ロケーション更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationUpdateResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: ロケーションが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+
+  /api/v1/master/locations/{id}/deactivate:
+    patch:
+      operationId: toggleLocationActive
+      summary: ロケーション無効化／有効化
+      description: 指定IDのロケーションの有効/無効を切り替える。在庫が存在する・棚卸中のロケーションは無効化不可
+      tags: [master-facility]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToggleActiveRequest'
+      responses:
+        '200':
+          description: 無効化/有効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationToggleResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: ロケーションが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: 在庫または棚卸中のため無効化不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                hasInventory:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_HAS_INVENTORY
+                    message: 在庫が存在するため無効化できません
+                stocktakeInProgress:
+                  value:
+                    errorCode: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS
+                    message: 棚卸中のため無効化できません
+
 components:
   # ============================================================
   # Security Schemes
@@ -472,6 +1387,734 @@ components:
           type: string
           description: メッセージ
 
+    ExistsResponse:
+      type: object
+      required: [exists]
+      properties:
+        exists:
+          type: boolean
+          description: 存在する場合true
+
+    CountResponse:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+          description: 件数
+
+    # --- Facility Master: Enums ---
+
+    StorageCondition:
+      type: string
+      enum: [AMBIENT, REFRIGERATED, FROZEN]
+      description: 保管条件（常温・冷蔵・冷凍）
+
+    AreaType:
+      type: string
+      enum: [STOCK, INBOUND, OUTBOUND, RETURN]
+      description: エリア種別（在庫・入荷・出荷・返品）
+
+    # --- Facility Master: Common ---
+
+    ToggleActiveRequest:
+      type: object
+      required: [isActive, version]
+      properties:
+        isActive:
+          type: boolean
+          description: falseで無効化、trueで有効化
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    # --- Facility Master: Warehouse ---
+
+    CreateWarehouseRequest:
+      type: object
+      required: [warehouseCode, warehouseName]
+      properties:
+        warehouseCode:
+          type: string
+          pattern: '^[A-Z]{4}$'
+          description: 倉庫コード（英大文字4文字固定・登録後変更不可）
+          example: WARA
+        warehouseName:
+          type: string
+          maxLength: 200
+          description: 倉庫名
+          example: 東京DC
+        warehouseNameKana:
+          type: string
+          maxLength: 200
+          description: 倉庫名カナ
+          example: トウキョウディーシー
+        address:
+          type: string
+          maxLength: 500
+          description: 住所
+          example: 東京都江東区辰巳1-1-1
+
+    UpdateWarehouseRequest:
+      type: object
+      required: [warehouseName, version]
+      properties:
+        warehouseName:
+          type: string
+          maxLength: 200
+          description: 倉庫名
+        warehouseNameKana:
+          type: string
+          maxLength: 200
+          description: 倉庫名カナ
+        address:
+          type: string
+          maxLength: 500
+          description: 住所
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    WarehouseDetail:
+      type: object
+      required: [id, warehouseCode, warehouseName, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        warehouseNameKana:
+          type: string
+        address:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WarehouseSimple:
+      type: object
+      required: [id, warehouseCode, warehouseName, isActive]
+      properties:
+        id:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        isActive:
+          type: boolean
+
+    WarehousePageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/WarehouseListItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    WarehouseListItem:
+      type: object
+      required: [id, warehouseCode, warehouseName, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        warehouseNameKana:
+          type: string
+        address:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WarehouseToggleResponse:
+      type: object
+      required: [id, warehouseCode, warehouseName, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- Facility Master: Building ---
+
+    CreateBuildingRequest:
+      type: object
+      required: [warehouseId, buildingCode, buildingName]
+      properties:
+        warehouseId:
+          type: integer
+          format: int64
+          description: 所属倉庫ID
+        buildingCode:
+          type: string
+          maxLength: 10
+          pattern: '^[A-Za-z0-9]+$'
+          description: 棟コード（倉庫内一意・変更不可）
+          example: A
+        buildingName:
+          type: string
+          maxLength: 200
+          description: 棟名称
+          example: A棟
+
+    UpdateBuildingRequest:
+      type: object
+      required: [buildingName, version]
+      properties:
+        buildingName:
+          type: string
+          maxLength: 200
+          description: 棟名称
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    BuildingDetail:
+      type: object
+      required: [id, buildingCode, buildingName, warehouseId, warehouseCode, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        buildingName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BuildingPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BuildingListItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    BuildingListItem:
+      type: object
+      required: [id, buildingCode, buildingName, warehouseId, warehouseCode, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        buildingName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BuildingToggleResponse:
+      type: object
+      required: [id, buildingCode, buildingName, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        buildingName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- Facility Master: Area ---
+
+    CreateAreaRequest:
+      type: object
+      required: [buildingId, areaCode, areaName, storageCondition, areaType]
+      properties:
+        buildingId:
+          type: integer
+          format: int64
+          description: 所属棟ID
+        areaCode:
+          type: string
+          maxLength: 20
+          pattern: '^[A-Za-z0-9\-]+$'
+          description: エリアコード（棟内一意・変更不可）
+          example: A01
+        areaName:
+          type: string
+          maxLength: 200
+          description: エリア名称
+          example: A棟1階 常温エリア
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+
+    UpdateAreaRequest:
+      type: object
+      required: [areaName, storageCondition, version]
+      properties:
+        areaName:
+          type: string
+          maxLength: 200
+          description: エリア名称
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    AreaDetail:
+      type: object
+      required: [id, areaCode, areaName, warehouseId, warehouseCode, buildingId, buildingCode, storageCondition, areaType, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        buildingId:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        buildingName:
+          type: string
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AreaPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AreaListItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    AreaListItem:
+      type: object
+      required: [id, areaCode, areaName, warehouseId, warehouseCode, buildingId, buildingCode, storageCondition, areaType, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        buildingId:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AreaUpdateResponse:
+      type: object
+      required: [id, areaCode, areaName, buildingId, storageCondition, areaType, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaName:
+          type: string
+        buildingId:
+          type: integer
+          format: int64
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    AreaToggleResponse:
+      type: object
+      required: [id, areaCode, areaName, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- Facility Master: Location ---
+
+    CreateLocationRequest:
+      type: object
+      required: [areaId, locationCode]
+      properties:
+        areaId:
+          type: integer
+          format: int64
+          description: 所属エリアID
+        locationCode:
+          type: string
+          maxLength: 50
+          description: ロケーションコード（倉庫内一意・変更不可）。STOCKエリアは棟-フロア-エリア-棚-段-並び形式
+          example: A-01-A-01-01-01
+        locationName:
+          type: string
+          maxLength: 200
+          description: ロケーション名称
+          example: A棟1階A-01棚1段1列
+
+    UpdateLocationRequest:
+      type: object
+      required: [version]
+      properties:
+        locationName:
+          type: string
+          maxLength: 200
+          description: ロケーション名称（空文字でクリア可）
+        version:
+          type: integer
+          description: 楽観的ロックバージョン
+
+    LocationDetail:
+      type: object
+      required: [id, locationCode, warehouseId, warehouseCode, areaId, areaCode, areaType, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        locationCode:
+          type: string
+        locationName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        areaId:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationFullDetail:
+      type: object
+      required: [id, locationCode, warehouseId, warehouseCode, areaId, areaCode, areaType, buildingId, buildingCode, isActive, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        locationCode:
+          type: string
+        locationName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        warehouseName:
+          type: string
+        areaId:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaName:
+          type: string
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        storageCondition:
+          $ref: '#/components/schemas/StorageCondition'
+        buildingId:
+          type: integer
+          format: int64
+        buildingCode:
+          type: string
+        buildingName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/LocationListItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    LocationListItem:
+      type: object
+      required: [id, locationCode, warehouseId, warehouseCode, areaId, areaCode, areaType, isActive, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        locationCode:
+          type: string
+        locationName:
+          type: string
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseCode:
+          type: string
+        areaId:
+          type: integer
+          format: int64
+        areaCode:
+          type: string
+        areaType:
+          $ref: '#/components/schemas/AreaType'
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationUpdateResponse:
+      type: object
+      required: [id, locationCode, areaId, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        locationCode:
+          type: string
+        locationName:
+          type: string
+        areaId:
+          type: integer
+          format: int64
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationToggleResponse:
+      type: object
+      required: [id, locationCode, isActive, version, updatedAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        locationCode:
+          type: string
+        locationName:
+          type: string
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+
+  # ============================================================
+  # Parameters
+  # ============================================================
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: リソースID
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: ページ番号（0始まり）
+
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: ページサイズ
+
   # ============================================================
   # Reusable Responses
   # ============================================================
@@ -502,6 +2145,42 @@ components:
               value:
                 errorCode: UNAUTHORIZED
                 message: 認証が必要です
+
+    Forbidden:
+      description: 権限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value:
+                errorCode: FORBIDDEN
+                message: この操作を実行する権限がありません
+
+    InvalidParameter:
+      description: クエリパラメータ不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidParameter:
+              value:
+                errorCode: INVALID_PARAMETER
+                message: クエリパラメータが不正です
+
+    OptimisticLockConflict:
+      description: 楽観的ロック競合
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            conflict:
+              value:
+                errorCode: OPTIMISTIC_LOCK_CONFLICT
+                message: 他のユーザーによる更新が先行しました。最新データを取得してから再度お試しください
 
 security:
   - cookieAuth: []
