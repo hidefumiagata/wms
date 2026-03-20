@@ -1,0 +1,507 @@
+openapi: 3.1.0
+info:
+  title: WMS ShowCase API
+  description: 倉庫管理システム（WMS）ShowCase のREST API定義
+  version: 0.1.0
+  contact:
+    name: WMS ShowCase Project
+
+servers:
+  - url: http://localhost:8080
+    description: ローカル開発環境
+  - url: https://{environment}.azurecontainerapps.io
+    description: Azure Container Apps
+    variables:
+      environment:
+        default: wms-showcase
+
+tags:
+  - name: auth
+    description: 認証・認可
+  - name: system
+    description: システム共通
+
+paths:
+  # ============================================================
+  # AUTH - 認証・認可
+  # ============================================================
+
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      summary: ログイン
+      description: ユーザーコードとパスワードで認証し、JWTアクセストークンおよびリフレッシュトークンをhttpOnlyクッキーにセットして返す
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          headers:
+            Set-Cookie:
+              description: access_token および refresh_token をhttpOnly Cookieとしてセット
+              schema:
+                type: string
+                examples:
+                  - access_token=eyJhbGciOiJIUzI1NiJ9...; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCredentials:
+                  summary: ユーザーコード不存在またはパスワード不一致
+                  value:
+                    errorCode: INVALID_CREDENTIALS
+                    message: ユーザーコードまたはパスワードが正しくありません
+                accountLocked:
+                  summary: アカウントロック
+                  value:
+                    errorCode: ACCOUNT_LOCKED
+                    message: アカウントがロックされています
+                accountInactive:
+                  summary: アカウント無効
+                  value:
+                    errorCode: ACCOUNT_INACTIVE
+                    message: アカウントが無効化されています
+
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      summary: ログアウト
+      description: サーバー側のリフレッシュトークンを削除し、クライアント側のCookieを無効化する
+      tags: [auth]
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: ログアウト成功
+          headers:
+            Set-Cookie:
+              description: access_token および refresh_token を Max-Age=0 で無効化
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: トークンリフレッシュ
+      description: refresh_token Cookieを検証し、新しいアクセストークンとリフレッシュトークンを発行する（トークンローテーション）
+      tags: [auth]
+      security: []
+      parameters:
+        - name: refresh_token
+          in: cookie
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: トークンリフレッシュ成功
+          headers:
+            Set-Cookie:
+              description: 新しい access_token および refresh_token をhttpOnly Cookieとしてセット
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          description: リフレッシュ失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  summary: refresh_token Cookieが存在しない
+                  value:
+                    errorCode: UNAUTHORIZED
+                    message: 認証が必要です
+                tokenExpired:
+                  summary: リフレッシュトークン期限切れまたは無効
+                  value:
+                    errorCode: REFRESH_TOKEN_EXPIRED
+                    message: リフレッシュトークンが期限切れです。再ログインしてください
+
+  /api/v1/auth/change-password:
+    post:
+      operationId: changePassword
+      summary: パスワード変更
+      description: 現在のパスワードを確認した上で新しいパスワードに変更する。初回ログイン時のパスワード変更にも使用する
+      tags: [auth]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '204':
+          description: パスワード変更成功
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  summary: access_token が無効
+                  value:
+                    errorCode: UNAUTHORIZED
+                    message: 認証が必要です
+                invalidCredentials:
+                  summary: 現在のパスワードが不一致
+                  value:
+                    errorCode: INVALID_CREDENTIALS
+                    message: 現在のパスワードが正しくありません
+                accountLocked:
+                  summary: パスワード連続失敗によるロック
+                  value:
+                    errorCode: ACCOUNT_LOCKED
+                    message: アカウントがロックされています
+        '409':
+          description: 新旧パスワード同一
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                samePassword:
+                  value:
+                    errorCode: SAME_PASSWORD
+                    message: 新しいパスワードは現在のパスワードと異なるものを設定してください
+
+  /api/v1/auth/password-reset/request:
+    post:
+      operationId: requestPasswordReset
+      summary: パスワードリセット申請
+      description: ユーザーコードまたはメールアドレスを受け取り、該当ユーザーにパスワードリセット用のメールを送信する。セキュリティ上、ユーザーの存在有無にかかわらず常に同一のレスポンスを返す
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestBody'
+      responses:
+        '200':
+          description: パスワードリセット申請受付（ユーザー存在有無にかかわらず同一レスポンス）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: If the account exists, a password reset email has been sent.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: レートリミット超過
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimited:
+                  value:
+                    errorCode: RATE_LIMIT_EXCEEDED
+                    message: リクエスト回数の上限を超えました。しばらく待ってから再度お試しください
+
+  /api/v1/auth/password-reset/confirm:
+    post:
+      operationId: confirmPasswordReset
+      summary: パスワード再設定
+      description: パスワードリセットトークンを検証し、新しいパスワードを設定する。成功時にはアカウントロックの解除と失敗カウンタのリセットも実施する
+      tags: [auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+      responses:
+        '200':
+          description: パスワード再設定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              examples:
+                success:
+                  value:
+                    message: Password has been reset successfully.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: トークン無効
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidToken:
+                  value:
+                    errorCode: INVALID_TOKEN
+                    message: トークンが無効または期限切れです
+
+  # ============================================================
+  # SYSTEM - システム共通
+  # ============================================================
+
+  /api/v1/system/business-date:
+    get:
+      operationId: getBusinessDate
+      summary: 営業日取得
+      description: システムで管理している現在の営業日を取得する
+      tags: [system]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: 営業日取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessDateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: システム異常（営業日レコード未設定）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  value:
+                    errorCode: INTERNAL_SERVER_ERROR
+                    message: システムエラーが発生しました
+
+components:
+  # ============================================================
+  # Security Schemes
+  # ============================================================
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token
+      description: JWTアクセストークン（httpOnly Cookie）
+
+  # ============================================================
+  # Schemas
+  # ============================================================
+  schemas:
+    # --- Auth Request/Response ---
+
+    LoginRequest:
+      type: object
+      required: [userCode, password]
+      properties:
+        userCode:
+          type: string
+          maxLength: 50
+          description: ログインID
+          example: admin001
+        password:
+          type: string
+          maxLength: 255
+          description: パスワード（平文）
+          example: password123
+
+    LoginResponse:
+      type: object
+      required: [userId, userCode, fullName, role, passwordChangeRequired]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: ユーザーID
+          example: 1
+        userCode:
+          type: string
+          description: ユーザーコード
+          example: admin001
+        fullName:
+          type: string
+          description: 氏名
+          example: 山田 太郎
+        role:
+          $ref: '#/components/schemas/UserRole'
+        passwordChangeRequired:
+          type: boolean
+          description: パスワード変更要求フラグ。trueの場合、フロントエンドはパスワード変更画面に遷移する
+          example: false
+
+    RefreshResponse:
+      type: object
+      required: [userId, userCode, fullName, role]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: ユーザーID
+          example: 1
+        userCode:
+          type: string
+          description: ユーザーコード
+          example: admin001
+        fullName:
+          type: string
+          description: 氏名
+          example: 山田 太郎
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          maxLength: 255
+          description: 現在のパスワード（平文）
+        newPassword:
+          type: string
+          maxLength: 255
+          description: 新しいパスワード（平文）。パスワードポリシーを満たすこと
+
+    PasswordResetRequestBody:
+      type: object
+      required: [identifier]
+      properties:
+        identifier:
+          type: string
+          maxLength: 255
+          description: ユーザーコードまたはメールアドレス
+          example: admin001
+
+    PasswordResetConfirmRequest:
+      type: object
+      required: [token, newPassword]
+      properties:
+        token:
+          type: string
+          description: パスワードリセットトークン（メールで受信したURL内のトークン）
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        newPassword:
+          type: string
+          maxLength: 255
+          description: 新しいパスワード（平文）。パスワードポリシーを満たすこと
+
+    # --- System ---
+
+    BusinessDateResponse:
+      type: object
+      required: [businessDate]
+      properties:
+        businessDate:
+          type: string
+          format: date
+          description: 現在の営業日（yyyy-MM-dd形式）
+          example: '2026-03-13'
+
+    # --- Common ---
+
+    UserRole:
+      type: string
+      enum: [SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER]
+      description: ユーザーロール
+
+    ErrorResponse:
+      type: object
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+          description: エラーコード
+          example: VALIDATION_ERROR
+        message:
+          type: string
+          description: エラーメッセージ
+          example: 入力内容に誤りがあります
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+          description: フィールドレベルのバリデーションエラー詳細（VALIDATION_ERRORの場合のみ）
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          description: エラーが発生したフィールド名
+          example: userCode
+        message:
+          type: string
+          description: フィールドのエラーメッセージ
+          example: 必須項目です
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: メッセージ
+
+  # ============================================================
+  # Reusable Responses
+  # ============================================================
+  responses:
+    ValidationError:
+      description: バリデーションエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validationError:
+              value:
+                errorCode: VALIDATION_ERROR
+                message: 入力内容に誤りがあります
+                details:
+                  - field: userCode
+                    message: 必須項目です
+
+    Unauthorized:
+      description: 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value:
+                errorCode: UNAUTHORIZED
+                message: 認証が必要です
+
+security:
+  - cookieAuth: []
