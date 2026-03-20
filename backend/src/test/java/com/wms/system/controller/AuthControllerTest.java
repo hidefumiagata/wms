@@ -33,6 +33,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -205,7 +206,7 @@ class AuthControllerTest {
             mockMvc.perform(post("/api/v1/auth/logout"))
                     .andExpect(status().isNoContent());
 
-            verify(authService).logout(any(), any());
+            verify(authService).logout(isNull(), any());
         }
     }
 
@@ -219,7 +220,7 @@ class AuthControllerTest {
         @DisplayName("正常系: トークンリフレッシュ成功時に200とRefreshResponseを返す")
         void refreshToken_success() throws Exception {
             User user = createTestUser();
-            when(authService.refresh(any(), any())).thenReturn(user);
+            when(authService.refresh(anyString(), any(), any())).thenReturn(user);
 
             mockMvc.perform(post("/api/v1/auth/refresh")
                             .cookie(new Cookie("refresh_token", "valid-refresh-token")))
@@ -229,7 +230,7 @@ class AuthControllerTest {
                     .andExpect(jsonPath("$.fullName").value("Test User"))
                     .andExpect(jsonPath("$.role").value("SYSTEM_ADMIN"));
 
-            verify(authService).refresh(any(), any());
+            verify(authService).refresh(anyString(), any(), any());
         }
     }
 

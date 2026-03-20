@@ -7,8 +7,6 @@ import com.wms.system.entity.User;
 import com.wms.system.repository.RefreshTokenRepository;
 import com.wms.system.repository.UserRepository;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,11 +84,10 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        String token = extractCookie(request, "access_token");
-        if (token != null) {
+    public void logout(String accessToken, HttpServletResponse response) {
+        if (accessToken != null && !accessToken.isBlank()) {
             try {
-                Claims claims = jwtTokenProvider.parseTokenAllowExpired(token);
+                Claims claims = jwtTokenProvider.parseTokenAllowExpired(accessToken);
                 Long userId = jwtTokenProvider.getUserIdFromClaims(claims);
                 refreshTokenRepository.deleteByUserId(userId);
                 log.info("Logout successful: userId={}", userId);
@@ -102,18 +99,16 @@ public class AuthService {
     }
 
     @Transactional
-    public User refresh(HttpServletRequest request, HttpServletResponse response) {
-        String refreshTokenRaw = extractCookie(request, "refresh_token");
-        if (refreshTokenRaw == null) {
+    public User refresh(String refreshTokenRaw, String accessToken,
+                         HttpServletResponse response) {
+        if (refreshTokenRaw == null || refreshTokenRaw.isBlank()) {
+            throw new BadCredentialsException("再度ログインしてください");
+        }
+        if (accessToken == null || accessToken.isBlank()) {
             throw new BadCredentialsException("再度ログインしてください");
         }
 
         // access_tokenからuserIdを取得（期限切れ許容）
-        String accessToken = extractCookie(request, "access_token");
-        if (accessToken == null) {
-            throw new BadCredentialsException("再度ログインしてください");
-        }
-
         Claims claims;
         try {
             claims = jwtTokenProvider.parseTokenAllowExpired(accessToken);
@@ -173,16 +168,5 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(refreshToken);
         cookieUtil.addRefreshTokenCookie(response, rawRefreshToken);
-    }
-
-    private String extractCookie(HttpServletRequest request, String name) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null;
-        for (Cookie cookie : cookies) {
-            if (name.equals(cookie.getName())) {
-                return cookie.getValue();
-            }
-        }
-        return null;
     }
 }

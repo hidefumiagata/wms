@@ -53,7 +53,8 @@ public class AuthController implements AuthApi {
         HttpServletRequest httpRequest = getHttpServletRequest();
         HttpServletResponse httpResponse = getHttpServletResponse();
 
-        authService.logout(httpRequest, httpResponse);
+        String accessToken = extractCookie(httpRequest, "access_token");
+        authService.logout(accessToken, httpResponse);
         return ResponseEntity.noContent().build();
     }
 
@@ -62,7 +63,8 @@ public class AuthController implements AuthApi {
         HttpServletRequest httpRequest = getHttpServletRequest();
         HttpServletResponse httpResponse = getHttpServletResponse();
 
-        User user = authService.refresh(httpRequest, httpResponse);
+        String accessToken = extractCookie(httpRequest, "access_token");
+        User user = authService.refresh(refreshToken, accessToken, httpResponse);
         return ResponseEntity.ok(toRefreshResponse(user));
     }
 
@@ -124,6 +126,16 @@ public class AuthController implements AuthApi {
                 .userCode(user.getUserCode())
                 .fullName(user.getFullName())
                 .role(UserRole.fromValue(user.getRole()));
+    }
+
+    private String extractCookie(HttpServletRequest request, String name) {
+        if (request.getCookies() == null) return null;
+        for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     private String getClientIp(HttpServletRequest request) {

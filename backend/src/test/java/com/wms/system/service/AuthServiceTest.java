@@ -7,8 +7,6 @@ import com.wms.system.entity.User;
 import com.wms.system.repository.RefreshTokenRepository;
 import com.wms.system.repository.UserRepository;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -39,7 +38,6 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private CookieUtil cookieUtil;
     @Mock private SystemParameterService systemParameterService;
-    @Mock private HttpServletRequest request;
     @Mock private HttpServletResponse response;
     @Mock private Claims claims;
 
@@ -149,11 +147,10 @@ class AuthServiceTest {
 
     @Test
     void logout_clearsTokensAndCookies() {
-        when(request.getCookies()).thenReturn(new Cookie[]{new Cookie("access_token", "jwt")});
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
-        authService.logout(request, response);
+        authService.logout("jwt", response);
 
         verify(refreshTokenRepository).deleteByUserId(1L);
         verify(cookieUtil).clearAuthCookies(response);
@@ -161,20 +158,25 @@ class AuthServiceTest {
 
     @Test
     void logout_parseTokenFails_stillClearsCookies() {
-        when(request.getCookies()).thenReturn(new Cookie[]{new Cookie("access_token", "bad-jwt")});
         when(jwtTokenProvider.parseTokenAllowExpired("bad-jwt")).thenThrow(new RuntimeException("parse error"));
 
-        authService.logout(request, response);
+        authService.logout("bad-jwt", response);
 
         verify(cookieUtil).clearAuthCookies(response);
         verify(refreshTokenRepository, never()).deleteByUserId(any());
     }
 
     @Test
-    void logout_noCookie_stillClearsCookies() {
-        when(request.getCookies()).thenReturn(null);
+    void logout_nullToken_stillClearsCookies() {
+        authService.logout(null, response);
 
-        authService.logout(request, response);
+        verify(cookieUtil).clearAuthCookies(response);
+        verify(refreshTokenRepository, never()).deleteByUserId(any());
+    }
+
+    @Test
+    void logout_blankToken_stillClearsCookies() {
+        authService.logout("  ", response);
 
         verify(cookieUtil).clearAuthCookies(response);
         verify(refreshTokenRepository, never()).deleteByUserId(any());
@@ -184,10 +186,6 @@ class AuthServiceTest {
 
     @Test
     void refresh_success() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "expired-jwt"),
-                new Cookie("refresh_token", "raw-refresh")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("expired-jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -199,7 +197,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.generateAccessToken(any(), any(), any(), anyBoolean())).thenReturn("new-jwt");
         when(passwordEncoder.encode(anyString())).thenReturn("new-hashed-refresh");
 
-        User result = authService.refresh(request, response);
+        User result = authService.refresh("raw-refresh", "expired-jwt", response);
 
         assertThat(result.getUserCode()).isEqualTo("admin001");
         verify(refreshTokenRepository, atLeast(2)).deleteByUserId(1L);
@@ -207,19 +205,35 @@ class AuthServiceTest {
     }
 
     @Test
-    void refresh_noRefreshCookie_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{new Cookie("access_token", "jwt")});
+    void refresh_nullRefreshToken_throwsBadCredentials() {
+        assertThatThrownBy(() -> authService.refresh(null, "jwt", response))
+                .isInstanceOf(BadCredentialsException.class);
+    }
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
+    @Test
+    void refresh_blankRefreshToken_throwsBadCredentials() {
+        assertThatThrownBy(() -> authService.refresh("  ", "jwt", response))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void refresh_nullAccessToken_throwsBadCredentials() {
+        assertThatThrownBy(() -> authService.refresh("raw", null, response))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void refresh_noStoredToken_throwsBadCredentials() {
+        when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
+        when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
+        when(refreshTokenRepository.findByUserId(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.refresh("raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
     void refresh_expiredRefreshToken_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "raw")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -227,17 +241,13 @@ class AuthServiceTest {
                 .userId(1L).tokenHash("hashed").expiresAt(OffsetDateTime.now().minusHours(1)).build();
         when(refreshTokenRepository.findByUserId(1L)).thenReturn(Optional.of(expiredToken));
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
         verify(refreshTokenRepository).deleteByUserId(1L);
     }
 
     @Test
     void refresh_tokenMismatch_deletesAllTokens() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "wrong-raw")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -246,41 +256,21 @@ class AuthServiceTest {
         when(refreshTokenRepository.findByUserId(1L)).thenReturn(Optional.of(storedToken));
         when(passwordEncoder.matches("wrong-raw", "hashed")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("wrong-raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
         verify(refreshTokenRepository).deleteByUserId(1L);
     }
 
     @Test
-    void refresh_noAccessCookie_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("refresh_token", "raw")
-        });
+    void refresh_parseTokenFails_throwsBadCredentials() {
+        when(jwtTokenProvider.parseTokenAllowExpired("bad-jwt")).thenThrow(new RuntimeException("parse error"));
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
-                .isInstanceOf(BadCredentialsException.class);
-    }
-
-    @Test
-    void refresh_noStoredToken_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "raw")
-        });
-        when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
-        when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
-        when(refreshTokenRepository.findByUserId(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("raw", "bad-jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
     void refresh_userNotFound_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "raw")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -290,29 +280,13 @@ class AuthServiceTest {
         when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
-                .isInstanceOf(BadCredentialsException.class);
-    }
-
-    @Test
-    void refresh_parseTokenFails_throwsBadCredentials() {
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "bad-jwt"),
-                new Cookie("refresh_token", "raw")
-        });
-        when(jwtTokenProvider.parseTokenAllowExpired("bad-jwt")).thenThrow(new RuntimeException("parse error"));
-
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
     void refresh_lockedUser_throwsBadCredentials() {
         activeUser.setLocked(true);
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "raw")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -322,17 +296,13 @@ class AuthServiceTest {
         when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(activeUser));
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
     void refresh_inactiveUser_throwsBadCredentials() {
         activeUser.setIsActive(false);
-        when(request.getCookies()).thenReturn(new Cookie[]{
-                new Cookie("access_token", "jwt"),
-                new Cookie("refresh_token", "raw")
-        });
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -342,7 +312,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(activeUser));
 
-        assertThatThrownBy(() -> authService.refresh(request, response))
+        assertThatThrownBy(() -> authService.refresh("raw", "jwt", response))
                 .isInstanceOf(BadCredentialsException.class);
     }
 }
