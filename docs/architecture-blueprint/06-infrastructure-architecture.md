@@ -43,8 +43,9 @@
 | **Container Apps** | min:0 max:3 | East: min:1 max:5 / West: min:0 max:5 |
 | **PostgreSQL** | B1ms 単一構成 | B1ms + Geo-redundant backup |
 | **Storage** | LRS | GRS（Japan West へ自動レプリケーション） |
-| **ACR** | Basic SKU（East） | Basic SKU + Geo-replication（East + West） |
+| **ACR** | Basic SKU（East） | Basic SKU（East のみ。Geo-replication非対応） |
 | **ネットワーク** | vnet-wms-dev (10.0.0.0/16) | vnet-wms-prd-east (10.1.0.0/16) + vnet-wms-prd-west (10.2.0.0/16) |
+| **メール送信** | Azure Communication Services | Azure Communication Services |
 
 ## サブスクリプション構成
 
@@ -103,7 +104,9 @@ infra/
 │   ├── storage/
 │   ├── vnet/
 │   ├── acr/
-│   └── front-door/         ← prd のみ使用
+│   ├── communication-services/
+│   ├── monitoring/            ← Log Analytics Workspace, Application Insights
+│   └── front-door/            ← prd のみ使用
 ├── environments/
 │   ├── dev/
 │   │   ├── main.tf

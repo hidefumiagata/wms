@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能設計書 — API設計 レビュー記録 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../../index.html">Home</a> &rsaquo; <a href="../index.html">機能設計書</a> &rsaquo; 機能設計書 — API設計 レビュー記録
+</nav>
+<main>
+  <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 機能設計書 — API設計 レビュー記録</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem;">10 件のレビュー記録票</p>
+    </div>
+    <a href="../index-api.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      ← ドキュメントに戻る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#review-records-api-auth">1. API設計レビュー記録票 — 認証・システム共通（AUTH / SYS）</a></li>
+        <li><a href="#review-records-api-batch-report">2. API設計レビュー記録票 — バッチ管理・レポート（BAT / RPT）</a></li>
+        <li><a href="#review-records-api-inbound">3. API設計レビュー記録票 — 入荷管理（INB）</a></li>
+        <li><a href="#review-records-api-inventory">4. API設計レビュー記録票 — 在庫管理（INV）</a></li>
+        <li><a href="#review-records-api-mst-facility">5. API設計レビュー記録票 — 施設マスタ（MST-FAC）</a></li>
+        <li><a href="#review-records-api-mst-partner">6. API設計レビュー記録票 — 取引先マスタ（MST-PAR）</a></li>
+        <li><a href="#review-records-api-mst-product">7. API設計レビュー記録票 — 商品マスタ（MST-PRD）</a></li>
+        <li><a href="#review-records-api-mst-user">8. API設計レビュー記録票 — ユーザーマスタ（MST-USR）</a></li>
+        <li><a href="#review-records-api-outbound">9. API設計レビュー記録票 — 出荷管理（OUT）</a></li>
+        <li><a href="#review-records-api-overview">10. API設計レビュー記録票 — API概要・共通仕様（08-api-overview.md）</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-auth">
+<h1>API設計レビュー記録票 — 認証・システム共通（AUTH / SYS）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/09-api-auth.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/architecture-blueprint/07-auth-architecture.md</code>、<code>10-security-architecture.md</code>、<code>docs/data-model/02-master-tables.md</code>、<code>docs/functional-design/02-screen-auth.md</code></blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>API設計書修正済</strong>（レビュー時に自動修正）</td><td>4件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>1件</td></tr>
+<tr><td>指摘事項なし</td><td>7件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>12件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>API-AUTH-001〜004, API-SYS-001</td><td><code>08-api-overview.md</code> テンプレート</td><td>全5APIが5セクション形式（概要/リクエスト/レスポンス/業務ロジック/補足）に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>API-AUTH-001〜004, API-SYS-001</td><td><code>08-api-overview.md</code> 全API一覧</td><td>メソッド・パス・認証・ロールが全API一覧の定義と一致していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>API-AUTH-001〜004</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>使用されているエラーコード（INVALID_CREDENTIALS, ACCOUNT_LOCKED, ACCOUNT_INACTIVE, TOKEN_EXPIRED, REFRESH_TOKEN_EXPIRED, SAME_PASSWORD）が全て一覧に定義されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>API-AUTH-001</td><td><code>02-master-tables.md</code> usersテーブル</td><td>ロック時に <code>locked=true</code> のみ更新し <code>locked_at=現在日時</code> の更新が漏れていた（ユーザー不存在時・パスワード不一致時の2箇所）</td><td><strong>API設計書修正済</strong></td><td>フローチャートの <code>SET_LOCK1</code> / <code>SET_LOCK2</code> ノードを <code>locked=true\nlocked_at=現在日時\nに更新</code> に修正済</td></tr>
+<tr><td>5</td><td>API-AUTH-003</td><td><code>07-auth-architecture.md</code> リフレッシュトークン管理</td><td>フローチャートに <code>HASH_TOKEN[&quot;受信したrefresh_tokenをBCryptでハッシュ化&quot;]</code> → <code>FIND_TOKEN[&quot;token_hashで検索&quot;]</code> の設計誤りがあった。BCryptは一方向ハッシュのため同じ入力でも毎回異なるハッシュ値が生成され「ハッシュ値でDB検索」は不可能</td><td><strong>API設計書修正済</strong></td><td>フローチャートを「JWTからuserIdをデコード → user_idで絞り込み → BCrypt.matches()で照合」フローに修正。ビジネスルール5も同様に修正済</td></tr>
+<tr><td>6</td><td>API-AUTH-004</td><td><code>10-security-architecture.md</code> ログイン失敗ロック</td><td><code>POST /api/v1/auth/change-password</code> の連続5回失敗でも同様にアカウントロックするポリシーがセキュリティアーキテクチャに定義されているが、API設計書の業務ロジックにロック処理が一切記述されていなかった</td><td><strong>API設計書修正済</strong></td><td>エラーレスポンス表に <code>ACCOUNT_LOCKED</code> 追加、フローチャートに失敗回数インクリメント・ロック処理を追加、ビジネスルール1修正・2追加、成功時の <code>failed_login_count=0</code> リセットも追加済</td></tr>
+<tr><td>7</td><td>API-AUTH-004</td><td><code>02-master-tables.md</code> usersテーブル</td><td>ロック時に <code>locked_at</code> 更新が漏れていた（修正6の対応内で合わせて修正）</td><td><strong>API設計書修正済</strong></td><td>フローチャートの SET_LOCK ノードに <code>locked_at=現在日時</code> を追加済</td></tr>
+<tr><td>8</td><td>API-AUTH-004</td><td><code>02-screen-auth.md</code> EVT-AUTH002-003</td><td>画面設計書のイベント定義に「<code>200 OK</code>: パスワード変更成功」と記述されているが、API設計書では <code>204 No Content</code> が正しい</td><td><strong>要対応</strong></td><td><code>02-screen-auth.md</code> EVT-AUTH002-003 の成功レスポンスコードを <code>200 OK</code> → <code>204 No Content（レスポンスボディなし）</code> に修正すること</td></tr>
+<tr><td>9</td><td>API-AUTH-001/002</td><td><code>07-auth-architecture.md</code> JWT設計</td><td>アクセストークン（JWT）のPayload内容（userId, userCode, role, iat, exp）と署名アルゴリズム（HS256）の設計がアーキテクチャ定義と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>API-AUTH-003</td><td><code>08-api-overview.md</code> 認証仕様</td><td>スライディング方式リフレッシュトークン（最終アクセスから1時間延長）の設計が共通認証仕様と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>11</td><td>API-AUTH-004</td><td><code>10-security-architecture.md</code> パスワード管理</td><td>パスワードポリシー「8文字以上、BCryptハッシュ」がAPI設計書に正しく反映されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>12</td><td>API-SYS-001</td><td><code>docs/data-model/04-batch-tables.md</code> business_dateテーブル</td><td><code>business_date</code> テーブルのレコード不存在時に500を返す設計がビジネスルールに明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.4 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/09-api-auth.md</code> API-AUTH-001 業務ロジック フローチャート</p>
+<ul><li style="margin-left:0px"><code>SET_LOCK1</code>: <code>&quot;locked=trueに更新&quot;</code> → <code>&quot;locked=true\nlocked_at=現在日時\nに更新&quot;</code></li><li style="margin-left:0px"><code>SET_LOCK2</code>: <code>&quot;locked=trueに更新&quot;</code> → <code>&quot;locked=true\nlocked_at=現在日時\nに更新&quot;</code></li></ul>
+<h3>No.5 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/09-api-auth.md</code> API-AUTH-003 業務ロジック フローチャート + ビジネスルール</p>
+<ul><li style="margin-left:0px"><strong>フローチャート修正前</strong>: <code>CHECK_COOKIE→HASH_TOKEN→FIND_TOKEN（token_hashで検索）</code></li><li style="margin-left:0px"><strong>フローチャート修正後</strong>: <code>CHECK_COOKIE→DECODE_JWT（userIdデコード）→FIND_TOKEN（user_idで検索）→BCRYPT_CHECK（BCrypt.matches照合）</code></li><li style="margin-left:0px"><strong>ビジネスルール5修正</strong>: 「BCryptハッシュ化してDB検索」→「user_idで絞り込み後、BCrypt.matches()照合」に変更</li></ul>
+<h3>No.6〜7 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/09-api-auth.md</code> API-AUTH-004</p>
+<ul><li style="margin-left:0px">エラーレスポンス表に <code>401 ACCOUNT_LOCKED</code> 行を追加</li><li style="margin-left:0px">フローチャートに失敗カウントインクリメント → ロック判定 → ACCOUNT_LOCKED レスポンスのフローを追加</li><li style="margin-left:0px">UPDATE_PW ノードに <code>failed_login_count = 0</code> リセットを追加</li><li style="margin-left:0px">ビジネスルール表: ルール1修正、ルール2追加（ロックポリシー）、旧ルール2→3に繰り下げ、ルール5修正（failed_login_count=0リセット追加）</li></ul>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/02-screen-auth.md</code></td><td>EVT-AUTH002-003 成功レスポンスコード</td><td><code>200 OK</code> → <code>204 No Content（レスポンスボディなし）</code> に修正。フロントエンドはレスポンスボディを参照せず、204受信時にPiniaストアの <code>passwordChangeRequired</code> を <code>false</code> に更新して <code>/</code> へ遷移する実装とすること</td><td>高</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-batch-report">
+<h1>API設計レビュー記録票 — バッチ管理・レポート（BAT / RPT）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/14-api-batch-report.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/05-reports.md</code>、<code>06-batch-processing.md</code>、<code>docs/data-model/04-batch-tables.md</code>、<code>docs/functional-design/07-screen-batch.md</code></blockquote></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>全レポートAPI（RPT-001〜017）</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション1（API概要）に <code>認証</code> と <code>対象ロール</code> が未記載。テンプレートでは必須項目</td><td>必須</td><td>対応済（全APIに認証・対象ロール追記）</td></tr>
+<tr><td>2</td><td>補助API（バッチ実行履歴詳細取得）</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション4（業務ロジック）とセクション5（補足事項）が欠落</td><td>必須</td><td>対応済（セクション4,5を追加）</td></tr>
+<tr><td>3</td><td>API-BAT-002</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション4に「エラーレスポンス」が欠落。セクション4のビジネスルール表が欠落</td><td>必須</td><td>対応済（エラーレスポンス表・ビジネスルール表追加）</td></tr>
+<tr><td>4</td><td>API-BAT-002</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション5（補足事項）の記述が薄い（箇条書きのみ）。パフォーマンス考慮が未記載</td><td>推奨</td><td>対応済（補足事項に件数・ポーリング説明を追加）</td></tr>
+<tr><td>5</td><td>API-RPT-001</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション5（補足事項）が欠落</td><td>必須</td><td>対応済（CSV出力仕様・パフォーマンス記載を追加）</td></tr>
+<tr><td>6</td><td>API-RPT-003〜017（RPT-001除く）</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション5（補足事項）が全て欠落。大量データ時のパフォーマンス考慮、CSVファイル名・ヘッダー仕様が未記載</td><td>必須</td><td>対応済（全APIにセクション5を追加）</td></tr>
+<tr><td>7</td><td>API-RPT-003, 004, 007, 014, 015</td><td>08-api-overview.md（テンプレート定義）</td><td>セクション4にビジネスルール表が欠落</td><td>必須</td><td>対応済（ビジネスルール表を追加）</td></tr>
+<tr><td>8</td><td>API-RPT-005, 006, 008, 015, 016</td><td>05-reports.md</td><td>レスポンスのフィールド定義表が欠落（JSON例はあるが説明テーブルがない）</td><td>推奨</td><td>対応済（フィールド定義表を追加）</td></tr>
+<tr><td>9</td><td>API-RPT-010</td><td>05-reports.md</td><td>ビジネスルール表が欠落</td><td>必須</td><td>対応済（ビジネスルール表を追加）</td></tr>
+<tr><td>10</td><td>API-RPT-011</td><td>05-reports.md</td><td>業務ロジックフローに「棚卸確定前でも出力可」の分岐が未設計</td><td>推奨</td><td>対応済（確定前出力可の分岐とビジネスルールを追加）</td></tr>
+<tr><td>11</td><td>API-RPT-014</td><td>05-reports.md（配送リスト要件）</td><td>レスポンスのフィールド定義表が欠落</td><td>推奨</td><td>対応済（フィールド定義表を追加）</td></tr>
+<tr><td>12</td><td>レポートAPIの共通仕様</td><td>08-api-overview.md</td><td>大量データ時のパフォーマンス考慮（件数上限・タイムアウト）が未記載</td><td>必須</td><td>対応済（共通仕様にパフォーマンス考慮セクションを追加）</td></tr>
+<tr><td>13</td><td>API-RPT-002</td><td>08-api-overview.md（API一覧）</td><td>API-RPT-002 が全API一覧に存在しない（002番が欠番）。これは意図的な欠番であり設計書と一致</td><td>情報</td><td>対応不要（08-api-overview.mdの一覧も002欠番であり整合している）</td></tr>
+<tr><td>14</td><td>API-BAT-001</td><td>06-batch-processing.md</td><td>日替処理5ステップ（営業日更新→入荷集計→出荷集計→在庫集計→バックアップ）は正しく設計されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>15</td><td>API-BAT-001</td><td>06-batch-processing.md</td><td>BATCH_ALREADY_RUNNING（SUCCESS/RUNNING時）・再実行時の全処理リトライ（FAILED削除→再INSERT）が正しく設計されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>16</td><td>API-RPT-017</td><td>05-reports.md, 07-screen-batch.md</td><td>日次集計レポートに必要な項目（入荷件数・数量、出荷件数・数量、在庫数量、未入荷・未出荷件数）が全て含まれている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>17</td><td>全レポートAPI</td><td>08-api-overview.md</td><td>CSVダウンロード時の <code>Content-Disposition: attachment</code> は共通仕様に記載あり。各APIの業務ロジックフローにも <code>CSVダウンロード</code> として明示されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>18</td><td>補助API（バッチ実行履歴詳細取得）</td><td>08-api-overview.md（API一覧）</td><td>補助APIは08-api-overview.mdの全API一覧に含まれていないが、API-BAT-001の補足事項でポーリング用として言及されている。APIとしての正式登録が検討課題</td><td>情報</td><td>アクションアイテムに記録</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>2026-03-14 セルフレビュー実施・即時修正</h3>
+<p>以下の修正を <code>14-api-batch-report.md</code> に対して実施した（Writeツールで全体書き直し）:</p>
+<ol><li><strong>全レポートAPI セクション1 認証・対象ロール追記</strong>（No.1）</li></ol>
+<ul><li style="margin-left:0px">RPT-001〜017の全APIのセクション1テーブルに <code>認証: 要</code> と <code>対象ロール: 全ロール</code> を追加</li></ul>
+<ol><li><strong>補助API（バッチ実行履歴詳細取得）セクション4,5 追加</strong>（No.2）</li></ol>
+<ul><li style="margin-left:0px">セクション4: 業務ロジックフローチャート + ビジネスルール表を追加</li><li style="margin-left:30px">セクション5: ポーリング用途の説明・RUNNING時の挙動を追加</li></ul>
+<ol><li><strong>API-BAT-002 エラーレスポンス表・ビジネスルール表追加</strong>（No.3）</li></ol>
+<ul><li style="margin-left:0px">セクション3にエラーレスポンス表を追加</li><li style="margin-left:30px">セクション4にビジネスルール表を追加</li></ul>
+<ol><li><strong>API-BAT-002 セクション5 補足事項を拡充</strong>（No.4）</li></ol>
+<ul><li style="margin-left:0px">件数に関する補足・ポーリング用途の説明を追加</li></ul>
+<ol><li><strong>全レポートAPI セクション5（補足事項）追加</strong>（No.5, 6）</li></ol>
+<ul><li style="margin-left:0px">CSV出力時のファイル名・ヘッダー行（日本語）を明記</li><li style="margin-left:30px">パフォーマンス考慮（件数上限）を記載</li></ul>
+<ol><li><strong>レポートAPIのビジネスルール表を追加</strong>（No.7）</li></ol>
+<ul><li style="margin-left:0px">RPT-003, 004, 007, 014, 015 に倉庫存在チェック・件数上限のビジネスルールを追加</li></ul>
+<ol><li><strong>レスポンスフィールド定義表を追加</strong>（No.8, 11）</li></ol>
+<ul><li style="margin-left:0px">RPT-005, 006, 007, 008, 009, 010, 014, 015, 016 にフィールド定義表を追加（一部不足分）</li></ul>
+<ol><li><strong>API-RPT-010 ビジネスルール表追加</strong>（No.9）</li></ol>
+<ol><li><strong>API-RPT-011 棚卸確定前出力可の分岐追加</strong>（No.10）</li></ol>
+<ul><li style="margin-left:0px">業務ロジックフローに確定前出力の分岐を追加</li></ul>
+<ol><li><strong>レポートAPI共通仕様にパフォーマンス考慮セクション追加</strong>（No.12）</li></ol>
+<ul><li style="margin-left:0px">件数上限（10,000件）・クエリタイムアウト（30秒）・インデックス活用を明記</li></ul>
+<h3>2026-03-14 第2回レビュー実施・即時修正</h3>
+<ol><li><strong>API-BAT-001 statusフィールド説明を補完</strong></li></ol>
+<ul><li style="margin-left:0px">「全体ステータス（<code>SUCCESS</code> / <code>FAILED</code>）。本APIは同期実行のため <code>RUNNING</code> は返さない」に修正</li></ul>
+<ol><li><strong>API-BAT-001 ステップ処理詳細テーブルの誤記修正</strong>（未入荷・未出荷リスト生成の帰属ステップ）</li></ol>
+<ul><li style="margin-left:0px">ステップ4: スナップショット生成のみに縮小</li><li style="margin-left:40px">ステップ5: バックアップ＋未入荷/未出荷リスト生成の2処理を明記（06-batch-processing.md準拠）</li></ul>
+<ol><li><strong>API-BAT-001 unreceivedCount/unshippedCount の説明誤記修正</strong></li></ol>
+<ul><li style="margin-left:0px">「ステップ2完了後」「ステップ3完了後」→「ステップ5完了後」に修正</li></ul>
+<ol><li><strong>補助API を API-BAT-003 として正式API化</strong></li></ol>
+<ul><li style="margin-left:0px">セクション見出しを「補助API: バッチ実行履歴詳細取得」→「API-BAT-003 バッチ実行履歴詳細取得」に変更</li><li style="margin-left:40px">API概要テーブルの API ID を「—（補助API）」→「<code>API-BAT-003</code>」に変更</li></ul>
+<ol><li><strong>API-RPT-006 / RPT-016 補足事項に warehouse_code 結合の説明追加</strong></li></ol>
+<ul><li style="margin-left:0px"><code>warehouseId</code> → <code>warehouses.warehouse_code</code> JOINして絞り込む旨を補足事項に追記</li></ul>
+<ol><li><strong>API-RPT-007 保管条件パラメータ追加</strong>（05-reports.md 要件に準拠）</li></ol>
+<ul><li style="margin-left:0px"><code>storageCondition</code> クエリパラメータを追加</li><li style="margin-left:40px">フローチャートQUERYノードの絞り込み条件に <code>storageCondition</code> を追加</li><li style="margin-left:40px">unitTypeの型を <code>CASE</code> / <code>BALL</code> / <code>PIECE</code> に統一（CAS/PCSは誤記）</li></ul>
+<ol><li><strong>API-RPT-014 配送業者・送り状番号フィールド追加</strong>（05-reports.md 要件に準拠）</li></ol>
+<ul><li style="margin-left:0px">レスポンスJSON例に <code>carrier</code>・<code>trackingNumber</code> を追加</li><li style="margin-left:40px">フィールド説明テーブルに <code>carrier</code>（配送業者名）・<code>trackingNumber</code>（送り状番号）を追加</li><li style="margin-left:40px">クエリパラメータに <code>carrier</code>（部分一致絞り込み）を追加</li></ul>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>全API一覧「バッチ管理（batch）」セクション</td><td><code>API-BAT-003</code>（<code>GET /api/v1/batch/executions/{id}</code> バッチ実行履歴詳細取得）を全API一覧に追加。対象ロール: SYSTEM_ADMIN, WAREHOUSE_MANAGER</td><td>高</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/07-screen-batch.md</code></td><td>BAT-002 イベント一覧 EVT-BAT002-001/002</td><td>APIパスを <code>GET /api/v1/batch/history</code> → <code>GET /api/v1/batch/executions</code> に修正</td><td>高</td></tr>
+<tr><td>3</td><td><code>docs/functional-requirements/05-reports.md</code></td><td>共通仕様「出力形式」</td><td>機能要件定義書では「PDFダウンロード」と記載されているが、API設計書では「CSV / JSON」形式に変更されている。要件定義書の記述を実際の設計方針（CSV/JSON）に合わせて修正が必要</td><td>高</td></tr>
+<tr><td>4</td><td><code>docs/functional-requirements/05-reports.md</code></td><td>業務フローの「PDF出力ボタン」記述</td><td>機能要件のフローチャートで「PDF出力ボタンを押す」「PDFを生成してダウンロード応答」と記載されているが、API設計はCSV/JSONのため整合していない。要件定義書のフローを「レポート出力」「CSVダウンロード応答」に修正が必要</td><td>高</td></tr>
+<tr><td>5</td><td><code>docs/functional-requirements/05-reports.md</code></td><td>「5. 未入荷リスト（リアルタイム）」対象範囲</td><td>「現在営業日の入荷予定日」とある対象範囲を「現在営業日以前の入荷予定日で入庫完了していないもの（当日分に限らない）」に改訂するか、当日分限定が正しければAPIの <code>asOfDate</code> ロジックを当日のみに制限するか決定が必要</td><td>中</td></tr>
+<tr><td>6</td><td><code>docs/functional-requirements/05-reports.md</code></td><td>「17. 日次集計レポート」出力項目</td><td>「未入荷件数」「未出荷件数」を出力項目として追記（07-screen-batch.md のRPT-017ダイアログ定義では既に含まれているため整合が必要）</td><td>中</td></tr>
+<tr><td>7</td><td><code>docs/data-model/04-batch-tables.md</code></td><td><code>inbound_summaries.inbound_quantity_total</code> カラム説明</td><td>集計単位が「バラ（PCS）換算」であることを説明に明記。同様に <code>outbound_summaries.outbound_quantity_total</code>、<code>inventory_snapshots.total_quantity</code> にも換算単位を明記</td><td>中</td></tr>
+<tr><td>8</td><td><code>docs/data-model/04-batch-tables.md</code></td><td>（確認事項）</td><td><code>inventory_movements</code> テーブルに <code>reason</code>（訂正理由）カラムの存在が <code>API-RPT-009</code> で参照されているが、バッチ系テーブル定義書では <code>inventory_movements</code> の詳細スキーマが記載されていない（他のデータモデルファイルを確認要）</td><td>低</td></tr>
+<tr><td>9</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧「バッチ」セクション</td><td><code>BATCH_EXECUTION_NOT_FOUND</code> は <code>API-RPT-017</code>（日次集計レポート）でも使用されているが、エラーコード一覧の説明が「バッチ実行履歴が見つからない」のみ。「指定日の日替処理が完了していない」という用途も説明に追記することで可読性が向上する</td><td>低</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-inbound">
+<h1>API設計レビュー記録票 — 入荷管理（INB）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/11-api-inbound.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/02-inbound-management.md</code>、<code>docs/data-model/03-transaction-tables.md</code>、<code>docs/functional-design/04-screen-inbound.md</code>、<code>docs/functional-design/review-records.md</code></blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>API設計書修正済</strong>（レビュー時に自動修正）</td><td>5件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>2件</td></tr>
+<tr><td>指摘事項なし</td><td>8件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>15件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>API-INB-001〜008, cancel</td><td><code>08-api-overview.md</code> テンプレート</td><td>全APIが5セクション形式（概要/リクエスト/レスポンス/業務ロジック/補足）に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>API-INB-001〜008, cancel</td><td><code>08-api-overview.md</code> 全API一覧</td><td>メソッド・パス・ロールが全API一覧の定義と一致していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>API-INB-001〜008, cancel</td><td><code>03-transaction-tables.md</code> inbound_slipsテーブル</td><td>リクエスト/レスポンスのフィールド名がDBカラム名（スネークケース→キャメルケース変換）と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>API-INB-cancel</td><td><code>02-inbound-management.md</code> §5 入荷キャンセル</td><td>機能要件書§5では「入庫完了以外のステータスをキャンセル可」と定義しているが、API設計書では「<code>INSPECTING</code> 以降はキャンセル不可」と誤って制限していた。また <code>PARTIAL_STORED</code> キャンセル時の在庫ロールバック処理が完全に欠落していた</td><td><strong>API設計書修正済</strong></td><td>1) ステータス遷移図に <code>INSPECTING → CANCELLED</code> / <code>PARTIAL_STORED → CANCELLED</code> を追加。2) API概要を「STORED/CANCELLED以外はキャンセル可」に変更。3) エラー条件を修正（STORED/CANCELLEDのみ不可）。4) フローチャートに PARTIAL_STORED 分岐と在庫ロールバック（<code>inventories UPDATE</code>・<code>inventory_movements INSERT movement_type=INBOUND_CANCEL</code>）を追加。5) ビジネスルール表を修正（ルール3・4追加）済</td></tr>
+<tr><td>5</td><td>API-INB-007</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>エラーコード一覧に定義済みの <code>INBOUND_LOCATION_AREA_MISMATCH</code>（入荷エリア不一致）が API-INB-007 のフローチャートおよびビジネスルール表に一切記載されておらず、実装時に入荷エリアチェックが漏れる可能性があった</td><td><strong>API設計書修正済</strong></td><td>フローチャートに <code>CHECK_AREA[入荷エリアチェック area_type=INBOUND]</code> → <code>ERR_AREA[422 INBOUND_LOCATION_AREA_MISMATCH]</code> ノードを追加。エラーレスポンス表に <code>422 INBOUND_LOCATION_AREA_MISMATCH</code> 追加。ビジネスルール3として「指定ロケーションは入荷エリア（<code>areas.area_type = INBOUND</code>）に属していなければならない」を追加済（旧ルール4→5〜9に繰り下げ）</td></tr>
+<tr><td>6</td><td>API-INB-002</td><td><code>review-records.md</code> I-12</td><td>画面設計書レビュー記録 I-12 の「API設計時に仕様確認が必要」アクションアイテムに対し、<code>warehouseId</code> の入力元（グローバルヘッダー選択中倉庫の自動セット）がAPI設計書の補足事項に未記載だった</td><td><strong>API設計書修正済</strong></td><td>補足事項に「<code>warehouseId</code> はフロントエンドのグローバルヘッダーで選択中の倉庫IDを自動セットする」旨を追記済（review-records.md I-12 クローズ）</td></tr>
+<tr><td>7</td><td>API-INB-004</td><td><code>02-inbound-management.md</code> ビジネスルール「修正不可」</td><td><code>PLANNED</code> ステータスのみ更新可能な設計根拠（<code>CONFIRMED</code> 以降は業務が進行中のため修正不可）が補足事項に未記載だった</td><td><strong>API設計書修正済</strong></td><td>補足事項に「更新可能なのは <code>PLANNED</code> ステータスの伝票のみ。<code>CONFIRMED</code> 以降は業務上の操作が進んでいるため修正不可とし、修正が必要な場合はキャンセルして再登録する（要件定義書ビジネスルール「修正不可」に準拠）」を追記済</td></tr>
+<tr><td>8</td><td>API-INB-001〜008, cancel</td><td><code>08-api-overview.md</code> 認証・認可仕様</td><td>ロール別アクセス権限マトリクスとの整合を確認。参照系は全ロール、更新系はSYSTEM_ADMIN/WAREHOUSE_MANAGER/WAREHOUSE_STAFF、VIEWERは参照のみ</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>9</td><td>API-INB-002</td><td><code>02-inbound-management.md</code> §1 管理項目</td><td>伝票番号の自動採番形式（<code>INB-YYYYMMDD-NNNN</code>）が業務要件と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>API-INB-006</td><td><code>02-inbound-management.md</code> §6 入荷検品</td><td>「入荷数の初期値は入荷予定数と同数にプリセット」する設計についての責務がフロントエンド側にあることが補足事項に明記されていることを確認（APIは変更がある行のみ受け取る設計）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>11</td><td>API-INB-007</td><td><code>02-inbound-management.md</code> §7 入庫指示・確定</td><td>ロケーション自動割当（同一商品の既存在庫ロケーション → 空きロケーション優先）の候補表示は別途 <code>GET /api/v1/inventory/location-suggestions</code> 等で対応する想定。本APIは確定操作のみ</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>12</td><td>API-INB-007</td><td><code>03-transaction-tables.md</code> inventory_movementsテーブル</td><td><code>movement_type = INBOUND</code> として <code>inventory_movements</code> に明細単位でレコードを追記する設計がデータモデルと整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>13</td><td>API-INB-cancel</td><td><code>03-transaction-tables.md</code> inventory_movementsテーブル</td><td><code>PARTIAL_STORED</code> キャンセル時の在庫ロールバックで <code>movement_type = INBOUND_CANCEL</code> を使用する設計が整合性を保てることを確認（追記専用テーブル方針に準拠）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>14</td><td>API-INB-002/004/006/007</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>全エラーコード（INBOUND_SLIP_NOT_FOUND, INBOUND_INVALID_STATUS, INBOUND_LINE_NOT_FOUND, INBOUND_LINE_NOT_INSPECTED, INBOUND_PARTNER_NOT_SUPPLIER, INBOUND_LOCATION_AREA_MISMATCH, DUPLICATE_PRODUCT_IN_LINES, PLANNED_DATE_TOO_EARLY, LOT_NUMBER_REQUIRED, EXPIRY_DATE_REQUIRED）が一覧に定義済みであることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>API-INB-001〜008</td><td><code>03-transaction-tables.md</code> inbound_slip_linesテーブル</td><td>明細の <code>line_status</code> 遷移（PENDING → INSPECTED → STORED）がAPI設計書のステータス遷移図と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.4 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/11-api-inbound.md</code> キャンセルAPI（API-INB-cancel）</p>
+<p><strong>修正理由</strong>: 機能要件書（02-inbound-management.md §5）の定義：</p>
+<ul><li style="margin-left:0px">「入庫完了（STORED）以外のステータスの入荷予定をキャンセルできる」</li><li style="margin-left:0px">キャンセル時の在庫戻し: PARTIAL_STOREDの場合は在庫減算ロールバック、INSPECTING以下は影響なし</li></ul>
+<p><strong>修正箇所1</strong>: ステータス遷移図</p>
+<ul><li style="margin-left:0px">追加: <code>INSPECTING --&gt; CANCELLED : キャンセル（API-INB-cancel）</code></li><li style="margin-left:0px">追加: <code>PARTIAL_STORED --&gt; CANCELLED : キャンセル（API-INB-cancel）</code></li></ul>
+<p><strong>修正箇所2</strong>: API概要テーブル</p>
+<ul><li style="margin-left:0px">修正前: <code>PLANNED</code> または <code>CONFIRMED</code> 状態の入荷予定伝票を <code>CANCELLED</code> に遷移させる。<code>INSPECTING</code> 以降の伝票はキャンセル不可。</li><li style="margin-left:0px">修正後: <code>STORED</code>（入庫完了）および <code>CANCELLED</code> 以外の入荷予定伝票を <code>CANCELLED</code> に遷移させる。<code>PARTIAL_STORED</code> の場合は入庫確定済み在庫を戻す処理を行う。</li></ul>
+<p><strong>修正箇所3</strong>: エラーレスポンス表</p>
+<ul><li style="margin-left:0px">修正前: <code>409 INBOUND_INVALID_STATUS | ステータスが PLANNED / CONFIRMED でない</code></li><li style="margin-left:0px">修正後: <code>409 INBOUND_INVALID_STATUS | ステータスが STORED（入庫完了）または CANCELLED（キャンセル済）</code></li></ul>
+<p><strong>修正箇所4</strong>: フローチャート</p>
+<ul><li style="margin-left:0px"><code>CHECK{status IN PLANNED, CONFIRMED?}</code> → <code>CHECK{status IN PLANNED, CONFIRMED, INSPECTING, PARTIAL_STORED?}</code></li><li style="margin-left:0px">PARTIAL_STORED 分岐を追加し、在庫ロールバック処理（<code>inventories UPDATE quantity -= stored_qty</code>、<code>inventory_movements INSERT movement_type=INBOUND_CANCEL</code>）を追加</li></ul>
+<p><strong>修正箇所5</strong>: ビジネスルール表</p>
+<ul><li style="margin-left:0px">ルール1修正: INSPECTING/PARTIAL_STORED/STOREDはキャンセル不可 → STORED/CANCELLEDのみキャンセル不可</li><li style="margin-left:0px">ルール3追加: PARTIAL_STOREDキャンセル時の在庫ロールバック処理</li><li style="margin-left:0px">ルール4追加: PLANNED/CONFIRMED/INSPECTINGキャンセルは在庫影響なし</li></ul>
+<h3>No.5 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/11-api-inbound.md</code> API-INB-007 業務ロジック</p>
+<ul><li style="margin-left:0px">エラーレスポンス表に <code>422 INBOUND_LOCATION_AREA_MISMATCH</code> 追加</li><li style="margin-left:0px">フローチャートに <code>CHECK_AREA[入荷エリアチェック area_type=INBOUND]</code> → <code>ERR_AREA[422 INBOUND_LOCATION_AREA_MISMATCH]</code> を CHECK_LOC と CHECK_STOCKTAKE の間に挿入</li><li style="margin-left:0px">ビジネスルール3として「指定ロケーションは入荷エリア（<code>areas.area_type = INBOUND</code>）に属していなければならない」を追加（旧ルール4〜8を5〜9に繰り下げ）</li></ul>
+<h3>No.6 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/11-api-inbound.md</code> API-INB-002 補足事項</p>
+<ul><li style="margin-left:0px">補足事項に以下を追記:</li></ul>
+<p>  「<code>warehouseId</code> はフロントエンドのグローバルヘッダーで選択中の倉庫IDを自動セットする（ユーザーが直接入力しない）。これにより、選択倉庫に紐づく入荷予定が自動登録される（画面設計書レビュー記録 I-12 対応）。」</p>
+<h3>No.7 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/11-api-inbound.md</code> API-INB-004 補足事項</p>
+<ul><li style="margin-left:0px">補足事項に以下を追記:</li></ul>
+<p>  「更新可能なのは <code>PLANNED</code> ステータスの伝票のみ。<code>CONFIRMED</code> 以降は業務上の操作（確認・検品・入庫）が進んでいるため修正不可とし、修正が必要な場合はキャンセルして再登録する（要件定義書ビジネスルール「修正不可」に準拠）。」</p>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/data-model/03-transaction-tables.md</code></td><td>inventory_movements テーブル <code>movement_type</code> 定義</td><td><code>INBOUND_CANCEL</code>（入荷キャンセル時の在庫ロールバック）を movement_type の有効値として追加すること</td><td>高</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/04-screen-inbound.md</code></td><td>INB-003 キャンセルボタン挙動</td><td><code>PARTIAL_STORED</code> ステータスのキャンセル時に在庫ロールバックが発生する旨の警告ダイアログを表示するイベント定義を追加すること（ユーザーに在庫変動を周知するため）</td><td>中</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-inventory">
+<h1>API設計レビュー記録票 — 在庫管理（INV）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/12-api-inventory.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/03-inventory-management.md</code>、<code>docs/data-model/03-transaction-tables.md</code>、<code>docs/functional-design/05-screen-inventory-ops.md</code>、<code>docs/functional-design/05-screen-inventory-stocktake.md</code></blockquote></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>全体</td><td>03-transaction-tables.md</td><td><code>inventory_movements</code> テーブルのカラム名が不整合。設計書では <code>created_at</code> / <code>created_by</code> と記載していたが、データモデル定義では <code>executed_at</code> / <code>executed_by</code> が正しいカラム名。全APIの記録内容表にも影響しないが、テーブルリファレンスの定義として修正が必要。</td><td>バグ</td><td>対応済（テーブルリファレンスを修正）</td></tr>
+<tr><td>2</td><td>全体（棚卸API）</td><td>—</td><td>設計書全体にわたり「棟卸」という誤記が多数存在（「棚卸」が正しい）。検索すると約80箇所以上の誤記が確認された。</td><td>誤記</td><td>対応済（全箇所を「棚卸」に修正）</td></tr>
+<tr><td>3</td><td>API-INV-011</td><td>08-api-overview.md</td><td>セクション4「業務ロジック」にMermaidフローチャートはあるが、ビジネスルール表が欠落していた。他のAPIとフォーマットを統一する必要がある。</td><td>フォーマット不備</td><td>対応済（ビジネスルール表を追加）</td></tr>
+<tr><td>4</td><td>API-INV-012</td><td>03-transaction-tables.md</td><td><code>stocktake_headers.target_description</code> カラムについて、設計書テーブルリファレンスではNOT NULLとして記載されていたが、データモデル定義（03-transaction-tables.md）ではNULL可（<code>NULL | —</code>）が正しい。棟全体指定の場合に自動生成されるため必ずしもNULLにならないが、定義の整合を取る必要がある。</td><td>データモデル不整合</td><td>対応済（NULL可に修正）</td></tr>
+<tr><td>5</td><td>API-INV-013</td><td>05-screen-inventory-stocktake.md</td><td>「関連画面」フィールドに <code>INV-012（棟卸実施）、INV-013（棟卸確定）</code> と記載されていたが、画面IDが誤り。正しくは <code>INV-013（棚卸実施・実数入力）、INV-014（棚卸確定）</code> 。</td><td>誤記</td><td>対応済（関連画面記述を修正）</td></tr>
+<tr><td>6</td><td>API-INV-011, API-INV-012</td><td>03-inventory-management.md</td><td>棚卸明細の上限2,000行（機能要件定義書に明記）に関する記載がAPI設計書にほぼなかった。運用上の制約として補足事項に記載すべき。</td><td>要件カバレッジ不足</td><td>対応済（API-INV-011補足事項、API-INV-012補足事項に追記）</td></tr>
+<tr><td>7</td><td>API-INV-004</td><td>08-api-overview.md</td><td>08-api-overview.mdの「在庫管理（移動・訂正）」ロール列に <code>WAREHOUSE_STAFF</code> が含まれているが、API-INV-004は <code>WAREHOUSE_MANAGER</code> のみが在庫訂正可能と設計書で明示している。また画面設計書（05-screen-inventory-ops.md INV-004）も対象ロールは <code>WAREHOUSE_MANAGER</code> のみ。API設計書側は正しい（より詳細なロール制限）が、08-api-overview.mdの一覧表との食い違いが発生している。</td><td>他ドキュメントとの不整合</td><td>08-api-overview.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>8</td><td>API-INV-012</td><td>08-api-overview.md</td><td>08-api-overview.mdの全API一覧では <code>API-INV-012</code> のロールが <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF</code> となっているが、API設計書では <code>WAREHOUSE_MANAGER（WAREHOUSE_STAFFは不可）</code> と定義している。機能要件・画面設計ともに WAREHOUSE_MANAGER 専権であるため、API設計書の定義が正しい。</td><td>他ドキュメントとの不整合</td><td>08-api-overview.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>9</td><td>API-INV-002, API-INV-003</td><td>08-api-overview.md</td><td><code>INVENTORY_CAPACITY_EXCEEDED</code>（422）エラーコードが在庫移動・ばらしで使用されているが、08-api-overview.mdの共通エラーコード一覧に記載がない。在庫管理ローカルのエラーコード一覧（12-api-inventory.md末尾）には記載されているが、共通エラーコード一覧への追記が望ましい。</td><td>他ドキュメントとの不整合</td><td>08-api-overview.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>10</td><td>API-INV-015</td><td>08-api-overview.md</td><td><code>INVENTORY_STOCKTAKE_NOT_ALL_COUNTED</code>（409）エラーコードが使用されているが、08-api-overview.mdの共通エラーコード一覧に記載がない。在庫管理ローカルのエラーコード一覧には記載されているが、共通一覧への追記が望ましい。</td><td>他ドキュメントとの不整合</td><td>08-api-overview.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>11</td><td>API-INV-011</td><td>05-screen-inventory-stocktake.md</td><td>画面設計書（INV-011のイベント一覧）では <code>GET /api/v1/stocktakes?page=1&amp;size=20</code> と記載されているが、APIパスは <code>/api/v1/inventory/stocktakes</code> が正しい。画面設計書側の誤記。</td><td>他ドキュメントとの不整合</td><td>05-screen-inventory-stocktake.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>12</td><td>API-INV-015</td><td>05-screen-inventory-stocktake.md</td><td>画面設計書（INV-014確定画面）のイベント一覧では <code>POST /api/v1/stocktakes/:id/finalize</code> と記載されているが、API-INV-015のパスは <code>POST /api/v1/inventory/stocktakes/{id}/confirm</code> が正しい。パス名・動詞が異なる。</td><td>他ドキュメントとの不整合</td><td>05-screen-inventory-stocktake.md修正要（アクションアイテムに記録）</td></tr>
+<tr><td>13</td><td>API-INV-002, API-INV-003</td><td>08-api-overview.md</td><td><code>INVENTORY_INSUFFICIENT</code> のHTTPステータスコードが <code>409</code> になっているが、08-api-overview.mdの共通エラーコード一覧では <code>422</code>（業務制約違反）と定義されている。データ競合ではなくビジネスルール違反のため422が正しい。</td><td>バグ</td><td>対応済（エラーレスポンス表・エラーコード一覧を409→422に修正）</td></tr>
+<tr><td>14</td><td>API-INV-004</td><td>05-screen-inventory-ops.md</td><td><code>reason</code>（訂正理由）フィールドの文字数上限がAPI設計書では「500文字」となっているが、画面設計書（INV-004 COR-REASON項目）では「200文字以内」と定義されている。画面バリデーションとAPI側のバリデーションを一致させる必要がある。</td><td>画面/API不整合</td><td>対応済（リクエスト仕様を1〜200文字に修正。エラー条件・補足事項にも200文字制限を追記）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<table>
+<thead><tr><th>No</th><th>修正内容</th><th>修正箇所</th><th>修正日</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>inventory_movements</code> テーブルリファレンスの <code>created_at</code>/<code>created_by</code> を <code>executed_at</code>/<code>executed_by</code> に修正</td><td>12-api-inventory.md テーブルリファレンス</td><td>2026-03-14</td></tr>
+<tr><td>2</td><td>「棟卸」→「棚卸」誤記を全箇所修正（約80箇所以上）</td><td>12-api-inventory.md 全体</td><td>2026-03-14</td></tr>
+<tr><td>3</td><td>API-INV-011 セクション4にビジネスルール表を追加</td><td>12-api-inventory.md API-INV-011</td><td>2026-03-14</td></tr>
+<tr><td>4</td><td><code>stocktake_headers.target_description</code> の NULL制約をNULL可に修正</td><td>12-api-inventory.md テーブルリファレンス</td><td>2026-03-14</td></tr>
+<tr><td>5</td><td>API-INV-013 関連画面を <code>INV-013（棚卸実施・実数入力）、INV-014（棚卸確定）</code> に修正</td><td>12-api-inventory.md API-INV-013</td><td>2026-03-14</td></tr>
+<tr><td>6</td><td>API-INV-011/012 補足事項に明細上限2,000行の記載を追加</td><td>12-api-inventory.md API-INV-011, API-INV-012</td><td>2026-03-14</td></tr>
+<tr><td>7</td><td><code>INVENTORY_INSUFFICIENT</code> HTTPステータスを 409 → 422 に修正（エラーレスポンス表×2、エラーコード一覧×1）</td><td>12-api-inventory.md API-INV-002, API-INV-003, エラーコード一覧</td><td>2026-03-14</td></tr>
+<tr><td>8</td><td>API-INV-004 <code>reason</code> フィールドの文字数上限を 500文字 → 200文字 に修正（リクエスト仕様・エラー条件・補足事項）</td><td>12-api-inventory.md API-INV-004</td><td>2026-03-14</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>全API一覧 > 在庫管理 > API-INV-004</td><td>ロール列を <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF</code> → <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> に修正。在庫訂正はWAREHOUSE_STAFFには権限なし。</td><td>高</td><td><strong>対応済</strong>（08-api-overview.md修正確認）</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>全API一覧 > 在庫管理 > API-INV-012</td><td>ロール列を <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF</code> → <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> に修正。棚卸開始はWAREHOUSE_STAFFには権限なし。</td><td>高</td><td><strong>対応済</strong>（08-api-overview.md修正確認）</td></tr>
+<tr><td>3</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 > 在庫管理</td><td><code>INVENTORY_CAPACITY_EXCEEDED</code>（422: ロケーション収容数上限超過）を追加</td><td>中</td><td><strong>対応済</strong>（08-api-overview.md追加確認）</td></tr>
+<tr><td>4</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 > 在庫管理</td><td><code>INVENTORY_STOCKTAKE_NOT_ALL_COUNTED</code>（409: 未入力の実数がある）を追加</td><td>中</td><td><strong>対応済</strong>（08-api-overview.md追加確認）</td></tr>
+<tr><td>5</td><td><code>docs/functional-design/05-screen-inventory-stocktake.md</code></td><td>INV-011 イベント一覧 > EVT-INV011-001</td><td>APIパスを <code>GET /api/v1/stocktakes?page=1&amp;size=20</code> → <code>GET /api/v1/inventory/stocktakes?page=0&amp;size=20</code> に修正（パスとページ番号0始まりの誤記）</td><td>中</td></tr>
+<tr><td>6</td><td><code>docs/functional-design/05-screen-inventory-stocktake.md</code></td><td>INV-014 イベント一覧 > EVT-INV014-005</td><td>APIパスを <code>POST /api/v1/stocktakes/:id/finalize</code> → <code>POST /api/v1/inventory/stocktakes/{id}/confirm</code> に修正（パス名・エンドポイント名の誤記）</td><td>中</td></tr>
+<tr><td>7</td><td><code>docs/functional-design/05-screen-inventory-stocktake.md</code></td><td>INV-012 イベント一覧 > EVT-INV012-006</td><td>APIパスを <code>POST /api/v1/stocktakes</code> → <code>POST /api/v1/inventory/stocktakes</code> に修正</td><td>中</td></tr>
+<tr><td>8</td><td><code>docs/data-model/03-transaction-tables.md</code></td><td>inventories テーブル</td><td>楽観的ロック（<code>@Version</code>）の注記は存在するが、<code>version</code> カラム自体がテーブル定義に記載されていない。Javaエンティティ側の <code>@Version</code> アノテーション対象カラムとして <code>version bigint NOT NULL DEFAULT 0</code> を追加すること。</td><td>低</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-mst-facility">
+<h1>API設計レビュー記録票 — 施設マスタ（MST-FAC）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/10-api-master-facility.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/01-master-management.md</code>、<code>docs/data-model/02-master-tables.md</code>、<code>docs/functional-design/03-screen-master-facility.md</code>、<code>docs/functional-design/03-screen-master-partner-warehouse.md</code></blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>API設計書修正済</strong>（レビュー時に自動修正）</td><td>6件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>5件</td></tr>
+<tr><td>指摘事項なし</td><td>6件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>17件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>共通仕様（冒頭）</td><td><code>08-api-overview.md</code> エラー仕様</td><td>共通エラーレスポンス形式のフィールド名が <code>&quot;fieldErrors&quot;</code> となっているが、08-api-overview.mdの標準は <code>&quot;details&quot;</code></td><td><strong>API設計書修正済</strong></td><td><code>fieldErrors</code> → <code>details</code> に修正済</td></tr>
+<tr><td>2</td><td>API-MST-FAC-002</td><td><code>01-master-management.md</code> §3 管理項目</td><td><code>warehouseCode</code> バリデーションが「最大50文字、英数字・ハイフンのみ」となっているが、要件定義書の定義は「英大文字4文字固定（例: WARA）」</td><td><strong>API設計書修正済</strong></td><td>バリデーションを <code>^[A-Z]{4}$</code>（英大文字4文字固定）に修正済</td></tr>
+<tr><td>3</td><td>API-MST-FAC-014</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション5（補足事項）が欠落</td><td><strong>API設計書修正済</strong></td><td>トランザクション境界・楽観ロックに関する補足事項を追加済</td></tr>
+<tr><td>4</td><td>API-MST-FAC-014</td><td>—</td><td>ビジネスルール表に「無効化済みでも更新可能」ルールが未記載</td><td><strong>API設計書修正済</strong></td><td>BR-002「無効化済みの棟でも更新可能」を追加済</td></tr>
+<tr><td>5</td><td>API-MST-FAC-023</td><td><code>08-api-overview.md</code> テンプレート</td><td>業務ロジックセクションにビジネスルール表が欠落（他の取得APIとの統一性が不足）</td><td><strong>API設計書修正済</strong></td><td>ビジネスルール表（存在チェック、無効化済み取得可能）を追加済</td></tr>
+<tr><td>6</td><td>API-MST-FAC-024</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション5（補足事項）が欠落。BR-003（無効化済みでも更新可能）も未記載</td><td><strong>API設計書修正済</strong></td><td>セクション5および BR-003 を追加済</td></tr>
+<tr><td>7</td><td>API-MST-FAC-033</td><td><code>08-api-overview.md</code> テンプレート</td><td>業務ロジックセクションにビジネスルール表が欠落</td><td><strong>API設計書修正済</strong></td><td>ビジネスルール表（存在チェック、無効化済み取得可能）を追加済</td></tr>
+<tr><td>8</td><td>全20API</td><td><code>08-api-overview.md</code> テンプレート</td><td>1. API概要テーブルに「認証」行が欠落（「認可ロール」のみ記載、「認証: 要」が省略されている）</td><td><strong>要対応</strong></td><td>全APIの概要テーブルに「<strong>認証</strong> \</td><td>要（JWT httpOnly Cookie）」行を追加すること。または、ファイル冒頭の共通仕様で「全APIはJWT認証必須」と明記されているため許容範囲とするか方針を確認</td></tr>
+<tr><td>9</td><td>全20API</td><td><code>08-api-overview.md</code> テンプレート</td><td>1. API概要テーブルに「関連画面」行が欠落（全APIで省略）</td><td><strong>要対応</strong></td><td>各APIに対応する画面IDを関連画面として追加すること（例: FAC-001→MST-021, FAC-011→MST-031 等）</td></tr>
+<tr><td>10</td><td>API-MST-FAC-002/012/022/032</td><td><code>03-screen-master-facility.md</code></td><td>棟名称・エリア名称・ロケーション名称の文字数制限が画面設計書では「100文字」だが、DBカラム定義・API設計書では「200文字」で不整合</td><td><strong>要対応</strong></td><td><code>03-screen-master-facility.md</code> の MST-032/042/043/052/053 フォームバリデーションの名称フィールド上限を100文字 → 200文字に修正すること</td></tr>
+<tr><td>11</td><td>API-MST-FAC-008/018/028/038 相当</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td><code>CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS</code>（FAC-035で使用）、<code>AREA_LOCATION_LIMIT_EXCEEDED</code>（FAC-032で使用）、<code>INVALID_LOCATION_CODE_FORMAT</code>（FAC-032で使用）が08-api-overview.mdのエラーコード一覧に未定義</td><td><strong>要対応</strong></td><td><code>08-api-overview.md</code> のエラーコード一覧（施設マスタ区分）に上記3エラーコードを追加すること</td></tr>
+<tr><td>12</td><td>API-MST-FAC-002</td><td><code>03-screen-master-partner-warehouse.md</code> MST-022</td><td>棟登録画面（MST-032）に「有効/無効」ラジオボタンが存在するが、API設計ではisActive=true固定（登録時の有効フラグはON固定の共通ルール）。画面設計が実装と乖離する可能性がある</td><td><strong>要対応</strong></td><td><code>03-screen-master-facility.md</code> の MST-032 から「有効/無効」ラジオボタンを削除し、「登録時はON固定」の注記に変更すること</td></tr>
+<tr><td>13</td><td>API-MST-FAC-001〜035</td><td><code>02-master-tables.md</code></td><td>warehouses/buildings/areas/locationsテーブルのカラム名・型とリクエスト/レスポンスフィールドの全体整合確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>14</td><td>API-MST-FAC-001〜035</td><td><code>08-api-overview.md</code> 全API一覧</td><td>全20APIのメソッド・パス・ロールが全API一覧の定義と一致することを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>API-MST-FAC-005/015/025/035</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>CANNOT_DEACTIVATE_HAS_CHILDREN（配下データあり）が適切に使用されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>16</td><td>API-MST-FAC-031/032</td><td><code>01-master-management.md</code> §6</td><td>ロケーションコードの自動採番形式（棟-フロア-エリア-棚-段-並び）がAPI設計書に正しく反映されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>17</td><td>API-MST-FAC-001/011/021/031</td><td><code>01-master-management.md</code> §3</td><td>倉庫マスタ管理画面はヘッダーの倉庫切替の影響を受けない設計（全倉庫一覧を表示）がAPIの仕様と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.1 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/10-api-master-facility.md</code> 冒頭 共通エラーレスポンス形式</p>
+<ul><li style="margin-left:0px"><strong>修正前</strong>: <code>&quot;fieldErrors&quot;: [...]</code></li><li style="margin-left:0px"><strong>修正後</strong>: <code>&quot;details&quot;: [...]</code></li><li style="margin-left:0px"><strong>修正理由</strong>: 08-api-overview.md の標準エラーレスポンス形式では <code>details</code> フィールドを使用。統一性のため修正。</li></ul>
+<h3>No.2 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/10-api-master-facility.md</code> API-MST-FAC-002 リクエスト仕様</p>
+<ul><li style="margin-left:0px"><strong>修正前</strong>: <code>warehouseCode</code>: 最大50文字、英数字・ハイフンのみ（正規表現: <code>^[A-Za-z0-9\-]+$</code>）</li><li style="margin-left:0px"><strong>修正後</strong>: <code>warehouseCode</code>: 英大文字4文字固定（正規表現: <code>^[A-Z]{4}$</code>）（例: <code>WARA</code>）</li><li style="margin-left:0px"><strong>修正理由</strong>: <code>01-master-management.md</code> §3 管理項目に「英大文字4文字固定」と明記されている</li></ul>
+<h3>No.3〜7 対応詳細</h3>
+<p><strong>修正対象</strong>: 各API セクション欠落への補完</p>
+<ul><li style="margin-left:0px">FAC-014: BR-002追加 + セクション5（補足事項）追加</li><li style="margin-left:0px">FAC-023: ビジネスルール表追加</li><li style="margin-left:0px">FAC-024: BR-003追加 + セクション5（補足事項）追加</li><li style="margin-left:0px">FAC-033: ビジネスルール表追加</li></ul>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/03-screen-master-facility.md</code></td><td>MST-032/042/043/052/053 フォームバリデーション</td><td>棟名称・エリア名称・ロケーション名称の最大文字数を100文字 → 200文字に修正すること（DBカラム定義 varchar(200) に準拠）</td><td>中</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/03-screen-master-facility.md</code></td><td>MST-032 有効/無効ラジオボタン</td><td>棟登録画面の「有効/無効」ラジオボタンを削除し、「登録時はON固定（全マスタ共通仕様）」の注記に変更すること</td><td>中</td></tr>
+<tr><td>3</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 施設マスタ</td><td>以下のエラーコードを追加すること: <code>CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS</code>（422: 棚卸中のため無効化不可）、<code>AREA_LOCATION_LIMIT_EXCEEDED</code>（422: エリアのロケーション登録上限超過）、<code>INVALID_LOCATION_CODE_FORMAT</code>（400: ロケーションコード形式不正）</td><td>中</td></tr>
+<tr><td>4</td><td><code>docs/functional-design/10-api-master-facility.md</code></td><td>全20API 概要テーブル</td><td>「認証」行（<code>認証 \| 要（JWT httpOnly Cookie）</code>）を追加するか、共通仕様に「全APIはJWT認証必須」の明記で代替するかの方針を確認して統一すること</td><td>低</td></tr>
+<tr><td>5</td><td><code>docs/functional-design/10-api-master-facility.md</code></td><td>全20API 概要テーブル</td><td>「関連画面」行を各APIに追加すること（FAC-001→MST-021, FAC-002→MST-022, FAC-011→MST-031, FAC-012→MST-032, FAC-021→MST-041, FAC-022→MST-042, FAC-031→MST-051, FAC-032→MST-052 等）</td><td>低</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-mst-partner">
+<h1>API設計レビュー記録票 — 取引先マスタ（MST-PAR）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/10-api-master-partner.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/01-master-management.md</code>、<code>docs/data-model/02-master-tables.md</code>、<code>docs/functional-design/03-screen-master-partner-warehouse.md</code></blockquote></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>API-MST-PAR-001〜005</td><td><code>08-api-overview.md</code> テンプレート</td><td>全5APIが5セクション形式（概要/リクエスト/レスポンス/業務ロジック/補足）に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>API-MST-PAR-001〜005</td><td><code>08-api-overview.md</code> 全API一覧</td><td>メソッド・パス・ロールが全API一覧の定義と一致していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>API-MST-PAR-001〜005</td><td><code>02-master-tables.md</code> partnersテーブル</td><td>リクエスト/レスポンスのフィールド名がDBカラム名（スネークケース→キャメルケース変換）と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>API-MST-PAR-001</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>関連画面IDが <code>MST-PAR-001</code>（誤）と記載されていた。正しくは <code>MST-011</code>（取引先一覧）</td><td><strong>API設計書修正済</strong></td><td>関連画面を <code>MST-PAR-001</code> → <code>MST-011</code> に修正済</td></tr>
+<tr><td>5</td><td>API-MST-PAR-002</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>関連画面IDが <code>MST-PAR-002</code>（誤）と記載されていた。正しくは <code>MST-012</code>（取引先登録）</td><td><strong>API設計書修正済</strong></td><td>関連画面を <code>MST-PAR-002</code> → <code>MST-012</code> に修正済</td></tr>
+<tr><td>6</td><td>API-MST-PAR-003</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>関連画面IDが <code>MST-PAR-003</code>、<code>MST-PAR-004</code>（誤）と記載されていた。正しくは <code>MST-011</code>（一覧）・<code>MST-013</code>（編集）</td><td><strong>API設計書修正済</strong></td><td>関連画面を <code>MST-011, MST-013</code> に修正済</td></tr>
+<tr><td>7</td><td>API-MST-PAR-004</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>関連画面IDが <code>MST-PAR-004</code>（誤）と記載されていた。正しくは <code>MST-013</code>（取引先編集）</td><td><strong>API設計書修正済</strong></td><td>関連画面を <code>MST-PAR-004</code> → <code>MST-013</code> に修正済</td></tr>
+<tr><td>8</td><td>API-MST-PAR-005</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>関連画面IDが <code>MST-PAR-001</code>、<code>MST-PAR-003</code>（誤）と記載されていた。正しくは <code>MST-011</code>（一覧）・<code>MST-013</code>（編集）</td><td><strong>API設計書修正済</strong></td><td>関連画面を <code>MST-011, MST-013</code> に修正済</td></tr>
+<tr><td>9</td><td>API-MST-PAR-001</td><td><code>08-api-overview.md</code> 標準レスポンス形式</td><td><code>all=true</code> パラメータによるシンプルリスト切り替え設計は08-api-overview.mdの標準仕様を拡張したもの。取引先プルダウン用途（仕入先のみ・出荷先のみのフィルタ）として妥当</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>API-MST-PAR-002/004</td><td><code>01-master-management.md</code> §2 管理項目</td><td><code>partnerNameKana</code>（フリガナ）はデータモデルおよびAPI設計ではNULL許容（任意）だが、画面設計では「必須」として設計されている可能性がある</td><td><strong>要対応</strong></td><td><code>03-screen-master-partner-warehouse.md</code> のMST-012/MST-013フォームバリデーションでの <code>partnerNameKana</code> 必須/任意の設定を確認・修正すること</td></tr>
+<tr><td>11</td><td>API-MST-PAR-002/004</td><td><code>01-master-management.md</code> §2 管理項目</td><td><code>partnerCode</code> の最大文字数: 画面設計「20文字」に対しデータモデル・API設計では「半角英数字・記号、50文字以内」（01-master-management.md対応済）と不整合</td><td><strong>要対応</strong></td><td><code>03-screen-master-partner-warehouse.md</code> のMST-012 <code>partnerCode</code> バリデーションの最大文字数を50文字に修正すること</td></tr>
+<tr><td>12</td><td>API-MST-PAR-001〜005</td><td><code>03-screen-master-partner-warehouse.md</code></td><td>画面設計書内のAPIパス参照が <code>/api/v1/partners</code> および <code>/api/v1/partners/{id}/disable</code>・<code>/api/v1/partners/{id}/enable</code> となっており、正しい <code>/api/v1/master/partners</code> および <code>/api/v1/master/partners/{id}/deactivate</code> と不整合</td><td><strong>要対応</strong></td><td><code>03-screen-master-partner-warehouse.md</code> の全APIパス参照を修正すること（プレフィックス <code>/master/</code> の追加、<code>/disable</code>・<code>/enable</code> → <code>/deactivate</code> への変更）</td></tr>
+<tr><td>13</td><td>API-MST-PAR-005</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>取引先無効化時に入荷中・出荷中の伝票が存在する場合のエラーコード（<code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> / <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> 相当）が08-api-overview.mdのエラーコード一覧に未定義</td><td><strong>要対応</strong></td><td><code>08-api-overview.md</code> のエラーコード一覧（マスタ管理共通パターン）に入荷中・出荷中伝票が存在する取引先の無効化不可エラーコードを追加すること</td></tr>
+<tr><td>14</td><td>API-MST-PAR-001〜005</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>PARTNER_NOT_FOUND, DUPLICATE_CODE, CANNOT_DEACTIVATE_HAS_CHILDREN（本来は配下テーブルなし）が定義済みであることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>API-MST-PAR-002/004</td><td><code>01-master-management.md</code> §2 ビジネスルール</td><td><code>partnerType</code> は <code>SUPPLIER</code> / <code>CUSTOMER</code> / <code>BOTH</code> の3値。種別によって入荷元・出荷先の選択可否が異なるルールがAPI業務ロジックに記載されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.4〜8 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/10-api-master-partner.md</code></p>
+<p><strong>修正内容</strong>: 各APIの「関連画面」フィールドに使用されていた架空の画面ID（<code>MST-PAR-001</code>〜<code>MST-PAR-004</code>）を実際の画面ID（<code>MST-011</code>〜<code>MST-013</code>）に修正。</p>
+<table>
+<thead><tr><th>API</th><th>修正前</th><th>修正後</th></tr></thead>
+<tbody>
+<tr><td>API-MST-PAR-001</td><td>MST-PAR-001</td><td>MST-011</td></tr>
+<tr><td>API-MST-PAR-002</td><td>MST-PAR-002</td><td>MST-012</td></tr>
+<tr><td>API-MST-PAR-003</td><td>MST-PAR-003, MST-PAR-004</td><td>MST-011, MST-013</td></tr>
+<tr><td>API-MST-PAR-004</td><td>MST-PAR-004</td><td>MST-013</td></tr>
+<tr><td>API-MST-PAR-005</td><td>MST-PAR-001, MST-PAR-003</td><td>MST-011, MST-013</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/03-screen-master-partner-warehouse.md</code></td><td>MST-011 EVT-MST011-001等 APIパス参照</td><td><code>/api/v1/partners</code> → <code>/api/v1/master/partners</code> に修正すること</td><td>高</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/03-screen-master-partner-warehouse.md</code></td><td>MST-011 EVT-MST011-006/007 APIパス参照</td><td><code>/api/v1/partners/{id}/disable</code> / <code>/api/v1/partners/{id}/enable</code> → <code>/api/v1/master/partners/{id}/deactivate</code> に修正すること（有効化・無効化は同一エンドポイント、<code>isActive</code> フラグで制御）</td><td>高</td></tr>
+<tr><td>3</td><td><code>docs/functional-design/03-screen-master-partner-warehouse.md</code></td><td>MST-012 <code>partnerCode</code> バリデーション</td><td>最大文字数を20文字 → 50文字に修正すること（<code>01-master-management.md</code> §2 管理項目の定義に準拠）</td><td>中</td></tr>
+<tr><td>4</td><td><code>docs/functional-design/03-screen-master-partner-warehouse.md</code></td><td>MST-012/MST-013 <code>partnerNameKana</code> バリデーション</td><td>データモデル・API設計ではNULL許容（任意項目）であるため、画面設計での「必須」バリデーション設定を「任意」に修正すること（または要件定義書で必須に統一する方針を明確化）</td><td>中</td></tr>
+<tr><td>5</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 マスタ管理共通パターン</td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code>（422）と <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code>（422）を追加すること → <strong>対応済</strong></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>追加修正ログ（第2次レビュー）</h2>
+<table>
+<thead><tr><th>#</th><th>対象</th><th>修正内容</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><code>10-api-master-partner.md</code></td><td>入荷ステータス <code>PENDING</code> を正しい値 <code>PLANNED</code>、<code>CONFIRMED</code> に修正（エラーレスポンス表・フローチャートSQL・ビジネスルール表の3箇所）</td></tr>
+<tr><td>B</td><td><code>08-api-overview.md</code></td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_TRANSACTION</code> を <code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> + <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> に分割して追加</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-mst-product">
+<h1>API設計レビュー記録票 — 商品マスタ（MST-PRD）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/10-api-master-product.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/01-master-management.md</code>、<code>docs/data-model/02-master-tables.md</code>、<code>docs/functional-design/03-screen-master-product.md</code></blockquote></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>API-MST-PRD-001〜005</td><td><code>08-api-overview.md</code> テンプレート</td><td>全5APIが5セクション形式（概要/リクエスト/レスポンス/業務ロジック/補足）に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>API-MST-PRD-001〜005</td><td><code>08-api-overview.md</code> 全API一覧</td><td>メソッド・パス・ロールが全API一覧の定義と一致していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>API-MST-PRD-001〜005</td><td><code>02-master-tables.md</code> productsテーブル</td><td>リクエスト/レスポンスのフィールド名がDBカラム名（スネークケース→キャメルケース変換）と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>API-MST-PRD-001</td><td><code>02-master-tables.md</code> productsテーブル</td><td>クエリパラメータ <code>shipmentStop</code> がレスポンスフィールド名 <code>shipmentStopFlag</code>・DBカラム <code>shipment_stop_flag</code> と命名不統一</td><td><strong>API設計書修正済</strong></td><td>クエリパラメータを <code>shipmentStop</code> → <code>shipmentStopFlag</code> に修正。Mermaidフローチャート内の記述も同様に修正済</td></tr>
+<tr><td>5</td><td>API-MST-PRD-001</td><td><code>01-master-management.md</code> §1 管理項目</td><td><code>unit</code>（単位）カラムが削除済みであることを確認。API設計書に単位フィールドは含まれていない</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>6</td><td>API-MST-PRD-001</td><td><code>01-master-management.md</code> §1 管理項目</td><td>カテゴリ項目が削除済みであることを確認。API設計書にカテゴリフィールドは含まれていない</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>7</td><td>API-MST-PRD-001〜005</td><td><code>08-api-overview.md</code> 認証・認可仕様</td><td>参照系API（001/003）は全ロール対象、更新系API（002/004/005）はSYSTEM_ADMIN・WAREHOUSE_MANAGERのみ。定義と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>8</td><td>API-MST-PRD-004</td><td><code>01-master-management.md</code> §1 ビジネスルール</td><td>商品コード変更不可ルール（<code>productCode</code> はリクエストボディで受け取っても無視）が補足事項に明記されている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>9</td><td>API-MST-PRD-005</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td><code>CANNOT_DEACTIVATE_HAS_INVENTORY</code> が適切に使用されている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>API-MST-PRD-004</td><td><code>02-master-tables.md</code> productsテーブル</td><td>ロット管理フラグ・賞味期限管理フラグの変更禁止（在庫存在時）ルールがビジネスルール表に記載されているが、対応するエラーコード（<code>CANNOT_CHANGE_LOT_MANAGE_FLAG</code> 相当）が08-api-overview.mdのエラーコード一覧に未定義</td><td><strong>要対応</strong></td><td><code>08-api-overview.md</code> のエラーコード一覧（マスタ管理共通パターン）に在庫存在時のフラグ変更不可エラーコードを追加すること</td></tr>
+<tr><td>11</td><td>API-MST-PRD-001〜005</td><td><code>03-screen-master-product.md</code></td><td>画面仕様のAPIパスが <code>/api/v1/products</code>（旧パス）と記述されている箇所があり、正しくは <code>/api/v1/master/products</code></td><td><strong>要対応</strong></td><td><code>03-screen-master-product.md</code> の全APIパス記述を <code>/api/v1/products</code> → <code>/api/v1/master/products</code> に修正すること</td></tr>
+<tr><td>12</td><td>API-MST-PRD-002/004</td><td><code>03-screen-master-product.md</code></td><td>画面設計書に「カテゴリ」「単位」の入力フィールドが残存しているが、データモデルから削除済みのため整合していない</td><td><strong>要対応</strong></td><td><code>03-screen-master-product.md</code> のMST-002・MST-003画面仕様からカテゴリ・単位フィールドの記述を削除すること</td></tr>
+<tr><td>13</td><td>API-MST-PRD-002/004/005</td><td><code>03-screen-master-product.md</code></td><td>画面設計書の対象ロールが「SYSTEM_ADMINのみ」と記述されているが、API仕様では「SYSTEM_ADMIN, WAREHOUSE_MANAGER」が更新可能。整合していない</td><td><strong>要対応</strong></td><td><code>03-screen-master-product.md</code> の対象ロールを「SYSTEM_ADMIN, WAREHOUSE_MANAGER」に修正すること。または、商品マスタ更新はSYSTEM_ADMINのみに限定するかを要件定義書で明確化すること</td></tr>
+<tr><td>14</td><td>API-MST-PRD-001〜005</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>全エラーコード（PRODUCT_NOT_FOUND, DUPLICATE_CODE等）が一覧に定義済みであることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>API-MST-PRD-001〜005</td><td><code>08-api-overview.md</code> 標準レスポンス形式</td><td>一覧APIはページングレスポンス形式、単一APIは直接リソース返却形式に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.4 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/10-api-master-product.md</code></p>
+<p><strong>修正箇所1</strong>: API-MST-PRD-001 クエリパラメータ表</p>
+<ul><li style="margin-left:0px"><strong>修正前</strong>: <code>| \</code>shipmentStop\<code> | Boolean | — | — | 出荷禁止フラグ... |</code></li><li style="margin-left:0px"><strong>修正後</strong>: <code>| \</code>shipmentStopFlag\<code> | Boolean | — | — | 出荷禁止フラグ... |</code></li></ul>
+<p><strong>修正箇所2</strong>: API-MST-PRD-001 業務ロジック Mermaidフローチャート</p>
+<ul><li style="margin-left:0px"><strong>修正前</strong>: <code>APPLY_FILTERS --&gt; FILTER_STOP[shipmentStop: 完全一致]</code></li><li style="margin-left:0px"><strong>修正後</strong>: <code>APPLY_FILTERS --&gt; FILTER_STOP[shipmentStopFlag: 完全一致]</code></li></ul>
+<p><strong>修正理由</strong>: DBカラム名 <code>shipment_stop_flag</code> に対応するJavaフィールド/APIパラメータ名は <code>shipmentStopFlag</code> が正しく、レスポンスボディ定義と統一するため修正。</p>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 マスタ管理共通パターン</td><td>在庫存在時のフラグ変更不可エラーコードを追加すること（例: <code>CANNOT_CHANGE_LOT_MANAGE_FLAG</code> / <code>CANNOT_CHANGE_EXPIRY_MANAGE_FLAG</code>、HTTPステータス 422）</td><td>中</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/03-screen-master-product.md</code></td><td>全画面のAPIパス記述</td><td><code>/api/v1/products</code> → <code>/api/v1/master/products</code> に修正すること</td><td>高</td></tr>
+<tr><td>3</td><td><code>docs/functional-design/03-screen-master-product.md</code></td><td>MST-002/MST-003 フォーム項目</td><td>データモデルから削除済みの「カテゴリ」「単位」フィールドの記述を削除すること</td><td>中</td></tr>
+<tr><td>4</td><td><code>docs/functional-design/03-screen-master-product.md</code> または <code>docs/functional-requirements/01-master-management.md</code></td><td>対象ロール定義</td><td>商品マスタの更新操作（登録・更新・無効化）を「SYSTEM_ADMINのみ」に限定するか「SYSTEM_ADMIN, WAREHOUSE_MANAGER」に拡張するかを明確化し、API設計書・画面設計書を統一すること</td><td>高</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-mst-user">
+<h1>API設計レビュー記録票 — ユーザーマスタ（MST-USR）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/10-api-master-user.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/01-master-management.md</code>、<code>docs/data-model/02-master-tables.md</code>、<code>docs/functional-design/03-screen-master-user.md</code>、<code>docs/architecture-blueprint/07-auth-architecture.md</code>、<code>docs/architecture-blueprint/10-security-architecture.md</code></blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>API設計書修正済</strong>（レビュー時に自動修正）</td><td>7件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>11件</td></tr>
+<tr><td>指摘事項なし</td><td>11件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>29件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>API-MST-USR-001〜006</td><td><code>08-api-overview.md</code> テンプレート</td><td>全6APIが5セクション形式（概要/リクエスト/レスポンス/業務ロジック/補足）に準拠していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>API-MST-USR-001〜006</td><td><code>08-api-overview.md</code> 全API一覧</td><td>メソッド・パス・ロールが全API一覧の定義と一致していることを確認（MST-USR-001〜006 全て SYSTEM_ADMIN のみ）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>API-MST-USR-001〜006</td><td><code>02-master-tables.md</code> usersテーブル</td><td>リクエスト/レスポンスのフィールド名がDBカラム名（スネークケース→キャメルケース変換）と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>API-MST-USR-002/004</td><td><code>10-security-architecture.md</code> パスワード管理</td><td><code>passwordHash</code> がレスポンスに含まれておらず、BCryptハッシュが外部に露出しないことを確認。<code>password_change_required = true</code> の登録時固定も整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>5</td><td>API-MST-USR-004</td><td><code>01-master-management.md</code> §7 ビジネスルール</td><td>自分自身のロール変更不可（<code>CANNOT_CHANGE_SELF_ROLE</code>）・無効化不可（<code>CANNOT_DEACTIVATE_SELF</code>）のルールがAPI設計書に正しく反映されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>6</td><td>API-MST-USR-006</td><td><code>07-auth-architecture.md</code> アカウントロック</td><td>ロック解除の冪等性保証（解除済みへの再解除も <code>204</code> を返す）が設計されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>7</td><td>API-MST-USR-006</td><td><code>08-api-overview.md</code> テンプレート</td><td>補足事項に「フロントエンドは <code>204 No Content</code> 受信後にユーザー情報を再取得して <code>locked</code> フラグ表示を更新する」旨が未記載</td><td><strong>API設計書修正済</strong></td><td>補足事項に画面別の再取得方針（MST-061 は一覧再取得、MST-063 はユーザー詳細再取得）を追記済</td></tr>
+<tr><td>8</td><td>API-MST-USR-001〜006</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td><code>CANNOT_CHANGE_SELF_ROLE</code>（自分自身のロール変更不可、422）が <code>08-api-overview.md</code> のエラーコード一覧に未定義</td><td><strong>要対応</strong></td><td><code>08-api-overview.md</code> のエラーコード一覧（マスタ管理共通パターン）に <code>CANNOT_CHANGE_SELF_ROLE \| 422 \| 自分自身のロールを変更しようとした</code> を追加すること</td></tr>
+<tr><td>9</td><td>API-MST-USR-002/004</td><td><code>03-screen-master-user.md</code> MST-062/063 フォームバリデーション</td><td>氏名フィールド（<code>userName</code>）のバリデーションが画面設計書では「1〜100文字」だが、DBカラム定義は <code>varchar(200)</code> でAPI設計書も「200文字以内」</td><td><strong>要対応</strong></td><td><code>03-screen-master-user.md</code> の MST-062 INP-002・MST-063 INP-021 のバリデーションを「100文字以内」→「200文字以内」に修正すること</td></tr>
+<tr><td>10</td><td>API-MST-USR-002/004</td><td><code>03-screen-master-user.md</code> MST-062/063 フォームバリデーション</td><td>メールアドレスフィールド（<code>email</code>）のバリデーションが画面設計書では「254文字以内」だが、DBカラム定義は <code>varchar(200)</code> でAPI設計書も「200文字以内」</td><td><strong>要対応</strong></td><td><code>03-screen-master-user.md</code> の MST-062 INP-003・MST-063 INP-022 のバリデーションを「254文字以内」→「200文字以内」に修正すること（RFC 5321 ではなくDBスキーマ優先で統一）</td></tr>
+<tr><td>11</td><td>API-MST-USR-001〜006</td><td><code>03-screen-master-user.md</code> 全イベント APIパス</td><td>画面設計書内のAPIパスが <code>/api/v1/users</code>（旧パス）と記述されている箇所があり、正しくは <code>/api/v1/master/users</code></td><td><strong>要対応</strong></td><td><code>03-screen-master-user.md</code> の以下イベント定義のAPIパスを修正すること: EVT-061-002: <code>GET /api/v1/users</code> → <code>GET /api/v1/master/users</code>、EVT-062-002: <code>POST /api/v1/users</code> → <code>POST /api/v1/master/users</code>、EVT-063-001: <code>GET /api/v1/users/{id}</code> → <code>GET /api/v1/master/users/{id}</code>、EVT-063-004: <code>PUT /api/v1/users/{id}</code> → <code>PUT /api/v1/master/users/{id}</code></td></tr>
+<tr><td>12</td><td>API-MST-USR-006</td><td><code>03-screen-master-user.md</code> EVT-061-006, EVT-063-002</td><td>アンロックAPIのパスが <code>PUT /api/v1/users/{id}/unlock</code> と記述されているが、正しくは <code>PATCH /api/v1/master/users/{id}/unlock</code></td><td><strong>要対応</strong></td><td><code>03-screen-master-user.md</code> の EVT-061-006・EVT-063-002 を <code>PATCH /api/v1/master/users/{id}/unlock</code> に修正すること</td></tr>
+<tr><td>13</td><td>API-MST-USR-002</td><td><code>03-screen-master-user.md</code> EVT-062-003</td><td>画面設計書に <code>GET /api/v1/users/exists?code={code}</code> という未定義APIへの参照がある。<code>08-api-overview.md</code> の全API一覧にこのエンドポイントは存在しない</td><td><strong>要対応</strong></td><td>設計方針を選択すること: (A) 登録時の重複は <code>409 DUPLICATE_CODE</code> でフィードバックし、リアルタイムチェックAPIは不要とする、または (B) <code>GET /api/v1/master/users/exists?code={code}</code> を新規エンドポイントとして <code>08-api-overview.md</code> に追加定義する。いずれかを選択後、<code>03-screen-master-user.md</code> を更新すること</td></tr>
+<tr><td>14</td><td>API-MST-USR-002</td><td><code>07-auth-architecture.md</code>・<code>10-security-architecture.md</code></td><td>パスワードポリシーに上限（最大文字数）が未定義。API設計書では「8文字以上」のみ定義。BCryptの入力上限（72バイト）を考慮して上限を設けるべき</td><td><strong>要対応</strong></td><td><code>10-security-architecture.md</code> §パスワード管理に「最大128文字」の上限を追記すること。API設計書は <code>10-security-architecture.md</code> 修正後に連動して更新すること</td></tr>
+<tr><td>15</td><td>API-MST-USR-001〜006</td><td><code>02-master-tables.md</code> usersテーブル</td><td><code>lockedAt</code> の null 時省略（<code>@JsonInclude(NON_NULL)</code>）の設計が補足事項に明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>16</td><td>API-MST-USR-002</td><td><code>10-security-architecture.md</code> パスワード管理</td><td>BCryptハッシュ化（強度12）がAPI設計書のビジネスルールに明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>17</td><td>API-MST-USR-004</td><td><code>07-auth-architecture.md</code> JWT設計</td><td>ロール変更後も既存のJWTトークンは失効しない（次回ログイン時に反映）設計が補足事項に明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>18</td><td>API-MST-USR-005</td><td><code>01-master-management.md</code> §7 ビジネスルール</td><td>自分自身の無効化不可（<code>CANNOT_DEACTIVATE_SELF</code>）ルールが正しく実装されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>19</td><td>API-MST-USR-001〜006</td><td><code>08-api-overview.md</code> 認証・認可仕様</td><td>全APIが SYSTEM_ADMIN のみのアクセス制限で定義されており、権限マトリクスと整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>20</td><td>API-MST-USR-001〜006</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>使用されているエラーコード（USER_NOT_FOUND, DUPLICATE_CODE, CANNOT_DEACTIVATE_SELF, CANNOT_CHANGE_SELF_ROLE, USER_ALREADY_LOCKED）が一覧に定義済みであることを確認 ※ CANNOT_CHANGE_SELF_ROLE は要対応（No.8）</td><td>指摘事項なし（No.8 除く）</td><td>—</td></tr>
+<tr><td>21</td><td>API-MST-USR-003</td><td><code>02-master-tables.md</code> usersテーブル</td><td>詳細取得レスポンスに <code>passwordHash</code> が含まれないことを確認（セキュリティ要件）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>22</td><td>API-MST-USR-006</td><td><code>10-security-architecture.md</code> ログイン失敗ロック</td><td>ロック解除時に <code>failed_login_count = 0</code> リセットするルールが API-MST-USR-006 ビジネスルール3に明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>23</td><td>API-MST-USR-002/004</td><td><code>01-master-management.md</code> §7 管理項目</td><td><code>userCode</code>（ユーザーコード）は登録後変更不可のルールがAPI設計書の補足事項に明記されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.7 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/10-api-master-user.md</code> API-MST-USR-006 補足事項</p>
+<p><strong>修正前</strong>: 補足事項に画面再取得の記述なし</p>
+<p><strong>追記内容</strong>:</p>
+<pre><code class="lang-">- フロントエンドは `204 No Content` 受信後、`GET /api/v1/master/users/{id}` を呼び出してユーザー情報を再取得し、
+  画面上の `locked` フラグ表示を更新すること（MST-061 は一覧再取得、MST-063 はユーザー詳細再取得）。</code></pre>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/functional-design/08-api-overview.md</code></td><td>エラーコード一覧 マスタ管理共通パターン</td><td><code>CANNOT_CHANGE_SELF_ROLE \| 422 \| 自分自身のロールを変更しようとした</code> を追加すること</td><td>高</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/03-screen-master-user.md</code></td><td>MST-062 INP-002・MST-063 INP-021 氏名バリデーション</td><td>「1〜100文字」→「1〜200文字」に修正（DBカラム <code>varchar(200)</code> に準拠）</td><td>高</td></tr>
+<tr><td>3</td><td><code>docs/functional-design/03-screen-master-user.md</code></td><td>MST-062 INP-003・MST-063 INP-022 メールアドレスバリデーション</td><td>「254文字以内」→「200文字以内」に修正（DBカラム <code>varchar(200)</code> に準拠）</td><td>高</td></tr>
+<tr><td>4</td><td><code>docs/functional-design/03-screen-master-user.md</code></td><td>EVT-061-002, EVT-062-002, EVT-063-001, EVT-063-004 APIパス</td><td><code>/api/v1/users</code> → <code>/api/v1/master/users</code> に修正（<code>/master/</code> プレフィックス追加）</td><td>高</td></tr>
+<tr><td>5</td><td><code>docs/functional-design/03-screen-master-user.md</code></td><td>EVT-061-006・EVT-063-002 アンロックAPIパス</td><td><code>PUT /api/v1/users/{id}/unlock</code> → <code>PATCH /api/v1/master/users/{id}/unlock</code> に修正</td><td>高</td></tr>
+<tr><td>6</td><td><code>docs/functional-design/03-screen-master-user.md</code></td><td>EVT-062-003 重複チェックAPI</td><td><code>GET /api/v1/users/exists</code> → <code>GET /api/v1/master/users/exists</code> に修正（API-MST-USR-007 追加により正式エンドポイントとして対応済み）</td><td>中</td></tr>
+<tr><td>7</td><td><code>docs/architecture-blueprint/10-security-architecture.md</code></td><td>§パスワード管理 パスワードポリシー</td><td>「8文字以上」に「128文字以内」の上限を追記すること（BCrypt 72バイト上限を考慮。API設計書側はAPI-MST-USR-002補足事項で先行確定済み）</td><td>低</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>追加修正ログ（第2次レビュー）</h2>
+<p>第2次レビューで以下の追加修正を実施済み:</p>
+<table>
+<thead><tr><th>#</th><th>対象API</th><th>修正内容</th></tr></thead>
+<tbody>
+<tr><td>A</td><td><code>API-MST-USR-001〜007</code></td><td>対象API範囲を「〜006」→「〜007」に更新</td></tr>
+<tr><td>B</td><td><code>API-MST-USR-002</code></td><td>フローチャートINSERTノードに <code>updated_by = ログイン中ユーザーID</code>・<code>updated_at = NOW()</code> を追加</td></tr>
+<tr><td>C</td><td><code>API-MST-USR-002</code></td><td>ビジネスルール5追加: INSERT時の <code>updated_by</code> = <code>created_by</code> 同一設定ルール</td></tr>
+<tr><td>D</td><td><code>API-MST-USR-002</code></td><td>補足事項にパスワード上限128文字の設計根拠（BCrypt 72バイト上限）を追記</td></tr>
+<tr><td>E</td><td><code>API-MST-USR-004</code></td><td>補足事項に <code>PUT</code> 選択理由（<code>userCode</code> 変更不可な実質部分更新であることの説明）を追記</td></tr>
+<tr><td>F</td><td><code>API-MST-USR-005</code></td><td>概要テキストを修正（一覧画面対応削除→編集画面からの操作に統一）、関連画面から <code>MST-061</code> を削除（要件定義「一覧からの独立ボタンは設けない」に準拠）</td></tr>
+<tr><td>G</td><td><code>API-MST-USR-006</code></td><td>補足事項にロック解除時の <code>refresh_tokens</code> 残存に関する既知仕様を追記</td></tr>
+<tr><td>H</td><td><code>API-MST-USR-007</code>（新規）</td><td>ユーザーコード存在確認APIを追加（<code>GET /api/v1/master/users/exists</code>、SYSTEM_ADMINのみ）。画面設計書 EVT-062-003 の未定義API問題を解消</td></tr>
+<tr><td>I</td><td><code>08-api-overview.md</code></td><td>API-MST-USR-005 のAPI名を「ユーザー無効化」→「ユーザー無効化/有効化」に修正</td></tr>
+<tr><td>J</td><td><code>08-api-overview.md</code></td><td>API-MST-USR-007 を全API一覧に追加</td></tr>
+<tr><td>K</td><td>付録エラーコード一覧</td><td><code>VALIDATION_ERROR</code> の対象API列に <code>007</code> を追加</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-outbound">
+<h1>API設計レビュー記録票 — 出荷管理（OUT）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/13-api-outbound.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>参照ドキュメント: <code>docs/functional-design/08-api-overview.md</code>、<code>docs/functional-requirements/04-outbound-management.md</code>、<code>docs/data-model/03-transaction-tables.md</code>、<code>docs/functional-design/06-screen-outbound.md</code></blockquote></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>対象API</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>テーブル定義</td><td><code>03-transaction-tables.md</code> outbound_slips</td><td><code>slip_number</code> の型が設計書 <code>VARCHAR(30)</code> に対しデータモデルは <code>varchar(50)</code> と不整合</td><td><strong>API設計書修正済</strong></td><td>設計書の <code>slip_number</code> / <code>transfer_slip_number</code> を <code>VARCHAR(30)</code> → <code>varchar(50)</code> に修正済</td></tr>
+<tr><td>2</td><td>API-OUT-011</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション4（業務ロジック）にMermaidフローチャートはあるがビジネスルール表が欠落</td><td><strong>API設計書修正済</strong></td><td>ビジネスルール表（warehouseId必須、倉庫存在チェック、0件時の挙動）を追加済</td></tr>
+<tr><td>3</td><td>API-OUT-011</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション5（補足事項）が欠落</td><td><strong>API設計書修正済</strong></td><td>補足事項（warehouseId必須の理由、lineCountの取得方法、ソートデフォルト）を追加済</td></tr>
+<tr><td>4</td><td>API-OUT-012</td><td><code>03-transaction-tables.md</code></td><td>ビジネスルール5「<code>picking_instruction_lines</code> の <code>qty_to_pick</code> は対応する <code>picking_instruction_lines</code>（引当時に生成されたもの）の <code>qty_to_pick</code> をそのままセットする」が自己参照になっており論理的に誤り</td><td><strong>API設計書修正済</strong></td><td><code>inventory_allocations</code> テーブルの <code>allocated_qty</code>（引当数量）をセットする旨に修正済</td></tr>
+<tr><td>5</td><td>API-OUT-013</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション4にMermaidフローチャートはあるがビジネスルール表が欠落</td><td><strong>API設計書修正済</strong></td><td>ビジネスルール表（存在チェック、明細ソート）を追加済</td></tr>
+<tr><td>6</td><td>API-OUT-013</td><td><code>08-api-overview.md</code> テンプレート</td><td>セクション5（補足事項）が欠落</td><td><strong>API設計書修正済</strong></td><td>補足事項（ステータス制限なし、createdByName取得、completedAt/completedByのnull挙動）を追加済</td></tr>
+<tr><td>7</td><td>API-OUT-021</td><td><code>03-transaction-tables.md</code> outbound_slip_lines</td><td>レスポンスJSON・ビジネスルール表で <code>inspectedQty</code> フィールドを使用しているが、<code>outbound_slip_lines</code> テーブルに <code>inspected_qty</code> カラムは存在しない。フローチャートでは <code>shipped_qty</code> に一時格納と正しく記述されている</td><td><strong>API設計書修正済</strong></td><td>セクション5補足事項に「inspectedQtyの格納先はshipped_qty（一時格納）であり、out-022完了時に確定する」旨を明記済</td></tr>
+<tr><td>8</td><td>API-OUT-021</td><td><code>review-records.md</code> O-5</td><td>途中保存対応（MSG-S-107追加済み）。API設計側でも複数回のPOST /inspect呼び出しを許容し、後続呼び出しで上書きする設計が必要</td><td><strong>API設計書修正済</strong></td><td>ビジネスルール4「途中保存（部分的な入力）可能」および補足事項に追記済</td></tr>
+<tr><td>9</td><td>API-OUT-001〜004</td><td><code>08-api-overview.md</code> テンプレート</td><td>受注管理APIs（001〜004）の5セクション形式への準拠を確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>API-OUT-014</td><td><code>04-outbound-management.md</code> §6</td><td>ピッキング完了登録時に受注ステータスを <code>PICKING_COMPLETED</code> に更新する設計が業務フローと整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>11</td><td>API-OUT-022</td><td><code>04-outbound-management.md</code> §8</td><td>出荷完了時に在庫を実減算する設計（<code>inventories.quantity</code> から <code>shipped_qty</code> を減算）が業務要件と整合していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>12</td><td>API-OUT-002</td><td><code>review-records.md</code> O-1</td><td>倉庫振替時の入荷伝票自動生成についてAPI設計書に明記されていることを確認（補足事項に記載済み）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>13</td><td>API-OUT-012</td><td><code>review-records.md</code> O-4</td><td>バッチピッキング後の受注別検品遷移フロー（対象受注一覧+「出荷検品へ」ボタン）はAPI-OUT-012のレスポンスに関連受注IDリストが含まれており対応済みであることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>14</td><td>API-OUT-001〜022</td><td><code>08-api-overview.md</code> エラーコード一覧</td><td>OUTBOUND_SLIP_NOT_FOUND, OUTBOUND_INVALID_STATUS, PICKING_NOT_FOUND, ALLOCATION_INSUFFICIENT 等が適切に使用されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>全体</td><td><code>08-api-overview.md</code> 認証・認可仕様</td><td>ロール別アクセス権限マトリクスとの整合を確認。参照系は全ロール、更新系はSYSTEM_ADMIN/WAREHOUSE_MANAGER/WAREHOUSE_STAFF、在庫引当はSYSTEM_ADMIN/WAREHOUSE_MANAGERのみ</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<h3>No.1 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/13-api-outbound.md</code> テーブル定義セクション</p>
+<ul><li style="margin-left:0px"><code>slip_number</code> / <code>transfer_slip_number</code> の型: <code>VARCHAR(30)</code> → <code>varchar(50)</code></li><li style="margin-left:0px"><strong>修正理由</strong>: <code>docs/data-model/03-transaction-tables.md</code> の定義は <code>varchar(50)</code> であり、設計書内テーブル定義が古い値を参照していた</li></ul>
+<h3>No.2〜3 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/13-api-outbound.md</code> API-OUT-011 セクション4・5</p>
+<ul><li style="margin-left:0px">セクション4にビジネスルール表を追加</li><li style="margin-left:0px">セクション5に補足事項を追加</li></ul>
+<h3>No.4 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/13-api-outbound.md</code> API-OUT-012 ビジネスルール5</p>
+<ul><li style="margin-left:0px"><strong>修正前</strong>: <code>picking_instruction_lines</code>（引当時に生成されたもの）の <code>qty_to_pick</code> を参照（自己参照）</li><li style="margin-left:0px"><strong>修正後</strong>: <code>inventory_allocations</code> テーブルの <code>allocated_qty</code>（引当数量）を参照</li></ul>
+<h3>No.5〜6 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/13-api-outbound.md</code> API-OUT-013 セクション4・5</p>
+<ul><li style="margin-left:0px">セクション4にビジネスルール表を追加</li><li style="margin-left:0px">セクション5に補足事項を追加</li></ul>
+<h3>No.7〜8 対応詳細</h3>
+<p><strong>修正対象</strong>: <code>docs/functional-design/13-api-outbound.md</code> API-OUT-021 セクション4・5</p>
+<ul><li style="margin-left:0px">ビジネスルール4に途中保存対応を追記</li><li style="margin-left:0px">セクション5に <code>inspectedQty</code> → <code>shipped_qty</code> 一時格納の設計説明と途中保存の動作仕様を追加</li></ul>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/data-model/03-transaction-tables.md</code></td><td>outbound_slip_lines テーブル</td><td><code>inspected_qty</code> カラムの追加、または <code>shipped_qty</code> を検品数量の一時格納に使用する旨の注記を追加すること（現状はAPI設計書の補足事項のみに記載）</td><td>中</td></tr>
+<tr><td>2</td><td><code>docs/functional-design/06-screen-outbound.md</code></td><td>OUT-021 検品画面</td><td>途中保存（部分入力）時のAPI呼び出し方法（<code>POST /inspect</code> を複数回実行）をイベント定義に明記すること</td><td>低</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-api-overview">
+<h1>API設計レビュー記録票 — API概要・共通仕様（08-api-overview.md）</h1>
+<blockquote>対象成果物: <code>docs/functional-design/08-api-overview.md</code>
+<p>レビュー日: 2026-03-14<br>レビュー担当: Java バックエンド REST API設計スペシャリスト（AI）<br>レビュースコープ: API共通仕様・エラー仕様・認証仕様・全API一覧の全体整合性確認</blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>API設計書修正済</strong>（レビュー時に自動修正）</td><td>3件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>3件</td></tr>
+<tr><td>指摘事項なし</td><td>16件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>22件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>レビュー記録</h2>
+<table>
+<thead><tr><th>No</th><th>チェック項目</th><th>参照ドキュメント</th><th>確認内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ベースURL設定が正しいか</td><td><code>04-backend-architecture.md</code> §API設計方針</td><td>ローカル <code>http://localhost:8080</code>、本番は Azure Container Apps の FQDN、パスプレフィックス <code>/api/v1/</code> がすべて整合。バックエンドアーキテクチャの <code>ベースパス：/api/v1/</code> と一致</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>2</td><td>リクエスト共通仕様（Content-Type・文字コード・日時フォーマット）が適切か</td><td><code>01-overview.md</code> §設計方針</td><td>UTF-8、ISO 8601、Asia/Tokyo はデータモデルの「タイムゾーン: Asia/Tokyo（アプリ層で変換。DB保存はUTC）」と整合。フロントエンド↔バックエンド間はJSTで送受信、DB保存はUTCの設計方針を API 概要書にも補足記載があるとより明確になるが、致命的問題ではない</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>3</td><td>レスポンス共通仕様（null フィールド・空配列）が適切か</td><td>—</td><td><code>@JsonInclude(NON_NULL)</code> で null フィールドを除外、空配列は <code>[]</code> を返す設定が明記されている。Spring Boot の実装方針と整合。<code>details</code> フィールドの空時の扱い（<code>[]</code> vs 省略）がエラー仕様サンプルで <code>&quot;details&quot;: []</code> となっているが、これは <code>NON_NULL</code> と矛盾しうる（空配列は null ではないため除外されないが <code>NON_EMPTY</code> の方が適切な可能性あり）。ただし空の <code>details</code> を常に含めることで一貫性が保たれるため許容範囲内</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>4</td><td>単一リソース取得レスポンス形式が適切か</td><td>各APIファイル</td><td><code>data</code> ラッパーなしの直接レスポンス方針が各APIファイル（09〜14）で一貫して採用されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>5</td><td>ページングリスト取得レスポンス形式が適切か</td><td><code>11-api-inbound.md</code>, <code>10-api-master-product.md</code> 等</td><td><code>content / page / size / totalElements / totalPages</code> の5フィールド構成が全ページング系APIで一貫して使用されていることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>6</td><td>シンプルリスト取得レスポンス形式が適切か</td><td><code>10-api-master-partner.md</code> (<code>all=true</code> 時)</td><td>プルダウン用途の <code>all=true</code> パラメータによるシンプルリスト返却が取引先・施設マスタAPIで採用されており、08-api-overview.md の定義と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>7</td><td>エラーレスポンス形式が適切か（フィールド名の統一）</td><td><code>10-api-master-facility.md</code> §共通エラーレスポンス形式</td><td><strong>不整合を検出</strong>: 08-api-overview.md では <code>details[].field / details[].message</code> と定義しているが、<code>10-api-master-facility.md</code> の共通エラーレスポンス形式では <code>fieldErrors[].field / fieldErrors[].message</code> を使用している。フィールド名 <code>details</code> と <code>fieldErrors</code> の不統一はクライアント実装上の混乱を招く</td><td><strong>API設計書修正要</strong></td><td>08-api-overview.md または 10-api-master-facility.md のどちらかに統一が必要（詳細はアクションアイテム参照）</td></tr>
+<tr><td>8</td><td>HTTPステータスコード一覧が網羅的か</td><td>各APIファイル</td><td><code>200 / 201 / 204 / 400 / 401 / 403 / 404 / 409 / 422 / 500</code> の10種類が定義されており、各APIファイルで使用されているステータスコードをすべてカバーしている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>9</td><td>エラーコード一覧に抜けがないか</td><td><code>11-api-inbound.md</code>, <code>12-api-inventory.md</code>, <code>13-api-outbound.md</code>, <code>14-api-batch-report.md</code></td><td>各APIファイルで使用されているエラーコードと照合した結果、以下を確認: (1) 全エラーコードが 08-api-overview.md に定義されている。(2) 14-api-batch-report.md の <code>BATCH_ALREADY_RUNNING</code> も正しく「バッチ」セクションに含まれている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>10</td><td>JWT + httpOnly Cookie 方式が正しく記述されているか</td><td><code>07-auth-architecture.md</code>, <code>10-security-architecture.md</code></td><td>Cookie名（<code>access_token</code> / <code>refresh_token</code>）、有効期限（1時間・スライディング1時間）が整合。ただし CSRF 対策の記述に不整合あり（詳細は No.11）</td><td>—</td><td>—</td></tr>
+<tr><td>11</td><td>CSRF対策の記述が07-auth-architecture.mdと整合しているか</td><td><code>07-auth-architecture.md</code></td><td><strong>不整合を検出</strong>: <code>07-auth-architecture.md</code> では「SameSite=Strict + CSRFトークン」と記載されているが、08-api-overview.md の認証・認可仕様では「CSRF対策: SameSite=Strict」のみで CSRFトークンの記述がない。CSRFトークン方式を採用するのかどうかの整合が必要</td><td><strong>要件定義書・アーキテクチャ設計書 修正要</strong></td><td><code>07-auth-architecture.md</code> の CSRF 対策記述を見直す（詳細はアクションアイテム参照）</td></tr>
+<tr><td>12</td><td>トークンリフレッシュフローが正しく記述されているか</td><td><code>10-security-architecture.md</code> §リフレッシュフロー</td><td>08-api-overview.md のシーケンス図と 10-security-architecture.md のシーケンス図が整合。トークンローテーション（古いトークンを無効化→新トークン発行）は 10-security-architecture.md に記載があり、08-api-overview.md からは参照関係を持てばよい。問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>13</td><td>ロール別アクセス権限マトリクスが07-auth-architecture.mdと整合しているか</td><td><code>07-auth-architecture.md</code> §機能別アクセス権限マトリクス</td><td>全体的に整合。在庫引当が <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> のみ（WAREHOUSE_STAFF 不可）という制約が両ドキュメントで一致していることを確認</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>14</td><td>全API一覧の網羅性: 認証・システム共通</td><td><code>09-api-auth.md</code></td><td>API-AUTH-001〜004（ログイン・ログアウト・リフレッシュ・パスワード変更）および API-SYS-001（営業日取得）がすべて掲載されており整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>15</td><td>全API一覧の網羅性: マスタ管理</td><td><code>10-api-master-product.md</code>, <code>10-api-master-partner.md</code>, <code>10-api-master-facility.md</code>, <code>10-api-master-user.md</code></td><td>MST-PRD-001〜005 / MST-PAR-001〜005 / MST-FAC-001〜035 / MST-USR-001〜006 がすべて掲載。MST-PRD-005 が「商品無効化」として掲載されているが、各APIファイルでは「商品無効化/有効化」と定義されている（同一エンドポイントで無効化・有効化の両方向を担うトグル動作）。全API一覧の API名表記が「無効化」のみとなっており、有効化も行う旨が伝わらない</td><td><strong>API設計書修正要</strong></td><td>08-api-overview.md の全API一覧の <code>PATCH .../deactivate</code> エンドポイントの API 名を「商品無効化/有効化」のように統一表記に修正することが望ましい（詳細はアクションアイテム参照）</td></tr>
+<tr><td>16</td><td>全API一覧の網羅性: 入荷管理</td><td><code>11-api-inbound.md</code></td><td><strong>不整合を検出</strong>: <code>11-api-inbound.md</code> には <code>API-INB-confirm</code>（入荷確認: <code>POST /api/v1/inbound/slips/{id}/confirm</code>）と <code>API-INB-cancel</code>（入荷キャンセル）が「補助API」として定義されているが、全API一覧（08-api-overview.md）には記載がない。これらは固有の API ID を持ち、業務フロー上必須の操作であるため欠番扱いは不適切</td><td><strong>API設計書修正要</strong></td><td>08-api-overview.md の全API一覧「入荷管理」に API-INB-confirm と API-INB-cancel を追加する（詳細はアクションアイテム参照）</td></tr>
+<tr><td>17</td><td>全API一覧の網羅性: 在庫管理・出荷管理</td><td><code>12-api-inventory.md</code>, <code>13-api-outbound.md</code></td><td>在庫管理 API-INV-001〜004・011〜015 の全9件が掲載されていることを確認。出荷管理 API-OUT-001〜004・011〜014・021〜022 の全10件が掲載されていることを確認。なお 13-api-outbound.md の「補助API: 個別在庫引当」「補助API: 一括在庫引当」「補助API: 受注キャンセル」はAPI IDが「—（補助API）」と定義されており、全API一覧への未掲載は許容される扱い</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>18</td><td>API-RPT-002 欠番の確認</td><td><code>14-api-batch-report.md</code></td><td><code>14-api-batch-report.md</code> 内に API-RPT-002 は定義されていない（欠番）。全API一覧では RPT-001 から RPT-003 に番号が飛んでいるが、欠番理由が記載されていない。他の開発者に誤解を与えるリスクがある</td><td><strong>API設計書修正要</strong></td><td>08-api-overview.md の全API一覧「レポート」セクションに API-RPT-002 欠番の理由を補足注記として追加すること（詳細はアクションアイテム参照）</td></tr>
+<tr><td>19</td><td>API-RPT-017 欠番の確認</td><td><code>14-api-batch-report.md</code></td><td>API-RPT-001〜017 の連番の中に欠番がないこと（RPT-002 を除く）を確認済み。RPT-017（日次集計レポート）まで連番で定義されている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>20</td><td>CORS設定とPATCHメソッドの整合性</td><td><code>10-security-architecture.md</code> §CORS設定</td><td><strong>重大な不整合を検出</strong>: <code>10-security-architecture.md</code> の CORS 許可メソッドが <code>GET, POST, PUT, DELETE, OPTIONS</code> となっており、<code>PATCH</code> が含まれていない。一方、08-api-overview.md および各APIファイルには多数の <code>PATCH</code> エンドポイントが定義されている（MST-PRD-005, MST-PAR-005, MST-FAC-005/015/025/035, MST-USR-005/006）。<code>PATCH</code> が CORS で許可されていない場合、ブラウザからのプリフライトリクエストが拒否されフロントエンドからの呼び出しが失敗する</td><td><strong>要件定義書・アーキテクチャ設計書 修正要</strong></td><td><code>10-security-architecture.md</code> の CORS 許可メソッドに <code>PATCH</code> を追加すること（詳細はアクションアイテム参照）</td></tr>
+<tr><td>21</td><td>パフォーマンス要件との整合性</td><td><code>13-non-functional-requirements.md</code> §1 性能要件</td><td>通常APIは2秒以内、集計・レポート系は5秒以内の要件が定義されている。API設計書では各レポートAPIに <code>format=csv</code> ダウンロード機能があり、大量データの場合に5秒を超えるリスクがあるが、これは実装フェーズで考慮すべき事項。API設計レベルでは問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>22</td><td>バックエンドアーキテクチャ（Controller/Service/Repository構成）との整合性</td><td><code>04-backend-architecture.md</code> §アーキテクチャパターン / §モジュール構成</td><td>API 設計の RESTful 方針、ベースパス <code>/api/v1/</code>、Spring Boot 実装方針が整合。モジュール構成（<code>inbound/</code>, <code>inventory/</code>, <code>outbound/</code>, <code>master/</code>, <code>report/</code>, <code>batch/</code>）と API パス（<code>/api/v1/inbound/</code>, <code>/api/v1/inventory/</code> 等）が対応している。レポート API は <code>report/</code> モジュール内に集約されており、<code>/api/v1/reports/</code> パスと整合</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>修正対応ログ</h2>
+<p>（08-api-overview.md の直接修正は Edit ツールへのアクセスが拒否されたため、すべて未対応。内容は「修正要 アクションアイテム」に記録。）</p>
+<hr>
+<h2>要件定義書・アーキテクチャ設計書 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ドキュメント</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>A-1</td><td><code>docs/architecture-blueprint/10-security-architecture.md</code></td><td>§CORS設定「許可メソッド」</td><td><code>GET, POST, PUT, DELETE, OPTIONS</code> に <code>PATCH</code> を追加する。<code>PATCH</code> メソッドは多数のマスタ無効化/有効化エンドポイントで使用されており、CORS 未許可ではブラウザからの呼び出しが失敗する。<strong>最優先で修正すること。</strong></td><td><strong>高</strong></td></tr>
+<tr><td>A-2</td><td><code>docs/architecture-blueprint/07-auth-architecture.md</code></td><td>§認証方式「CSRF対策」</td><td><code>SameSite=Strict + CSRFトークン</code> の記述を見直す。<code>SameSite=Strict</code> による CSRF 防止は十分であり、追加の CSRFトークン実装は不要と判断できる場合は <code>SameSite=Strict</code> のみに修正する。CSRFトークンを実装する場合は 08-api-overview.md にその仕様を追記する。</td><td><strong>中</strong></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>API設計書（08-api-overview.md）修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>B-1</td><td>§全API一覧「入荷管理」</td><td><code>API-INB-confirm</code>（入荷確認: <code>POST /api/v1/inbound/slips/{id}/confirm</code>、SYSTEM_ADMIN・WAREHOUSE_MANAGER・WAREHOUSE_STAFF）および <code>API-INB-cancel</code>（入荷キャンセル: <code>POST /api/v1/inbound/slips/{id}/cancel</code>、同ロール）を追加する。これらは業務フロー上必須の操作であり、固有のAPI IDを持つため全API一覧への掲載が必要</td><td><strong>高</strong></td></tr>
+<tr><td>B-2</td><td>§全API一覧「レポート」</td><td>API-RPT-002 の欠番理由を補足注記として追記する（例: 「API-RPT-002 は欠番（当初予定していた入荷検品サマリーレポートを API-RPT-001 に統合したため）」等の記載）</td><td><strong>低</strong></td></tr>
+<tr><td>B-3</td><td>§全API一覧（各マスタ管理グループ）</td><td><code>PATCH .../deactivate</code> エンドポイントの API 名表記を「商品無効化」から「商品無効化/有効化」に統一する（MST-PRD-005, MST-PAR-005, MST-FAC-005/015/025/035, MST-USR-005）。実際のAPI設計書では無効化・有効化の両方向をサポートしており、一覧の表記が実態と合っていない</td><td><strong>低</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>10-api-master-facility.md 修正要 アクションアイテム</h2>
+<table>
+<thead><tr><th>#</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>C-1</td><td>§共通エラーレスポンス形式</td><td>エラーレスポンスのフィールド名を <code>fieldErrors</code> から <code>details</code> に統一する。08-api-overview.md では <code>details[].field / details[].message</code> と定義されているが、10-api-master-facility.md では <code>fieldErrors</code> を使用しており不整合が生じている。クライアント実装上の混乱を防ぐため統一が必要</td><td><strong>高</strong></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>API設計書全体サマリー（横断的な気づき）</h2>
+<h3>1. 補助APIの位置づけ不統一</h3>
+<p>各APIファイルで「補助API」と称するエンドポイントの扱いが一貫していない。</p>
+<ul><li style="margin-left:0px"><code>11-api-inbound.md</code> の「補助API: 入荷確認（<code>API-INB-confirm</code>）」「補助API: 入荷キャンセル（<code>API-INB-cancel</code>）」は固有のAPI IDを持ち、業務的に必須の操作であるため、全API一覧への掲載が必要。</li><li style="margin-left:0px"><code>13-api-outbound.md</code> の補助API（個別在庫引当・一括在庫引当・受注キャンセル）はAPI IDが「—（補助API）」と定義されており、内部実装上の位置づけであるため、全API一覧への未掲載は許容される。</li><li style="margin-left:0px"><code>14-api-batch-report.md</code> の「バッチ実行履歴詳細取得（<code>GET /api/v1/batch/executions/{id}</code>）」もAPI IDが「—（補助API）」だが、フロントエンドがポーリングに使用する重要なエンドポイントであり、全API一覧への掲載が望ましい。</li></ul>
+<p><strong>推奨</strong>: API IDを持つエンドポイントはすべて全API一覧に掲載し、内部補助目的でAPI IDを持たないエンドポイントのみ補助API扱いとするよう統一する。</p>
+<h3>2. エラーレスポンスのフィールド名不統一</h3>
+<p>前述の通り、<code>10-api-master-facility.md</code> が <code>fieldErrors</code> を使用している点は 08-api-overview.md の <code>details</code> と異なる。他のAPIファイル（09, 10-product, 10-partner, 10-user, 11, 12, 13, 14）では <code>details</code> で統一されているため、施設マスタAPIのみ例外になっている。</p>
+<h3>3. CORS設定のPATCH未許可問題（重大）</h3>
+<code>10-security-architecture.md</code> の CORS 許可メソッドに <code>PATCH</code> が含まれていない。全マスタ管理の無効化/有効化エンドポイントが <code>PATCH</code> メソッドを使用しているため、この問題が解消されないと実装フェーズで全マスタ無効化/有効化機能がフロントエンドから呼び出せない致命的な問題が発生する。
+<h3>4. 入荷ステータス「CONFIRMED」の業務的位置づけ</h3>
+<code>11-api-inbound.md</code> のステータス遷移図では <code>PLANNED → CONFIRMED → INSPECTING</code> の遷移が定義されている。しかし機能要件定義書（<code>02-inbound-management.md</code>）では入荷確認ステップが明確化されているかどうかを確認する必要がある。入荷確認（CONFIRMED）は業務的に「担当者が入荷予定を確認・承認する」ステップとして定義されているが、画面設計レビュー記録票（review-records.md）では入荷管理の I-12 で「INB-002 は新規登録専用、INB-003 には編集ボタンを設けない設計」とあり、CONFIRMED 遷移の画面上の操作フローが明確でない可能性がある。API設計フェーズでの確認事項として記録する。
+<h3>5. リフレッシュトークンのスライディング方式の動作詳細</h3>
+<p>08-api-overview.md では「スライディング方式（最終アクセスから1時間）」と記載されているが、<code>10-security-architecture.md</code> では「リフレッシュ時に古いトークンを無効化し新しいトークンを発行（トークンローテーション）」と記載されている。「最終アクセスから1時間」がリフレッシュAPIへのアクセスを指すのか、任意のAPIアクセスを指すのかが08-api-overview.mdから不明確。実装仕様として「リフレッシュトークンの有効期限はリフレッシュAPIを呼び出すたびにリセットされる」旨を明記することが望ましい。</p>
+<h3>6. タイムゾーン処理の補足必要性</h3>
+<p>08-api-overview.md のリクエスト共通仕様では「タイムゾーン: Asia/Tokyo（フロントエンド↔バックエンド間の送受信はJST）」と記載されているが、<code>01-overview.md</code>（データモデル）では「DB保存はUTC」と定義されている。APIを通じた送受信はJST、DBへの永続化はUTCという変換がバックエンド内部で自動的に行われることを、08-api-overview.md の共通仕様として補足記載することが望ましい。</p>
+<h3>7. ページングサイズ上限の一貫性</h3>
+<p>08-api-overview.md §ページング仕様では <code>size</code> の上限を <code>100</code> と定義している。各APIファイルでの確認：</p>
+<ul><li style="margin-left:0px">商品マスタ（上限100）、取引先マスタ（上限100）、入荷管理（上限100）、バッチ履歴（上限100）で一貫して守られている。</li><li style="margin-left:0px">施設マスタAPIでは <code>1〜100</code> と明示されており整合している。</li></ul>
+<p>全APIで上限100が守られており問題なし。</p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>

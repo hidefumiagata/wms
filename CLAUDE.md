@@ -14,6 +14,7 @@
 - **ストレージ**: Azure Blob Storage（フロントエンド静的ホスティング + I/Fファイル）
 - **コンテナレジストリ**: Azure Container Registry (ACR)
 - **IaC**: Terraform
+- **API設計**: API First（OpenAPI → コード自動生成）
 - **認証**: Spring Security + JWT + httpOnly Cookie
 
 ## グランドルール
@@ -30,11 +31,50 @@
 ## ドキュメント構成
 - docs/project-plan/           - プロジェクト計画書（全12セクション完成）
 - docs/architecture-blueprint/ - アーキテクチャブループリント（全13セクション完成）
-- docs/functional-requirements/ - 機能要件定義書（全7セクション完成）
+- docs/functional-requirements/ - 機能要件定義書（全11セクション完成: 00認証〜08返品管理）
 - docs/data-model/             - データモデル定義（全4ファイル完成）
-- docs/functional-design/      - 機能設計書（画面設計完成: 01〜07, mockups/全45画面, review-records.md）
-- docs/architecture-design/    - アーキテクチャ設計書（作成予定）
-- docs/test-specifications/    - テスト仕様書（作成予定）
+- docs/functional-design/      - 機能設計書
+  - 画面設計: SCR-01〜SCR-15（15ファイル）
+  - API設計: API-01〜API-13（13ファイル）
+  - IF設計: IF-01〜IF-02（2ファイル）
+  - BAT設計: BAT-01（1ファイル）
+  - RPT設計: RPT-01〜RPT-18（17ファイル）
+  - モックアップ: mockups/（55画面）
+  - 標準テンプレート: _standard-screen.md, _standard-api.md, _standard-report.md
+- openapi/                     - OpenAPI定義（wms-api.yaml）
+- docs/architecture-design/    - アーキテクチャ設計書（全13セクション完成）
+- docs/test-specifications/    - テスト仕様書（テスト計画書+テンプレート完成、個別テスト仕様書は実装後に作成）
+
+## ドキュメントSSOT（Single Source of Truth）ルール
+
+**1つの事実は1箇所にだけ定義する。** 他のドキュメントは参照リンクで示す。
+
+### 情報の定義場所（SSOT）一覧
+
+| 情報 | SSOT（定義場所） | 他ドキュメントでの記載ルール |
+|------|-----------------|------------------------|
+| **ビジネスルール・業務フロー** | functional-requirements/*.md | 他は「functional-requirements/XXXを参照」とリンク。ルールの複製禁止 |
+| **技術方針・共通規約**（認証方式、エラーハンドリング、DTO規約、ロック方式等） | architecture-blueprint/*.md | 他は「architecture-blueprint/XXXを参照」とリンク。方針の複製禁止 |
+| **テーブル定義・カラム定義** | data-model/*.md | API設計書・画面設計書にカラム一覧を複製しない。必要なら「data-model/XXXを参照」 |
+| **APIエンドポイント・リクエスト/レスポンス仕様** | functional-design/API-*.md | 画面設計書(SCR)にはAPI IDとエンドポイントパスのみ記載。パラメータ詳細はAPI設計書を参照 |
+| **画面項目・バリデーション・メッセージ・UX** | functional-design/SCR-*.md | API設計書に画面メッセージを複製しない |
+| **パスワードポリシー** | architecture-blueprint/10-security-architecture.md | 画面設計書は「セキュリティアーキテクチャを参照」。ポリシー値の複製禁止 |
+| **ステータス遷移・ステータスコード定義** | functional-design/API-*.md（各モジュールのAPI設計書冒頭） | 画面設計書はマッピング表で参照。functional-requirementsはステータス名のみ記載 |
+| **システムパラメータの一覧・デフォルト値** | data-model/02-master-tables.md（system_parametersの初期データ） | 他は「data-modelを参照」。値の複製禁止 |
+| **バッチ処理の内部ロジック・SQL** | functional-design/BAT-*.md | 他は参照リンクのみ |
+| **I/Fのデータマッピング・採番ロジック** | functional-design/IF-*.md | 他は参照リンクのみ |
+| **レポートPDFレイアウト・カラム定義** | functional-design/RPT-*.md | 他は参照リンクのみ |
+| **センシティブエンドポイント一覧** | architecture-design/08-common-infrastructure.md セクション4.5 | 他は参照リンクのみ |
+| **全ID体系（画面ID・API ID・RPT ID・BAT ID・IFX ID・伝票番号・メッセージID）** | functional-design/_id-registry.md | 個別設計書にID一覧を複製しない。新規ID追加時は _id-registry.md を先に更新する |
+| **APIインターフェース定義（エンドポイント・リクエスト/レスポンス型）** | openapi/wms-api.yaml | functional-design/API-*.mdは業務ロジック設計のSSOT。APIの型定義はOpenAPIがSSOT |
+| **テスト戦略・カバレッジ目標・完了基準** | test-specifications/00-test-plan.md | 他は「test-specificationsを参照」。カバレッジ値の複製禁止 |
+
+### SSOTの運用ルール
+
+1. **新しい情報を追加する時**: まずSSOT（定義場所）に書く。他ドキュメントには参照リンクのみ
+2. **情報を変更する時**: SSOTのみ変更する。参照リンクは変更不要（リンク先が常に最新）
+3. **レビューで矛盾を見つけた時**: SSOT側を正とし、複製側を参照リンクに置き換える
+4. **例外**: 画面設計書のイベント一覧にはAPIエンドポイントパス（`POST /api/v1/xxx`）を記載してよい（開発時の利便性のため）。ただしリクエスト/レスポンスの詳細は複製しない
 
 ## 開発ルール（実装フェーズ）
 - 作業前にGitHub Issueを作成する
@@ -50,7 +90,7 @@
 
 ## プロジェクト計画書 進捗
 - [x] セクション1: プロジェクト憲章
-- [x] セクション2: スコープ管理計画（WBS）※ドラフト、後で拡充
+- [x] セクション2: スコープ管理計画（WBS）
 - [x] セクション3: 要件管理計画
 - [x] セクション4: スケジュール管理計画 ※管理外（サンデープログラミングのため）
 - [x] セクション5: コスト管理計画

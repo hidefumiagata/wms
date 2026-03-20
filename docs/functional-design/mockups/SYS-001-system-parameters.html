@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYS-001 システムパラメータ設定 — WMS</title>
+  <style>
+    :root {
+      --color-primary: #A100FF; --color-primary-dark: #460073; --color-primary-mid: #7500C0;
+      --color-primary-light: #E8AAFF; --color-primary-bg: #F5E6FF;
+      --color-black: #000000; --color-white: #FFFFFF;
+      --color-gray-50: #FAFAFA; --color-gray-100: #F4F4F4; --color-gray-200: #E8E8E8;
+      --color-gray-300: #D4D4D4; --color-gray-400: #ABABAB; --color-gray-500: #848484;
+      --color-gray-600: #636363; --color-gray-700: #454545; --color-gray-800: #262626;
+      --color-gray-900: #161616;
+      --color-success: #198038; --color-success-bg: #DEFBE6;
+      --color-warning: #7A5800; --color-warning-bg: #FFF8E1;
+      --color-error: #DA1E28; --color-error-bg: #FFF1F1;
+      --color-info: #0043CE; --color-info-bg: #EDF5FF;
+      --font-family: 'Graphik', 'Inter', 'Noto Sans JP', Arial, sans-serif;
+      --border-radius: 4px; --border-radius-lg: 8px;
+      --header-height: 56px; --sidebar-width: 220px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: var(--font-family); font-size: 14px; color: var(--color-gray-900); background: var(--color-gray-100); }
+
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header === */
+    .app-header {
+      position: fixed; left: 0; right: 0; height: var(--header-height);
+      background: var(--color-black); display: flex; align-items: center;
+      padding: 0 24px; gap: 24px; z-index: 100;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--color-white); letter-spacing: -0.5px; }
+    .logo .accent { color: var(--color-primary); }
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 4px 10px; cursor: pointer;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar === */
+    .app-sidebar {
+      position: fixed; left: 0; width: var(--sidebar-width);
+      bottom: 0; background: var(--color-gray-900); overflow-y: auto; z-index: 90;
+    }
+    .sidebar-section {
+      padding: 16px 20px 4px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-gray-500);
+    }
+    .sidebar-menu { list-style: none; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+      color: var(--color-gray-400); font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all 0.12s;
+      border-left: 3px solid transparent;
+    }
+    .sidebar-menu li a:hover { background: #1E1E1E; color: var(--color-white); }
+    .sidebar-menu li a.active {
+      background: rgba(161,0,255,0.15); color: var(--color-primary-light);
+      border-left-color: var(--color-primary); font-weight: 600;
+    }
+    .sidebar-menu li a .icon { width: 16px; text-align: center; opacity: 0.7; }
+    .sidebar-menu li a.active .icon { opacity: 1; }
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; text-decoration: none;
+      border-left: 3px solid transparent; transition: all 0.12s;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    /* === Main === */
+    .app-main {
+      margin-left: var(--sidebar-width);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+    }
+
+    /* === Breadcrumb + Page Header === */
+    .breadcrumb { font-size: 12px; color: var(--color-gray-500); margin-bottom: 6px; }
+    .breadcrumb .sep { margin: 0 6px; color: var(--color-gray-300); }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--color-gray-900); }
+
+    /* === Buttons === */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+      border: none; border-radius: var(--border-radius); font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-primary   { background: var(--color-primary); color: var(--color-white); }
+    .btn-primary:hover { background: var(--color-primary-mid); }
+    .btn-ghost     { background: var(--color-white); color: var(--color-gray-700); border: 1.5px solid var(--color-gray-300); }
+    .btn-ghost:hover { background: var(--color-gray-100); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* === Table === */
+    .table-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: var(--color-gray-50); border-bottom: 2px solid var(--color-gray-200); }
+    thead th { padding: 11px 16px; text-align: left; font-weight: 700; color: var(--color-gray-700); white-space: nowrap; font-size: 12px; }
+    tbody tr { border-bottom: 1px solid var(--color-gray-200); transition: background 0.08s; }
+    tbody tr:hover { background: var(--color-primary-bg); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 11px 16px; vertical-align: middle; }
+
+    /* === Category Section Row === */
+    .category-row td {
+      background: var(--color-gray-100); font-weight: 700; font-size: 13px;
+      color: var(--color-gray-700); padding: 10px 16px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .category-row:hover { background: none; }
+    .category-row td { cursor: default; }
+
+    /* === Form Input in table === */
+    .form-input {
+      padding: 6px 10px; border: 1.5px solid var(--color-gray-300); border-radius: var(--border-radius);
+      font-family: var(--font-family); font-size: 13px; color: var(--color-gray-900);
+      background: var(--color-white); outline: none; transition: border-color 0.15s;
+      width: 120px;
+    }
+    .form-input:focus { border-color: var(--color-primary); }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">SYS-001</span>
+    <span>システムパラメータ設定</span>
+    <span style="color:#444">|</span>
+    <span>URL: /system/parameters</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span class="accent">M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">▼</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/17</strong></div>
+      <div class="user-info">ログイン中: <strong>admin</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">📦</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">📊</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">🚚</span> 出荷管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">🗂</span> マスタ管理</a></li>
+      <li><a href="#"><span class="icon">📈</span> レポート</a></li>
+      <li><a href="#"><span class="icon">⚙</span> バッチ管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">システム設定</div>
+    <ul class="sidebar-menu">
+      <li><a href="#" class="active"><span class="icon">🔧</span> パラメータ設定</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span class="sep">›</span> システム設定 <span class="sep">›</span> パラメータ設定
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">システムパラメータ設定</h1>
+    </div>
+
+    <!-- Parameter Table -->
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>パラメータ名</th>
+            <th>現在値</th>
+            <th>デフォルト値</th>
+            <th>説明</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Category: 在庫管理 -->
+          <tr class="category-row">
+            <td colspan="5">在庫管理</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">LOCATION_CAPACITY_CASE</td>
+            <td><input type="text" class="form-input" value="1"></td>
+            <td style="color:var(--color-gray-500)">1</td>
+            <td style="color:var(--color-gray-600)">ロケーションあたりのケース格納上限数</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">LOCATION_CAPACITY_BALL</td>
+            <td><input type="text" class="form-input" value="6"></td>
+            <td style="color:var(--color-gray-500)">6</td>
+            <td style="color:var(--color-gray-600)">ロケーションあたりのボール格納上限数</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">LOCATION_CAPACITY_PIECE</td>
+            <td><input type="text" class="form-input" value="100"></td>
+            <td style="color:var(--color-gray-500)">100</td>
+            <td style="color:var(--color-gray-600)">ロケーションあたりのピース格納上限数</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+          <!-- Category: 認証・セキュリティ -->
+          <tr class="category-row">
+            <td colspan="5">認証・セキュリティ</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">LOGIN_FAILURE_LOCK_COUNT</td>
+            <td><input type="text" class="form-input" value="5"></td>
+            <td style="color:var(--color-gray-500)">5</td>
+            <td style="color:var(--color-gray-600)">アカウントロックまでのログイン失敗回数</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">SESSION_TIMEOUT_MINUTES</td>
+            <td><input type="text" class="form-input" value="60"></td>
+            <td style="color:var(--color-gray-500)">30</td>
+            <td style="color:var(--color-gray-600)">セッションタイムアウト時間（分）</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;font-family:monospace;font-size:13px">PASSWORD_RESET_EXPIRY_MINUTES</td>
+            <td><input type="text" class="form-input" value="30"></td>
+            <td style="color:var(--color-gray-500)">30</td>
+            <td style="color:var(--color-gray-600)">パスワードリセットリンクの有効期限（分）</td>
+            <td><button class="btn btn-primary btn-sm">保存</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能設計書 — その他設計 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../index.html">Home</a> &rsaquo; <a href="index.html">機能設計書</a> &rsaquo; その他設計
+</nav>
+<main>
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:1.6rem;color:#1a1a2e;">📄 その他設計</h1>
+    <p style="color:#888;margin-top:8px;font-size:0.9rem;">Other Design</p>
+  </div>
+  
+  
+  <div style="text-align:right; margin-bottom: 24px;">
+    <a href="reviews/index-other.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      📋 レビュー記録を見る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#BAT-01-daily-close">1. 機能設計書 — バッチ設計 日替処理（BAT-001）</a></li>
+        <li><a href="#IF-01-inbound-plan">2. 機能設計書 — I/F設計 入荷予定取り込み（IFX-001）</a></li>
+        <li><a href="#IF-02-order">3. I/F設計書 — IFX-002: 受注取り込みI/F</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="BAT-01-daily-close">
+<h1>機能設計書 — バッチ設計 日替処理（BAT-001）</h1>
+<h2>1. バッチ概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>バッチID</strong></td><td><code>BAT-001</code></td></tr>
+<tr><td><strong>バッチ名</strong></td><td>日替処理（Daily Close）</td></tr>
+<tr><td><strong>実行方式</strong></td><td>APIリクエスト経由の同期実行（<code>POST /api/v1/batch/daily-close</code>）</td></tr>
+<tr><td><strong>実行権限</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><strong>入力</strong></td><td><code>targetBusinessDate</code>（処理対象営業日）</td></tr>
+<tr><td><strong>処理時間目安</strong></td><td>数秒〜数十秒</td></tr>
+<tr><td><strong>API仕様</strong></td><td><a href="API-09-batch.md" target="_blank">API-09-batch.md</a> API-BAT-001 を参照</td></tr>
+<tr><td><strong>画面仕様</strong></td><td><a href="SCR-11-batch.md" target="_blank">SCR-11-batch.md</a> BAT-001 を参照</td></tr>
+<tr><td><strong>業務要件</strong></td><td><a href="../functional-requirements/06-batch-processing.md" target="_blank">functional-requirements/06-batch-processing.md</a> を参照</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>2. 処理フロー全体</h2>
+<div class="mermaid">flowchart TD
+    START([API呼び出し]) --> VALIDATE[入力バリデーション]
+    VALIDATE -->|NG| ERR_400[400 VALIDATION_ERROR]
+    VALIDATE -->|OK| CHECK_DUP{batch_execution_logs<br/>同一営業日チェック}
+
+    CHECK_DUP -->|SUCCESS/RUNNING存在| ERR_409[409 BATCH_ALREADY_RUNNING]
+    CHECK_DUP -->|FAILED存在| RESUME[FAILEDレコードから<br/>完了済みステップを取得]
+    CHECK_DUP -->|なし| NEW_EXEC[新規実行]
+
+    RESUME --> DEL_FAILED[FAILEDレコードを削除]
+    DEL_FAILED --> INSERT_LOG
+    NEW_EXEC --> INSERT_LOG[RUNNINGレコードをINSERT]
+
+    INSERT_LOG --> S1[Step 1: 営業日更新]
+    S1 --> S2[Step 2: 入荷実績集計]
+    S2 --> S3[Step 3: 出荷実績集計]
+    S3 --> S4[Step 4: 在庫集計]
+    S4 --> S5[Step 5: アーカイブ+リスト生成]
+    S5 --> S6[Step 6: 日次集計レコード生成]
+    S6 --> COMPLETE[status=SUCCESS<br/>completed_at更新]
+    COMPLETE --> RESPONSE[200 OK レスポンス返却]
+
+    S1 -->|失敗| FAIL
+    S2 -->|失敗| FAIL
+    S3 -->|失敗| FAIL
+    S4 -->|失敗| FAIL
+    S5 -->|失敗| FAIL
+    S6 -->|失敗| FAIL[status=FAILED<br/>後続ステップ=SKIPPED<br/>completed_at更新]
+    FAIL --> RESPONSE</div>
+<blockquote><strong>注記</strong>: 業務要件では5ステップだが、実装上は「日次集計レコード生成」を独立した Step 6 として管理する。Step 6 は Steps 2〜5 の集計結果を <code>daily_summary_records</code> に統合する。</blockquote>
+<hr>
+<h2>3. トランザクション設計</h2>
+<h3>3.1 トランザクション境界</h3>
+<p>各ステップは <strong>独立したトランザクション</strong> で実行する。ステップ間は <code>batch_execution_logs</code> の <code>stepN_status</code> を直接更新（各ステップの成功直後に COMMIT）して進捗を永続化する。</p>
+<pre><code class="lang-">[Step 1 トランザクション]  → COMMIT → stepN_status更新 → COMMIT
+[Step 2 トランザクション]  → COMMIT → stepN_status更新 → COMMIT
+...</code></pre>
+<h3>3.2 ステップステータス更新の実装</h3>
+<pre><code class="lang-java">@Service
+@RequiredArgsConstructor
+public class DailyCloseService {
+
+    private final BatchExecutionLogRepository logRepository;
+    private final PlatformTransactionManager txManager;
+
+    public BatchResultResponse execute(LocalDate targetBusinessDate, Long executedBy) {
+        // 1. 二重実行チェック + RUNNINGレコード作成（独立トランザクション）
+        BatchExecutionLog log = initExecution(targetBusinessDate, executedBy);
+
+        // 2. 各ステップを順次実行
+        StepResult[] results = new StepResult[6];
+        boolean[] previouslyCompleted = loadPreviouslyCompletedSteps(log);
+
+        for (int step = 1; step &lt;= 6; step++) {
+            if (previouslyCompleted[step - 1]) {
+                results[step - 1] = StepResult.skipped();
+                continue;
+            }
+            results[step - 1] = executeStepInNewTransaction(step, targetBusinessDate, log.getId());
+            updateStepStatus(log.getId(), step, results[step - 1]);
+
+            if (results[step - 1].isFailed()) {
+                markRemainingAsSkipped(log.getId(), step + 1);
+                return buildFailedResponse(log, results);
+            }
+        }
+
+        // 3. 全ステップ成功
+        completeExecution(log.getId());
+        return buildSuccessResponse(log, results, targetBusinessDate);
+    }
+}</code></pre>
+<h3>3.3 ステップステータス更新SQL</h3>
+<p>各ステップ完了後に即座に実行（専用トランザクション）:</p>
+<pre><code class="lang-sql">-- ステップN成功時
+UPDATE batch_execution_logs
+SET step{N}_status = 'SUCCESS'
+WHERE id = :logId;
+
+-- ステップN失敗時
+UPDATE batch_execution_logs
+SET step{N}_status = 'FAILED',
+    error_message = :errorMessage,
+    status = 'FAILED',
+    completed_at = NOW()
+WHERE id = :logId;
+
+-- 後続ステップのSKIPPED設定
+UPDATE batch_execution_logs
+SET step{M}_status = 'SKIPPED'  -- M = N+1 ~ 6
+WHERE id = :logId;</code></pre>
+<hr>
+<h2>4. 各ステップ詳細設計</h2>
+<h3>Step 1: 営業日更新</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td><code>business_date</code> テーブルの <code>current_business_date</code> を <code>targetBusinessDate</code> に更新する</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td><code>business_date</code></td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td>あり。既に更新済みの場合はスキップ</td></tr>
+<p></tbody><br></table></p>
+<h4>処理フロー</h4>
+<div class="mermaid">flowchart TD
+    S([開始]) --> LOCK[SELECT * FROM business_date<br/>WHERE id = 1 FOR UPDATE]
+    LOCK --> CHECK{current_business_date<br/>= targetBusinessDate ?}
+    CHECK -->|既に同じ| SKIP[スキップ — 更新不要]
+    CHECK -->|異なる| VALIDATE{current_business_date<br/>+1 = targetBusinessDate ?}
+    VALIDATE -->|YES| UPDATE[UPDATE business_date<br/>SET current_business_date = targetBusinessDate]
+    VALIDATE -->|NO| ERR[エラー: 営業日が連続していない]
+    UPDATE --> OK([成功])
+    SKIP --> OK
+    ERR --> NG([失敗])</div>
+<h4>SQL</h4>
+<pre><code class="lang-sql">-- 排他ロック取得
+SELECT current_business_date FROM business_date WHERE id = 1 FOR UPDATE;
+
+-- 冪等性チェック: 既に更新済みならスキップ
+-- current_business_date = targetBusinessDate → スキップ
+
+-- 連続性チェック: current_business_date + 1 = targetBusinessDate であること
+-- 満たさない場合はエラー（営業日が2日以上飛ぶことを防止）
+
+-- 更新
+UPDATE business_date
+SET current_business_date = :targetBusinessDate,
+    updated_at = NOW(),
+    updated_by = :executedBy
+WHERE id = 1;</code></pre>
+<h4>ビジネスルール</h4>
+<table>
+<thead><tr><th>#</th><th>ルール</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>current_business_date + 1日 = targetBusinessDate</code> でない場合はエラー（営業日スキップ防止）</td></tr>
+<tr><td>2</td><td><code>current_business_date = targetBusinessDate</code> の場合はスキップ（冪等性：再実行時に二重進行しない）</td></tr>
+<tr><td>3</td><td><code>SELECT ... FOR UPDATE</code> で排他制御（複数ユーザーの同時実行を防止）</td></tr>
+<tr><td>4</td><td>営業日カレンダーは管理しない。土日・祝日を跨ぐ場合は、金曜→土曜、土曜→日曜、日曜→月曜の順に3回日替処理を実行する運用とする。<code>targetBusinessDate</code> をユーザーが指定するため、運用ルールとして周知する</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>Step 2: 入荷実績集計</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td>対象営業日に入庫完了した入荷伝票を倉庫別に集計して <code>inbound_summaries</code> に保存する</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td>読取: <code>inbound_slips</code>, <code>inbound_slip_lines</code> / 書込: <code>inbound_summaries</code></td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td><code>ON CONFLICT DO UPDATE</code> で冪等</td></tr>
+<p></tbody><br></table></p>
+<h4>SQL</h4>
+<pre><code class="lang-sql">-- 入荷実績を倉庫別に集計して INSERT（冪等: 既存は UPDATE）
+INSERT INTO inbound_summaries (
+    business_date,
+    warehouse_id,
+    warehouse_code,
+    inbound_count,
+    inbound_line_count,
+    inbound_quantity_total,
+    created_at
+)
+SELECT
+    :targetBusinessDate,
+    s.warehouse_id,
+    w.warehouse_code,
+    COUNT(DISTINCT s.id),                          -- 入庫完了件数（ヘッダ単位）
+    COUNT(l.id),                                   -- 入庫完了明細件数
+    COALESCE(SUM(l.inspected_qty * CASE
+        WHEN l.unit_type = 'CASE' THEN p.case_quantity * p.ball_quantity
+        WHEN l.unit_type = 'BALL' THEN p.ball_quantity
+        ELSE 1
+    END), 0),                                      -- 入庫数量合計（バラ換算）
+    NOW()
+FROM inbound_slips s
+JOIN inbound_slip_lines l ON l.inbound_slip_id = s.id
+JOIN warehouses w ON w.id = s.warehouse_id
+JOIN products p ON p.id = l.product_id
+WHERE s.status = 'STORED'
+  AND l.stored_at::date = :targetBusinessDate
+GROUP BY s.warehouse_id, w.warehouse_code
+ON CONFLICT (business_date, warehouse_id)
+DO UPDATE SET
+    inbound_count = EXCLUDED.inbound_count,
+    inbound_line_count = EXCLUDED.inbound_line_count,
+    inbound_quantity_total = EXCLUDED.inbound_quantity_total;</code></pre>
+<h4>補足</h4>
+<ul><li style="margin-left:0px"><code>stored_at::date</code> で入庫完了日を判定（<code>stored_at</code> は <code>inbound_slip_lines</code> の入庫確定日時カラム。ヘッダの <code>inbound_slips</code> には <code>stored_at</code> カラムは存在しないため、明細の <code>stored_at</code> で判定する）</li><li style="margin-left:0px">バラ換算は <code>products</code> テーブルの <code>case_quantity</code>（ケース入数）× <code>ball_quantity</code>（ボール入数）を使用。CASE→バラは <code>case_quantity * ball_quantity</code>、BALL→バラは <code>ball_quantity</code></li><li style="margin-left:0px">対象営業日に入庫完了データが0件の場合は集計レコードを生成しない（空INSERTなし）</li></ul>
+<hr>
+<h3>Step 3: 出荷実績集計</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td>対象営業日に出荷完了した出荷伝票を倉庫別に集計して <code>outbound_summaries</code> に保存する</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td>読取: <code>outbound_slips</code>, <code>outbound_slip_lines</code> / 書込: <code>outbound_summaries</code></td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td><code>ON CONFLICT DO UPDATE</code> で冪等</td></tr>
+<p></tbody><br></table></p>
+<h4>SQL</h4>
+<pre><code class="lang-sql">INSERT INTO outbound_summaries (
+    business_date,
+    warehouse_id,
+    warehouse_code,
+    outbound_count,
+    outbound_line_count,
+    outbound_quantity_total,
+    created_at
+)
+SELECT
+    :targetBusinessDate,
+    s.warehouse_id,
+    w.warehouse_code,
+    COUNT(DISTINCT s.id),
+    COUNT(l.id),
+    COALESCE(SUM(l.shipped_qty * CASE
+        WHEN l.unit_type = 'CASE' THEN p.case_quantity * p.ball_quantity
+        WHEN l.unit_type = 'BALL' THEN p.ball_quantity
+        ELSE 1
+    END), 0),
+    NOW()
+FROM outbound_slips s
+JOIN outbound_slip_lines l ON l.outbound_slip_id = s.id
+JOIN warehouses w ON w.id = s.warehouse_id
+JOIN products p ON p.id = l.product_id
+WHERE s.status = 'SHIPPED'
+  AND s.shipped_at::date = :targetBusinessDate
+GROUP BY s.warehouse_id, w.warehouse_code
+ON CONFLICT (business_date, warehouse_id)
+DO UPDATE SET
+    outbound_count = EXCLUDED.outbound_count,
+    outbound_line_count = EXCLUDED.outbound_line_count,
+    outbound_quantity_total = EXCLUDED.outbound_quantity_total;</code></pre>
+<hr>
+<h3>Step 4: 在庫集計</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td>対象営業日末時点の在庫残高を倉庫・商品・荷姿単位で <code>inventory_snapshots</code> に保存する</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td>読取: <code>inventories</code>, <code>warehouses</code>, <code>products</code>, <code>locations</code> / 書込: <code>inventory_snapshots</code></td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td><code>ON CONFLICT DO UPDATE</code> で冪等</td></tr>
+<p></tbody><br></table></p>
+<h4>SQL</h4>
+<pre><code class="lang-sql">-- 既存のスナップショットを削除（冪等性: 再実行時にUPSERTで対応）
+INSERT INTO inventory_snapshots (
+    business_date,
+    warehouse_id,
+    warehouse_code,
+    product_id,
+    product_code,
+    product_name,
+    unit_type,
+    total_quantity,
+    created_at
+)
+SELECT
+    :targetBusinessDate,
+    loc.warehouse_id,
+    w.warehouse_code,
+    i.product_id,
+    p.product_code,
+    p.product_name,
+    i.unit_type,
+    SUM(i.quantity),         -- 在庫数量合計（荷姿単位のまま集計。バラ換算はStep 6で実施）
+    NOW()
+FROM inventories i
+JOIN locations loc ON loc.id = i.location_id
+JOIN warehouses w ON w.id = loc.warehouse_id
+JOIN products p ON p.id = i.product_id
+WHERE i.quantity &gt; 0
+GROUP BY loc.warehouse_id, w.warehouse_code,
+         i.product_id, p.product_code, p.product_name,
+         i.unit_type
+ON CONFLICT (business_date, warehouse_id, product_id, unit_type)
+DO UPDATE SET
+    total_quantity = EXCLUDED.total_quantity,
+    product_name = EXCLUDED.product_name;</code></pre>
+<h4>補足</h4>
+<ul><li style="margin-left:0px">在庫スナップショットは <strong>現在の在庫テーブルのその時点の値</strong> を記録する（日時ベースの履歴計算ではない）</li><li style="margin-left:0px"><code>quantity &gt; 0</code> の在庫のみ対象（在庫0のレコードはスナップショットに含めない）</li><li style="margin-left:0px"><code>product_name</code> は <code>DO UPDATE</code> で最新化（商品名変更への対応）</li></ul>
+<hr>
+<h3>Step 5: アーカイブ + 未入荷・未出荷リスト生成</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td>① 2ヶ月以上前の完了済みトランデータをバックアップテーブルに複製<br/>② 未入荷リスト・未出荷リストを生成</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td>読取/書込: 下記参照</td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td>バックアップは <code>ON CONFLICT DO NOTHING</code>、リストは <code>DELETE + INSERT</code></td></tr>
+<p></tbody><br></table></p>
+<h4>5a. トランデータバックアップ</h4>
+<pre><code class="lang-sql">-- 入荷伝票バックアップ（2ヶ月以上前の入庫完了データ）
+INSERT INTO inbound_slips_backup
+SELECT s.*, NOW() AS backed_up_at, :logId AS batch_execution_log_id
+FROM inbound_slips s
+WHERE s.status = 'STORED'
+  AND s.updated_at &lt; :targetBusinessDate::timestamp - INTERVAL '2 months'
+ON CONFLICT DO NOTHING;
+
+-- 入荷伝票明細バックアップ（親がバックアップ対象のもの）
+INSERT INTO inbound_slip_lines_backup
+SELECT l.*, NOW() AS backed_up_at, :logId AS batch_execution_log_id
+FROM inbound_slip_lines l
+WHERE l.inbound_slip_id IN (
+    SELECT id FROM inbound_slips
+    WHERE status = 'STORED'
+      AND updated_at &lt; :targetBusinessDate::timestamp - INTERVAL '2 months'
+)
+ON CONFLICT DO NOTHING;
+
+-- 出荷伝票バックアップ
+INSERT INTO outbound_slips_backup
+SELECT s.*, NOW() AS backed_up_at, :logId AS batch_execution_log_id
+FROM outbound_slips s
+WHERE s.status = 'SHIPPED'
+  AND s.updated_at &lt; :targetBusinessDate::timestamp - INTERVAL '2 months'
+ON CONFLICT DO NOTHING;
+
+-- 出荷伝票明細バックアップ
+INSERT INTO outbound_slip_lines_backup
+SELECT l.*, NOW() AS backed_up_at, :logId AS batch_execution_log_id
+FROM outbound_slip_lines l
+WHERE l.outbound_slip_id IN (
+    SELECT id FROM outbound_slips
+    WHERE status = 'SHIPPED'
+      AND updated_at &lt; :targetBusinessDate::timestamp - INTERVAL '2 months'
+)
+ON CONFLICT DO NOTHING;
+
+-- 在庫移動バックアップ
+INSERT INTO inventory_movements_backup
+SELECT m.*, NOW() AS backed_up_at, :logId AS batch_execution_log_id
+FROM inventory_movements m
+WHERE m.executed_at &lt; :targetBusinessDate::timestamp - INTERVAL '2 months'
+ON CONFLICT DO NOTHING;</code></pre>
+<h4>5a. 補足事項</h4>
+<ul><li style="margin-left:0px">元テーブルのデータは現時点では削除しない（参照整合性維持のため）。データ肥大化が問題になった場合は、バックアップ成功済みレコードの削除バッチを将来フェーズで追加する。その際はFK参照（明細テーブル）を含めた削除順序の設計が必要。</li></ul>
+<h4>5b. 未入荷リスト生成</h4>
+<pre><code class="lang-sql">-- 既存レコードを削除（冪等性: 再実行時に再生成）
+DELETE FROM unreceived_list_records
+WHERE batch_business_date = :targetBusinessDate;
+
+-- 未入荷リスト生成
+-- 対象: 入荷予定日が targetBusinessDate 以前で、入庫完了していない入荷明細
+INSERT INTO unreceived_list_records (
+    batch_business_date, inbound_slip_id, slip_number,
+    planned_date, warehouse_code, partner_code, partner_name,
+    product_code, product_name, unit_type, planned_qty,
+    current_status, created_at
+)
+SELECT
+    :targetBusinessDate,
+    s.id,
+    s.slip_number,
+    s.planned_date,
+    w.warehouse_code,
+    pr.partner_code,
+    pr.partner_name,
+    p.product_code,
+    p.product_name,
+    l.unit_type,
+    l.planned_qty,
+    s.status,
+    NOW()
+FROM inbound_slips s
+JOIN inbound_slip_lines l ON l.inbound_slip_id = s.id
+JOIN warehouses w ON w.id = s.warehouse_id
+LEFT JOIN partners pr ON pr.id = s.partner_id
+JOIN products p ON p.id = l.product_id
+WHERE s.planned_date &lt;= :targetBusinessDate
+  AND s.status NOT IN ('STORED', 'CANCELLED');</code></pre>
+<h4>5c. 未出荷リスト生成</h4>
+<pre><code class="lang-sql">-- 既存レコードを削除（冪等性）
+DELETE FROM unshipped_list_records
+WHERE batch_business_date = :targetBusinessDate;
+
+-- 未出荷リスト生成
+-- 対象: 出荷予定日が targetBusinessDate 以前で、出荷完了していない出荷明細
+INSERT INTO unshipped_list_records (
+    batch_business_date, outbound_slip_id, slip_number,
+    planned_date, warehouse_code, partner_code, partner_name,
+    product_code, product_name, unit_type, ordered_qty,
+    current_status, created_at
+)
+SELECT
+    :targetBusinessDate,
+    s.id,
+    s.slip_number,
+    s.planned_date,
+    w.warehouse_code,
+    pr.partner_code,
+    pr.partner_name,
+    p.product_code,
+    p.product_name,
+    l.unit_type,
+    l.ordered_qty,
+    s.status,
+    NOW()
+FROM outbound_slips s
+JOIN outbound_slip_lines l ON l.outbound_slip_id = s.id
+JOIN warehouses w ON w.id = s.warehouse_id
+LEFT JOIN partners pr ON pr.id = s.partner_id
+JOIN products p ON p.id = l.product_id
+WHERE s.planned_date &lt;= :targetBusinessDate
+  AND s.status NOT IN ('SHIPPED', 'CANCELLED');</code></pre>
+<hr>
+<h3>Step 6: 日次集計レコード生成</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>目的</strong></td><td>Steps 2〜5 の集計結果と返品データを統合して <code>daily_summary_records</code> に保存する</td></tr>
+<tr><td><strong>対象テーブル</strong></td><td>読取: <code>inbound_summaries</code>, <code>outbound_summaries</code>, <code>inventory_snapshots</code>, <code>return_slips</code>, <code>unreceived_list_records</code>, <code>unshipped_list_records</code> / 書込: <code>daily_summary_records</code></td></tr>
+<tr><td><strong>トランザクション</strong></td><td>独立（READ COMMITTED）</td></tr>
+<tr><td><strong>冪等性</strong></td><td><code>ON CONFLICT DO UPDATE</code> で冪等</td></tr>
+<p></tbody><br></table></p>
+<h4>SQL</h4>
+<pre><code class="lang-sql">-- 対象倉庫の一覧を取得（アクティブ倉庫）
+-- 各倉庫について日次集計レコードを生成
+INSERT INTO daily_summary_records (
+    business_date,
+    warehouse_id,
+    warehouse_code,
+    inbound_count,
+    inbound_line_count,
+    inbound_quantity_total,
+    outbound_count,
+    outbound_line_count,
+    outbound_quantity_total,
+    return_quantity_total,
+    return_count,
+    inventory_quantity_total,
+    unreceived_count,
+    unshipped_count,
+    created_at
+)
+SELECT
+    :targetBusinessDate,
+    w.id,
+    w.warehouse_code,
+    -- 入荷実績（Step 2の結果）
+    COALESCE(ib.inbound_count, 0),
+    COALESCE(ib.inbound_line_count, 0),
+    COALESCE(ib.inbound_quantity_total, 0),
+    -- 出荷実績（Step 3の結果）
+    COALESCE(ob.outbound_count, 0),
+    COALESCE(ob.outbound_line_count, 0),
+    COALESCE(ob.outbound_quantity_total, 0),
+    -- 返品実績（当日の返品を直接集計）
+    COALESCE(rt.return_quantity_total, 0),
+    COALESCE(rt.return_count, 0),
+    -- 在庫総数量（Step 4のスナップショットから合算、バラ換算）
+    COALESCE(inv.inventory_quantity_total, 0),
+    -- 未入荷・未出荷件数（Step 5の結果）
+    COALESCE(ur.unreceived_count, 0),
+    COALESCE(us.unshipped_count, 0),
+    NOW()
+FROM warehouses w
+-- 入荷サマリー
+LEFT JOIN inbound_summaries ib
+    ON ib.business_date = :targetBusinessDate AND ib.warehouse_id = w.id
+-- 出荷サマリー
+LEFT JOIN outbound_summaries ob
+    ON ob.business_date = :targetBusinessDate AND ob.warehouse_id = w.id
+-- 返品集計（当日分を直接集計）
+LEFT JOIN (
+    SELECT
+        warehouse_id,
+        COUNT(*) AS return_count,
+        SUM(r.quantity * CASE
+            WHEN r.unit_type = 'CASE' THEN p.case_quantity * p.ball_quantity
+            WHEN r.unit_type = 'BALL' THEN p.ball_quantity
+            ELSE 1
+        END) AS return_quantity_total
+    FROM return_slips r
+    JOIN products p ON p.id = r.product_id
+    WHERE r.return_date = :targetBusinessDate
+      AND r.status = 'COMPLETED'
+    GROUP BY r.warehouse_id
+) rt ON rt.warehouse_id = w.id
+-- 在庫スナップショット合算（バラ換算）
+LEFT JOIN (
+    SELECT
+        warehouse_id,
+        SUM(sn.total_quantity * CASE
+            WHEN sn.unit_type = 'CASE' THEN p.case_quantity * p.ball_quantity
+            WHEN sn.unit_type = 'BALL' THEN p.ball_quantity
+            ELSE 1
+        END) AS inventory_quantity_total
+    FROM inventory_snapshots sn
+    JOIN products p ON p.id = sn.product_id
+    WHERE sn.business_date = :targetBusinessDate
+    GROUP BY sn.warehouse_id
+) inv ON inv.warehouse_id = w.id
+-- 未入荷件数
+LEFT JOIN (
+    SELECT warehouse_code, COUNT(DISTINCT inbound_slip_id) AS unreceived_count
+    FROM unreceived_list_records
+    WHERE batch_business_date = :targetBusinessDate
+    GROUP BY warehouse_code
+) ur ON ur.warehouse_code = w.warehouse_code
+-- 未出荷件数
+LEFT JOIN (
+    SELECT warehouse_code, COUNT(DISTINCT outbound_slip_id) AS unshipped_count
+    FROM unshipped_list_records
+    WHERE batch_business_date = :targetBusinessDate
+    GROUP BY warehouse_code
+) us ON us.warehouse_code = w.warehouse_code
+WHERE w.is_active = true
+ON CONFLICT (business_date, warehouse_id)
+DO UPDATE SET
+    inbound_count = EXCLUDED.inbound_count,
+    inbound_line_count = EXCLUDED.inbound_line_count,
+    inbound_quantity_total = EXCLUDED.inbound_quantity_total,
+    outbound_count = EXCLUDED.outbound_count,
+    outbound_line_count = EXCLUDED.outbound_line_count,
+    outbound_quantity_total = EXCLUDED.outbound_quantity_total,
+    return_quantity_total = EXCLUDED.return_quantity_total,
+    return_count = EXCLUDED.return_count,
+    inventory_quantity_total = EXCLUDED.inventory_quantity_total,
+    unreceived_count = EXCLUDED.unreceived_count,
+    unshipped_count = EXCLUDED.unshipped_count;</code></pre>
+<hr>
+<h2>5. 再実行（リトライ）設計</h2>
+<h3>5.1 再実行フロー</h3>
+<div class="mermaid">flowchart TD
+    START([同一営業日で再実行]) --> FIND{batch_execution_logs<br/>で FAILED レコード検索}
+    FIND -->|なし| ERR[409 BATCH_ALREADY_RUNNING<br/>SUCCESSレコードが存在]
+    FIND -->|あり| LOAD[FAILEDレコードの<br/>step1_status〜step6_status を読み取り]
+    LOAD --> DEL[FAILEDレコードを DELETE]
+    DEL --> INSERT[新しい RUNNING レコードを INSERT<br/>完了済みステップ情報を保持]
+    INSERT --> EXEC[各ステップを順次実行<br/>完了済みステップはスキップ]</div>
+<h3>5.2 スキップ判定ロジック</h3>
+<pre><code class="lang-java">private boolean[] loadPreviouslyCompletedSteps(BatchExecutionLog failedLog) {
+    if (failedLog == null) {
+        return new boolean[]{false, false, false, false, false, false};
+    }
+    return new boolean[]{
+        &quot;SUCCESS&quot;.equals(failedLog.getStep1Status()),
+        &quot;SUCCESS&quot;.equals(failedLog.getStep2Status()),
+        &quot;SUCCESS&quot;.equals(failedLog.getStep3Status()),
+        &quot;SUCCESS&quot;.equals(failedLog.getStep4Status()),
+        &quot;SUCCESS&quot;.equals(failedLog.getStep5Status()),
+        &quot;SUCCESS&quot;.equals(failedLog.getStep6Status()),
+    };
+}</code></pre>
+<h3>5.3 冪等性の保証</h3>
+<table>
+<thead><tr><th>ステップ</th><th>冪等性の仕組み</th></tr></thead>
+<tbody>
+<tr><td>Step 1</td><td><code>current_business_date</code> が既に <code>targetBusinessDate</code> なら UPDATE をスキップ</td></tr>
+<tr><td>Step 2</td><td><code>ON CONFLICT (business_date, warehouse_id) DO UPDATE</code></td></tr>
+<tr><td>Step 3</td><td><code>ON CONFLICT (business_date, warehouse_id) DO UPDATE</code></td></tr>
+<tr><td>Step 4</td><td><code>ON CONFLICT (business_date, warehouse_id, product_id, unit_type) DO UPDATE</code></td></tr>
+<tr><td>Step 5（バックアップ）</td><td><code>ON CONFLICT DO NOTHING</code>（バックアップ済みレコードはスキップ）</td></tr>
+<tr><td>Step 5（リスト）</td><td><code>DELETE + INSERT</code>（対象営業日のリストを全削除して再生成）</td></tr>
+<tr><td>Step 6</td><td><code>ON CONFLICT (business_date, warehouse_id) DO UPDATE</code></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>6. エラーハンドリング</h2>
+<h3>6.1 ステップ失敗時の動作</h3>
+<pre><code class="lang-java">private StepResult executeStepInNewTransaction(int stepNumber, LocalDate targetDate, Long logId) {
+    TransactionTemplate txTemplate = new TransactionTemplate(txManager);
+    txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+    try {
+        return txTemplate.execute(status -&gt; {
+            switch (stepNumber) {
+                case 1: return step1UpdateBusinessDate(targetDate);
+                case 2: return step2AggregateInbound(targetDate);
+                case 3: return step3AggregateOutbound(targetDate);
+                case 4: return step4SnapshotInventory(targetDate);
+                case 5: return step5ArchiveAndGenerateLists(targetDate, logId);
+                case 6: return step6GenerateDailySummary(targetDate);
+                default: throw new IllegalArgumentException(&quot;Unknown step: &quot; + stepNumber);
+            }
+        });
+    } catch (Exception e) {
+        log.error(&quot;Step {} failed for businessDate={}: {}&quot;, stepNumber, targetDate, e.getMessage(), e);
+        return StepResult.failed(e.getMessage());
+    }
+}</code></pre>
+<h3>6.2 エラー記録</h3>
+<p>失敗時は以下をDBに記録:</p>
+<ul><li style="margin-left:0px"><code>stepN_status = 'FAILED'</code></li><li style="margin-left:0px"><code>error_message</code> = 例外メッセージ（最大1000文字に切り詰め）</li><li style="margin-left:0px">後続ステップは全て <code>SKIPPED</code></li><li style="margin-left:0px"><code>status = 'FAILED'</code></li><li style="margin-left:0px"><code>completed_at = NOW()</code></li></ul>
+<hr>
+<h2>7. パフォーマンス考慮</h2>
+<h3>7.1 インデックス活用</h3>
+<table>
+<thead><tr><th>ステップ</th><th>使用インデックス</th></tr></thead>
+<tbody>
+<tr><td>Step 2</td><td><code>inbound_slips(status)</code> + <code>inbound_slip_lines(stored_at)</code></td></tr>
+<tr><td>Step 3</td><td><code>outbound_slips(status, shipped_at)</code></td></tr>
+<tr><td>Step 4</td><td><code>inventories(location_id)</code> + <code>locations(warehouse_id)</code></td></tr>
+<tr><td>Step 5a</td><td><code>inbound_slips(status, updated_at)</code>, <code>outbound_slips(status, updated_at)</code>, <code>inventory_movements(executed_at)</code></td></tr>
+<tr><td>Step 5b</td><td><code>inbound_slips(planned_date, status)</code></td></tr>
+<tr><td>Step 5c</td><td><code>outbound_slips(planned_date, status)</code></td></tr>
+<p></tbody><br></table></p>
+<h3>7.2 バッチサイズ考慮</h3>
+<ul><li style="margin-left:0px">ShowCase規模（データ件数: 数千〜数万件）では全ステップ合計で数秒〜数十秒で完了する想定</li><li style="margin-left:0px">バックアップ処理（Step 5a）が最も時間を要する可能性があるが、<code>ON CONFLICT DO NOTHING</code> により2回目以降は高速</li><li style="margin-left:0px">将来的にデータ量が増加した場合は、Step 5a にバッチサイズ制限（LIMIT 10000 + ループ）を導入する</li></ul>
+<hr>
+<h2>8. <code>batch_execution_logs</code> のステップ拡張</h2>
+<p>業務要件では5ステップだが、実装では6ステップ管理が必要。<code>batch_execution_logs</code> テーブルに <code>step6_status</code> カラムを追加する。</p>
+<pre><code class="lang-sql">ALTER TABLE batch_execution_logs
+ADD COLUMN step6_status varchar(20) NULL;
+
+COMMENT ON COLUMN batch_execution_logs.step6_status IS '日次集計レコード生成: SUCCESS / FAILED / SKIPPED';</code></pre>
+<blockquote><strong>data-model/04-batch-tables.md への反映が必要</strong>。</blockquote>
+<hr>
+<h2>9. テスト観点</h2>
+<table>
+<thead><tr><th>#</th><th>テスト観点</th><th>確認内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>正常系: 新規実行</td><td>全6ステップが SUCCESS になること</td></tr>
+<tr><td>2</td><td>正常系: 0件データ</td><td>対象営業日にデータが0件でもエラーにならないこと</td></tr>
+<tr><td>3</td><td>二重実行防止</td><td>SUCCESS レコードが存在する営業日に再実行で 409 が返ること</td></tr>
+<tr><td>4</td><td>再実行: Step 3 失敗→再実行</td><td>Step 1, 2 がスキップされ、Step 3 から再開すること</td></tr>
+<tr><td>5</td><td>冪等性: Step 1</td><td>再実行で営業日が二重に進まないこと</td></tr>
+<tr><td>6</td><td>冪等性: Step 2〜4</td><td>再実行で集計レコードが重複しないこと（UPSERT）</td></tr>
+<tr><td>7</td><td>冪等性: Step 5 リスト</td><td>再実行でリストが重複しないこと（DELETE + INSERT）</td></tr>
+<tr><td>8</td><td>バックアップ</td><td>2ヶ月以上前のデータのみバックアップされること</td></tr>
+<tr><td>9</td><td>返品データ</td><td>Step 6 で当日の返品実績が正しく集計されること</td></tr>
+<tr><td>10</td><td>複数倉庫</td><td>倉庫別に正しく集計・分離されること</td></tr>
+<tr><td>11</td><td>未入荷/未出荷</td><td>予定日 ≦ 営業日 かつ未完了のデータのみリストに含まれること</td></tr>
+<tr><td>12</td><td>トランザクション分離</td><td>Step 3 失敗時に Step 2 の結果がロールバックされないこと</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="IF-01-inbound-plan">
+<h1>機能設計書 — I/F設計 入荷予定取り込み（IFX-001）</h1>
+<blockquote><strong>業務要件</strong>: <a href="../functional-requirements/07-interface.md" target="_blank">07-interface.md</a> を参照
+<p><strong>方式設計</strong>（CSVフォーマット・バリデーションルール・フロー・クラス構成）: <a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md</a> を参照<br><strong>テーブル定義</strong>: <a href="../data-model/03-transaction-tables.md" target="_blank">03-transaction-tables.md</a>（inbound_slips / inbound_slip_lines / if_executions）を参照<br><strong>マスタ定義</strong>: <a href="../data-model/02-master-tables.md" target="_blank">02-master-tables.md</a>（partners / products）を参照</blockquote></p>
+<hr>
+<h2>目次</h2>
+<ol><li><a href="#1-if概要" target="_blank">I/F概要</a></li><li><a href="#2-データマッピング詳細" target="_blank">データマッピング詳細</a></li><li><a href="#3-取り込みsql" target="_blank">取り込みSQL</a></li><li><a href="#4-トランザクション設計" target="_blank">トランザクション設計</a></li><li><a href="#5-伝票採番ロジック" target="_blank">伝票採番ロジック</a></li><li><a href="#6-テスト観点" target="_blank">テスト観点</a></li></ol>
+<hr>
+<h2>1. I/F概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>I/F ID</strong></td><td>IFX-001</td></tr>
+<tr><td><strong>I/F名</strong></td><td>入荷予定取り込みI/F</td></tr>
+<tr><td><strong>方向</strong></td><td>外部 → WMS</td></tr>
+<tr><td><strong>形式</strong></td><td>CSV（UTF-8、BOMなし）</td></tr>
+<tr><td><strong>取り込み先テーブル</strong></td><td><code>inbound_slips</code> / <code>inbound_slip_lines</code></td></tr>
+<tr><td><strong>取り込み後ステータス</strong></td><td><code>PLANNED</code>（入荷予定）</td></tr>
+<tr><td><strong>実装方式</strong></td><td>モック（手動配置）</td></tr>
+<tr><td><strong>Blob Storageパス</strong></td><td><a href="../architecture-design/09-interface-architecture.md#2-blob-storageディレクトリ構成" target="_blank">09-interface-architecture.md セクション2</a> を参照</td></tr>
+<tr><td><strong>CSVフォーマット</strong></td><td><a href="../architecture-design/09-interface-architecture.md#42-ifx-001-入荷予定取り込みcsvフォーマット" target="_blank">09-interface-architecture.md セクション4.2</a> を参照</td></tr>
+<tr><td><strong>バリデーションルール</strong></td><td><a href="../architecture-design/09-interface-architecture.md#6-データ検証設計バリデーション" target="_blank">09-interface-architecture.md セクション6</a> を参照</td></tr>
+<tr><td><strong>取り込みフロー</strong></td><td><a href="../architecture-design/09-interface-architecture.md#7-取り込みフロー詳細設計" target="_blank">09-interface-architecture.md セクション7</a> を参照</td></tr>
+<tr><td><strong>実行権限</strong></td><td>SYSTEM_ADMIN / WAREHOUSE_MANAGER</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>2. データマッピング詳細</h2>
+<h3>2.1 伝票グルーピングロジック</h3>
+<p>CSVの各データ行を <code>partner_code</code> + <code>planned_date</code> の組み合わせでグルーピングし、1グループ = 1件の入荷伝票（<code>inbound_slips</code>）として登録する。グループ内の各行は入荷明細（<code>inbound_slip_lines</code>）の1レコードとなる。</p>
+<pre><code class="lang-java">// InboundPlanCsvProcessor.java — グルーピング処理
+public Map&lt;InboundSlipKey, List&lt;InboundPlanCsvRow&gt;&gt; groupBySlip(List&lt;InboundPlanCsvRow&gt; validRows) {
+    return validRows.stream()
+        .collect(Collectors.groupingBy(
+            row -&gt; new InboundSlipKey(row.getPartnerCode(), row.getPlannedDate()),
+            LinkedHashMap::new,  // CSVの出現順序を保持
+            Collectors.toList()
+        ));
+}
+
+// グルーピングキー
+public record InboundSlipKey(String partnerCode, LocalDate plannedDate) {}</code></pre>
+<p><strong>グルーピング例</strong>:</p>
+<table>
+<thead><tr><th>CSV行</th><th>partner_code</th><th>planned_date</th><th>product_code</th><th>グループ</th><th>伝票</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SUP-0001</td><td>2026-03-20</td><td>PRD-001</td><td>A</td><td>伝票1</td></tr>
+<tr><td>2</td><td>SUP-0001</td><td>2026-03-20</td><td>PRD-002</td><td>A</td><td>伝票1</td></tr>
+<tr><td>3</td><td>SUP-0002</td><td>2026-03-21</td><td>PRD-003</td><td>B</td><td>伝票2</td></tr>
+<tr><td>4</td><td>SUP-0001</td><td>2026-03-21</td><td>PRD-001</td><td>C</td><td>伝票3</td></tr>
+<p></tbody><br></table></p>
+<h3>2.2 inbound_slips（ヘッダ）マッピング</h3>
+<table>
+<thead><tr><th>#</th><th>対象カラム</th><th>変換元</th><th>変換ルール</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>slip_number</code></td><td>—</td><td>自動採番（<a href="#5-伝票採番ロジック" target="_blank">セクション5</a> 参照）</td></tr>
+<tr><td>2</td><td><code>slip_type</code></td><td>—</td><td>固定値: <code>NORMAL</code></td></tr>
+<tr><td>3</td><td><code>transfer_slip_number</code></td><td>—</td><td><code>NULL</code>（通常入荷のため）</td></tr>
+<tr><td>4</td><td><code>warehouse_id</code></td><td>リクエストパラメータ <code>warehouseId</code></td><td>ユーザーが画面で選択中の倉庫ID をそのまま設定</td></tr>
+<tr><td>5</td><td><code>warehouse_code</code></td><td><code>warehouses</code> テーブル</td><td><code>warehouseId</code> で warehouses を検索し <code>warehouse_code</code> をコピー</td></tr>
+<tr><td>6</td><td><code>warehouse_name</code></td><td><code>warehouses</code> テーブル</td><td><code>warehouseId</code> で warehouses を検索し <code>warehouse_name</code> をコピー</td></tr>
+<tr><td>7</td><td><code>partner_id</code></td><td>CSV <code>partner_code</code></td><td><code>partners</code> テーブルを <code>partner_code</code> で検索し <code>id</code> を取得</td></tr>
+<tr><td>8</td><td><code>partner_code</code></td><td>CSV <code>partner_code</code></td><td>CSV値をそのままコピー</td></tr>
+<tr><td>9</td><td><code>partner_name</code></td><td><code>partners</code> テーブル</td><td>検索結果の <code>partner_name</code> をコピー</td></tr>
+<tr><td>10</td><td><code>planned_date</code></td><td>CSV <code>planned_date</code></td><td><code>yyyy-MM-dd</code> 文字列を <code>LocalDate</code> にパースし設定</td></tr>
+<tr><td>11</td><td><code>status</code></td><td>—</td><td>固定値: <code>PLANNED</code></td></tr>
+<tr><td>12</td><td><code>note</code></td><td>CSV <code>note</code></td><td>グループ内の最初の行（CSV出現順で先頭）の <code>note</code> 値を設定。空文字列は <code>NULL</code> に変換</td></tr>
+<tr><td>13</td><td><code>cancelled_at</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>13</td><td><code>cancelled_by</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>14</td><td><code>created_at</code></td><td>—</td><td><code>now()</code>（JPA <code>@CreationTimestamp</code>）</td></tr>
+<tr><td>15</td><td><code>created_by</code></td><td>JWTトークン</td><td>認証済みユーザーの <code>user_id</code></td></tr>
+<tr><td>16</td><td><code>updated_at</code></td><td>—</td><td><code>now()</code>（JPA <code>@UpdateTimestamp</code>）</td></tr>
+<tr><td>17</td><td><code>updated_by</code></td><td>JWTトークン</td><td>認証済みユーザーの <code>user_id</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.3 inbound_slip_lines（明細）マッピング</h3>
+<table>
+<thead><tr><th>#</th><th>対象カラム</th><th>変換元</th><th>変換ルール</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>inbound_slip_id</code></td><td>—</td><td>親伝票の <code>id</code>（INSERT後に取得）</td></tr>
+<tr><td>2</td><td><code>line_no</code></td><td>—</td><td>グループ内のCSV行出現順に1始まりの連番を付与</td></tr>
+<tr><td>3</td><td><code>product_id</code></td><td>CSV <code>product_code</code></td><td><code>products</code> テーブルを <code>product_code</code> で検索し <code>id</code> を取得</td></tr>
+<tr><td>4</td><td><code>product_code</code></td><td>CSV <code>product_code</code></td><td>CSV値をそのままコピー</td></tr>
+<tr><td>5</td><td><code>product_name</code></td><td><code>products</code> テーブル</td><td>検索結果の <code>product_name</code> をコピー</td></tr>
+<tr><td>6</td><td><code>unit_type</code></td><td>CSV <code>unit_type</code></td><td>CSV値をそのまま設定（<code>CASE</code> / <code>BALL</code> / <code>PIECE</code>）</td></tr>
+<tr><td>7</td><td><code>planned_qty</code></td><td>CSV <code>planned_qty</code></td><td>整数パース後に設定</td></tr>
+<tr><td>8</td><td><code>inspected_qty</code></td><td>—</td><td><code>NULL</code>（入荷予定時点では未検品）</td></tr>
+<tr><td>9</td><td><code>lot_number</code></td><td>CSV <code>lot_number</code></td><td>CSV値をそのまま設定（空文字列は <code>NULL</code> に変換）</td></tr>
+<tr><td>10</td><td><code>expiry_date</code></td><td>CSV <code>expiry_date</code></td><td><code>yyyy-MM-dd</code> 文字列を <code>LocalDate</code> にパース（空は <code>NULL</code>）</td></tr>
+<tr><td>11</td><td><code>putaway_location_id</code></td><td>—</td><td><code>NULL</code>（入庫確定前）</td></tr>
+<tr><td>12</td><td><code>putaway_location_code</code></td><td>—</td><td><code>NULL</code>（入庫確定前）</td></tr>
+<tr><td>13</td><td><code>line_status</code></td><td>—</td><td>固定値: <code>PENDING</code></td></tr>
+<tr><td>14</td><td><code>inspected_at</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>15</td><td><code>inspected_by</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>16</td><td><code>stored_at</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>17</td><td><code>stored_by</code></td><td>—</td><td><code>NULL</code></td></tr>
+<tr><td>18</td><td><code>created_at</code></td><td>—</td><td><code>now()</code>（JPA <code>@CreationTimestamp</code>）</td></tr>
+<tr><td>19</td><td><code>updated_at</code></td><td>—</td><td><code>now()</code>（JPA <code>@UpdateTimestamp</code>）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.4 CSVのnoteカラムのマッピング</h3>
+<p>CSVフォーマット（<a href="../architecture-design/09-interface-architecture.md#42-ifx-001-入荷予定取り込みcsvフォーマット" target="_blank">09-interface-architecture.md セクション4.2</a>）で定義されている <code>note</code>（備考）カラムは、<code>inbound_slips.note</code> にマッピングする。同一伝票（同一 <code>partner_code</code> + <code>planned_date</code>）内に複数行が存在する場合、最初の行（CSV出現順で先頭）の <code>note</code> 値をヘッダの備考として採用する。CSVの <code>note</code> 値はバリデーション（L2: 500文字以内チェック）の対象とする。</p>
+<h3>2.5 コード → ID解決の実装</h3>
+<p>マスタ参照の最適化として、CSV内のユニークなコードを一括検索する（<a href="../architecture-design/09-interface-architecture.md#102-マスタ検索の最適化" target="_blank">09-interface-architecture.md セクション10.2</a> 参照）。</p>
+<pre><code class="lang-java">// InboundPlanCsvProcessor.java — コード→ID解決
+public class MasterCache {
+    private final Map&lt;String, Partner&gt; partnerMap;   // key: partner_code
+    private final Map&lt;String, Product&gt; productMap;   // key: product_code
+    private final Warehouse warehouse;
+
+    public static MasterCache build(
+            List&lt;InboundPlanCsvRow&gt; rows,
+            Long warehouseId,
+            PartnerRepository partnerRepo,
+            ProductRepository productRepo,
+            WarehouseRepository warehouseRepo) {
+
+        // 1. ユニークなコードを抽出
+        Set&lt;String&gt; partnerCodes = rows.stream()
+            .map(InboundPlanCsvRow::getPartnerCode)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        Set&lt;String&gt; productCodes = rows.stream()
+            .map(InboundPlanCsvRow::getProductCode)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        // 2. IN句で一括検索
+        Map&lt;String, Partner&gt; partnerMap = partnerRepo
+            .findByPartnerCodeIn(partnerCodes).stream()
+            .collect(Collectors.toMap(Partner::getPartnerCode, Function.identity()));
+
+        Map&lt;String, Product&gt; productMap = productRepo
+            .findByProductCodeIn(productCodes).stream()
+            .collect(Collectors.toMap(Product::getProductCode, Function.identity()));
+
+        // 3. 倉庫情報取得
+        Warehouse warehouse = warehouseRepo.findById(warehouseId)
+            .orElseThrow(() -&gt; new BusinessException(&quot;WMS-E-IFX-901&quot;,
+                &quot;倉庫ID(&quot; + warehouseId + &quot;)が存在しません&quot;));
+
+        return new MasterCache(partnerMap, productMap, warehouse);
+    }
+}</code></pre>
+<h3>2.6 CSVの空文字列の扱い</h3>
+<table>
+<thead><tr><th>CSVの値</th><th>変換後の値</th><th>対象カラム</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;&quot;</code> （空文字列）</td><td><code>NULL</code></td><td><code>lot_number</code>, <code>expiry_date</code>, <code>note</code></td></tr>
+<tr><td><code>&quot; &quot;</code> （空白のみ）</td><td><code>NULL</code></td><td><code>lot_number</code>, <code>expiry_date</code>, <code>note</code></td></tr>
+<tr><td>未指定（カンマ連続 <code>,,</code>）</td><td><code>NULL</code></td><td><code>lot_number</code>, <code>expiry_date</code>, <code>note</code></td></tr>
+<p></tbody><br></table></p>
+<pre><code class="lang-java">// CsvParser.java — 空文字列のNULL変換
+private String normalizeEmpty(String value) {
+    if (value == null) return null;
+    String trimmed = value.trim();
+    return trimmed.isEmpty() ? null : trimmed;
+}</code></pre>
+<hr>
+<h2>3. 取り込みSQL</h2>
+<h3>3.1 inbound_slips INSERT</h3>
+<pre><code class="lang-sql">INSERT INTO inbound_slips (
+    slip_number,
+    slip_type,
+    transfer_slip_number,
+    warehouse_id,
+    warehouse_code,
+    warehouse_name,
+    partner_id,
+    partner_code,
+    partner_name,
+    planned_date,
+    status,
+    note,
+    cancelled_at,
+    cancelled_by,
+    created_at,
+    created_by,
+    updated_at,
+    updated_by
+) VALUES (
+    :slipNumber,          -- 自動採番（セクション5参照）
+    'NORMAL',             -- 固定値
+    NULL,                 -- 通常入荷のためNULL
+    :warehouseId,         -- リクエストパラメータ
+    :warehouseCode,       -- warehousesテーブルから取得
+    :warehouseName,       -- warehousesテーブルから取得
+    :partnerId,           -- partnersテーブルから取得
+    :partnerCode,         -- CSVのpartner_code
+    :partnerName,         -- partnersテーブルから取得
+    :plannedDate,         -- CSVのplanned_date
+    'PLANNED',            -- 固定値
+    :note,                -- CSVのnote（グループ内最初の行の値）
+    NULL,                 -- キャンセル日時
+    NULL,                 -- キャンセル者
+    NOW(),                -- 作成日時
+    :currentUserId,       -- 認証ユーザーID
+    NOW(),                -- 更新日時
+    :currentUserId        -- 認証ユーザーID
+)
+RETURNING id;             -- 明細INSERT用にIDを取得</code></pre>
+<h3>3.2 inbound_slip_lines INSERT</h3>
+<pre><code class="lang-sql">INSERT INTO inbound_slip_lines (
+    inbound_slip_id,
+    line_no,
+    product_id,
+    product_code,
+    product_name,
+    unit_type,
+    planned_qty,
+    inspected_qty,
+    lot_number,
+    expiry_date,
+    putaway_location_id,
+    putaway_location_code,
+    line_status,
+    inspected_at,
+    inspected_by,
+    stored_at,
+    stored_by,
+    created_at,
+    updated_at
+) VALUES (
+    :inboundSlipId,       -- 親伝票のID（RETURNING idで取得）
+    :lineNo,              -- 1始まり連番
+    :productId,           -- productsテーブルから取得
+    :productCode,         -- CSVのproduct_code
+    :productName,         -- productsテーブルから取得
+    :unitType,            -- CSVのunit_type
+    :plannedQty,          -- CSVのplanned_qty
+    NULL,                 -- 検品数（未検品）
+    :lotNumber,           -- CSVのlot_number（NULLable）
+    :expiryDate,          -- CSVのexpiry_date（NULLable）
+    NULL,                 -- 入庫先ロケーションID（未確定）
+    NULL,                 -- 入庫先ロケーションコード（未確定）
+    'PENDING',            -- 固定値
+    NULL,                 -- 検品日時
+    NULL,                 -- 検品者
+    NULL,                 -- 入庫日時
+    NULL,                 -- 入庫者
+    NOW(),                -- 作成日時
+    NOW()                 -- 更新日時
+);</code></pre>
+<h3>3.3 if_executions INSERT（取り込み履歴）</h3>
+<pre><code class="lang-sql">INSERT INTO if_executions (
+    if_type,
+    file_name,
+    blob_path,
+    total_count,
+    success_count,
+    error_count,
+    mode,
+    status,
+    error_message,
+    blob_move_failed,
+    warehouse_id,
+    executed_at,
+    executed_by
+) VALUES (
+    'INBOUND_PLAN',       -- 固定値
+    :fileName,            -- 元ファイル名（例: INB-PLAN-001.csv）
+    :blobPath,            -- processed後の完全パス
+    :totalCount,          -- CSV総行数（ヘッダ除く）
+    :successCount,        -- バリデーション成功行数
+    :errorCount,          -- バリデーションエラー行数
+    :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
+    :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
+    :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
+    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    :warehouseId,         -- 取り込み対象倉庫ID
+    NOW(),                -- 実行日時
+    :currentUserId        -- 実行ユーザーID
+);</code></pre>
+<h3>3.4 バッチINSERT実装方針</h3>
+<p>JPA <code>saveAll()</code> を使用し、Spring Boot の JDBC バッチINSERT設定で一括登録を行う。</p>
+<pre><code class="lang-yaml"># application.yml — バッチINSERT設定
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100            # 100件ずつバッチINSERT
+          order_inserts: true        # INSERT文をテーブル単位で並べ替え
+          order_updates: true        # UPDATE文をテーブル単位で並べ替え
+        id:
+          new_generator_mappings: true</code></pre>
+<pre><code class="lang-java">// InterfaceService.java — 一括登録
+@Transactional
+public ImportResult importInboundPlan(ImportRequest request) {
+    // ... バリデーション・グルーピング処理（省略）...
+
+    List&lt;InboundSlip&gt; slipsToSave = new ArrayList&lt;&gt;();
+
+    for (Map.Entry&lt;InboundSlipKey, List&lt;InboundPlanCsvRow&gt;&gt; entry : grouped.entrySet()) {
+        InboundSlipKey key = entry.getKey();
+        List&lt;InboundPlanCsvRow&gt; rows = entry.getValue();
+
+        // ヘッダ構築
+        InboundSlip slip = buildInboundSlip(key, masterCache, currentUserId);
+
+        // 明細構築
+        int lineNo = 1;
+        for (InboundPlanCsvRow row : rows) {
+            InboundSlipLine line = buildInboundSlipLine(row, lineNo++, masterCache);
+            slip.addLine(line);  // 親子リレーション設定
+        }
+
+        slipsToSave.add(slip);
+    }
+
+    // JPA saveAll → CascadeType.ALL で明細も一括INSERT
+    inboundSlipRepository.saveAll(slipsToSave);
+
+    // 取り込み履歴保存
+    saveIfExecution(request, slipsToSave, validationResult);
+
+    return buildImportResult(slipsToSave, validationResult);
+}</code></pre>
+<p><strong>JPA エンティティのカスケード設定</strong>:</p>
+<pre><code class="lang-java">@Entity
+@Table(name = &quot;inbound_slips&quot;)
+public class InboundSlip {
+    // ...
+
+    @OneToMany(mappedBy = &quot;inboundSlip&quot;, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy(&quot;lineNo ASC&quot;)
+    private List&lt;InboundSlipLine&gt; lines = new ArrayList&lt;&gt;();
+
+    public void addLine(InboundSlipLine line) {
+        lines.add(line);
+        line.setInboundSlip(this);
+    }
+}</code></pre>
+<p><strong>ID生成戦略</strong>:</p>
+<p>PostgreSQL の <code>bigserial</code>（<code>IDENTITY</code> 戦略）を使用する場合、Hibernate のバッチINSERT は <code>GenerationType.IDENTITY</code> では無効になる。これを回避するため <code>GenerationType.SEQUENCE</code> を使用する。</p>
+<pre><code class="lang-java">@Id
+@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = &quot;inbound_slip_seq&quot;)
+@SequenceGenerator(name = &quot;inbound_slip_seq&quot;, sequenceName = &quot;inbound_slips_id_seq&quot;,
+    allocationSize = 50)  // シーケンスのプリアロケーション
+private Long id;</code></pre>
+<hr>
+<h2>4. トランザクション設計</h2>
+<h3>4.1 トランザクション境界</h3>
+<pre><code class="lang-">┌─────────────────────────────────────────────────────────────────┐
+│ InterfaceService.importInboundPlan()                            │
+│                                                                 │
+│  [トランザクション外]                                              │
+│  1. Blob Storage から CSV 読み取り                                │
+│  2. 再バリデーション（L1〜L5）                                     │
+│  3. 成功行の抽出とグルーピング                                      │
+│  4. マスタ一括検索（MasterCache構築）                               │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ @Transactional                                          │    │
+│  │                                                         │    │
+│  │  5. inbound_slips INSERT（N件）                          │    │
+│  │  6. inbound_slip_lines INSERT（M件）                     │    │
+│  │  7. if_executions INSERT（1件）                          │    │
+│  │                                                         │    │
+│  │  → 全て成功: COMMIT                                      │    │
+│  │  → いずれか失敗: ROLLBACK（5〜7全てロールバック）           │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                 │
+│  [トランザクション外]                                              │
+│  8. Blob ファイルを pending → processed へ移動                   │
+│     → 移動失敗時: if_executions の blob_move_failed を                │
+│       true に UPDATE（別トランザクション）+ ERROR ログ出力           │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘</code></pre>
+<h3>4.2 1ファイル = 1トランザクション</h3>
+<p>1回の取り込み操作（1 CSVファイル）は1トランザクションで処理する。</p>
+<table>
+<thead><tr><th>方針</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><strong>トランザクション粒度</strong></td><td>1ファイル内で生成される全伝票（複数のinbound_slips + 各inbound_slip_lines）を1トランザクションで一括コミット</td></tr>
+<tr><td><strong>根拠</strong></td><td>ファイル単位の整合性を担保する。部分的な伝票登録による不整合を防止</td></tr>
+<p></tbody><br></table></p>
+<h3>4.3 SUCCESS_ONLY モードの部分成功</h3>
+<code>mode = SUCCESS_ONLY</code> の場合、バリデーション成功行のみを取り込む。
+<pre><code class="lang-">CSV 100行
+  ├── バリデーション成功: 95行 → グルーピング → N件の伝票として登録
+  └── バリデーションエラー: 5行 → スキップ（DB登録なし）</code></pre>
+<p><strong>部分成功の扱い</strong>:</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>DB登録対象</strong></td><td>バリデーション成功行のみ。エラー行から生成される伝票は全て除外</td></tr>
+<tr><td><strong>伝票の完全性</strong></td><td>グルーピング後、1伝票内にエラー行と成功行が混在する場合、成功行のみで伝票を構成する</td></tr>
+<tr><td><strong>空伝票の防止</strong></td><td>グルーピング後、全明細がエラーとなった伝票はヘッダも生成しない</td></tr>
+<tr><td><strong>取り込み履歴</strong></td><td><code>success_count</code> にDB登録された行数、<code>error_count</code> にスキップされた行数を記録</td></tr>
+<tr><td><strong>ステータス</strong></td><td><code>mode=SUCCESS_ONLY</code> の場合は常に <code>COMPLETED</code>（成功行0件でも <code>COMPLETED</code> + <code>success_count=0</code>）。<code>mode=DISCARD</code> の場合は <code>DISCARDED</code>（<a href="#44-discardモードの処理" target="_blank">セクション4.4</a> 参照）</td></tr>
+<p></tbody><br></table></p>
+<pre><code class="lang-java">// グルーピング後のフィルタリング
+Map&lt;InboundSlipKey, List&lt;InboundPlanCsvRow&gt;&gt; grouped = groupBySlip(successRows);
+
+// 空グループを除外（全明細がエラーのグループ）
+grouped.entrySet().removeIf(entry -&gt; entry.getValue().isEmpty());
+
+if (grouped.isEmpty() &amp;&amp; request.getMode() == ImportMode.SUCCESS_ONLY) {
+    // 全行エラーの場合: DB登録なし、ファイルはprocessedへ移動
+    // if_executions に status='COMPLETED', success_count=0 で記録
+}</code></pre>
+<h3>4.4 DISCARDモードの処理</h3>
+<pre><code class="lang-">CSV 100行（バリデーションエラー3行含む）
+  └── 全件スキップ（DB登録なし）
+  └── ファイルを processed へ移動
+  └── if_executions に status='DISCARDED' で記録</code></pre>
+<h3>4.5 失敗時のロールバック</h3>
+<table>
+<thead><tr><th>障害パターン</th><th>ロールバック範囲</th><th>ファイル状態</th><th>復旧</th></tr></thead>
+<tbody>
+<tr><td>DB INSERT中の例外</td><td>伝票・明細・履歴全てロールバック</td><td>pending に残留</td><td>ユーザーが再度取り込み操作</td></tr>
+<tr><td>Blob移動失敗（DB登録成功後）</td><td>ロールバックなし（DB確定済み）</td><td>pending に残留</td><td>手動でprocessedへ移動 or 履歴で確認</td></tr>
+<p></tbody><br></table></p>
+<p>詳細は <a href="../architecture-design/09-interface-architecture.md#74-トランザクション制御" target="_blank">09-interface-architecture.md セクション7.4</a> を参照。</p>
+<hr>
+<h2>5. 伝票採番ロジック</h2>
+<h3>5.1 採番フォーマット</h3>
+<pre><code class="lang-">INB-YYYYMMDD-NNNN</code></pre>
+<table>
+<thead><tr><th>部位</th><th>説明</th><th>例</th></tr></thead>
+<tbody>
+<tr><td><code>INB</code></td><td>入荷伝票プレフィックス（固定）</td><td><code>INB</code></td></tr>
+<tr><td><code>YYYYMMDD</code></td><td>現在営業日（<code>current_business_date</code>）</td><td><code>20260320</code></td></tr>
+<tr><td><code>NNNN</code></td><td>日付内連番（4桁ゼロ埋め、1始まり）</td><td><code>0001</code></td></tr>
+<p></tbody><br></table></p>
+<p>例: <code>INB-20260320-0001</code>, <code>INB-20260320-0002</code>, <code>INB-20260321-0001</code></p>
+<blockquote>手動画面登録（API-INB-002）と同一の採番ルールを使用する（<a href="API-06-inbound.md" target="_blank">API-06-inbound.md</a> 参照）。</blockquote>
+<h3>5.2 採番方式: SELECT FOR UPDATE</h3>
+<p>PostgreSQLネイティブシーケンスは日付リセットに対応できないため、<code>SELECT ... FOR UPDATE</code> によるアプリケーション採番を使用する。</p>
+<pre><code class="lang-java">// SlipNumberGenerator.java
+@Component
+public class SlipNumberGenerator {
+
+    @Autowired
+    private InboundSlipRepository inboundSlipRepository;
+
+    /**
+     * 入荷伝票番号を採番する。
+     * @param businessDate 現在営業日（採番の日付部分に使用）
+     * @return 新しい伝票番号（例: INB-20260320-0001）
+     */
+    public String generateInboundSlipNumber(LocalDate businessDate) {
+        String dateStr = businessDate.format(DateTimeFormatter.BASIC_ISO_DATE); // 20260320
+        String prefix = &quot;INB-&quot; + dateStr + &quot;-&quot;;
+
+        // 同一日付の最大番号を排他ロック付きで取得
+        Optional&lt;String&gt; maxSlipNumber = inboundSlipRepository
+            .findMaxSlipNumberByPrefix(prefix);
+
+        int nextSeq;
+        if (maxSlipNumber.isPresent()) {
+            // &quot;INB-20260320-0003&quot; → 3 → 4
+            String seqPart = maxSlipNumber.get().substring(prefix.length());
+            nextSeq = Integer.parseInt(seqPart) + 1;
+        } else {
+            nextSeq = 1;
+        }
+
+        if (nextSeq &gt; 9999) {
+            throw new BusinessException(&quot;WMS-E-IFX-902&quot;,
+                &quot;伝票番号が上限（9999）に達しました。日付: &quot; + dateStr);
+        }
+
+        return prefix + String.format(&quot;%04d&quot;, nextSeq);
+    }
+}</code></pre>
+<p><strong>Repository クエリ</strong>:</p>
+<pre><code class="lang-java">// InboundSlipRepository.java
+@Query(value = &quot;&quot;&quot;
+    SELECT slip_number FROM inbound_slips
+    WHERE slip_number LIKE :prefix || '%'
+    ORDER BY slip_number DESC
+    LIMIT 1
+    FOR UPDATE
+    &quot;&quot;&quot;, nativeQuery = true)
+Optional&lt;String&gt; findMaxSlipNumberByPrefix(@Param(&quot;prefix&quot;) String prefix);</code></pre>
+<h3>5.3 コンカレンシー制御</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>排他方式</strong></td><td><code>SELECT ... FOR UPDATE</code>（行ロック）</td></tr>
+<tr><td><strong>ロック範囲</strong></td><td>同一日付プレフィックスの最大番号行のみ</td></tr>
+<tr><td><strong>デッドロック防止</strong></td><td>営業日ベースの採番のため、同一トランザクション内では同一日付プレフィックスのみ。デッドロックリスクなし</td></tr>
+<tr><td><strong>スループット</strong></td><td>同一日付の同時採番はシリアライズされるが、異なる日付の採番は並行可能</td></tr>
+<p></tbody><br></table></p>
+<pre><code class="lang-java">// 営業日を取得して採番に使用（1ファイル内の全伝票で同一営業日）
+LocalDate businessDate = businessDateService.getCurrentBusinessDate();
+
+for (InboundSlipKey key : grouped.keySet()) {
+    String slipNumber = slipNumberGenerator.generateInboundSlipNumber(businessDate);
+    // ... 伝票構築 ...
+}</code></pre>
+<h3>5.4 日付リセット</h3>
+<ul><li style="margin-left:0px">日付部分は <code>current_business_date</code>（現在営業日）を使用する</li><li style="margin-left:0px">1ファイル内の全伝票は同一営業日で採番される（<code>planned_date</code> に関わらず統一）</li><li style="margin-left:0px">日をまたいでの連番リセットは自動的に発生する（同一日付の既存レコードが無ければ <code>0001</code> から開始）</li><li style="margin-left:0px">手動登録API（<a href="API-06-inbound.md" target="_blank">API-06-inbound.md</a>）と同一の日付基準を使用する</li></ul>
+<hr>
+<h2>6. テスト観点</h2>
+<h3>6.1 正常系</h3>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>N-01</td><td>1行のCSVファイル取り込み</td><td>1伝票1明細が正しく登録されること</td></tr>
+<tr><td>N-02</td><td>複数行・同一伝票のCSV取り込み</td><td>同一 partner_code + planned_date がグルーピングされ、1伝票N明細になること</td></tr>
+<tr><td>N-03</td><td>複数伝票に分かれるCSV取り込み</td><td>異なる partner_code / planned_date の組み合わせが別伝票になること</td></tr>
+<tr><td>N-04</td><td>最大行数（10,000行）のCSV取り込み</td><td>性能目標（60秒以内）を満たすこと</td></tr>
+<tr><td>N-05</td><td>ロット番号・期限日ありのCSV取り込み</td><td><code>lot_number</code>, <code>expiry_date</code> が正しく設定されること</td></tr>
+<tr><td>N-06</td><td>ロット番号・期限日なしのCSV取り込み</td><td><code>lot_number</code>, <code>expiry_date</code> が NULL であること</td></tr>
+<tr><td>N-07</td><td>備考ありのCSV取り込み</td><td>CSVの <code>note</code> カラムが <code>inbound_slips.note</code> に正しくマッピングされること。同一伝票内に複数行がある場合、最初の行の <code>note</code> が採用されること（<a href="#24-csvのnoteカラムのマッピング" target="_blank">セクション2.4</a> 参照）</td></tr>
+<tr><td>N-08</td><td>伝票番号の自動採番</td><td><code>INB-YYYYMMDD-NNNN</code> 形式で採番されること</td></tr>
+<tr><td>N-09</td><td>同一日付の複数回取り込み</td><td>連番が正しくインクリメントされること</td></tr>
+<tr><td>N-10</td><td>取り込み履歴の記録</td><td><code>if_executions</code> に正しい値が記録されること</td></tr>
+<tr><td>N-11</td><td>ファイルのprocessedへの移動</td><td>pending から processed へ正しいパスで移動されること</td></tr>
+<tr><td>N-12</td><td>DISCARDモードの取り込み</td><td>DB登録なし、ファイル移動あり、履歴がDISCARDEDで記録されること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.2 SUCCESS_ONLY（部分成功）</h3>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>P-01</td><td>エラー行と成功行の混在</td><td>エラー行はスキップされ、成功行のみDB登録されること</td></tr>
+<tr><td>P-02</td><td>1伝票内で一部行がエラー</td><td>エラー行を除いた明細で伝票が構成されること</td></tr>
+<tr><td>P-03</td><td>1伝票の全行がエラー</td><td>その伝票はヘッダも生成されないこと</td></tr>
+<tr><td>P-04</td><td>全行エラーの場合</td><td>DB登録0件、ファイルは移動、履歴に success_count=0 で記録されること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.3 バリデーション</h3>
+<p>バリデーションの詳細テストケースは <a href="../architecture-design/09-interface-architecture.md#6-データ検証設計バリデーション" target="_blank">09-interface-architecture.md セクション6</a> のルールに基づく。</p>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>対応エラーコード</th></tr></thead>
+<tbody>
+<tr><td>V-01</td><td>存在しない partner_code</td><td><code>WMS-E-IFX-301</code></td></tr>
+<tr><td>V-02</td><td>無効化された取引先</td><td><code>WMS-E-IFX-302</code></td></tr>
+<tr><td>V-03</td><td>CUSTOMER種別の取引先（SUPPLIERまたはBOTHでない）</td><td><code>WMS-E-IFX-303</code></td></tr>
+<tr><td>V-04</td><td>存在しない product_code</td><td><code>WMS-E-IFX-304</code></td></tr>
+<tr><td>V-05</td><td>無効化された商品</td><td><code>WMS-E-IFX-305</code></td></tr>
+<tr><td>V-06</td><td>過去日付の planned_date</td><td><code>WMS-E-IFX-401</code></td></tr>
+<tr><td>V-07</td><td>ロット管理商品で lot_number 未入力</td><td><code>WMS-E-IFX-402</code></td></tr>
+<tr><td>V-08</td><td>期限管理商品で expiry_date 未入力</td><td><code>WMS-E-IFX-403</code></td></tr>
+<tr><td>V-09</td><td>期限管理商品で expiry_date が現在営業日以前</td><td><code>WMS-E-IFX-404</code></td></tr>
+<tr><td>V-10</td><td>同一伝票内で同一 product_code の重複</td><td><code>WMS-E-IFX-501</code></td></tr>
+<p></tbody><br></table></p>
+<h3>6.4 伝票採番</h3>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>S-01</td><td>初回採番</td><td><code>INB-YYYYMMDD-0001</code> が生成されること</td></tr>
+<tr><td>S-02</td><td>既存伝票がある日付での採番</td><td>最大番号+1の連番が生成されること</td></tr>
+<tr><td>S-03</td><td>連番が9999に達した場合</td><td><code>WMS-E-IFX-902</code> エラーが発生すること</td></tr>
+<tr><td>S-04</td><td>異なる日付の同時採番</td><td>それぞれ独立に採番されること</td></tr>
+<tr><td>S-05</td><td>同一日付の並行取り込み</td><td><code>SELECT FOR UPDATE</code> により排他制御され、番号が重複しないこと</td></tr>
+<p></tbody><br></table></p>
+<h3>6.5 トランザクション・異常系</h3>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>T-01</td><td>DB INSERT中の例外</td><td>全伝票・全明細・履歴がロールバックされること。ファイルはpendingに残留</td></tr>
+<tr><td>T-02</td><td>Blob移動失敗</td><td>DB登録は確定済み。<code>blob_move_failed=true</code> で履歴が更新されること</td></tr>
+<tr><td>T-03</td><td>Blob読み取り失敗</td><td>リトライ（3回）後にエラーレスポンスが返ること</td></tr>
+<tr><td>T-04</td><td>バリデーション後にマスタが変更された場合</td><td>取り込み実行時の再バリデーションでエラーとなること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.6 データ整合性</h3>
+<table>
+<thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>D-01</td><td>partner_name のスナップショット</td><td>取り込み時点の <code>partner_name</code> が伝票に保存されること（後でマスタ変更しても伝票は不変）</td></tr>
+<tr><td>D-02</td><td>product_name のスナップショット</td><td>取り込み時点の <code>product_name</code> が明細に保存されること</td></tr>
+<tr><td>D-03</td><td>warehouse_code/name のスナップショット</td><td>取り込み時点の倉庫情報が伝票に保存されること</td></tr>
+<tr><td>D-04</td><td>line_no の連番性</td><td>1伝票内の明細行番号が1始まりの連番であること</td></tr>
+<tr><td>D-05</td><td>空文字列のNULL変換</td><td>CSVの空値が正しくNULLに変換されること</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="IF-02-order">
+<h1>I/F設計書 — IFX-002: 受注取り込みI/F</h1>
+<blockquote><strong>業務要件</strong>: <a href="../functional-requirements/07-interface.md" target="_blank">07-interface.md</a> を参照
+<p><strong>方式設計（CSV仕様・バリデーション・フロー・クラス構成）</strong>: <a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md</a> を参照<br><strong>出荷管理業務ルール</strong>: <a href="../functional-requirements/04-outbound-management.md" target="_blank">04-outbound-management.md</a> を参照<br><strong>テーブル定義</strong>: <a href="../data-model/03-transaction-tables.md" target="_blank">03-transaction-tables.md</a>（outbound_slips / outbound_slip_lines / if_executions）を参照<br><strong>マスタ定義</strong>: <a href="../data-model/02-master-tables.md" target="_blank">02-master-tables.md</a>（partners / products）を参照</blockquote></p>
+<hr>
+<h2>目次</h2>
+<ol><li><a href="#1-if概要" target="_blank">I/F概要</a></li><li><a href="#2-データマッピング詳細" target="_blank">データマッピング詳細</a></li><li><a href="#3-取り込みsql" target="_blank">取り込みSQL</a></li><li><a href="#4-トランザクション設計" target="_blank">トランザクション設計</a></li><li><a href="#5-伝票採番ロジック" target="_blank">伝票採番ロジック</a></li><li><a href="#6-テスト観点" target="_blank">テスト観点</a></li></ol>
+<hr>
+<h2>1. I/F概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>I/F ID</strong></td><td>IFX-002</td></tr>
+<tr><td><strong>I/F名</strong></td><td>受注取り込みI/F</td></tr>
+<tr><td><strong>方向</strong></td><td>外部 → WMS</td></tr>
+<tr><td><strong>形式</strong></td><td>CSV（UTF-8、BOMなし）</td></tr>
+<tr><td><strong>取り込み先テーブル</strong></td><td><code>outbound_slips</code> / <code>outbound_slip_lines</code></td></tr>
+<tr><td><strong>取り込み後ステータス</strong></td><td><code>ORDERED</code>（受注）</td></tr>
+<tr><td><strong>実行権限</strong></td><td>SYSTEM_ADMIN / WAREHOUSE_MANAGER</td></tr>
+<tr><td><strong>Blob Storageパス</strong></td><td><code>iffiles/order/pending/</code> → <code>iffiles/order/processed/</code></td></tr>
+<tr><td><strong>ファイル名パターン</strong></td><td><code>ORD-{連番3桁}.csv</code>（例: <code>ORD-001.csv</code>）</td></tr>
+<p></tbody><br></table></p>
+<p>CSVフォーマット定義（カラム定義・ヘッダ行仕様・最大行数等）およびバリデーションルール（L1〜L5）は <a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md セクション4.3, 6</a> を参照。</p>
+<hr>
+<h2>2. データマッピング詳細</h2>
+<h3>2.1 伝票グルーピングロジック</h3>
+<p>CSV行を出荷伝票（ヘッダ＋明細）に変換する際、同一 <code>partner_code</code> + <code>planned_date</code> の組み合わせを1件の出荷伝票としてまとめる。</p>
+<pre><code class="lang-">グルーピングキー: partner_code + &quot;|&quot; + planned_date
+  例: &quot;CUS-0001|2026-03-22&quot; → 1件の outbound_slips
+  各CSV行 → outbound_slip_lines の1明細</code></pre>
+<pre><code class="lang-java">// 擬似コード: CSVパース後のグルーピング
+Map&lt;String, List&lt;OrderCsvRow&gt;&gt; grouped = validRows.stream()
+    .collect(Collectors.groupingBy(
+        row -&gt; row.getPartnerCode() + &quot;|&quot; + row.getPlannedDate(),
+        LinkedHashMap::new,  // CSV出現順を保持
+        Collectors.toList()
+    ));
+// grouped の各エントリが1伝票に対応する
+// Key: &quot;CUS-0001|2026-03-22&quot; → 1件の outbound_slips
+// Value: List&lt;OrderCsvRow&gt; → 各行が outbound_slip_lines の1明細</code></pre>
+<p><strong>同一伝票内の同一商品チェック</strong>: 1伝票（同一 <code>partner_code</code> + <code>planned_date</code>）内に同一 <code>product_code</code> が2行以上存在した場合はバリデーションエラー（<code>WMS-E-IFX-502</code>）とする。</p>
+<h3>2.2 outbound_slips（ヘッダ）マッピング</h3>
+<table>
+<thead><tr><th>outbound_slips カラム</th><th>値の決定方法</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>DB自動採番（bigserial）</td><td>—</td></tr>
+<tr><td><code>slip_number</code></td><td>自動採番（<a href="#5-伝票採番ロジック" target="_blank">セクション5</a> 参照）</td><td><code>OUT-YYYYMMDD-XXXX</code></td></tr>
+<tr><td><code>slip_type</code></td><td>固定値: <code>NORMAL</code></td><td>通常出荷</td></tr>
+<tr><td><code>transfer_slip_number</code></td><td><code>NULL</code></td><td>倉庫振替ではないため</td></tr>
+<tr><td><code>warehouse_id</code></td><td>リクエストパラメータ <code>warehouseId</code> から取得</td><td>画面で選択中の倉庫</td></tr>
+<tr><td><code>warehouse_code</code></td><td><code>warehouses</code> テーブルから <code>warehouse_id</code> で検索→コード取得</td><td>登録時コピー</td></tr>
+<tr><td><code>warehouse_name</code></td><td><code>warehouses</code> テーブルから <code>warehouse_id</code> で検索→名称取得</td><td>登録時コピー</td></tr>
+<tr><td><code>partner_id</code></td><td>CSV <code>partner_code</code> → <code>partners</code> テーブル検索→ID取得</td><td>コード→ID解決</td></tr>
+<tr><td><code>partner_code</code></td><td>CSV <code>partner_code</code> をそのままコピー</td><td>登録時コピー</td></tr>
+<tr><td><code>partner_name</code></td><td><code>partners</code> テーブルから取得した <code>partner_name</code></td><td>登録時コピー</td></tr>
+<tr><td><code>planned_date</code></td><td>CSV <code>planned_date</code> を <code>yyyy-MM-dd</code> → <code>LocalDate</code> パース</td><td>—</td></tr>
+<tr><td><code>carrier</code></td><td><code>NULL</code></td><td>取り込み時は未設定</td></tr>
+<tr><td><code>tracking_number</code></td><td><code>NULL</code></td><td>取り込み時は未設定</td></tr>
+<tr><td><code>status</code></td><td>固定値: <code>ORDERED</code></td><td>受注ステータス</td></tr>
+<tr><td><code>shipped_at</code></td><td><code>NULL</code></td><td>—</td></tr>
+<tr><td><code>shipped_by</code></td><td><code>NULL</code></td><td>—</td></tr>
+<tr><td><code>cancelled_at</code></td><td><code>NULL</code></td><td>—</td></tr>
+<tr><td><code>cancelled_by</code></td><td><code>NULL</code></td><td>—</td></tr>
+<tr><td><code>created_at</code></td><td><code>now()</code></td><td>DB側デフォルト</td></tr>
+<tr><td><code>created_by</code></td><td>JWT認証ユーザーのID</td><td>—</td></tr>
+<tr><td><code>updated_at</code></td><td><code>now()</code></td><td>DB側デフォルト</td></tr>
+<tr><td><code>updated_by</code></td><td>JWT認証ユーザーのID</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<h3>2.3 outbound_slip_lines（明細）マッピング</h3>
+<table>
+<thead><tr><th>outbound_slip_lines カラム</th><th>値の決定方法</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>DB自動採番（bigserial）</td><td>—</td></tr>
+<tr><td><code>outbound_slip_id</code></td><td>親 <code>outbound_slips</code> の <code>id</code></td><td>INSERT後に取得</td></tr>
+<tr><td><code>line_no</code></td><td>伝票内の連番（1始まり）</td><td>グルーピング後のリスト内のインデックス+1</td></tr>
+<tr><td><code>product_id</code></td><td>CSV <code>product_code</code> → <code>products</code> テーブル検索→ID取得</td><td>コード→ID解決</td></tr>
+<tr><td><code>product_code</code></td><td>CSV <code>product_code</code> をそのままコピー</td><td>登録時コピー</td></tr>
+<tr><td><code>product_name</code></td><td><code>products</code> テーブルから取得した <code>product_name</code></td><td>登録時コピー</td></tr>
+<tr><td><code>unit_type</code></td><td>CSV <code>unit_type</code> をそのまま保持</td><td>バリデーション済み</td></tr>
+<tr><td><code>ordered_qty</code></td><td>CSV <code>ordered_qty</code> を整数パース</td><td>—</td></tr>
+<tr><td><code>inspected_qty</code></td><td><code>NULL</code></td><td>出荷検品前のため未設定</td></tr>
+<tr><td><code>shipped_qty</code></td><td><code>0</code>（デフォルト）</td><td>—</td></tr>
+<tr><td><code>line_status</code></td><td>固定値: <code>ORDERED</code></td><td>—</td></tr>
+<tr><td><code>created_at</code></td><td><code>now()</code></td><td>DB側デフォルト</td></tr>
+<tr><td><code>updated_at</code></td><td><code>now()</code></td><td>DB側デフォルト</td></tr>
+<p></tbody><br></table></p>
+<h3>2.4 コード→ID解決処理</h3>
+<p>バリデーション成功行に対して、以下のマスタ検索を一括で実行しMapにキャッシュする（<a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md セクション10.2</a> 参照）。</p>
+<pre><code class="lang-java">// 擬似コード: マスタ一括検索
+Set&lt;String&gt; partnerCodes = validRows.stream()
+    .map(OrderCsvRow::getPartnerCode)
+    .collect(Collectors.toSet());
+
+Set&lt;String&gt; productCodes = validRows.stream()
+    .map(OrderCsvRow::getProductCode)
+    .collect(Collectors.toSet());
+
+// バッチ検索 → Map化
+Map&lt;String, Partner&gt; partnerMap = partnerRepository
+    .findByPartnerCodeIn(partnerCodes).stream()
+    .collect(Collectors.toMap(Partner::getPartnerCode, Function.identity()));
+
+Map&lt;String, Product&gt; productMap = productRepository
+    .findByProductCodeIn(productCodes).stream()
+    .collect(Collectors.toMap(Product::getProductCode, Function.identity()));
+
+// 倉庫情報はリクエストパラメータから1件取得
+Warehouse warehouse = warehouseRepository.findById(warehouseId)
+    .orElseThrow(() -&gt; new BusinessException(&quot;WMS-E-IFX-901&quot;, &quot;倉庫が見つかりません&quot;));</code></pre>
+<p><strong>マスタ参照時の検証項目</strong>（バリデーションで検証済みだが再確認）:</p>
+<table>
+<thead><tr><th>検証内容</th><th>エラーコード</th></tr></thead>
+<tbody>
+<tr><td>取引先コードが <code>partners</code> テーブルに存在する</td><td><code>WMS-E-IFX-301</code></td></tr>
+<tr><td>取引先が有効（<code>is_active = true</code>）</td><td><code>WMS-E-IFX-302</code></td></tr>
+<tr><td>取引先種別が <code>CUSTOMER</code> または <code>BOTH</code></td><td><code>WMS-E-IFX-303</code></td></tr>
+<tr><td>商品コードが <code>products</code> テーブルに存在する</td><td><code>WMS-E-IFX-304</code></td></tr>
+<tr><td>商品が有効（<code>is_active = true</code>）</td><td><code>WMS-E-IFX-305</code></td></tr>
+<tr><td>商品に出荷禁止フラグが設定されていない（<code>shipment_stop_flag = false</code>）</td><td><code>WMS-E-IFX-306</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.5 CSVカラムのマッピング対象外</h3>
+<p>CSVフォーマット（<a href="../architecture-design/09-interface-architecture.md#43-ifx-002-受注取り込みcsvフォーマット" target="_blank">09-interface-architecture.md セクション4.3</a>）で定義されている <code>note</code>（備考）カラムは、<code>outbound_slips</code> / <code>outbound_slip_lines</code> のいずれにもマッピングしない。CSVの <code>note</code> 値はバリデーション（L2: 500文字以内チェック）の対象とするが、DB登録時には保存されない。外部システム向けにこの仕様を周知すること。</p>
+<h3>2.6 CSVの空文字列の扱い</h3>
+<table>
+<thead><tr><th>CSVの値</th><th>変換後の値</th><th>対象カラム</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;&quot;</code> （空文字列）</td><td><code>NULL</code></td><td><code>note</code></td></tr>
+<tr><td><code>&quot; &quot;</code> （空白のみ）</td><td><code>NULL</code></td><td><code>note</code></td></tr>
+<tr><td>未指定（カンマ連続 <code>,,</code>）</td><td><code>NULL</code></td><td><code>note</code></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>3. 取り込みSQL</h2>
+<h3>3.1 outbound_slips INSERT</h3>
+<pre><code class="lang-sql">INSERT INTO outbound_slips (
+    slip_number,
+    slip_type,
+    transfer_slip_number,
+    warehouse_id,
+    warehouse_code,
+    warehouse_name,
+    partner_id,
+    partner_code,
+    partner_name,
+    planned_date,
+    carrier,
+    tracking_number,
+    status,
+    shipped_at,
+    shipped_by,
+    cancelled_at,
+    cancelled_by,
+    created_at,
+    created_by,
+    updated_at,
+    updated_by
+) VALUES (
+    :slipNumber,          -- 自動採番（セクション5参照）
+    'NORMAL',             -- 固定値
+    NULL,                 -- 振替なし
+    :warehouseId,         -- リクエストパラメータ
+    :warehouseCode,       -- warehousesから取得
+    :warehouseName,       -- warehousesから取得
+    :partnerId,           -- partnersから解決
+    :partnerCode,         -- CSVから
+    :partnerName,         -- partnersから取得
+    :plannedDate,         -- CSVから（LocalDate）
+    NULL,                 -- 配送業者（取り込み時は未設定）
+    NULL,                 -- 送り状番号（取り込み時は未設定）
+    'ORDERED',            -- 固定値
+    NULL,                 -- 出荷日時（未出荷）
+    NULL,                 -- 出荷者（未出荷）
+    NULL,                 -- キャンセル日時
+    NULL,                 -- キャンセル者
+    NOW(),                -- 作成日時
+    :currentUserId,       -- JWT認証ユーザー
+    NOW(),                -- 更新日時
+    :currentUserId        -- JWT認証ユーザー
+)
+RETURNING id;             -- 明細INSERT用に取得</code></pre>
+<h3>3.2 outbound_slip_lines INSERT</h3>
+<pre><code class="lang-sql">INSERT INTO outbound_slip_lines (
+    outbound_slip_id,
+    line_no,
+    product_id,
+    product_code,
+    product_name,
+    unit_type,
+    ordered_qty,
+    inspected_qty,
+    shipped_qty,
+    line_status,
+    created_at,
+    updated_at
+) VALUES (
+    :outboundSlipId,      -- 親ヘッダのRETURNING id
+    :lineNo,              -- 伝票内連番（1始まり）
+    :productId,           -- productsから解決
+    :productCode,         -- CSVから
+    :productName,         -- productsから取得
+    :unitType,            -- CSVから（バリデーション済み）
+    :orderedQty,          -- CSVから（整数パース済み）
+    NULL,                 -- 検品数量（未検品）
+    0,                    -- 出荷済み数量（デフォルト）
+    'ORDERED',            -- 固定値
+    NOW(),                -- 作成日時
+    NOW()                 -- 更新日時
+);</code></pre>
+<h3>3.3 if_executions INSERT（取り込み履歴）</h3>
+<pre><code class="lang-sql">INSERT INTO if_executions (
+    if_type,
+    file_name,
+    blob_path,
+    total_count,
+    success_count,
+    error_count,
+    mode,
+    status,
+    error_message,
+    blob_move_failed,
+    warehouse_id,
+    executed_at,
+    executed_by
+) VALUES (
+    'ORDER',              -- 固定値
+    :fileName,            -- 元ファイル名（例: ORD-001.csv）
+    :blobPath,            -- processed後の完全パス
+    :totalCount,          -- CSV総行数（ヘッダ除く）
+    :successCount,        -- バリデーション成功行数
+    :errorCount,          -- バリデーションエラー行数
+    :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
+    :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
+    :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
+    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    :warehouseId,         -- 取り込み対象倉庫ID
+    NOW(),                -- 実行日時
+    :currentUserId        -- 実行ユーザーID
+);</code></pre>
+<h3>3.4 バッチINSERT実装方針</h3>
+<p>JPA <code>saveAll()</code> を使用し、Spring Data JPAの一括保存を活用する。パフォーマンス最適化のため以下の設定を行う。</p>
+<pre><code class="lang-yaml"># application.yml
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100       # 100件ずつバッチINSERT
+        order_inserts: true     # INSERT文をテーブル順に並べ替え
+        order_updates: true     # UPDATE文をテーブル順に並べ替え</code></pre>
+<pre><code class="lang-java">// 擬似コード: エンティティ構築とバッチ保存
+List&lt;OutboundSlip&gt; slipsToSave = new ArrayList&lt;&gt;();
+
+for (Map.Entry&lt;String, List&lt;OrderCsvRow&gt;&gt; entry : grouped.entrySet()) {
+    String[] keyParts = entry.getKey().split(&quot;\\|&quot;);
+    String partnerCode = keyParts[0];
+    String plannedDateStr = keyParts[1];
+    List&lt;OrderCsvRow&gt; rows = entry.getValue();
+
+    Partner partner = partnerMap.get(partnerCode);
+    LocalDate plannedDate = LocalDate.parse(plannedDateStr);
+
+    // ヘッダ構築
+    OutboundSlip slip = new OutboundSlip();
+    slip.setSlipNumber(generateSlipNumber(plannedDate)); // セクション5参照
+    slip.setSlipType(&quot;NORMAL&quot;);
+    slip.setWarehouseId(warehouse.getId());
+    slip.setWarehouseCode(warehouse.getWarehouseCode());
+    slip.setWarehouseName(warehouse.getWarehouseName());
+    slip.setPartnerId(partner.getId());
+    slip.setPartnerCode(partner.getPartnerCode());
+    slip.setPartnerName(partner.getPartnerName());
+    slip.setPlannedDate(plannedDate);
+    slip.setStatus(&quot;ORDERED&quot;);
+    slip.setCreatedBy(currentUserId);
+    slip.setUpdatedBy(currentUserId);
+
+    // 明細構築
+    List&lt;OutboundSlipLine&gt; lines = new ArrayList&lt;&gt;();
+    for (int i = 0; i &lt; rows.size(); i++) {
+        OrderCsvRow row = rows.get(i);
+        Product product = productMap.get(row.getProductCode());
+
+        OutboundSlipLine line = new OutboundSlipLine();
+        line.setOutboundSlip(slip);       // JPA関連付け
+        line.setLineNo(i + 1);            // 1始まり
+        line.setProductId(product.getId());
+        line.setProductCode(product.getProductCode());
+        line.setProductName(product.getProductName());
+        line.setUnitType(row.getUnitType());
+        line.setOrderedQty(row.getOrderedQty());
+        line.setShippedQty(0);
+        line.setLineStatus(&quot;ORDERED&quot;);
+        lines.add(line);
+    }
+    slip.setLines(lines);
+    slipsToSave.add(slip);
+}
+
+// バッチ保存（cascade = CascadeType.ALL で明細も同時保存）
+outboundSlipRepository.saveAll(slipsToSave);
+outboundSlipRepository.flush();  // バッチINSERT即時実行</code></pre>
+<hr>
+<h2>4. トランザクション設計</h2>
+<h3>4.1 トランザクション範囲</h3>
+<p>トランザクション制御は <a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md セクション7.4</a> の共通設計に従う。</p>
+<pre><code class="lang-">[トランザクション外] Blob Storage読み取り
+[トランザクション外] 再バリデーション（L1〜L5）
+[トランザクション外] マスタ一括検索・Map構築
+------- @Transactional 開始 -------
+[トランザクション内] outbound_slips / outbound_slip_lines INSERT
+[トランザクション内] if_executions INSERT（取り込み履歴）
+------- @Transactional コミット -------
+[トランザクション外] Blobファイル移動（pending → processed）</code></pre>
+<h3>4.2 1ファイル = 1トランザクション</h3>
+<p>1つのCSVファイルの取り込みは1つのDBトランザクションとして実行する。ファイル内のいずれかの伝票の登録に失敗した場合は、そのファイルの全伝票がロールバックされる。</p>
+<h3>4.3 SUCCESS_ONLYモード時の部分成功</h3>
+<table>
+<thead><tr><th>項目</th><th>仕様</th></tr></thead>
+<tbody>
+<tr><td><strong>対象行</strong></td><td>バリデーション成功行のみを取り込み対象とする</td></tr>
+<tr><td><strong>エラー行</strong></td><td>スキップする（DBには登録しない）</td></tr>
+<tr><td><strong>トランザクション</strong></td><td>成功行の全伝票登録を1トランザクションで実行</td></tr>
+<tr><td><strong>部分失敗</strong></td><td>成功行の登録中にDBエラーが発生した場合は全伝票ロールバック</td></tr>
+<tr><td><strong>履歴記録</strong></td><td><code>if_executions</code> に <code>success_count</code>（登録行数）と <code>error_count</code>（スキップ行数）を記録</td></tr>
+<p></tbody><br></table></p>
+<h3>4.4 DISCARDモード</h3>
+<table>
+<thead><tr><th>項目</th><th>仕様</th></tr></thead>
+<tbody>
+<tr><td><strong>DB登録</strong></td><td>行わない</td></tr>
+<tr><td><strong>ファイル移動</strong></td><td><code>pending</code> → <code>processed</code> へ移動する</td></tr>
+<tr><td><strong>履歴記録</strong></td><td><code>if_executions</code> に <code>status = 'DISCARDED'</code> として記録</td></tr>
+<p></tbody><br></table></p>
+<h3>4.5 障害パターンとリカバリ</h3>
+<table>
+<thead><tr><th>パターン</th><th>影響</th><th>リカバリ</th></tr></thead>
+<tbody>
+<tr><td>DB INSERT中の例外</td><td>全伝票ロールバック。ファイルは <code>pending</code> に残留</td><td>ユーザーが原因を確認し再操作</td></tr>
+<tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は確定済み。ファイルが <code>pending</code> に残留</td><td><code>if_executions</code> に <code>blob_move_failed = true</code> を記録。手動でファイル移動</td></tr>
+<tr><td>アプリ再起動（トランザクション中）</td><td>未コミット分はロールバック。ファイルは <code>pending</code> に残留</td><td>ユーザーが再操作</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>5. 伝票採番ロジック</h2>
+<h3>5.1 採番フォーマット</h3>
+<pre><code class="lang-">OUT-{YYYYMMDD}-{4桁連番}</code></pre>
+<table>
+<thead><tr><th>要素</th><th>説明</th><th>例</th></tr></thead>
+<tbody>
+<tr><td><code>OUT</code></td><td>出荷伝票固定プレフィックス</td><td><code>OUT</code></td></tr>
+<tr><td><code>YYYYMMDD</code></td><td>現在営業日（<code>current_business_date</code>）</td><td><code>20260322</code></td></tr>
+<tr><td><code>4桁連番</code></td><td>その日付の通し番号（0001始まり）</td><td><code>0001</code></td></tr>
+<p></tbody><br></table></p>
+<p>例: <code>OUT-20260322-0001</code>, <code>OUT-20260322-0002</code></p>
+<h3>5.2 採番方式: SELECT FOR UPDATE</h3>
+<p>PostgreSQLネイティブシーケンスは日付リセットに対応できないため、<code>SELECT ... FOR UPDATE</code> によるアプリケーション採番を使用する（<a href="IF-01-inbound-plan.md" target="_blank">IF-01-inbound-plan.md</a> と同一方式）。</p>
+<pre><code class="lang-java">// SlipNumberGenerator.java — 出荷伝票番号の採番
+public String generateOutboundSlipNumber(LocalDate businessDate) {
+    String dateStr = businessDate.format(DateTimeFormatter.BASIC_ISO_DATE); // 20260322
+    String prefix = &quot;OUT-&quot; + dateStr + &quot;-&quot;;
+
+    // 同一日付の最大番号を排他ロック付きで取得
+    Optional&lt;String&gt; maxSlipNumber = outboundSlipRepository
+        .findMaxSlipNumberByPrefix(prefix);
+
+    int nextSeq;
+    if (maxSlipNumber.isPresent()) {
+        // &quot;OUT-20260322-0003&quot; → 3 → 4
+        String seqPart = maxSlipNumber.get().substring(prefix.length());
+        nextSeq = Integer.parseInt(seqPart) + 1;
+    } else {
+        nextSeq = 1;
+    }
+
+    if (nextSeq &gt; 9999) {
+        throw new BusinessException(&quot;WMS-E-IFX-901&quot;,
+            &quot;伝票番号の採番上限（9999）に達しました: &quot; + prefix);
+    }
+
+    return prefix + String.format(&quot;%04d&quot;, nextSeq);
+}</code></pre>
+<p><strong>Repository クエリ</strong>:</p>
+<pre><code class="lang-java">// OutboundSlipRepository.java
+@Query(value = &quot;&quot;&quot;
+    SELECT slip_number FROM outbound_slips
+    WHERE slip_number LIKE :prefix || '%'
+    ORDER BY slip_number DESC
+    LIMIT 1
+    FOR UPDATE
+    &quot;&quot;&quot;, nativeQuery = true)
+Optional&lt;String&gt; findMaxSlipNumberByPrefix(@Param(&quot;prefix&quot;) String prefix);</code></pre>
+<h3>5.3 コンカレンシー制御</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>排他方式</strong></td><td><code>SELECT ... FOR UPDATE</code>（行ロック）</td></tr>
+<tr><td><strong>ロック範囲</strong></td><td>同一日付プレフィックスの最大番号行のみ</td></tr>
+<tr><td><strong>デッドロック防止</strong></td><td>営業日ベースの採番のため、同一トランザクション内では同一日付プレフィックスのみ。デッドロックリスクなし</td></tr>
+<tr><td><strong>スループット</strong></td><td>同一日付の同時採番はシリアライズされるが、異なる日付の採番は並行可能</td></tr>
+<p></tbody><br></table></p>
+<pre><code class="lang-java">// 営業日を取得して採番に使用（1ファイル内の全伝票で同一営業日）
+LocalDate businessDate = businessDateService.getCurrentBusinessDate();
+
+for (String key : grouped.keySet()) {
+    String slipNumber = slipNumberGenerator.generateOutboundSlipNumber(businessDate);
+    // ... 伝票構築 ...
+}</code></pre>
+<p><strong>同時実行の追加安全策</strong>: I/F取り込みは画面UIで同一I/Fの並行実行を制限する（<a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md セクション10.1</a> 参照）。加えて、<code>outbound_slips.slip_number</code> にUNIQUE制約があるため、万が一の重複はDB側で検出される。重複発生時はトランザクション全体がロールバックされ、ユーザーに再操作を促す。</p>
+<h3>5.4 日付リセット</h3>
+<p>採番連番は日付（<code>current_business_date</code>）単位でリセットされる。1ファイル内の全伝票は同一営業日で採番される（<code>planned_date</code> に関わらず統一）。手動登録API（<a href="API-08-outbound.md" target="_blank">API-08-outbound.md</a>）と同一の日付基準を使用する。</p>
+<hr>
+<h2>6. テスト観点</h2>
+<h3>6.1 正常系</h3>
+<table>
+<thead><tr><th>No</th><th>テスト観点</th><th>テスト内容</th></tr></thead>
+<tbody>
+<tr><td>N-01</td><td>基本取り込み</td><td>CSVファイル1件（1伝票・1明細）を取り込み、<code>outbound_slips</code> と <code>outbound_slip_lines</code> が正しく登録されること</td></tr>
+<tr><td>N-02</td><td>複数伝票</td><td>異なる <code>partner_code</code> + <code>planned_date</code> の組み合わせが別伝票として登録されること</td></tr>
+<tr><td>N-03</td><td>複数明細</td><td>同一伝票に複数の商品明細が正しく登録され、<code>line_no</code> が1始まりの連番であること</td></tr>
+<tr><td>N-04</td><td>伝票採番</td><td><code>OUT-YYYYMMDD-XXXX</code> 形式で正しく採番されること</td></tr>
+<tr><td>N-05</td><td>連番の連続性</td><td>同一ファイル内に同一 <code>planned_date</code> の伝票が複数ある場合、連番が連続すること（例: 0001, 0002）</td></tr>
+<tr><td>N-06</td><td>既存伝票がある場合の採番</td><td>DBに既存伝票がある日付でINSERTした場合、既存の最大値+1から採番されること</td></tr>
+<tr><td>N-07</td><td>コード→ID解決</td><td><code>partner_code</code> → <code>partner_id</code> / <code>partner_name</code>、<code>product_code</code> → <code>product_id</code> / <code>product_name</code> が正しくコピーされること</td></tr>
+<tr><td>N-08</td><td>ステータス</td><td>取り込み後の伝票ステータスが <code>ORDERED</code>、明細ステータスが <code>ORDERED</code> であること</td></tr>
+<tr><td>N-09</td><td>倉庫情報</td><td>リクエストの <code>warehouseId</code> から <code>warehouse_code</code> / <code>warehouse_name</code> が正しくコピーされること</td></tr>
+<tr><td>N-10</td><td>SUCCESS_ONLYモード</td><td>エラー行がスキップされ、成功行のみが登録されること</td></tr>
+<tr><td>N-11</td><td>DISCARDモード</td><td>DB登録が行われず、ファイルが <code>processed</code> に移動されること</td></tr>
+<tr><td>N-12</td><td>取り込み履歴</td><td><code>if_executions</code> に正しく履歴が記録されること（<code>if_type = 'ORDER'</code>）</td></tr>
+<tr><td>N-13</td><td>Blobファイル移動</td><td>取り込み後にファイルが <code>processed/{yyyy}/{MM}/{dd}/{timestamp}_{fileName}</code> に移動されること</td></tr>
+<tr><td>N-14</td><td>備考フィールド</td><td>CSV <code>note</code> カラムが <code>outbound_slip_lines</code> に反映されないこと（outbound_slip_linesにnoteカラムなし）</td></tr>
+<tr><td>N-15</td><td>大量データ</td><td>10,000行のCSVが60秒以内に取り込み完了すること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.2 バリデーション系</h3>
+<table>
+<thead><tr><th>No</th><th>テスト観点</th><th>テスト内容</th></tr></thead>
+<tbody>
+<tr><td>V-01</td><td>必須チェック</td><td><code>partner_code</code>, <code>planned_date</code>, <code>product_code</code>, <code>unit_type</code>, <code>ordered_qty</code> が空の場合にエラーとなること</td></tr>
+<tr><td>V-02</td><td>日付形式</td><td><code>planned_date</code> が <code>yyyy-MM-dd</code> 以外の形式でエラーとなること</td></tr>
+<tr><td>V-03</td><td>数量チェック</td><td><code>ordered_qty</code> が0以下・小数・文字列の場合にエラーとなること</td></tr>
+<tr><td>V-04</td><td>unit_type</td><td><code>CASE</code> / <code>BALL</code> / <code>PIECE</code> 以外の値でエラーとなること</td></tr>
+<tr><td>V-05</td><td>文字数超過</td><td>各カラムの最大長を超える値でエラーとなること</td></tr>
+<tr><td>V-06</td><td>取引先不在</td><td>存在しない <code>partner_code</code> でエラーとなること</td></tr>
+<tr><td>V-07</td><td>取引先無効</td><td><code>is_active = false</code> の取引先でエラーとなること</td></tr>
+<tr><td>V-08</td><td>取引先種別</td><td><code>partner_type = 'SUPPLIER'</code>（仕入先のみ）の取引先でエラーとなること</td></tr>
+<tr><td>V-09</td><td>商品不在</td><td>存在しない <code>product_code</code> でエラーとなること</td></tr>
+<tr><td>V-10</td><td>商品無効</td><td><code>is_active = false</code> の商品でエラーとなること</td></tr>
+<tr><td>V-11</td><td>出荷禁止</td><td><code>shipment_stop_flag = true</code> の商品でエラーとなること</td></tr>
+<tr><td>V-12</td><td>伝票内重複</td><td>同一伝票内に同一 <code>product_code</code> が2行以上でエラーとなること</td></tr>
+<tr><td>V-13</td><td>ヘッダ不正</td><td>ヘッダ行のカラム数・カラム名が不正な場合にエラーとなること</td></tr>
+<tr><td>V-14</td><td>行数超過</td><td>10,001行以上のCSVでエラーとなること</td></tr>
+<tr><td>V-15</td><td>データ行0件</td><td>ヘッダのみのCSVでエラーとなること</td></tr>
+<tr><td>V-16</td><td>複数エラー</td><td>1行に複数のエラーがある場合、全エラーが返却されること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.3 異常系</h3>
+<table>
+<thead><tr><th>No</th><th>テスト観点</th><th>テスト内容</th></tr></thead>
+<tbody>
+<tr><td>E-01</td><td>DB登録エラー</td><td>INSERT失敗時に全伝票がロールバックされ、ファイルが <code>pending</code> に残留すること</td></tr>
+<tr><td>E-02</td><td>伝票番号重複</td><td>UNIQUE制約違反が発生した場合にトランザクションがロールバックされること</td></tr>
+<tr><td>E-03</td><td>採番上限</td><td>同一日付で9999件超の採番でエラーとなること</td></tr>
+<tr><td>E-04</td><td>Blob読み取り失敗</td><td>Blob Storage接続エラー時にリトライ後、適切なエラーメッセージが返却されること</td></tr>
+<tr><td>E-05</td><td>Blob移動失敗</td><td>DB登録成功後にBlob移動が失敗した場合、<code>if_executions.blob_move_failed = true</code> が記録されること</td></tr>
+<tr><td>E-06</td><td>再バリデーション不一致</td><td>バリデーション後〜取り込み実行間にマスタが変更された場合、再バリデーションでエラーが検出されること</td></tr>
+<tr><td>E-07</td><td>文字コード不正</td><td>UTF-8以外のファイルでL1バリデーションエラーとなること</td></tr>
+<p></tbody><br></table></p>
+<h3>6.4 境界値</h3>
+<table>
+<thead><tr><th>No</th><th>テスト観点</th><th>テスト内容</th></tr></thead>
+<tbody>
+<tr><td>B-01</td><td>最小データ</td><td>1行のみのCSV（ヘッダ+1データ行）が正常に取り込めること</td></tr>
+<tr><td>B-02</td><td>最大データ</td><td>10,000行のCSVが正常に取り込めること</td></tr>
+<tr><td>B-03</td><td>数量境界</td><td><code>ordered_qty = 1</code> が正常に取り込めること</td></tr>
+<tr><td>B-04</td><td>文字数最大</td><td>各カラムが最大長の値で正常に取り込めること</td></tr>
+<tr><td>B-05</td><td>備考空文字</td><td><code>note</code> が空文字のCSV行が正常に取り込めること</td></tr>
+<tr><td>B-06</td><td>日付境界</td><td>当日日付の <code>planned_date</code> が正常に取り込めること</td></tr>
+<p></tbody><br></table></p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+  <script src="../scripts/lib/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    document.addEventListener('DOMContentLoaded', function () {
+      mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+    });
+  </script>
+
+</body>
+</html>

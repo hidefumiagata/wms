@@ -166,8 +166,4 @@ flowchart LR
 
 ### カバレッジ目標（バックエンド）
 
-| 種別 | 目標 |
-|------|------|
-| C0（ステートメント） | 100% |
-| C1（ブランチ） | 100% |
-| C2（条件） | 100% |
+> テストカバレッジ目標のSSOTは [test-specifications/00-test-plan.md](../test-specifications/00-test-plan.md) を参照。

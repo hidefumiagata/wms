@@ -12,7 +12,7 @@ JWT + httpOnly Cookie 方式（セクション7確定）に対して、以下の
 | 項目 | 内容 |
 |------|------|
 | **アクセストークン** | 有効期限 1時間。httpOnly Cookie（`access_token`）に格納 |
-| **リフレッシュトークン** | スライディング方式。最終アクセスから1時間で失効（＝1時間操作なしで自動ログアウト）。httpOnly Cookie（`refresh_token`）に格納 |
+| **リフレッシュトークン** | スライディング方式。最終アクセスから24時間で失効。httpOnly Cookie（`refresh_token`）に格納。セッションタイムアウト（60分操作なしで自動ログアウト）はフロントエンド側タイマー（55分警告→60分ログアウト）で制御する |
 | **リフレッシュトークン管理** | DBの `refresh_tokens` テーブルで管理（トークンハッシュ・ユーザーID・有効期限） |
 | **トークンローテーション** | リフレッシュ時に古いトークンを無効化し新しいトークンを発行（トークン盗用対策） |
 
@@ -46,13 +46,15 @@ sequenceDiagram
 | `POST` | `/api/v1/auth/refresh` | アクセストークン再発行 |
 | `POST` | `/api/v1/auth/logout` | ログアウト（リフレッシュトークンをDB削除・Cookie削除） |
 | `POST` | `/api/v1/auth/change-password` | パスワード変更 |
+| `POST` | `/api/v1/auth/password-reset/request` | パスワードリセット申請（メール送信） |
+| `POST` | `/api/v1/auth/password-reset/confirm` | パスワード再設定（トークン検証＋変更） |
 
 ## パスワード管理
 
 | 項目 | 内容 |
 |------|------|
-| **ポリシー** | 8文字以上 |
-| **ハッシュ** | BCrypt（Spring Security デフォルト） |
+| **ポリシー** | 8〜128文字、英大文字・英小文字・数字を各1文字以上必須 |
+| **ハッシュ** | BCrypt（Spring Security デフォルト、strength=12） |
 | **初回ログイン** | SYSTEM_ADMINが初期パスワードを発行。初回ログイン時にパスワード変更を強制（変更完了まで他操作不可） |
 | **初回フラグ** | `users` テーブルの `password_change_required` フラグで管理 |
 
@@ -80,7 +82,7 @@ sequenceDiagram
 | 項目 | 内容 |
 |------|------|
 | **許可オリジン** | Blob Static Website URL（dev / prd 各環境のみ）。環境変数で設定 |
-| **許可メソッド** | GET, POST, PUT, DELETE, OPTIONS |
+| **許可メソッド** | GET, POST, PUT, PATCH, DELETE, OPTIONS |
 | **許可ヘッダー** | Content-Type |
 | **認証情報** | `allowCredentials: true`（Cookie送信のため） |
 

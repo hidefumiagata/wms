@@ -60,6 +60,7 @@
     <p style="color:#888;margin-top:8px;font-size:0.9rem;">Architecture Blueprint</p>
   </div>
   
+  
   <div class="toc">
     <strong>目次</strong>
     <ol>
@@ -97,7 +98,7 @@
 <tbody>
 <tr><td>入荷</td><td><code>inbound</code></td><td>入荷予定・入荷検品・入庫指示</td></tr>
 <tr><td>在庫</td><td><code>inventory</code></td><td>ロケーション管理・棚卸・在庫照会</td></tr>
-<tr><td>在庫引当</td><td><code>allocation</code></td><td>受注データを元に出荷分在庫を引き当て・ピッキング可能化</td></tr>
+<tr><td>在庫引当</td><td><code>allocation</code></td><td>受注データを元に出荷分在庫を引き当て・ピッキング可能化。画面・APIを持つ独立モジュールとして実装する</td></tr>
 <tr><td>出荷</td><td><code>outbound</code></td><td>ピッキング指示・出荷検品・配送指示</td></tr>
 <tr><td>マスタ</td><td><code>master</code></td><td>商品・取引先・ロケーション・ユーザ</td></tr>
 <tr><td>レポート</td><td><code>report</code></td><td>各種帳票・一覧出力</td></tr>
@@ -132,7 +133,7 @@
 <h1>システム構成</h1>
 <div class="drawio-container">
   <div class="drawio-title">📊 diagrams/system-architecture.drawio</div>
-  <div class="mxgraph" style="max-width:100%;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;zoom layers lightbox&quot;,&quot;xml&quot;:&quot;&lt;mxfile host=\&quot;app.diagrams.net\&quot; version=\&quot;21.0.0\&quot;&gt;\r\n  &lt;diagram name=\&quot;system-architecture\&quot; id=\&quot;wms-system-arch\&quot;&gt;\r\n    &lt;mxGraphModel dx=\&quot;1422\&quot; dy=\&quot;762\&quot; grid=\&quot;0\&quot; gridSize=\&quot;10\&quot; guides=\&quot;1\&quot; tooltips=\&quot;1\&quot; connect=\&quot;1\&quot; arrows=\&quot;1\&quot; fold=\&quot;1\&quot; page=\&quot;0\&quot; pageScale=\&quot;1\&quot; pageWidth=\&quot;1500\&quot; pageHeight=\&quot;1060\&quot; math=\&quot;0\&quot; shadow=\&quot;0\&quot;&gt;\r\n      &lt;root&gt;\r\n        &lt;mxCell id=\&quot;0\&quot;/&gt;\r\n        &lt;mxCell id=\&quot;1\&quot; parent=\&quot;0\&quot;/&gt;\r\n\r\n        &lt;!-- ===== TITLE ===== --&gt;\r\n        &lt;mxCell id=\&quot;title\&quot; value=\&quot;WMS システム概念図\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=18;fontStyle=1;fontColor=#1A1A2E;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;400\&quot; y=\&quot;18\&quot; width=\&quot;700\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== USER / EXTERNAL AREA (band) ===== --&gt;\r\n        &lt;mxCell id=\&quot;user-band\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;dashed=1;dashPattern=6 3;opacity=30;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;68\&quot; width=\&quot;1460\&quot; height=\&quot;90\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;user-band-lbl\&quot; value=\&quot;ユーザー / 外部システム\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;align=left;fontColor=#888888;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;34\&quot; y=\&quot;74\&quot; width=\&quot;220\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;mxCell id=\&quot;browser\&quot; value=\&quot;ブラウザ / クライアント&amp;#xa;（倉庫スタッフ / 管理者）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#333333;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;155\&quot; y=\&quot;96\&quot; width=\&quot;180\&quot; height=\&quot;52\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;ext\&quot; value=\&quot;外部システム（ERP / EC 等）&amp;#xa;※モック（手動CSV配置）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontColor=#AAAAAA;fontSize=11;dashed=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1220\&quot; y=\&quot;96\&quot; width=\&quot;210\&quot; height=\&quot;52\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== AZURE RUNTIME AREA ===== --&gt;\r\n        &lt;mxCell id=\&quot;azure-bg\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#E6F3FB;strokeColor=#0078D4;dashed=1;dashPattern=8 4;opacity=35;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;175\&quot; width=\&quot;1460\&quot; height=\&quot;580\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;azure-lbl\&quot; value=\&quot;Microsoft Azure — 実行・運用領域\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#0078D4;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;182\&quot; width=\&quot;500\&quot; height=\&quot;25\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== FRONTEND LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;fe-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#DBEEFF;strokeColor=#0078D4;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;218\&quot; width=\&quot;230\&quot; height=\&quot;215\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;fe-layer-lbl\&quot; value=\&quot;フロントエンド層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#0078D4;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;223\&quot; width=\&quot;230\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;mxCell id=\&quot;fe-blob\&quot; value=\&quot;Azure Blob Storage（$web）&amp;#xa;静的Webサイトホスティング\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#005A9E;fontColor=#FFFFFF;fontSize=11;fontStyle=1;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;56\&quot; y=\&quot;246\&quot; width=\&quot;198\&quot; height=\&quot;70\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;fe-stack\&quot; value=\&quot;Vue 3 + TypeScript&amp;#xa;Element Plus / Pinia&amp;#xa;vue-i18n（日英）/ Vite\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0078D4;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;56\&quot; y=\&quot;326\&quot; width=\&quot;198\&quot; height=\&quot;92\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== BACKEND LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;be-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#EFF8EF;strokeColor=#4CAF50;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;320\&quot; y=\&quot;218\&quot; width=\&quot;680\&quot; height=\&quot;330\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;be-layer-lbl\&quot; value=\&quot;バックエンド層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#2E7D32;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;320\&quot; y=\&quot;223\&quot; width=\&quot;680\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Container Apps outer box --&gt;\r\n        &lt;mxCell id=\&quot;ca-box\&quot; value=\&quot;Azure Container Apps　—　Spring Boot 3.x / Java 21　—　Gradle\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontStyle=1;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;336\&quot; y=\&quot;245\&quot; width=\&quot;648\&quot; height=\&quot;290\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- API Gateway / Auth layer --&gt;\r\n        &lt;mxCell id=\&quot;api-gw\&quot; value=\&quot;API Gateway Layer　—　認証・ルーティング・CORS　|　ベースパス: /api/v1/\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;272\&quot; width=\&quot;616\&quot; height=\&quot;33\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Business modules background --&gt;\r\n        &lt;mxCell id=\&quot;mod-bg\&quot; value=\&quot;業務モジュール\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4E8;strokeColor=#82B366;fontSize=10;fontStyle=2;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;316\&quot; width=\&quot;616\&quot; height=\&quot;115\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-inbound\&quot; value=\&quot;入荷管理&amp;#xa;inbound\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;368\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-inventory\&quot; value=\&quot;在庫管理&amp;#xa;inventory\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;468\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-allocation\&quot; value=\&quot;在庫引当&amp;#xa;allocation\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=10;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;568\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-outbound\&quot; value=\&quot;出荷管理&amp;#xa;outbound\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;668\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-master\&quot; value=\&quot;マスタ管理&amp;#xa;master\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;368\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-report\&quot; value=\&quot;レポート&amp;#xa;report\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;468\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-batch\&quot; value=\&quot;バッチ処理&amp;#xa;batch\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;568\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-if\&quot; value=\&quot;外部連携I/F&amp;#xa;interfacing\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;668\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Shared layer --&gt;\r\n        &lt;mxCell id=\&quot;shared\&quot; value=\&quot;Shared 共通基盤　—　認証（JWT + httpOnly Cookie）/ ロギング / エラー処理 / バリデーション\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;434\&quot; width=\&quot;616\&quot; height=\&quot;35\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;ca-tech\&quot; value=\&quot;Spring Data JPA + Flyway　/　Spring Security　/　Springdoc OpenAPI　/　JUnit 5 + Mockito\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#666666;align=center;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;477\&quot; width=\&quot;616\&quot; height=\&quot;20\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== DATA / INTEGRATION LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;data-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#FFF8E1;strokeColor=#FFA726;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;218\&quot; width=\&quot;262\&quot; height=\&quot;275\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;data-lbl\&quot; value=\&quot;データ・連携層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#E65100;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;223\&quot; width=\&quot;262\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;pg\&quot; value=\&quot;Azure Database for&amp;#xa;PostgreSQL Flexible Server&amp;#xa;B1ms (1vCore, 2GB)&amp;#xa;VNet プライベートエンドポイント\&quot; style=\&quot;shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontStyle=1;size=12;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1076\&quot; y=\&quot;246\&quot; width=\&quot;226\&quot; height=\&quot;115\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;blob-if\&quot; value=\&quot;Azure Blob Storage（iffiles）&amp;#xa;入荷予定CSV / 受注CSV&amp;#xa;pending/ → processed/\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1076\&quot; y=\&quot;380\&quot; width=\&quot;226\&quot; height=\&quot;80\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== MONITORING LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;mon-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#F3E5F5;strokeColor=#9C27B0;opacity=50;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;508\&quot; width=\&quot;262\&quot; height=\&quot;162\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;mon-lbl\&quot; value=\&quot;監視・運用層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#6A1B9A;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;513\&quot; width=\&quot;262\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;law\&quot; value=\&quot;Log Analytics Workspace&amp;#xa;アプリログ保存（30日）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1074\&quot; y=\&quot;538\&quot; width=\&quot;230\&quot; height=\&quot;50\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;azmon\&quot; value=\&quot;Azure Monitor&amp;#xa;アラート → メール通知\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1074\&quot; y=\&quot;598\&quot; width=\&quot;230\&quot; height=\&quot;50\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== DEV / DEPLOY AREA ===== --&gt;\r\n        &lt;mxCell id=\&quot;dev-area\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#263238;strokeColor=#546E7A;opacity=12;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;778\&quot; width=\&quot;1460\&quot; height=\&quot;250\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;dev-area-lbl\&quot; value=\&quot;開発・デプロイ領域\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#546E7A;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;784\&quot; width=\&quot;350\&quot; height=\&quot;25\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Repository --&gt;\r\n        &lt;mxCell id=\&quot;gh-repo\&quot; value=\&quot;GitHub Repository&amp;#xa;&amp;#xa;frontend/　backend/&amp;#xa;infra/（Terraform）&amp;#xa;docs/（ドキュメント）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#24292E;strokeColor=#444D56;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;55\&quot; y=\&quot;820\&quot; width=\&quot;185\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions --&gt;\r\n        &lt;mxCell id=\&quot;gh-actions\&quot; value=\&quot;GitHub Actions — CI/CD&amp;#xa;&amp;#xa;CI: Lint / Test / Build / Docker Build&amp;#xa;CD (dev): push to main → 自動デプロイ&amp;#xa;CD (prd): 手動承認 → デプロイ\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#2088FF;strokeColor=#0068D6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;310\&quot; y=\&quot;820\&quot; width=\&quot;300\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ACR --&gt;\r\n        &lt;mxCell id=\&quot;acr\&quot; value=\&quot;Azure Container Registry&amp;#xa;（acrwms）&amp;#xa;&amp;#xa;Dockerイメージ管理&amp;#xa;sha-{hash} / v1.0.0\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;690\&quot; y=\&quot;820\&quot; width=\&quot;200\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Terraform --&gt;\r\n        &lt;mxCell id=\&quot;tf\&quot; value=\&quot;Terraform IaC&amp;#xa;&amp;#xa;terraform apply　→　インフラ一式構築&amp;#xa;terraform destroy　→　全削除&amp;#xa;State: wms-terraform サブスク\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#623CE4;strokeColor=#4B2DB5;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;970\&quot; y=\&quot;820\&quot; width=\&quot;265\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== LEGEND ===== --&gt;\r\n        &lt;mxCell id=\&quot;leg-bg\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1305\&quot; y=\&quot;820\&quot; width=\&quot;170\&quot; height=\&quot;180\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg-title\&quot; value=\&quot;凡例\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;align=center;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1365\&quot; y=\&quot;828\&quot; width=\&quot;50\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg1\&quot; value=\&quot;業務モジュール\&quot; style=\&quot;rounded=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;852\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg2\&quot; value=\&quot;在庫引当（独立モジュール）\&quot; style=\&quot;rounded=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=9;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;880\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg3\&quot; value=\&quot;外部連携（モック）\&quot; style=\&quot;rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontSize=9;dashed=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;908\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg4\&quot; value=\&quot;Azure サービス\&quot; style=\&quot;rounded=1;fillColor=#0078D4;fontColor=#FFFFFF;strokeColor=#005A9E;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;936\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg5\&quot; value=\&quot;開発・デプロイ\&quot; style=\&quot;rounded=1;fillColor=#24292E;fontColor=#FFFFFF;strokeColor=#444D56;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;964\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== EDGES ===== --&gt;\r\n\r\n        &lt;!-- Browser → Frontend (HTTPS) --&gt;\r\n        &lt;mxCell id=\&quot;e-br-fe\&quot; value=\&quot;HTTPS\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0078D4;\&quot; edge=\&quot;1\&quot; source=\&quot;browser\&quot; target=\&quot;fe-blob\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Browser → API GW (REST API) --&gt;\r\n        &lt;mxCell id=\&quot;e-br-api\&quot; value=\&quot;HTTPS / REST API / JWT Cookie\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;\&quot; edge=\&quot;1\&quot; source=\&quot;browser\&quot; target=\&quot;api-gw\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Frontend SPA → API GW (API呼び出し) --&gt;\r\n        &lt;mxCell id=\&quot;e-fe-api\&quot; value=\&quot;API呼び出し\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#4CAF50;\&quot; edge=\&quot;1\&quot; source=\&quot;fe-stack\&quot; target=\&quot;api-gw\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- External → Blob iffiles (CSV配置) --&gt;\r\n        &lt;mxCell id=\&quot;e-ext-if\&quot; value=\&quot;CSV配置\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#AAAAAA;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;ext\&quot; target=\&quot;blob-if\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Backend → PostgreSQL --&gt;\r\n        &lt;mxCell id=\&quot;e-be-pg\&quot; value=\&quot;JPA / JDBC\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#6C8EBF;\&quot; edge=\&quot;1\&quot; source=\&quot;ca-box\&quot; target=\&quot;pg\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- interfacing → Blob iffiles (CSV読取) --&gt;\r\n        &lt;mxCell id=\&quot;e-if-blob\&quot; value=\&quot;CSV読取\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D9A520;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;m-if\&quot; target=\&quot;blob-if\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Backend → Log Analytics --&gt;\r\n        &lt;mxCell id=\&quot;e-be-law\&quot; value=\&quot;ログ送信\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#9673A6;\&quot; edge=\&quot;1\&quot; source=\&quot;ca-box\&quot; target=\&quot;law\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Repo → GitHub Actions --&gt;\r\n        &lt;mxCell id=\&quot;e-gh-ga\&quot; value=\&quot;push / PR\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#24292E;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-repo\&quot; target=\&quot;gh-actions\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions → ACR (docker push) --&gt;\r\n        &lt;mxCell id=\&quot;e-ga-acr\&quot; value=\&quot;docker push\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-actions\&quot; target=\&quot;acr\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions → Frontend (az storage upload) --&gt;\r\n        &lt;mxCell id=\&quot;e-ga-fe\&quot; value=\&quot;az storage upload\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-actions\&quot; target=\&quot;fe-blob\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ACR → Container Apps (docker pull) --&gt;\r\n        &lt;mxCell id=\&quot;e-acr-ca\&quot; value=\&quot;docker pull\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;acr\&quot; target=\&quot;ca-box\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Terraform → Azure (manage) --&gt;\r\n        &lt;mxCell id=\&quot;e-tf-az\&quot; value=\&quot;インフラ管理&amp;#xa;Deploy / Destroy\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#623CE4;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;tf\&quot; target=\&quot;azure-bg\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n      &lt;/root&gt;\r\n    &lt;/mxGraphModel&gt;\r\n  &lt;/diagram&gt;\r\n&lt;/mxfile&gt;\r\n&quot;}"></div>
+  <div class="mxgraph" style="max-width:100%;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;toolbar&quot;:&quot;zoom layers lightbox&quot;,&quot;xml&quot;:&quot;&lt;mxfile host=\&quot;app.diagrams.net\&quot; version=\&quot;21.0.0\&quot;&gt;\r\n  &lt;diagram name=\&quot;system-architecture\&quot; id=\&quot;wms-system-arch\&quot;&gt;\r\n    &lt;mxGraphModel dx=\&quot;1422\&quot; dy=\&quot;762\&quot; grid=\&quot;0\&quot; gridSize=\&quot;10\&quot; guides=\&quot;1\&quot; tooltips=\&quot;1\&quot; connect=\&quot;1\&quot; arrows=\&quot;1\&quot; fold=\&quot;1\&quot; page=\&quot;0\&quot; pageScale=\&quot;1\&quot; pageWidth=\&quot;1500\&quot; pageHeight=\&quot;1060\&quot; math=\&quot;0\&quot; shadow=\&quot;0\&quot;&gt;\r\n      &lt;root&gt;\r\n        &lt;mxCell id=\&quot;0\&quot;/&gt;\r\n        &lt;mxCell id=\&quot;1\&quot; parent=\&quot;0\&quot;/&gt;\r\n\r\n        &lt;!-- ===== TITLE ===== --&gt;\r\n        &lt;mxCell id=\&quot;title\&quot; value=\&quot;WMS システム概念図\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=18;fontStyle=1;fontColor=#1A1A2E;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;400\&quot; y=\&quot;18\&quot; width=\&quot;700\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== USER / EXTERNAL AREA (band) ===== --&gt;\r\n        &lt;mxCell id=\&quot;user-band\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;dashed=1;dashPattern=6 3;opacity=30;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;68\&quot; width=\&quot;1460\&quot; height=\&quot;90\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;user-band-lbl\&quot; value=\&quot;ユーザー / 外部システム\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=2;fontSize=10;align=left;fontColor=#888888;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;34\&quot; y=\&quot;74\&quot; width=\&quot;220\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;mxCell id=\&quot;browser\&quot; value=\&quot;ブラウザ / クライアント&amp;#xa;（倉庫スタッフ / 管理者）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#333333;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;155\&quot; y=\&quot;96\&quot; width=\&quot;180\&quot; height=\&quot;52\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;ext\&quot; value=\&quot;外部システム（ERP / EC 等）&amp;#xa;※モック（手動CSV配置）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontColor=#AAAAAA;fontSize=11;dashed=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1220\&quot; y=\&quot;96\&quot; width=\&quot;210\&quot; height=\&quot;52\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== AZURE RUNTIME AREA ===== --&gt;\r\n        &lt;mxCell id=\&quot;azure-bg\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#E6F3FB;strokeColor=#0078D4;dashed=1;dashPattern=8 4;opacity=35;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;175\&quot; width=\&quot;1460\&quot; height=\&quot;580\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;azure-lbl\&quot; value=\&quot;Microsoft Azure — 実行・運用領域\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#0078D4;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;182\&quot; width=\&quot;500\&quot; height=\&quot;25\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== FRONTEND LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;fe-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#DBEEFF;strokeColor=#0078D4;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;218\&quot; width=\&quot;230\&quot; height=\&quot;215\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;fe-layer-lbl\&quot; value=\&quot;フロントエンド層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#0078D4;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;223\&quot; width=\&quot;230\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;mxCell id=\&quot;fe-blob\&quot; value=\&quot;Azure Blob Storage（$web）&amp;#xa;静的Webサイトホスティング\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#005A9E;fontColor=#FFFFFF;fontSize=11;fontStyle=1;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;56\&quot; y=\&quot;246\&quot; width=\&quot;198\&quot; height=\&quot;70\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;fe-stack\&quot; value=\&quot;Vue 3 + TypeScript&amp;#xa;Element Plus / Pinia&amp;#xa;vue-i18n（日英）/ Vite\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0078D4;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;56\&quot; y=\&quot;326\&quot; width=\&quot;198\&quot; height=\&quot;92\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== BACKEND LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;be-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#EFF8EF;strokeColor=#4CAF50;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;320\&quot; y=\&quot;218\&quot; width=\&quot;680\&quot; height=\&quot;330\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;be-layer-lbl\&quot; value=\&quot;バックエンド層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#2E7D32;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;320\&quot; y=\&quot;223\&quot; width=\&quot;680\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Container Apps outer box --&gt;\r\n        &lt;mxCell id=\&quot;ca-box\&quot; value=\&quot;Azure Container Apps　—　Spring Boot 3.x / Java 21　—　Gradle\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;fontStyle=1;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;336\&quot; y=\&quot;245\&quot; width=\&quot;648\&quot; height=\&quot;290\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- API Gateway / Auth layer --&gt;\r\n        &lt;mxCell id=\&quot;api-gw\&quot; value=\&quot;API Gateway Layer　—　認証・ルーティング・CORS　|　ベースパス: /api/v1/\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;272\&quot; width=\&quot;616\&quot; height=\&quot;33\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Business modules background --&gt;\r\n        &lt;mxCell id=\&quot;mod-bg\&quot; value=\&quot;業務モジュール\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF4E8;strokeColor=#82B366;fontSize=10;fontStyle=2;verticalAlign=top;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;316\&quot; width=\&quot;616\&quot; height=\&quot;115\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-inbound\&quot; value=\&quot;入荷管理&amp;#xa;inbound\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;368\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-inventory\&quot; value=\&quot;在庫管理&amp;#xa;inventory\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;468\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-allocation\&quot; value=\&quot;在庫引当&amp;#xa;allocation\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=10;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;568\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-outbound\&quot; value=\&quot;出荷管理&amp;#xa;outbound\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;668\&quot; y=\&quot;340\&quot; width=\&quot;90\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-master\&quot; value=\&quot;マスタ管理&amp;#xa;master\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;368\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-report\&quot; value=\&quot;レポート&amp;#xa;report\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;468\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-batch\&quot; value=\&quot;バッチ処理&amp;#xa;batch\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;568\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;m-if\&quot; value=\&quot;外部連携I/F&amp;#xa;interfacing\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;668\&quot; y=\&quot;388\&quot; width=\&quot;90\&quot; height=\&quot;36\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Shared layer --&gt;\r\n        &lt;mxCell id=\&quot;shared\&quot; value=\&quot;Shared 共通基盤　—　認証（JWT + httpOnly Cookie）/ ロギング / エラー処理 / バリデーション\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;434\&quot; width=\&quot;616\&quot; height=\&quot;35\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;ca-tech\&quot; value=\&quot;Spring Data JPA + Flyway　/　Spring Security　/　Springdoc OpenAPI　/　JUnit 5 + Mockito\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontSize=9;fontStyle=2;fontColor=#666666;align=center;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;352\&quot; y=\&quot;477\&quot; width=\&quot;616\&quot; height=\&quot;20\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== DATA / INTEGRATION LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;data-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#FFF8E1;strokeColor=#FFA726;opacity=60;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;218\&quot; width=\&quot;262\&quot; height=\&quot;330\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;data-lbl\&quot; value=\&quot;データ・連携層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#E65100;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;223\&quot; width=\&quot;262\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;pg\&quot; value=\&quot;Azure Database for&amp;#xa;PostgreSQL Flexible Server&amp;#xa;B1ms (1vCore, 2GB)&amp;#xa;VNet プライベートエンドポイント\&quot; style=\&quot;shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontStyle=1;size=12;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1076\&quot; y=\&quot;246\&quot; width=\&quot;226\&quot; height=\&quot;115\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;blob-if\&quot; value=\&quot;Azure Blob Storage（iffiles）&amp;#xa;入荷予定CSV / 受注CSV&amp;#xa;pending/ → processed/\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3C4;strokeColor=#D9A520;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1076\&quot; y=\&quot;380\&quot; width=\&quot;226\&quot; height=\&quot;80\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;mxCell id=\&quot;acs-email\&quot; value=\&quot;Azure Communication Services&amp;#xa;Email（パスワードリセット）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=10;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1076\&quot; y=\&quot;470\&quot; width=\&quot;226\&quot; height=\&quot;50\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Backend → ACS Email --&gt;\r\n        &lt;mxCell id=\&quot;e-be-acs\&quot; value=\&quot;メール送信\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#6C8EBF;\&quot; edge=\&quot;1\&quot; source=\&quot;ca-box\&quot; target=\&quot;acs-email\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== MONITORING LAYER ===== --&gt;\r\n        &lt;mxCell id=\&quot;mon-layer\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#F3E5F5;strokeColor=#9C27B0;opacity=50;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;508\&quot; width=\&quot;262\&quot; height=\&quot;162\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;mon-lbl\&quot; value=\&quot;監視・運用層\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;align=center;fontColor=#6A1B9A;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1058\&quot; y=\&quot;513\&quot; width=\&quot;262\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;law\&quot; value=\&quot;Log Analytics Workspace&amp;#xa;アプリログ保存（30日）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1074\&quot; y=\&quot;538\&quot; width=\&quot;230\&quot; height=\&quot;50\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;azmon\&quot; value=\&quot;Azure Monitor&amp;#xa;アラート → メール通知\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=10;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1074\&quot; y=\&quot;598\&quot; width=\&quot;230\&quot; height=\&quot;50\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== DEV / DEPLOY AREA ===== --&gt;\r\n        &lt;mxCell id=\&quot;dev-area\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#263238;strokeColor=#546E7A;opacity=12;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;20\&quot; y=\&quot;778\&quot; width=\&quot;1460\&quot; height=\&quot;250\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;dev-area-lbl\&quot; value=\&quot;開発・デプロイ領域\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=13;align=left;fontColor=#546E7A;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;784\&quot; width=\&quot;350\&quot; height=\&quot;25\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Repository --&gt;\r\n        &lt;mxCell id=\&quot;gh-repo\&quot; value=\&quot;GitHub Repository&amp;#xa;&amp;#xa;frontend/　backend/&amp;#xa;infra/（Terraform）&amp;#xa;docs/（ドキュメント）\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#24292E;strokeColor=#444D56;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;55\&quot; y=\&quot;820\&quot; width=\&quot;185\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions --&gt;\r\n        &lt;mxCell id=\&quot;gh-actions\&quot; value=\&quot;GitHub Actions — CI/CD&amp;#xa;&amp;#xa;CI: Lint / Test / Build / Docker Build&amp;#xa;CD (dev): push to main → 自動デプロイ&amp;#xa;CD (prd): 手動承認 → デプロイ\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#2088FF;strokeColor=#0068D6;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;310\&quot; y=\&quot;820\&quot; width=\&quot;300\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ACR --&gt;\r\n        &lt;mxCell id=\&quot;acr\&quot; value=\&quot;Azure Container Registry&amp;#xa;（acrwms）&amp;#xa;&amp;#xa;Dockerイメージ管理&amp;#xa;sha-{hash} / v1.0.0\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;690\&quot; y=\&quot;820\&quot; width=\&quot;200\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Terraform --&gt;\r\n        &lt;mxCell id=\&quot;tf\&quot; value=\&quot;Terraform IaC&amp;#xa;&amp;#xa;terraform apply　→　インフラ一式構築&amp;#xa;terraform destroy　→　全削除&amp;#xa;State: wms-terraform サブスク\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;fillColor=#623CE4;strokeColor=#4B2DB5;fontColor=#FFFFFF;fontSize=11;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;970\&quot; y=\&quot;820\&quot; width=\&quot;265\&quot; height=\&quot;130\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== LEGEND ===== --&gt;\r\n        &lt;mxCell id=\&quot;leg-bg\&quot; value=\&quot;\&quot; style=\&quot;rounded=1;fillColor=#FAFAFA;strokeColor=#CCCCCC;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1305\&quot; y=\&quot;820\&quot; width=\&quot;170\&quot; height=\&quot;180\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg-title\&quot; value=\&quot;凡例\&quot; style=\&quot;text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;align=center;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1365\&quot; y=\&quot;828\&quot; width=\&quot;50\&quot; height=\&quot;18\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg1\&quot; value=\&quot;業務モジュール\&quot; style=\&quot;rounded=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;852\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg2\&quot; value=\&quot;在庫引当（独立モジュール）\&quot; style=\&quot;rounded=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=9;fontStyle=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;880\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg3\&quot; value=\&quot;外部連携（モック）\&quot; style=\&quot;rounded=1;fillColor=#F5F5F5;strokeColor=#AAAAAA;fontSize=9;dashed=1;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;908\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg4\&quot; value=\&quot;Azure サービス\&quot; style=\&quot;rounded=1;fillColor=#0078D4;fontColor=#FFFFFF;strokeColor=#005A9E;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;936\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n        &lt;mxCell id=\&quot;leg5\&quot; value=\&quot;開発・デプロイ\&quot; style=\&quot;rounded=1;fillColor=#24292E;fontColor=#FFFFFF;strokeColor=#444D56;fontSize=9;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry x=\&quot;1315\&quot; y=\&quot;964\&quot; width=\&quot;150\&quot; height=\&quot;22\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ===== EDGES ===== --&gt;\r\n\r\n        &lt;!-- Browser → Frontend (HTTPS) --&gt;\r\n        &lt;mxCell id=\&quot;e-br-fe\&quot; value=\&quot;HTTPS\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#0078D4;\&quot; edge=\&quot;1\&quot; source=\&quot;browser\&quot; target=\&quot;fe-blob\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Browser → API GW (REST API) --&gt;\r\n        &lt;mxCell id=\&quot;e-br-api\&quot; value=\&quot;HTTPS / REST API / JWT Cookie\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;\&quot; edge=\&quot;1\&quot; source=\&quot;browser\&quot; target=\&quot;api-gw\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Frontend SPA → API GW (API呼び出し) --&gt;\r\n        &lt;mxCell id=\&quot;e-fe-api\&quot; value=\&quot;API呼び出し\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#4CAF50;\&quot; edge=\&quot;1\&quot; source=\&quot;fe-stack\&quot; target=\&quot;api-gw\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- External → Blob iffiles (CSV配置) --&gt;\r\n        &lt;mxCell id=\&quot;e-ext-if\&quot; value=\&quot;CSV配置\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#AAAAAA;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;ext\&quot; target=\&quot;blob-if\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Backend → PostgreSQL --&gt;\r\n        &lt;mxCell id=\&quot;e-be-pg\&quot; value=\&quot;JPA / JDBC\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#6C8EBF;\&quot; edge=\&quot;1\&quot; source=\&quot;ca-box\&quot; target=\&quot;pg\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- interfacing → Blob iffiles (CSV読取) --&gt;\r\n        &lt;mxCell id=\&quot;e-if-blob\&quot; value=\&quot;CSV読取\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#D9A520;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;m-if\&quot; target=\&quot;blob-if\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Backend → Log Analytics --&gt;\r\n        &lt;mxCell id=\&quot;e-be-law\&quot; value=\&quot;ログ送信\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#9673A6;\&quot; edge=\&quot;1\&quot; source=\&quot;ca-box\&quot; target=\&quot;law\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Repo → GitHub Actions --&gt;\r\n        &lt;mxCell id=\&quot;e-gh-ga\&quot; value=\&quot;push / PR\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#24292E;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-repo\&quot; target=\&quot;gh-actions\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions → ACR (docker push) --&gt;\r\n        &lt;mxCell id=\&quot;e-ga-acr\&quot; value=\&quot;docker push\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-actions\&quot; target=\&quot;acr\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- GitHub Actions → Frontend (az storage upload) --&gt;\r\n        &lt;mxCell id=\&quot;e-ga-fe\&quot; value=\&quot;az storage upload\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#2088FF;\&quot; edge=\&quot;1\&quot; source=\&quot;gh-actions\&quot; target=\&quot;fe-blob\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- ACR → Container Apps (docker pull) --&gt;\r\n        &lt;mxCell id=\&quot;e-acr-ca\&quot; value=\&quot;docker pull\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#B85450;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;acr\&quot; target=\&quot;ca-box\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n        &lt;!-- Terraform → Azure (manage) --&gt;\r\n        &lt;mxCell id=\&quot;e-tf-az\&quot; value=\&quot;インフラ管理&amp;#xa;Deploy / Destroy\&quot; style=\&quot;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#623CE4;dashed=1;\&quot; edge=\&quot;1\&quot; source=\&quot;tf\&quot; target=\&quot;azure-bg\&quot; parent=\&quot;1\&quot;&gt;\r\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;/&gt;\r\n        &lt;/mxCell&gt;\r\n\r\n      &lt;/root&gt;\r\n    &lt;/mxGraphModel&gt;\r\n  &lt;/diagram&gt;\r\n&lt;/mxfile&gt;\r\n&quot;}"></div>
 </div>
 <h2>構成サマリー</h2>
 <table>
@@ -145,19 +146,15 @@
 <tr><td><strong>データベース</strong></td><td>Azure Database for PostgreSQL Flexible Server（B1ms）</td><td>✅ 確定</td></tr>
 <tr><td><strong>認証方式</strong></td><td>JWT + httpOnly Cookie</td><td>✅ 確定</td></tr>
 <tr><td><strong>バッチ実行</strong></td><td><code>POST /api/v1/batch/{name}</code>（手動実行）</td><td>✅ 確定</td></tr>
+<tr><td><strong>メール送信</strong></td><td>Azure Communication Services（Email）</td><td>✅ 確定</td></tr>
 <tr><td><strong>クラウド</strong></td><td>Azure</td><td>✅ 確定</td></tr>
 <tr><td><strong>IaC</strong></td><td>Terraform</td><td>✅ 確定</td></tr>
 <p></tbody><br></table></p>
 <h2>コスト方針</h2>
-<table>
-<thead><tr><th>状態</th><th>月額概算</th></tr></thead>
-<tbody>
-<tr><td><strong>稼働時（デモ・開発時）</strong></td><td>~$18/月</td></tr>
-<tr><td><strong>停止時（未使用時）</strong></td><td>~$4/月（Blob Storageのみ）</td></tr>
-<p></tbody><br></table></p>
+<p>詳細なコスト見積もりは <a href="../architecture-design/02-system-architecture.md" target="_blank">architecture-design/02-system-architecture.md</a> の付録Aを参照。</p>
 <ul><li style="margin-left:0px">Azure Container Apps：min replicas=0 でリクエストなし時はゼロコスト</li><li style="margin-left:0px">PostgreSQL Flexible Server：未使用時は停止（ストレージのみ課金）</li><li style="margin-left:0px">⚠️ PostgreSQL は7日間で自動再起動されるため定期的に停止操作が必要</li></ul>
 <h2>通信フロー</h2>
-<ul><li style="margin-left:0px">ユーザー → Azure Blob Storage：静的ファイル（HTML/CSS/JS）取得</li><li style="margin-left:0px">ユーザー → Azure Container Apps：HTTPS / REST API（JWT認証）</li><li style="margin-left:0px">バックエンド → PostgreSQL：SQL</li><li style="margin-left:0px">バックエンド → Azure Blob Storage：I/Fファイル取得</li><li style="margin-left:0px">外部システム → Azure Blob Storage：CSVアップロード（モック）</li></ul>
+<ul><li style="margin-left:0px">ユーザー → Azure Blob Storage：静的ファイル（HTML/CSS/JS）取得</li><li style="margin-left:0px">ユーザー → Azure Container Apps：HTTPS / REST API（JWT認証）</li><li style="margin-left:0px">バックエンド → PostgreSQL：SQL</li><li style="margin-left:0px">バックエンド → Azure Blob Storage：I/Fファイル取得</li><li style="margin-left:0px">外部システム → Azure Blob Storage：CSVアップロード（モック）</li><li style="margin-left:0px">バックエンド → Azure Communication Services：パスワードリセットメール送信</li></ul>
 <h2>CORS設定</h2>
 <p>フロントエンド（Blob Storage）とバックエンドAPIは異なるオリジンになるため、APIサーバー側でCORSを設定する。<br>許可オリジン：Blob Static Website URL（dev/prd各環境）</p>
 </div>
@@ -200,38 +197,230 @@
 <p>ヘッダーには <strong>現在営業日</strong> を常時表示する。ログイン後、全画面で営業日が確認できる。<br>営業日は <code>GET /api/v1/system/business-date</code> で取得し、Pinia ストアで状態管理する。</p>
 <h2>多言語対応</h2>
 <ul><li style="margin-left:0px"><strong>vue-i18n</strong> を使用</li><li style="margin-left:0px">初期対応言語：日本語（ja）・英語（en）</li><li style="margin-left:0px">言語ファイル：<code>src/locales/ja.json</code>、<code>src/locales/en.json</code></li><li style="margin-left:0px">デフォルト言語：日本語</li><li style="margin-left:0px">言語切替：ヘッダーから選択可能</li></ul>
-<h2>ディレクトリ構成（案）</h2>
+<h2>ディレクトリ構成</h2>
 <pre><code class="lang-">frontend/
 ├── src/
-│   ├── assets/          # 静的ファイル
-│   ├── components/      # 共通コンポーネント
-│   ├── composables/     # Composition API（共通ロジック）
-│   ├── layouts/         # レイアウトコンポーネント
-│   ├── locales/         # i18n言語ファイル
+│   ├── assets/              # 静的ファイル
+│   ├── components/          # 共通UIコンポーネント
+│   ├── composables/         # 画面単位のComposable（後述）
+│   │   ├── master/
+│   │   │   ├── useWarehouseList.ts
+│   │   │   ├── useWarehouseForm.ts
+│   │   │   └── ...
+│   │   ├── inbound/
+│   │   ├── inventory/
+│   │   ├── outbound/
+│   │   └── batch/
+│   ├── layouts/             # レイアウトコンポーネント
+│   │   ├── DefaultLayout.vue    # サイドメニュー付きレイアウト
+│   │   └── BlankLayout.vue      # ログイン画面用（メニューなし）
+│   ├── locales/             # i18n言語ファイル
 │   │   ├── ja.json
 │   │   └── en.json
-│   ├── router/          # Vue Router設定
-│   ├── stores/          # Piniaストア（systemStore: 営業日管理を含む）
-│   ├── types/           # TypeScript型定義
-│   ├── utils/           # ユーティリティ関数
-│   ├── views/           # ページコンポーネント
-│   │   ├── inbound/     # 入荷管理画面
-│   │   ├── inventory/   # 在庫管理画面
-│   │   ├── outbound/    # 出荷管理画面
-│   │   ├── master/      # マスタ管理画面
-│   │   ├── report/      # レポート画面
-│   │   └── batch/       # バッチ実行画面
+│   ├── router/              # Vue Router設定
+│   │   └── index.ts
+│   ├── stores/              # Piniaストア（後述）
+│   │   ├── auth.ts          # authStore
+│   │   └── system.ts        # systemStore
+│   ├── types/               # TypeScript型定義
+│   │   └── generated/       # OpenAPIから自動生成（手動編集禁止）
+│   ├── utils/               # ユーティリティ関数
+│   │   └── api.ts           # Axiosインスタンス・インターセプター設定
+│   ├── views/               # ページコンポーネント（.vue）
+│   │   ├── auth/
+│   │   ├── inbound/
+│   │   ├── inventory/
+│   │   ├── outbound/
+│   │   ├── master/
+│   │   ├── report/
+│   │   └── batch/
 │   ├── App.vue
 │   └── main.ts
 ├── tests/
-│   ├── unit/            # Vitestユニットテスト
-│   └── e2e/             # Playwrightテスト
+│   ├── unit/                # Vitestユニットテスト
+│   └── e2e/                 # Playwrightテスト
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
 └── package.json</code></pre>
-<h2>API通信</h2>
-<ul><li style="margin-left:0px">Axios インスタンスを共通設定（<code>src/utils/api.ts</code>）</li><li style="margin-left:0px">リクエストインターセプター：JWTトークンを <code>Authorization: Bearer</code> ヘッダーに自動付与</li><li style="margin-left:0px">レスポンスインターセプター：401エラー時にログイン画面へリダイレクト</li></ul>
+<h2>API型定義（OpenAPI自動生成）</h2>
+<p>バックエンド（Springdoc OpenAPI）が出力する <code>openapi.json</code> から、<code>openapi-typescript</code> でTypeScript型を自動生成する。</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>生成ツール</strong></td><td><code>openapi-typescript</code></td></tr>
+<tr><td><strong>生成元</strong></td><td>バックエンドの <code>/v3/api-docs</code>（Springdoc自動出力）</td></tr>
+<tr><td><strong>出力先</strong></td><td><code>src/types/generated/</code></td></tr>
+<tr><td><strong>生成コマンド</strong></td><td><code>npx openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated/api.d.ts</code></td></tr>
+<tr><td><strong>実行タイミング</strong></td><td>バックエンドのAPI変更時に手動実行（<code>npm run generate-types</code> スクリプトとして登録）</td></tr>
+<tr><td><strong>ルール</strong></td><td><code>src/types/generated/</code> 配下は手動編集禁止。型の拡張が必要な場合は別ファイルで <code>extends</code> する</td></tr>
+<p></tbody><br></table></p>
+<h2>Composable設計</h2>
+<h3>方針: 画面単位で完結</h3>
+<p>各画面のロジック（API呼び出し、フォームバリデーション、状態管理）を <strong>1画面1ファイル</strong> のComposableに閉じ込める。画面間で共通のComposableは作らない。</p>
+<p><strong>理由:</strong> 画面ごとの独立性を保ち、変更時の影響範囲を最小化する。類似コードが生じるが、可読性・保守性（画面単位の使い捨て・書き直し）を優先する。</p>
+<h3>命名規則</h3>
+<table>
+<thead><tr><th>画面パターン</th><th>Composable名</th><th>責務</th></tr></thead>
+<tbody>
+<tr><td>一覧画面</td><td><code>use{Resource}List</code></td><td>検索条件の状態管理、一覧API呼び出し、ページネーション、有効/無効切替</td></tr>
+<tr><td>登録画面</td><td><code>use{Resource}Form</code></td><td>フォーム状態、バリデーション（VeeValidate + Zod）、登録API呼び出し</td></tr>
+<tr><td>編集画面</td><td><code>use{Resource}Form</code></td><td>登録と共用。既存データ取得 → フォーム初期化 → 更新API呼び出し</td></tr>
+<tr><td>特殊画面</td><td><code>use{ScreenName}</code></td><td>棚卸実施、ピッキング等の固有ロジック</td></tr>
+<p></tbody><br></table></p>
+<h3>対応関係（例: 倉庫マスタ）</h3>
+<table>
+<thead><tr><th>機能設計書</th><th>View（.vue）</th><th>Composable</th></tr></thead>
+<tbody>
+<tr><td>SCR-04 MST-021 倉庫一覧</td><td><code>views/master/WarehouseList.vue</code></td><td><code>composables/master/useWarehouseList.ts</code></td></tr>
+<tr><td>SCR-04 MST-022 倉庫登録</td><td><code>views/master/WarehouseCreate.vue</code></td><td><code>composables/master/useWarehouseForm.ts</code></td></tr>
+<tr><td>SCR-04 MST-023 倉庫編集</td><td><code>views/master/WarehouseEdit.vue</code></td><td><code>composables/master/useWarehouseForm.ts</code></td></tr>
+<p></tbody><br></table></p>
+<h3>Composableの典型構造（一覧画面）</h3>
+<pre><code class="lang-typescript">// composables/master/useWarehouseList.ts
+export function useWarehouseList() {
+  // --- 状態 ---
+  const items = ref&lt;WarehouseListItem[]&gt;([])
+  const loading = ref(false)
+  const page = ref(0)
+  const size = ref(20)
+  const totalElements = ref(0)
+  const searchCriteria = reactive({ isActive: null as boolean | null })
+
+  // --- API呼び出し ---
+  async function fetchList() {
+    loading.value = true
+    try {
+      const res = await apiClient.get('/api/v1/master/warehouses', {
+        params: { ...searchCriteria, page: page.value, size: size.value }
+      })
+      items.value = res.data.content
+      totalElements.value = res.data.totalElements
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // --- 操作 ---
+  async function toggleActive(id: number) { /* ... */ }
+  function resetSearch() { /* ... */ }
+
+  return { items, loading, page, size, totalElements, searchCriteria,
+           fetchList, toggleActive, resetSearch }
+}</code></pre>
+<blockquote><code>.vue</code> ファイルは表示とイベントバインディングに専念し、ロジックはComposableに委譲する。</blockquote>
+<h2>API通信・エラーハンドリング</h2>
+<h3>Axiosインスタンス設定（<code>src/utils/api.ts</code>）</h3>
+<pre><code class="lang-typescript">const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true,  // httpOnly Cookie を自動送信
+})</code></pre>
+<h3>レスポンスインターセプター（共通エラー処理）</h3>
+<table>
+<thead><tr><th>ステータス</th><th>インターセプターの処理</th><th>画面側の対応</th></tr></thead>
+<tbody>
+<tr><td><strong>401</strong></td><td><code>POST /api/v1/auth/refresh</code> でリフレッシュ試行。成功→元リクエストをリトライ。失敗→ログイン画面へリダイレクト</td><td>不要（透過的）</td></tr>
+<tr><td><strong>403</strong></td><td><code>ElMessage.error('権限がありません')</code> を表示</td><td>不要</td></tr>
+<tr><td><strong>500</strong></td><td><code>ElMessage.error('システムエラーが発生しました')</code> を表示</td><td>不要</td></tr>
+<tr><td><strong>400, 409, 422</strong></td><td><strong>処理しない</strong>（そのまま reject）</td><td>各Composableの <code>try/catch</code> で画面固有のエラー処理</td></tr>
+<p></tbody><br></table></p>
+<h3>401リフレッシュフロー</h3>
+<div class="mermaid">sequenceDiagram
+    participant V as Vue（Composable）
+    participant A as Axiosインターセプター
+    participant B as バックエンドAPI
+
+    V->>A: APIリクエスト
+    A->>B: リクエスト送信（Cookie付き）
+    B-->>A: 401 Unauthorized
+    A->>B: POST /api/v1/auth/refresh（Cookie付き）
+    alt リフレッシュ成功
+        B-->>A: 200 OK（新Cookie セット）
+        A->>B: 元リクエストをリトライ
+        B-->>A: 200 OK
+        A-->>V: 正常レスポンス
+    else リフレッシュ失敗
+        B-->>A: 401 Unauthorized
+        A->>A: router.push('/login')
+    end</div>
+<blockquote>リフレッシュ中に他のリクエストが同時に401を受けた場合、リフレッシュ処理を1つだけ実行し、完了後に待機中のリクエストをまとめてリトライする（キュー制御）。</blockquote>
+<h3>画面側の業務エラー処理パターン</h3>
+<pre><code class="lang-typescript">// Composable内での業務エラー処理（400/409/422）
+async function submitForm() {
+  try {
+    await apiClient.put(`/api/v1/master/warehouses/${id}`, {
+      ...formData,
+      version: version.value,  // 楽観的ロック: 取得時のversionを送り返す
+    })
+    ElMessage.success('倉庫を更新しました')
+    router.push({ name: 'WarehouseList' })
+  } catch (e: any) {
+    if (e.response?.status === 400 &amp;&amp; e.response.data.details) {
+      // バリデーションエラー → フォームフィールドにエラー表示
+      setFieldErrors(e.response.data.details)
+    } else if (e.response?.status === 409
+        &amp;&amp; e.response.data.code === 'WMS-E-CMN-009') {
+      // 楽観的ロック競合 → 再読み込みを促す
+      ElMessage.error('他のユーザーが更新済みです。画面を再読み込みしてください')
+    } else if (e.response?.status === 409 || e.response?.status === 422) {
+      // その他の業務エラー → トーストでメッセージ表示
+      ElMessage.error(e.response.data.message)
+    }
+    // 401/403/500 はインターセプターが処理済みなのでここには来ない
+  }
+}</code></pre>
+<h3>楽観的ロック競合時のUXパターン</h3>
+<p>更新APIが 409（<code>OptimisticLockConflictException</code>）を返した場合、<strong>シンプル通知方式</strong> を採用する。</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>通知</strong></td><td><code>ElMessage.error('他のユーザーが更新済みです。画面を再読み込みしてください')</code></td></tr>
+<tr><td><strong>画面の状態</strong></td><td>フォームはそのまま残す（ユーザーが入力値を確認・コピーできるように）</td></tr>
+<tr><td><strong>復帰操作</strong></td><td>ユーザーが手動で画面を再読み込み（ブラウザリロードまたは画面内の再読み込みボタン）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>差分マージ方式を採用しない理由:</strong> WMSのマスタ同時編集の頻度は低く（管理者のみの操作）、実装コストに見合わない。発生頻度が想定を上回った場合に再検討する。</blockquote>
+<h2>Piniaストア設計</h2>
+<h3>方針</h3>
+<p><strong>グローバルに共有が必要な状態のみ</strong> ストアに入れる。画面固有の状態（検索条件、フォーム入力値、ダイアログ開閉等）はComposable内の <code>ref</code> / <code>reactive</code> で管理する。</p>
+<h3>ストア一覧</h3>
+<table>
+<thead><tr><th>ストア</th><th>ファイル</th><th>保持する状態</th><th>更新タイミング</th></tr></thead>
+<tbody>
+<tr><td><strong>authStore</strong></td><td><code>stores/auth.ts</code></td><td>ユーザーID、ユーザー名、ロール、ログイン状態</td><td>ログイン成功時、ログアウト時</td></tr>
+<tr><td><strong>systemStore</strong></td><td><code>stores/system.ts</code></td><td>営業日、選択中倉庫ID、UI言語（ja/en）</td><td>ログイン直後に取得、倉庫切替時、バッチ実行後（営業日再取得）、言語切替時</td></tr>
+<p></tbody><br></table></p>
+<h3>authStore</h3>
+<pre><code class="lang-typescript">// stores/auth.ts
+export const useAuthStore = defineStore('auth', () =&gt; {
+  const user = ref&lt;{ id: number; username: string; role: string } | null&gt;(null)
+  const isLoggedIn = computed(() =&gt; user.value !== null)
+  const isAdmin = computed(() =&gt; user.value?.role === 'SYSTEM_ADMIN')
+
+  async function fetchCurrentUser() { /* GET /api/v1/auth/me */ }
+  function clearUser() { user.value = null }
+
+  return { user, isLoggedIn, isAdmin, fetchCurrentUser, clearUser }
+})</code></pre>
+<h3>systemStore</h3>
+<pre><code class="lang-typescript">// stores/system.ts
+export const useSystemStore = defineStore('system', () =&gt; {
+  const businessDate = ref&lt;string&gt;('')       // 'YYYY-MM-DD'
+  const selectedWarehouseId = ref&lt;number | null&gt;(null)
+  const locale = ref&lt;'ja' | 'en'&gt;('ja')
+
+  async function fetchBusinessDate() { /* GET /api/v1/system/business-date */ }
+
+  return { businessDate, selectedWarehouseId, locale, fetchBusinessDate }
+})</code></pre>
+<h3>ストアに入れないもの</h3>
+<table>
+<thead><tr><th>データ</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>一覧画面の検索結果・検索条件</td><td>画面遷移で破棄して問題ない。Composable内の <code>ref</code> で管理</td></tr>
+<tr><td>フォーム入力値</td><td>画面ローカル。Composable内の <code>reactive</code> で管理</td></tr>
+<tr><td>ダイアログ・モーダルの開閉状態</td><td>コンポーネントローカルの <code>ref</code> で管理</td></tr>
+<tr><td>ローディング状態</td><td>API呼び出し単位でComposable内の <code>ref</code> で管理</td></tr>
+<p></tbody><br></table></p>
 </div>
 
 <hr class="doc-separator">
@@ -263,7 +452,17 @@
 
     REQ --> CTL --> SVC --> REP --> DB</div>
 <h2>モジュール構成</h2>
-<p>各業務モジュールは独立したパッケージとして実装し、モジュール間の依存は <code>shared</code> を経由する。</p>
+<p>各業務モジュールは独立したパッケージとして実装する。</p>
+<h3>モジュール間の依存ルール</h3>
+<table>
+<thead><tr><th>呼び出しパターン</th><th>可否</th><th>例</th></tr></thead>
+<tbody>
+<tr><td>業務モジュール → <code>shared</code></td><td>✅</td><td>全モジュールから共通基盤を参照</td></tr>
+<tr><td>業務モジュール → 他の業務モジュールの <strong>Service</strong></td><td>✅</td><td><code>outbound.AllocationService</code> → <code>inventory.InventoryService</code></td></tr>
+<tr><td>業務モジュール → 他の業務モジュールの <strong>Repository</strong></td><td>✗</td><td>他モジュールのDBアクセスは必ずService経由</td></tr>
+<tr><td>業務モジュール → 他の業務モジュールの <strong>Controller</strong></td><td>✗</td><td>Controller間の直接呼び出しは禁止</td></tr>
+<p></tbody><br></table></p>
+<blockquote>モジュール間の Service 直接呼び出しを許可する。イベント駆動やFacadeパターンによる間接化は、現時点ではオーバーヘッドが大きいため採用しない。</blockquote>
 <pre><code class="lang-">backend/
 └── src/main/java/com/wms/
     ├── inbound/        # 入荷管理
@@ -286,7 +485,103 @@
         ├── security/   # JWT認証
         └── util/       # ユーティリティ</code></pre>
 <h2>API設計方針</h2>
-<ul><li style="margin-left:0px">RESTful API</li><li style="margin-left:0px">ベースパス：<code>/api/v1/</code></li><li style="margin-left:0px">OpenAPIドキュメント：<code>/swagger-ui.html</code>（Springdoc自動生成）</li><li style="margin-left:0px">レスポンス形式：JSON統一</li></ul>
+<ul><li style="margin-left:0px">RESTful API</li><li style="margin-left:0px">ベースパス：<code>/api/v1/</code></li><li style="margin-left:0px">OpenAPIドキュメント：<code>/swagger-ui.html</code>（Springdoc自動生成）</li><li style="margin-left:0px">レスポンス形式：JSON統一</li><li style="margin-left:0px">リクエスト Content-Type：<code>application/json</code></li></ul>
+<h3>ページネーション共通仕様</h3>
+<p>一覧取得APIはすべて <strong>ページベース</strong> のページネーションを採用する（Spring Data の <code>Pageable</code> を利用）。</p>
+<h4>リクエストパラメータ</h4>
+<table>
+<thead><tr><th>パラメータ</th><th>型</th><th>デフォルト</th><th>制約</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>page</code></td><td>Integer</td><td><code>0</code></td><td>0以上</td><td>ページ番号（0始まり）</td></tr>
+<tr><td><code>size</code></td><td>Integer</td><td><code>20</code></td><td>1〜100</td><td>1ページあたりの件数</td></tr>
+<tr><td><code>sort</code></td><td>String</td><td>API別に定義</td><td><code>{field},{asc\|desc}</code></td><td>ソート条件</td></tr>
+<p></tbody><br></table></p>
+<h4>レスポンス形式</h4>
+<pre><code class="lang-json">{
+  &quot;content&quot;: [ /* リソースの配列 */ ],
+  &quot;page&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;totalElements&quot;: 142,
+  &quot;totalPages&quot;: 8
+}</code></pre>
+<table>
+<thead><tr><th>フィールド</th><th>型</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>content</code></td><td>Array</td><td>該当ページのリソース配列</td></tr>
+<tr><td><code>page</code></td><td>Integer</td><td>現在のページ番号（0始まり）</td></tr>
+<tr><td><code>size</code></td><td>Integer</td><td>1ページあたりの件数</td></tr>
+<tr><td><code>totalElements</code></td><td>Long</td><td>総件数</td></tr>
+<tr><td><code>totalPages</code></td><td>Integer</td><td>総ページ数</td></tr>
+<p></tbody><br></table></p>
+<blockquote>ページングが不要なプルダウン用途では <code>all=true</code> パラメータでシンプルリスト（配列のみ）を返すパターンを各APIで個別に定義する。</blockquote>
+<h3>HTTPステータスコード使い分け</h3>
+<table>
+<thead><tr><th>ステータス</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>200 OK</code></td><td>取得成功・更新成功</td></tr>
+<tr><td><code>201 Created</code></td><td>リソース新規作成成功</td></tr>
+<tr><td><code>400 Bad Request</code></td><td>リクエスト形式不正・バリデーションエラー（Jakarta Bean Validation）</td></tr>
+<tr><td><code>401 Unauthorized</code></td><td>未認証・トークン期限切れ</td></tr>
+<tr><td><code>403 Forbidden</code></td><td>権限不足（ロール不一致）</td></tr>
+<tr><td><code>404 Not Found</code></td><td>対象リソースが存在しない</td></tr>
+<tr><td><code>409 Conflict</code></td><td>楽観的ロック競合・業務上の整合性エラー（例: 重複登録、状態遷移不正）</td></tr>
+<tr><td><code>422 Unprocessable Entity</code></td><td>形式は正しいが業務ルール違反（例: 在庫不足、棚卸中ロケーションへの操作）</td></tr>
+<tr><td><code>500 Internal Server Error</code></td><td>サーバー内部エラー</td></tr>
+<p></tbody><br></table></p>
+<h3>単一リソース取得時のレスポンス</h3>
+<p>単一リソース（詳細取得・登録・更新）はエンベロープなしでリソースオブジェクトを直接返す。</p>
+<pre><code class="lang-json">{
+  &quot;id&quot;: 1,
+  &quot;warehouseCode&quot;: &quot;WH-001&quot;,
+  &quot;warehouseName&quot;: &quot;東京第一倉庫&quot;,
+  ...
+}</code></pre>
+<h2>DTO規約</h2>
+<h3>命名規則</h3>
+<table>
+<thead><tr><th>種別</th><th>命名パターン</th><th>例</th></tr></thead>
+<tbody>
+<tr><td>リクエスト（作成）</td><td><code>Create{Resource}Request</code></td><td><code>CreateWarehouseRequest</code></td></tr>
+<tr><td>リクエスト（更新）</td><td><code>Update{Resource}Request</code></td><td><code>UpdateWarehouseRequest</code></td></tr>
+<tr><td>レスポンス（単体）</td><td><code>{Resource}Response</code></td><td><code>WarehouseResponse</code></td></tr>
+<tr><td>レスポンス（一覧要素）</td><td><code>{Resource}Response</code>（単体と共用）または <code>{Resource}ListItem</code></td><td><code>WarehouseListItem</code></td></tr>
+<tr><td>検索条件</td><td><code>{Resource}SearchCriteria</code></td><td><code>WarehouseSearchCriteria</code></td></tr>
+<p></tbody><br></table></p>
+<h3>配置場所</h3>
+<p>各モジュールの <code>dto/</code> パッケージに配置する。</p>
+<pre><code class="lang-">com.wms.master.dto/
+├── CreateWarehouseRequest.java
+├── UpdateWarehouseRequest.java
+├── WarehouseResponse.java
+└── WarehouseSearchCriteria.java</code></pre>
+<h3>Entity ↔ DTO 変換</h3>
+<table>
+<thead><tr><th>項目</th><th>方針</th></tr></thead>
+<tbody>
+<tr><td><strong>変換手段</strong></td><td>手動マッピング（各DTOクラスに <code>static</code> ファクトリメソッドを定義）</td></tr>
+<tr><td><strong>Entity → Response</strong></td><td><code>{Response}.from(Entity)</code> staticメソッド</td></tr>
+<tr><td><strong>Request → Entity</strong></td><td><code>{Request}.toEntity()</code> インスタンスメソッドまたは Service 層で組み立て</td></tr>
+<tr><td><strong>Controllerの制約</strong></td><td><strong>Controller は Entity を直接返してはならない</strong>。必ず DTO に変換して返す</td></tr>
+<p></tbody><br></table></p>
+<pre><code class="lang-java">// 例: WarehouseResponse.java
+public record WarehouseResponse(
+    Long id,
+    String warehouseCode,
+    String warehouseName,
+    Boolean isActive,
+    Integer version        // 楽観的ロック用
+) {
+    public static WarehouseResponse from(Warehouse entity) {
+        return new WarehouseResponse(
+            entity.getId(),
+            entity.getWarehouseCode(),
+            entity.getWarehouseName(),
+            entity.getIsActive(),
+            entity.getVersion()
+        );
+    }
+}</code></pre>
+<blockquote><strong>MapStruct を採用しない理由:</strong> フィールド数が限定的で手動マッピングのコストが低く、変換ロジックの可読性・デバッグ容易性を優先する。将来フィールド数が増加した場合は MapStruct 導入を再検討する。</blockquote>
 <h2>バッチ実行API</h2>
 <pre><code class="lang-">POST /api/v1/batch/daily-close    # 日替処理（営業日更新・入荷実績集計・出荷実績集計・在庫集計・バックアップを順次実行）</code></pre>
 <p>内部的には5処理を順番に実行するが、エンドポイントは1つ。詳細は機能要件定義書 <a href="../../functional-requirements/06-batch-processing.md" target="_blank">06-batch-processing.md</a> 参照。</p>
@@ -322,7 +617,7 @@
 <thead><tr><th>データ種別</th><th>削除方式</th><th>詳細</th></tr></thead>
 <tbody>
 <tr><td><strong>トランザクションデータ</strong></td><td>物理削除 ＋ 履歴テーブルコピー</td><td>バッチ日替処理でトランテーブルから履歴テーブルへコピー後に物理削除。履歴検索はトランテーブルと履歴テーブルの両方を検索。</td></tr>
-<tr><td><strong>マスタデータ</strong></td><td>論理削除</td><td><code>deleted_at</code> カラムで管理</td></tr>
+<tr><td><strong>マスタデータ</strong></td><td>論理削除</td><td><code>is_active</code> フラグで管理（物理削除は行わない）</td></tr>
 <p></tbody><br></table></p>
 <p><strong>理由：</strong> トランテーブルを常に小さく保ち性能を担保するため。大規模WMS（SAP等）でも採用されている実績ある方式。</p>
 <h3>ロック方式</h3>
@@ -330,8 +625,14 @@
 <thead><tr><th>対象</th><th>ロック方式</th><th>詳細</th></tr></thead>
 <tbody>
 <tr><td><strong>在庫引当処理</strong></td><td>悲観的ロック（<code>SELECT FOR UPDATE</code>）</td><td>引当処理中は在庫レコードを行ロック。他業務からのアクセスをブロック。</td></tr>
-<tr><td><strong>その他更新競合リスクのあるテーブル</strong></td><td>楽観的ロック（<code>version</code> カラム）</td><td>在庫テーブル等に <code>version</code> カラムを付与</td></tr>
+<tr><td><strong>その他更新競合リスクのあるテーブル</strong></td><td>楽観的ロック（<code>version</code> カラム）</td><td>マスタテーブル・トランザクションヘッダ等に <code>version</code> カラムを付与</td></tr>
 <p></tbody><br></table></p>
+<h4>楽観的ロック実装</h4>
+<p>全対象テーブルに <code>version integer NOT NULL DEFAULT 0</code> カラムを付与する。<br>Spring Data JPA の <code>@Version</code> アノテーションで自動管理し、更新時に version 不一致を検出すると <code>OptimisticLockingFailureException</code> がスローされる。Service 層でこれをキャッチし <code>OptimisticLockConflictException</code>（→ 409 Conflict）に変換する。</p>
+<pre><code class="lang-java">// Entity
+@Version
+private Integer version;</code></pre>
+<p>フロントエンドとの連携パターンは <a href="03-frontend-architecture.md" target="_blank">03-frontend-architecture.md</a> のエラーハンドリングを参照。</p>
 <pre><code class="lang-java">// Spring Data JPAでの悲観的ロック実装
 @Lock(LockModeType.PESSIMISTIC_WRITE)
 @Query(&quot;SELECT s FROM Stock s WHERE s.locationId = :locationId AND s.productId = :productId&quot;)
@@ -345,9 +646,9 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <thead><tr><th>カラム名</th><th>型</th><th>説明</th></tr></thead>
 <tbody>
 <tr><td><code>created_at</code></td><td>TIMESTAMP WITH TIME ZONE</td><td>作成日時</td></tr>
-<tr><td><code>created_by</code></td><td>VARCHAR</td><td>作成者（ユーザID）</td></tr>
+<tr><td><code>created_by</code></td><td>BIGINT FK → users.id</td><td>作成者</td></tr>
 <tr><td><code>updated_at</code></td><td>TIMESTAMP WITH TIME ZONE</td><td>最終更新日時</td></tr>
-<tr><td><code>updated_by</code></td><td>VARCHAR</td><td>最終更新者（ユーザID）</td></tr>
+<tr><td><code>updated_by</code></td><td>BIGINT FK → users.id</td><td>最終更新者</td></tr>
 <p></tbody><br></table></p>
 <p>Spring Data JPA の <code>@EntityListeners(AuditingEntityListener.class)</code> で自動設定する。</p>
 <h3>PK採番</h3>
@@ -371,25 +672,18 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <p></tbody><br></table></p>
 <blockquote>詳細なテーブル定義はデータモデル定義書（<code>docs/data-model/</code>）で管理する。</blockquote>
 <h2>営業日管理テーブル</h2>
-<p>営業日（→ 概念の詳細は <a href="01-overall-architecture.md" target="_blank">01-overall-architecture.md</a> 参照）は <code>system_parameters</code> テーブルで一元管理する。</p>
-<h3>system_parameters テーブル（概要）</h3>
+<p>営業日（→ 概念の詳細は <a href="01-overall-architecture.md" target="_blank">01-overall-architecture.md</a> 参照）は専用の <code>business_date</code> テーブルで管理する。</p>
+<h3>business_date テーブル（概要）</h3>
 <table>
 <thead><tr><th>カラム名</th><th>型</th><th>説明</th></tr></thead>
 <tbody>
-<tr><td><code>param_key</code></td><td>VARCHAR（PK）</td><td>パラメータキー（例: <code>BUSINESS_DATE</code>）</td></tr>
-<tr><td><code>param_value</code></td><td>VARCHAR</td><td>パラメータ値（例: <code>2026-03-13</code>）</td></tr>
-<tr><td><code>description</code></td><td>VARCHAR</td><td>パラメータの説明</td></tr>
+<tr><td><code>id</code></td><td>BIGSERIAL（PK）</td><td>PK（単一レコード）</td></tr>
+<tr><td><code>current_date</code></td><td>DATE NOT NULL</td><td>現在の営業日</td></tr>
 <tr><td><code>updated_at</code></td><td>TIMESTAMP WITH TIME ZONE</td><td>最終更新日時</td></tr>
-<tr><td><code>updated_by</code></td><td>VARCHAR</td><td>最終更新者（ユーザIDまたはシステム）</td></tr>
-<p></tbody><br></table></p>
-<h3>営業日パラメータ</h3>
-<table>
-<thead><tr><th>param_key</th><th>param_value（例）</th><th>説明</th></tr></thead>
-<tbody>
-<tr><td><code>BUSINESS_DATE</code></td><td><code>2026-03-13</code></td><td>現在の営業日（日替処理で更新）</td></tr>
+<tr><td><code>updated_by</code></td><td>BIGINT FK → users.id</td><td>最終更新者</td></tr>
 <p></tbody><br></table></p>
 <blockquote>営業日は日替処理（<code>POST /api/v1/batch/daily-close</code>）実行時に翌日付へ更新される。
-<p>アプリ起動時にキャッシュせず、都度DBから取得する（営業日変更が即時反映されるため）。</blockquote></p>
+<p>アプリ起動時にキャッシュせず、都度DBから取得する（営業日変更が即時反映されるため）。<br>詳細なカラム定義はデータモデル定義書（<code>docs/data-model/04-batch-tables.md</code>）を参照。</blockquote></p>
 </div>
 
 <hr class="doc-separator">
@@ -439,8 +733,9 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <tr><td><strong>Container Apps</strong></td><td>min:0 max:3</td><td>East: min:1 max:5 / West: min:0 max:5</td></tr>
 <tr><td><strong>PostgreSQL</strong></td><td>B1ms 単一構成</td><td>B1ms + Geo-redundant backup</td></tr>
 <tr><td><strong>Storage</strong></td><td>LRS</td><td>GRS（Japan West へ自動レプリケーション）</td></tr>
-<tr><td><strong>ACR</strong></td><td>Basic SKU（East）</td><td>Basic SKU + Geo-replication（East + West）</td></tr>
+<tr><td><strong>ACR</strong></td><td>Basic SKU（East）</td><td>Basic SKU（East のみ。Geo-replication非対応）</td></tr>
 <tr><td><strong>ネットワーク</strong></td><td>vnet-wms-dev (10.0.0.0/16)</td><td>vnet-wms-prd-east (10.1.0.0/16) + vnet-wms-prd-west (10.2.0.0/16)</td></tr>
+<tr><td><strong>メール送信</strong></td><td>Azure Communication Services</td><td>Azure Communication Services</td></tr>
 <p></tbody><br></table></p>
 <h2>サブスクリプション構成</h2>
 <div class="mermaid">graph TD
@@ -492,7 +787,9 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 │   ├── storage/
 │   ├── vnet/
 │   ├── acr/
-│   └── front-door/         ← prd のみ使用
+│   ├── communication-services/
+│   ├── monitoring/            ← Log Analytics Workspace, Application Insights
+│   └── front-door/            ← prd のみ使用
 ├── environments/
 │   ├── dev/
 │   │   ├── main.tf
@@ -525,8 +822,8 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <tr><td><strong>方式</strong></td><td>JWT（JSON Web Token）+ httpOnly Cookie</td></tr>
 <tr><td><strong>実装</strong></td><td>Spring Security + jjwt</td></tr>
 <tr><td><strong>トークン保存</strong></td><td>httpOnly Cookie（XSS対策）</td></tr>
-<tr><td><strong>CSRF対策</strong></td><td>SameSite=Strict + CSRFトークン</td></tr>
-<tr><td><strong>トークン有効期限</strong></td><td>アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから1時間で失効）</td></tr>
+<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax（httpOnly Cookie の SameSite 属性による CSRF 対策。CSRFトークンは不要。Lax はトップレベルナビゲーション（リンク遷移）ではCookieを送信するため、ブックマークやメール内リンクからのアクセスで再ログインを強制されない）</td></tr>
+<tr><td><strong>トークン有効期限</strong></td><td>アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから24時間で失効）</td></tr>
 <p></tbody><br></table></p>
 <h2>認証フロー</h2>
 <div class="mermaid">sequenceDiagram
@@ -570,11 +867,27 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <tr><td><strong>外部連携I/F</strong></td><td>✅</td><td>✅</td><td>✗</td><td>✗</td></tr>
 <tr><td><strong>営業日取得</strong>（GET /api/v1/system/business-date）</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
 <p></tbody><br></table></p>
+<h3>パスワードリセット（セルフサービス）</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>申請</strong></td><td>ログイン画面の「パスワードを忘れた方」リンクから、ユーザーIDまたはメールアドレスを入力して申請</td></tr>
+<tr><td><strong>メール送信</strong></td><td>Azure Communication Services（Email）でリセットリンクを送信</td></tr>
+<tr><td><strong>トークン有効期限</strong></td><td>30分（システムパラメータで変更可能）</td></tr>
+<tr><td><strong>トークン管理</strong></td><td><code>password_reset_tokens</code> テーブルにハッシュ化して保存。使用済み・期限切れは無効</td></tr>
+<tr><td><strong>ロック解除</strong></td><td>パスワードリセット完了時にアカウントロックを解除し、失敗カウンタをリセットする</td></tr>
+<p></tbody><br></table></p>
 <h3>Spring Security 実装方針</h3>
 <pre><code class="lang-java">// アノテーションベースで各APIに権限を付与
 @PreAuthorize(&quot;hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')&quot;)
 @PostMapping(&quot;/api/v1/batch/daily-close&quot;)
-public ResponseEntity&lt;Void&gt; runDailyClose() { ... }</code></pre>
+public ResponseEntity&lt;Void&gt; runDailyClose() { ... }
+
+@PostMapping(&quot;/api/v1/auth/password-reset/request&quot;)
+public ResponseEntity&lt;Void&gt; requestPasswordReset(...) { ... }
+
+@PostMapping(&quot;/api/v1/auth/password-reset/confirm&quot;)
+public ResponseEntity&lt;Void&gt; confirmPasswordReset(...) { ... }</code></pre>
 </div>
 
 <hr class="doc-separator">
@@ -631,35 +944,82 @@ Log Analytics Workspace
 <p></tbody><br></table></p>
 <h2>エラーハンドリング</h2>
 <h3>方針</h3>
-<ul><li style="margin-left:0px"><code>@ControllerAdvice</code> で一元管理</li><li style="margin-left:0px">全エラーレスポンスを統一フォーマットで返却</li></ul>
+<ul><li style="margin-left:0px"><code>@ControllerAdvice</code>（<code>GlobalExceptionHandler</code>）で一元管理</li><li style="margin-left:0px">全エラーレスポンスを統一フォーマットで返却</li><li style="margin-left:0px">Service 層では業務例外をスローし、Controller 層では例外をスローしない（<code>GlobalExceptionHandler</code> に委譲）</li></ul>
 <h3>エラーレスポンス形式</h3>
 <pre><code class="lang-json">{
-  &quot;code&quot;: &quot;WMS-E-INB-001&quot;,
+  &quot;code&quot;: &quot;INBOUND_SLIP_NOT_FOUND&quot;,
   &quot;message&quot;: &quot;入荷予定データが存在しません&quot;,
   &quot;timestamp&quot;: &quot;2026-03-12T10:00:00+09:00&quot;,
   &quot;traceId&quot;: &quot;abc123&quot;
 }</code></pre>
-<h3>エラーコード体系</h3>
-<pre><code class="lang-">WMS-{種別}-{モジュール}-{連番}
-例：
-WMS-E-INB-001  → エラー / 入荷 / 001
-WMS-W-INV-001  → 警告 / 在庫 / 001
-WMS-I-SHP-001  → 情報 / 出荷 / 001</code></pre>
-<h4>モジュール略称一覧</h4>
+<p>バリデーションエラー（複数フィールド）の場合は <code>details</code> を付与する。</p>
+<pre><code class="lang-json">{
+  &quot;code&quot;: &quot;VALIDATION_ERROR&quot;,
+  &quot;message&quot;: &quot;入力内容にエラーがあります&quot;,
+  &quot;timestamp&quot;: &quot;2026-03-12T10:00:00+09:00&quot;,
+  &quot;traceId&quot;: &quot;abc123&quot;,
+  &quot;details&quot;: [
+    { &quot;field&quot;: &quot;warehouseCode&quot;, &quot;message&quot;: &quot;倉庫コードは必須です&quot; },
+    { &quot;field&quot;: &quot;warehouseName&quot;, &quot;message&quot;: &quot;倉庫名は50文字以内で入力してください&quot; }
+  ]
+}</code></pre>
+<h3>例外クラス階層</h3>
+<p>すべてのカスタム例外は <code>shared.exception</code> パッケージに配置する。</p>
+<pre><code class="lang-">RuntimeException
+└── WmsException（abstract）              ← 全カスタム例外の基底クラス
+    ├── ResourceNotFoundException         ← 404 Not Found
+    ├── DuplicateResourceException        ← 409 Conflict（一意制約違反・重複登録）
+    ├── BusinessRuleViolationException    ← 422 Unprocessable Entity（業務ルール違反）
+    ├── OptimisticLockConflictException   ← 409 Conflict（楽観的ロック競合）
+    └── InvalidStateTransitionException   ← 409 Conflict（状態遷移不正）</code></pre>
 <table>
-<thead><tr><th>略称</th><th>モジュール</th></tr></thead>
+<thead><tr><th>例外クラス</th><th>HTTPステータス</th><th>用途・例</th></tr></thead>
 <tbody>
-<tr><td><code>INB</code></td><td>inbound（入荷）</td></tr>
-<tr><td><code>INV</code></td><td>inventory（在庫）</td></tr>
-<tr><td><code>ALL</code></td><td>allocation（在庫引当）</td></tr>
-<tr><td><code>SHP</code></td><td>outbound（出荷）</td></tr>
-<tr><td><code>MST</code></td><td>master（マスタ）</td></tr>
-<tr><td><code>RPT</code></td><td>report（レポート）</td></tr>
-<tr><td><code>BCH</code></td><td>batch（バッチ）</td></tr>
-<tr><td><code>IFX</code></td><td>interface（外部連携）</td></tr>
-<tr><td><code>CMN</code></td><td>shared（共通）</td></tr>
-<tr><td><code>AUT</code></td><td>認証・認可</td></tr>
+<tr><td><code>ResourceNotFoundException</code></td><td>404</td><td>指定IDのリソースが存在しない、論理削除済みリソースへのアクセス</td></tr>
+<tr><td><code>DuplicateResourceException</code></td><td>409</td><td>倉庫コード重複、ユーザーID重複</td></tr>
+<tr><td><code>BusinessRuleViolationException</code></td><td>422</td><td>在庫不足、棚卸中ロケーションへの操作、ロック済みアカウント</td></tr>
+<tr><td><code>OptimisticLockConflictException</code></td><td>409</td><td><code>@Version</code> による楽観的ロック検出時</td></tr>
+<tr><td><code>InvalidStateTransitionException</code></td><td>409</td><td>入荷ステータスが「検品済」なのに再度検品しようとした等</td></tr>
 <p></tbody><br></table></p>
+<h4>WmsException 基底クラス</h4>
+<pre><code class="lang-java">public abstract class WmsException extends RuntimeException {
+    private final String errorCode;  // 英語定数名形式（例: DUPLICATE_CODE, VALIDATION_ERROR）
+
+    protected WmsException(String errorCode, String message) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorCode() { return errorCode; }
+}</code></pre>
+<h3>GlobalExceptionHandler マッピング</h3>
+<code>@ControllerAdvice</code> クラスで例外 → HTTPレスポンスへの変換を一元管理する。
+<table>
+<thead><tr><th>例外</th><th>ステータス</th><th>処理</th></tr></thead>
+<tbody>
+<tr><td><code>ResourceNotFoundException</code></td><td>404</td><td>エラーコード・メッセージを返却</td></tr>
+<tr><td><code>DuplicateResourceException</code></td><td>409</td><td>エラーコード・メッセージを返却</td></tr>
+<tr><td><code>BusinessRuleViolationException</code></td><td>422</td><td>エラーコード・メッセージを返却</td></tr>
+<tr><td><code>OptimisticLockConflictException</code></td><td>409</td><td>エラーコード・メッセージを返却</td></tr>
+<tr><td><code>InvalidStateTransitionException</code></td><td>409</td><td>エラーコード・メッセージを返却</td></tr>
+<tr><td><code>MethodArgumentNotValidException</code></td><td>400</td><td>Jakarta Bean Validation エラー。<code>details</code> 付きレスポンス</td></tr>
+<tr><td><code>AccessDeniedException</code></td><td>403</td><td>Spring Security 権限不足</td></tr>
+<tr><td><code>AuthenticationException</code></td><td>401</td><td>Spring Security 認証エラー</td></tr>
+<tr><td><code>Exception</code>（その他）</td><td>500</td><td>スタックトレースをログ出力し、汎用エラーメッセージを返却（詳細は非公開）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>原則:</strong> Service 層は上記のカスタム例外をスローする。Repository 層の例外（<code>DataIntegrityViolationException</code> 等）は Service 層でキャッチしてカスタム例外に変換する。Controller 層は例外処理を行わず、<code>GlobalExceptionHandler</code> に委譲する。</blockquote>
+<h3>エラーコード体系</h3>
+<p>エラーコードは英語の定数名を使用する。命名規則は <code>{RESOURCE}_{ERROR_TYPE}</code> または <code>{ERROR_TYPE}</code>（リソース非依存の場合）とする。</p>
+<pre><code class="lang-">例：
+  WAREHOUSE_NOT_FOUND        — 倉庫が見つからない
+  DUPLICATE_CODE             — コード重複
+  OPTIMISTIC_LOCK_CONFLICT   — 楽観的ロック競合
+  VALIDATION_ERROR           — 入力バリデーションエラー
+  INVALID_SORT_FIELD         — 不正なソートフィールド
+  INTERNAL_SERVER_ERROR      — サーバー内部エラー
+  FORBIDDEN                  — 権限不足
+  UNAUTHORIZED               — 認証エラー</code></pre>
+<p>エラーコードは各モジュールの Service 層で定義する。定数クラスの作成は行わず、各例外スロー箇所でリテラルとして記述する（エラーコードの検索性をIDEのテキスト検索で確保する）。</p>
 <h2>その他共通設定</h2>
 <table>
 <thead><tr><th>項目</th><th>設定</th></tr></thead>
@@ -669,7 +1029,7 @@ WMS-I-SHP-001  → 情報 / 出荷 / 001</code></pre>
 <tr><td><strong>バリデーション</strong></td><td>Jakarta Bean Validation（Controller層）+ ビジネスルール（Service層）</td></tr>
 <tr><td><strong>トランザクション</strong></td><td><code>@Transactional</code> をService層に付与</td></tr>
 <tr><td><strong>トレースID</strong></td><td>リクエストごとにUUIDを付与、全ログに埋め込み</td></tr>
-<tr><td><strong>営業日</strong></td><td><code>system_parameters</code> テーブルから都度取得（キャッシュなし）。全業務処理は営業日を基準とする。詳細は <a href="01-overall-architecture.md" target="_blank">01-overall-architecture.md</a> 参照</td></tr>
+<tr><td><strong>営業日</strong></td><td><code>business_date</code> テーブルから都度取得（キャッシュなし）。全業務処理は営業日を基準とする。詳細は <a href="01-overall-architecture.md" target="_blank">01-overall-architecture.md</a> 参照</td></tr>
 <p></tbody><br></table></p>
 </div>
 
@@ -787,7 +1147,7 @@ WMS-I-SHP-001  → 情報 / 出荷 / 001</code></pre>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td><strong>アクセストークン</strong></td><td>有効期限 1時間。httpOnly Cookie（<code>access_token</code>）に格納</td></tr>
-<tr><td><strong>リフレッシュトークン</strong></td><td>スライディング方式。最終アクセスから1時間で失効（＝1時間操作なしで自動ログアウト）。httpOnly Cookie（<code>refresh_token</code>）に格納</td></tr>
+<tr><td><strong>リフレッシュトークン</strong></td><td>スライディング方式。最終アクセスから24時間で失効。httpOnly Cookie（<code>refresh_token</code>）に格納。セッションタイムアウト（60分操作なしで自動ログアウト）はフロントエンド側タイマー（55分警告→60分ログアウト）で制御する</td></tr>
 <tr><td><strong>リフレッシュトークン管理</strong></td><td>DBの <code>refresh_tokens</code> テーブルで管理（トークンハッシュ・ユーザーID・有効期限）</td></tr>
 <tr><td><strong>トークンローテーション</strong></td><td>リフレッシュ時に古いトークンを無効化し新しいトークンを発行（トークン盗用対策）</td></tr>
 <p></tbody><br></table></p>
@@ -817,13 +1177,15 @@ WMS-I-SHP-001  → 情報 / 出荷 / 001</code></pre>
 <tr><td><code>POST</code></td><td><code>/api/v1/auth/refresh</code></td><td>アクセストークン再発行</td></tr>
 <tr><td><code>POST</code></td><td><code>/api/v1/auth/logout</code></td><td>ログアウト（リフレッシュトークンをDB削除・Cookie削除）</td></tr>
 <tr><td><code>POST</code></td><td><code>/api/v1/auth/change-password</code></td><td>パスワード変更</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/auth/password-reset/request</code></td><td>パスワードリセット申請（メール送信）</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/v1/auth/password-reset/confirm</code></td><td>パスワード再設定（トークン検証＋変更）</td></tr>
 <p></tbody><br></table></p>
 <h2>パスワード管理</h2>
 <table>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
-<tr><td><strong>ポリシー</strong></td><td>8文字以上</td></tr>
-<tr><td><strong>ハッシュ</strong></td><td>BCrypt（Spring Security デフォルト）</td></tr>
+<tr><td><strong>ポリシー</strong></td><td>8〜128文字、英大文字・英小文字・数字を各1文字以上必須</td></tr>
+<tr><td><strong>ハッシュ</strong></td><td>BCrypt（Spring Security デフォルト、strength=12）</td></tr>
 <tr><td><strong>初回ログイン</strong></td><td>SYSTEM_ADMINが初期パスワードを発行。初回ログイン時にパスワード変更を強制（変更完了まで他操作不可）</td></tr>
 <tr><td><strong>初回フラグ</strong></td><td><code>users</code> テーブルの <code>password_change_required</code> フラグで管理</td></tr>
 <p></tbody><br></table></p>
@@ -851,7 +1213,7 @@ WMS-I-SHP-001  → 情報 / 出荷 / 001</code></pre>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td><strong>許可オリジン</strong></td><td>Blob Static Website URL（dev / prd 各環境のみ）。環境変数で設定</td></tr>
-<tr><td><strong>許可メソッド</strong></td><td>GET, POST, PUT, DELETE, OPTIONS</td></tr>
+<tr><td><strong>許可メソッド</strong></td><td>GET, POST, PUT, PATCH, DELETE, OPTIONS</td></tr>
 <tr><td><strong>許可ヘッダー</strong></td><td>Content-Type</td></tr>
 <tr><td><strong>認証情報</strong></td><td><code>allowCredentials: true</code>（Cookie送信のため）</td></tr>
 <p></tbody><br></table></p>
@@ -1131,13 +1493,7 @@ ENTRYPOINT [&quot;java&quot;, &quot;-jar&quot;, &quot;app.jar&quot;]</code></pre
 <tr><td><strong>E2Eテスト</strong></td><td>Playwright</td><td>手動（prd環境）</td></tr>
 <p></tbody><br></table></p>
 <h3>カバレッジ目標（バックエンド）</h3>
-<table>
-<thead><tr><th>種別</th><th>目標</th></tr></thead>
-<tbody>
-<tr><td>C0（ステートメント）</td><td>100%</td></tr>
-<tr><td>C1（ブランチ）</td><td>100%</td></tr>
-<tr><td>C2（条件）</td><td>100%</td></tr>
-<p></tbody><br></table></p>
+<blockquote>テストカバレッジ目標のSSOTは <a href="../test-specifications/00-test-plan.md" target="_blank">test-specifications/00-test-plan.md</a> を参照。</blockquote>
 </div>
 
 <hr class="doc-separator">

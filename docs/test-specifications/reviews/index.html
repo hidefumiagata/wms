@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テスト仕様書 — レビュー記録 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../../index.html">Home</a> &rsaquo; <a href="../index.html">テスト仕様書</a> &rsaquo; テスト仕様書 — レビュー記録
+</nav>
+<main>
+  <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 テスト仕様書 — レビュー記録</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem;">10 件のレビュー記録票</p>
+    </div>
+    <a href="../index.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      ← ドキュメントに戻る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#review-records-TST-ALL-allocation">1. レビュー記録票: TST-ALL-allocation.md</a></li>
+        <li><a href="#review-records-TST-AUTH-login-password">2. レビュー記録票: TST-AUTH-login-password.md</a></li>
+        <li><a href="#review-records-TST-BAT-batch">3. レビュー記録票: TST-BAT-batch.md</a></li>
+        <li><a href="#review-records-TST-IF-interface">4. レビュー記録票: TST-IF-interface.md</a></li>
+        <li><a href="#review-records-TST-INB-inbound">5. レビュー記録票: TST-INB-inbound.md</a></li>
+        <li><a href="#review-records-TST-INV-inventory">6. レビュー記録票: TST-INV-inventory.md</a></li>
+        <li><a href="#review-records-TST-MST-master-management">7. レビュー記録票: TST-MST-master-management.md</a></li>
+        <li><a href="#review-records-TST-OUT-outbound">8. レビュー記録票: TST-OUT-outbound.md</a></li>
+        <li><a href="#review-records-TST-RPT-reports">9. レビュー記録票: TST-RPT-reports.md</a></li>
+        <li><a href="#review-records-TST-RTN-returns">10. レビュー記録票: TST-RTN-returns.md</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-ALL-allocation">
+<h1>レビュー記録票: TST-ALL-allocation.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-ALL-allocation.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>1</td></tr>
+<tr><td>指摘なし</td><td>8</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>11</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-003 DB検証 #1 allocation_details</td><td>data-model/03-transaction-tables.md (allocation_details)</td><td>「3件のレコードが作成」と記載されているが、実際にはロケーションC（qty=3）とロケーションA（qty=5）の2件のみ引当が発生し、ロケーションBは引当なし。正しくは「2件」</td><td>対象ファイル修正済み</td><td>「3件」→「2件」に修正</td></tr>
+<tr><td>2</td><td>SC-004 DB検証 #1 unpack_instructions</td><td>data-model/03-transaction-tables.md (unpack_instructions)</td><td><code>quantity=6</code> と記載されているが、unpack_instructionsテーブルには <code>quantity</code> カラムは存在せず、<code>from_qty</code>（ばらし元数量）と <code>to_qty</code>（ばらし先数量）の2カラムで管理される。正しくは <code>from_qty=1, to_qty=6</code></td><td>対象ファイル修正済み</td><td><code>quantity=6</code> → <code>from_qty=1, to_qty=6</code> に修正</td></tr>
+<tr><td>3</td><td>SC-005 DB検証 #4 inventory_movements</td><td>functional-requirements/04a-allocation.md</td><td>機能要件定義書では在庫変動記録の種別を「UNPACK」と記載（86行目）しているが、データモデル定義書（inventory_movements.movement_type）およびAPI設計書（API-ALL-004レスポンス）では <code>BREAKDOWN_OUT</code> / <code>BREAKDOWN_IN</code> を使用。テスト仕様書は <code>BREAKDOWN_OUT</code> / <code>BREAKDOWN_IN</code> を使用しておりデータモデルと整合しているが、機能要件定義書側の記載が古い</td><td>要対応（他ドキュメント）</td><td>functional-requirements/04a-allocation.md の「種別「UNPACK」として記録する」を「種別「BREAKDOWN_OUT」（減算）と「BREAKDOWN_IN」（加算）の2レコードとして記録する」に修正すべき</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): 04a-allocation.mdのUNPACKをBREAKDOWN_OUT/BREAKDOWN_INに修正完了</blockquote>
+<table>
+<thead><tr><th>4</th><th>SC-001〜SC-008 テストステップ全体</th><th>SCR-13-allocation.md, API-12-allocation.md</th><th>画面イベント（EVT-ALL001-xxx）、メッセージID（MSG-*-ALL001-xxx）、APIエンドポイントパスがそれぞれ画面設計書・API設計書と一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>SC-001 DB検証 outbound_slips.status</th><th>data-model/03-transaction-tables.md (outbound_slips)</th><th>ステータス値 <code>ALLOCATED</code> がデータモデルの定義値と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>SC-002 部分引当のステータス</th><th>API-12-allocation.md (API-ALL-002)</th><th><code>PARTIAL_ALLOCATED</code> ステータスがAPI設計書のレスポンス仕様と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>SC-005 ばらし完了の5ステップ処理順序</th><th>API-12-allocation.md (API-ALL-004)</th><th>DB検証の記載内容（Step1〜Step5）がAPI設計書のばらし完了ビジネスロジックフローと整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>SC-007 引当解放のDB検証</th><th>API-12-allocation.md (API-ALL-006)</th><th>allocation_details削除、在庫のallocated_qty減算、unpack_instructions削除がAPI設計書の業務ロジックフローと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>SC-010 引当解放拒否のHTTPステータス</th><th>API-12-allocation.md (API-ALL-006)</th><th>409 RELEASE_NOT_ALLOWED がAPI設計書のエラーコード一覧と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>SC-011 ばらし再完了拒否のHTTPステータス</th><th>API-12-allocation.md (API-ALL-004)</th><th>400 ALREADY_COMPLETED がAPI設計書のエラーコード一覧と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>11</th><th>SC-013 権限チェック対象ロール</th><th>API-12-allocation.md (API-ALL-001, API-ALL-002)</th><th>WAREHOUSE_STAFFが引当実行API・受注一覧APIの対象ロール外であることがAPI設計書と一致。なおAPI-ALL-004（ばらし完了）はWAREHOUSE_STAFFも対象ロールに含まれており、テストで403になるのは引当実行・一覧取得APIに限定されている点は適切</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-AUTH-login-password">
+<h1>レビュー記録票: TST-AUTH-login-password.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-AUTH-login-password.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし（確認済み）</td><td>10</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>14</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-001 DB検証 #2: <code>refresh_tokens</code> の <code>expires_at</code> が「現在日時 + 1時間」</td><td>architecture-blueprint/07-auth-architecture.md, 10-security-architecture.md</td><td>アーキテクチャブループリント（SSOT）ではリフレッシュトークンの有効期限は「最終アクセスから<strong>24時間</strong>で失効」と定義されている。一方、API設計書（API-AUTH-003）の業務ロジックフローチャートでは「現在日時 + 1時間」と記載。テスト仕様書はAPI設計書に従い「1時間」としているが、SSoTであるアーキテクチャブループリントとの間に矛盾がある。どちらかを統一する必要がある。</td><td>要対応（他ドキュメント）</td><td>アーキテクチャブループリント（07, 10）とAPI設計書（API-01 API-AUTH-003）の間でリフレッシュトークン有効期限の記載を統一すること。統一後にテスト仕様書も合わせて更新する</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-01-auth.mdのリフレッシュトークン有効期限を24時間に修正完了</blockquote>
+<table>
+<thead><tr><th>2</th><th>テストシナリオ一覧（全体）</th><th>functional-requirements/00-authentication.md</th><th>機能要件定義書に「パスワード変更APIの連続5回失敗でもアカウントロック（ログイン失敗ロックと同一の仕組み）」と明記されているが、このテストシナリオが存在しない。パスワード変更画面で旧パスワードを5回連続で誤った場合のロック→解除→再変更のE2Eシナリオを追加すべき</th><th>対象ファイル修正済み</th><th>SC-022として「異常系: パスワード変更5回連続失敗でアカウントロック」シナリオを追加</th></tr></thead>
+<thead><tr><th>3</th><th>SC-001〜SC-004（全ロールログイン）</th><th>functional-design/SCR-01-auth.md（EVT-AUTH001-002, EVT-AUTH001-003）</th><th>SCR-01のイベント一覧 EVT-AUTH001-002〜003 の API レスポンスマッピングにメッセージID誤りがある。<code>INVALID_CREDENTIALS</code> → <code>MSG-E-AUTH001-001</code> と記載されているが、メッセージ一覧では <code>MSG-E-AUTH001-001</code> = 「ユーザーコードは必須です」（必須チェック）。正しくは <code>MSG-E-AUTH001-003</code>。同様に <code>ACCOUNT_LOCKED</code> → <code>MSG-E-AUTH001-002</code> も正しくは <code>MSG-E-AUTH001-004</code>。テスト仕様書側はメッセージ一覧に基づき正しいID（003, 004）を使用しているため修正不要</th><th>要対応（他ドキュメント）</th><th>SCR-01-auth.md の EVT-AUTH001-002 レスポンスマッピング内のメッセージID参照を修正すること: <code>INVALID_CREDENTIALS</code>/<code>ACCOUNT_INACTIVE</code> → <code>MSG-E-AUTH001-003</code>、<code>ACCOUNT_LOCKED</code> → <code>MSG-E-AUTH001-004</code></th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): SCR-01-auth.mdのメッセージIDマッピングをMSG-E-AUTH001-003に修正完了</blockquote>
+<table>
+<thead><tr><th>4</th><th>SC-005 メッセージID <code>MSG-E-AUTH001-003</code></th><th>functional-design/SCR-01-auth.md メッセージ一覧</th><th>テスト仕様書のメッセージID・メッセージ文がSCR-01のメッセージ一覧と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>SC-007 メッセージID <code>MSG-E-AUTH001-004</code></th><th>functional-design/SCR-01-auth.md メッセージ一覧</th><th>テスト仕様書のメッセージID・メッセージ文がSCR-01のメッセージ一覧と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>SC-008 無効化アカウント → <code>MSG-E-AUTH001-003</code></th><th>functional-design/API-01-auth.md API-AUTH-001</th><th>API設計書で <code>ACCOUNT_INACTIVE</code> は <code>INVALID_CREDENTIALS</code> と同一メッセージ（セキュリティ上、無効アカウントの存在を露出しない）。テスト仕様書の期待結果と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>SC-009 アカウントロックフロー（5回失敗→ロック→解除→再ログイン）</th><th>functional-requirements/00-authentication.md, functional-design/API-01-auth.md</th><th>機能要件・API設計と整合。DB検証項目も <code>locked</code>, <code>locked_at</code>, <code>failed_login_count</code> の遷移を正しく検証</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>SC-010 初回パスワード変更強制</th><th>functional-design/SCR-01-auth.md AUTH-002</th><th>ナビゲーションガードによる遷移ブロック（Step 2-3）、成功メッセージ <code>MSG-S-AUTH002-001</code> がSCR-01と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>SC-012 メッセージID <code>MSG-E-AUTH002-007</code></th><th>functional-design/SCR-01-auth.md AUTH-002 メッセージ一覧</th><th>メッセージIDと文言が一致。DB検証で <code>failed_login_count</code> 増加を確認しているのも API-AUTH-004 の業務ロジックと整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>SC-014 <code>409 Conflict SAME_PASSWORD</code></th><th>functional-design/API-01-auth.md API-AUTH-004</th><th>API設計書のエラーレスポンス仕様と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>11</th><th>SC-015 パスワードリセットフロー</th><th>functional-design/API-01-auth.md API-AUTH-005/006, data-model/02-master-tables.md</th><th>DB検証（password_reset_tokens の expires_at = 現在日時+30分、使用後レコード削除、users更新）がAPI設計書・データモデルと整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>12</th><th>SC-016/017 無効トークン <code>MSG-E-AUTH004-004</code></th><th>functional-design/SCR-01-auth.md AUTH-004 メッセージ一覧</th><th>メッセージID・文言・HTTPステータス（401 INVALID_TOKEN）がSCR-01・API設計書と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>13</th><th>SC-018 セッションタイムアウト（55分警告→60分ログアウト）</th><th>functional-requirements/00-authentication.md</th><th>警告タイミング・自動ログアウトタイミング・メッセージID <code>MSG-I-AUTH001-001</code> が機能要件・画面設計と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>14</th><th>テストシナリオ一覧（全体）</th><th>functional-design/SCR-01-auth.md AUTH-001</th><th>SCR-01 AUTH-001 の画面レイアウトに「残り試行回数を表示する」との記載があるが、エラーハンドリング補足で「残り回数の表示は行わない」と矛盾している。テスト仕様書には残り回数表示のテストがないが、SCR-01内の記載を統一する必要がある</th><th>要対応（他ドキュメント）</th><th>SCR-01-auth.md の AUTH-001 セクション2「フォームエリアの詳細」の残り試行回数表示の記述を削除するか、エラーハンドリング補足セクションと統一すること</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): SCR-01-auth.mdの残り試行回数表示を「表示しない」に統一完了</blockquote>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-BAT-batch">
+<h1>レビュー記録票: TST-BAT-batch.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-BAT-batch.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>0</td></tr>
+<tr><td>指摘なし</td><td>10</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>11</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ヘッダー「対象設計書」</td><td>SCR-11, API-09, BAT-01</td><td>SCR-11（BAT-001, BAT-002）、API-09（API-BAT-001〜003）、BAT-01-daily-close.md を正しく参照している</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>2</td><td>SC-001 全体</td><td>BAT-01-daily-close.md Section 8</td><td>6ステップ構成は業務要件（5ステップ）に対してStep 6（日次集計レコード生成）が追加された実装仕様を正しく反映している</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>3</td><td>SC-001 DB検証</td><td>data-model/04-batch-tables.md</td><td>全テーブル名・カラム名（<code>business_date</code>, <code>inbound_summaries</code>, <code>outbound_summaries</code>, <code>inventory_snapshots</code>, <code>unreceived_list_records</code>, <code>unshipped_list_records</code>, <code>daily_summary_records</code>, <code>batch_execution_logs</code>, <code>inbound_slips_backup</code>, <code>outbound_slips_backup</code>）がデータモデルと一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>4</td><td>SC-001 メッセージID</td><td>SCR-11-batch.md BAT-001 メッセージ一覧</td><td>MSG-W-BAT001-001, MSG-S-BAT001-001 の参照・メッセージ文が画面設計書と一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>5</td><td>SC-002 API検証</td><td>API-09-batch.md API-BAT-001</td><td>409 Conflict + <code>BATCH_ALREADY_RUNNING</code> エラーコードがAPI設計書のエラーレスポンス定義と一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>6</td><td>SC-003 再実行ロジック</td><td>API-09-batch.md ビジネスルール#2,#5, BAT-01 Section 5</td><td>FAILEDレコード削除→完了済みステップスキップ→未完了ステップから再開の動作がAPI設計書・バッチ設計書の再実行フローと一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>7</td><td>SC-004 冪等性検証</td><td>BAT-01-daily-close.md Step 1 ビジネスルール#2</td><td>営業日が二重に進行しないことの検証が、Step 1の冪等性設計（<code>current_business_date = targetBusinessDate</code> ならスキップ）と整合</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>8</td><td>SC-005 営業日連続性</td><td>BAT-01-daily-close.md Step 1 ビジネスルール#1</td><td><code>current + 1 = target</code> の連続性チェック違反（19→22）でStep 1失敗の期待結果がバッチ設計と一致。API検証で200 OK + status=FAILED を期待しているのもAPI-BAT-001の仕様（同期実行でステップ失敗は200 OKで返却）と整合</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>9</td><td>SC-006 未入荷/未出荷リスト</td><td>BAT-01-daily-close.md Step 5b/5c SQL</td><td>リスト生成条件（予定日 <= 営業日、status NOT IN ('STORED'/'SHIPPED', 'CANCELLED')）、キャンセル済み除外、完了済み除外の検証がバッチ設計のSQLと一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>10</td><td>SC-007 バラ換算ロジック</td><td>BAT-01-daily-close.md Step 6 SQL</td><td>CASE/BALL/PIECEのバラ換算（<code>case_quantity * ball_quantity</code> / <code>ball_quantity</code> / 1）がバッチ設計のSQLロジックと一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>11</td><td>テストシナリオ一覧の網羅性</td><td>BAT-01-daily-close.md Section 9 テスト観点</td><td>BAT-01が挙げるテスト観点12項目のうち、観点#2「0件データでエラーにならない」のシナリオが欠落している。対象営業日に入荷・出荷・在庫・返品データが0件の状態で日替処理を実行し、全ステップがSUCCESSとなることを確認するシナリオを追加すべき</td><td>対象ファイル修正済み</td><td>SC-010として0件データシナリオを追加</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-IF-interface">
+<h1>レビュー記録票: TST-IF-interface.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-IF-interface.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>6</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>0</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>11</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-002 API検証 #1 レスポンスフィールド名</td><td>architecture-design/09-interface-architecture.md セクション6.8</td><td>バリデーションAPIレスポンスのフィールド名が <code>totalCount</code>, <code>errors</code> と記載されていたが、アーキテクチャ設計書のレスポンス形式では <code>totalRows</code>, <code>rows</code> と定義されている。フィールド名の不一致</td><td>対象ファイル修正済み</td><td><code>totalCount=10</code> → <code>totalRows=10</code>、<code>errors=[]</code> → <code>rows=[]</code> に修正</td></tr>
+<tr><td>2</td><td>シナリオ一覧・詳細</td><td>functional-design/SCR-15-interface.md IF-003画面項目一覧、functional-design/IF-02-order.md</td><td>IFX-002（受注CSV）の取り込みフルフローのテストシナリオが欠落していた。SC-001〜SC-008は全て入荷予定CSV（IFX-001）に特化しており、受注CSVの正常系フルフロー（outbound_slips/outbound_slip_linesへのDB登録検証）がなかった。SC-007に受注CSVの採番検証は含まれるが、完全な取り込みフローテストではなかった</td><td>対象ファイル修正済み</td><td>SC-011（受注CSVフルフローテスト）を新規追加。outbound_slips/outbound_slip_linesのDB検証、if_executionsの<code>if_type='ORDER'</code>検証を含む</td></tr>
+<tr><td>3</td><td>シナリオ一覧</td><td>functional-design/SCR-15-interface.md 対象ロール、architecture-design/09-interface-architecture.md セクション1.2</td><td>権限テストが欠落していた。全テストシナリオがWAREHOUSE_MANAGERロールのみで実行されており、(1) SYSTEM_ADMINロールでの正常系テスト、(2) 権限不足ロール（WAREHOUSE_STAFF等）のアクセス拒否テストが含まれていなかった</td><td>対象ファイル修正済み</td><td>SC-012（権限不足でのアクセス拒否テスト）とSC-014（SYSTEM_ADMINでの正常系テスト）を新規追加</td></tr>
+<tr><td>4</td><td>シナリオ一覧</td><td>functional-design/SCR-15-interface.md MSG-E-IF001-004、architecture-design/09-interface-architecture.md セクション10.3</td><td>ファイルサイズ上限（50MB）超過のテストシナリオが欠落していた。セキュリティ要件・画面設計書でファイルサイズ制限が定義されているがテストケースがなかった</td><td>対象ファイル修正済み</td><td>SC-013（50MB超ファイルのバリデーション拒否テスト）を新規追加</td></tr>
+<tr><td>5</td><td>SC-010 テストステップ #17, #18</td><td>architecture-design/09-interface-architecture.md セクション6.3 L1バリデーション</td><td>L1ファイルレベルエラー（データ行0件、行数超過）のテストステップで確認方法にエラーコードが記載されていなかった。ヘッダ不正（step 16）には<code>WMS-E-IFX-003</code>が記載されていたが、データ行0件と行数超過にはエラーコードが欠落</td><td>対象ファイル修正済み</td><td>step 17に<code>WMS-E-IFX-005</code>、step 18に<code>WMS-E-IFX-006</code>を追加</td></tr>
+<tr><td>6</td><td>SC-009 テストステップ #2</td><td>functional-design/SCR-15-interface.md IF-003画面項目一覧（IF003-COL-IFTYPE, IF003-COL-BLOB-WARN）</td><td>取り込み履歴一覧テーブルの表示確認項目に「I/F種別」列と「Blob移動警告」列が含まれていなかった。SCR-15のIF-003画面項目一覧にはIF003-COL-IFTYPE（I/F種別）とIF003-COL-BLOB-WARN（Blob移動警告アイコン）が定義されている</td><td>対象ファイル修正済み</td><td>step 2の期待結果に「I/F種別」と「Blob移動警告アイコン列」の確認を追加</td></tr>
+<tr><td>7</td><td>SC-001〜SC-010 全体</td><td>functional-requirements/07-interface.md</td><td>テストシナリオ全体の業務フローカバレッジを確認。機能要件定義書の4機能（ファイル一覧照会・バリデーション実行・取り込み実行・取り込み履歴照会）について、正常系・異常系が網羅されている</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>8</td><td>SC-004, SC-005 DB検証</td><td>data-model/03-transaction-tables.md if_executions テーブル定義</td><td>if_executionsテーブルのカラム名（if_type, file_name, total_count, success_count, error_count, mode, status, blob_move_failed）がデータモデル定義と一致していることを確認</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>9</td><td>SC-006 DB検証</td><td>functional-design/IF-01-inbound-plan.md セクション2.1, 2.4</td><td>伝票グルーピングロジック（partner_code + planned_date）およびnoteカラムのマッピング（グループ内最初の行のnoteを採用）がIF-01設計書と整合していることを確認</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>10</td><td>SC-007 DB検証</td><td>functional-design/IF-01-inbound-plan.md セクション5.1</td><td>伝票採番フォーマット <code>INB-YYYYMMDD-NNNN</code> がIF-01設計書と整合していることを確認。営業日ベースでの採番、既存最大値+1のインクリメントルールも正しい</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>11</td><td>SC-010 バリデーションエラーコード一覧</td><td>architecture-design/09-interface-architecture.md セクション6.3〜6.7</td><td>テストで使用しているエラーコード（WMS-E-IFX-301〜306, 401〜404, 501〜502, 003, 105）がアーキテクチャ設計書のバリデーションエラーコード定義と全て一致していることを確認</td><td>指摘なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-INB-inbound">
+<h1>レビュー記録票: TST-INB-inbound.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-INB-inbound.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>4</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>1</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-INB-021 API検証テーブル</td><td>API-06-inbound.md ステータス遷移図</td><td>PARTIAL_STORED状態からの入荷確認テストケースが欠落していた。API-06のステータス遷移図によると、confirm はPLANNEDからのみ可能であるため、PARTIAL_STOREDからの確認も409エラーとなるべきだがテストケースがなかった</td><td>対象ファイル修正済み</td><td>PARTIAL_STOREDのテストケース（#3）を追加し、既存番号を繰り下げ。前提条件にもPARTIAL_STOREDを追記</td></tr>
+<tr><td>2</td><td>シナリオ一覧・詳細</td><td>API-06-inbound.md API-INB-007（キャンセル）、functional-requirements/02-inbound-management.md セクション5</td><td>INSPECTING状態からの入荷キャンセル（正常系）のテストシナリオが欠落していた。要件定義では「入庫完了以外のステータスの入荷予定をキャンセルできる」と記載されており、PLANNED（SC-INB-030）、CONFIRMED（SC-INB-031）、PARTIAL_STORED（SC-INB-032）はカバーされていたがINSPECTINGが抜けていた</td><td>対象ファイル修正済み</td><td>SC-INB-031a（INSPECTING状態からのキャンセル・在庫影響なし）を新規追加</td></tr>
+<tr><td>3</td><td>シナリオ一覧・詳細</td><td>API-06-inbound.md API-INB-005（入荷予定削除）</td><td>API-INB-005（入荷予定削除: DELETE /api/v1/inbound/slips/{id}）のテストシナリオが完全に欠落していた。PLANNED状態のみ削除可能という業務ロジックの検証が必要</td><td>対象ファイル修正済み</td><td>SC-INB-006（正常系: PLANNED状態の物理削除）とSC-INB-007（異常系: PLANNED以外は削除不可）を新規追加</td></tr>
+<tr><td>4</td><td>SC-INB-042 API検証テーブル</td><td>API-06-inbound.md API-INB-008、functional-requirements/02-inbound-management.md</td><td>期限切れ商品の検品エラー時のHTTPステータスが「422 or 400」と曖昧に記載されていた。要件定義では「エラーとし、入荷を受け付けない」と明記されており、ビジネスルール違反は422が適切</td><td>対象ファイル修正済み</td><td>HTTPステータスを<code>422</code>に確定し、エラーコード<code>EXPIRY_DATE_EXPIRED</code>を明記</td></tr>
+<tr><td>5</td><td>SC-INB-042 API検証テーブル</td><td>API-06-inbound.md API-INB-008 エラーレスポンス一覧</td><td>API-INB-008の検品登録APIのエラーレスポンス一覧に、期限切れ商品（<code>expiry_date</code>が営業日以前）の場合のエラーコード（<code>EXPIRY_DATE_EXPIRED</code>等）が定義されていない。要件定義（02-inbound-management.md）では「賞味期限が営業日以前の場合はエラー」と明記されているが、API設計書にエラーコードの定義がない</td><td>要対応（他ドキュメント）</td><td>API-06-inbound.md の API-INB-008 エラーレスポンス一覧に <code>422 EXPIRY_DATE_EXPIRED</code>（賞味期限が営業日以前）を追加する必要がある</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-06-inbound.mdのAPI-INB-008エラーレスポンス一覧にEXPIRY_DATE_EXPIREDエラーコードを追加完了</blockquote>
+<table>
+<thead><tr><th>6</th><th>SC-INB-001〜SC-INB-090 全体</th><th>functional-requirements/02-inbound-management.md</th><th>テストシナリオ全体の業務フローカバレッジを確認。入荷予定登録（手動）・入荷予定一覧照会・入荷確認・入荷キャンセル（全ステータス）・入荷検品・入庫指示確定・入荷実績照会・検品レポートの全機能をカバーしている。E2Eフルフローテスト（SC-INB-090）も適切</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>SC-INB-050〜SC-INB-052 DB検証</th><th>data-model/03-transaction-tables.md</th><th>inventories・inventory_movementsテーブルへの影響検証項目を確認。UPSERTキー（location_id, product_id, unit_type, lot_number, expiry_date）、movement_typeの値（INBOUND, INBOUND_CANCEL）、quantity_afterの検証が適切に含まれている</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>テストデータ要件</th><th>data-model/02-master-tables.md, data-model/03-transaction-tables.md</th><th>テストデータ要件のテーブル名・カラム名がデータモデル定義と整合していることを確認。partners、products、locations、areas、inventories等のテストデータ定義が正しい</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-INV-inventory">
+<h1>レビュー記録票: TST-INV-inventory.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-INV-inventory.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>7</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>12</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>棚卸シナリオ一覧</td><td>SCR-09 INV-014 メッセージ一覧 MSG-E-INV014-005</td><td>INV-014画面設計のEVT-INV014-004に「引当数チェック: 実数がallocated_qtyを下回るロケーションが存在する場合はエラー」とあるが、対応するテストシナリオが存在しなかった。SC-INV-074 として追加</td><td>対象ファイル修正済み</td><td>SC-INV-074（棚卸確定時の引当数下回りチェック）を棚卸シナリオ一覧と詳細に追加</td></tr>
+<tr><td>2</td><td>SC-INV-073 ステップ2 エラーメッセージ文</td><td>SCR-09 INV-014 MSG-E-INV014-002</td><td>テスト仕様のエラーメッセージ文が「実数が未入力の項目があります。」だが、画面設計書では「実数が未入力の項目があります。INV-013で全項目を入力してください」。後半部分が欠落していた</td><td>対象ファイル修正済み</td><td>画面設計書のメッセージ文に合わせて修正</td></tr>
+<tr><td>3</td><td>SC-INV-034 引当数下回り訂正エラー</td><td>API-07 API-INV-004 業務ロジック</td><td>画面設計（SCR-08 INV-004）には <code>newQty &gt;= allocated_qty</code> チェックと MSG-E-INV004-006 が定義されているが、API設計書（API-INV-004）の業務ルール一覧にこのバリデーションが記載されていない。テスト仕様は画面設計に基づき正しいが、API側で実装漏れになるリスクあり</td><td>要対応（他ドキュメント）</td><td>API-07 API-INV-004 のビジネスルールに「newQty >= allocated_qty であること」を追加すべき。エラーコードとして <code>INVENTORY_CORRECTION_BELOW_ALLOCATED</code> 等を定義し、エラーレスポンス表にも追加が必要</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-07 API-INV-004の業務ルールにCORRECTION_BELOW_ALLOCATEDエラーコードおよび引当数チェックルールを追加完了</blockquote>
+<table>
+<thead><tr><th>4</th><th>SC-INV-050 DB検証 stocktake_headers</th><th>data-model/03-transaction-tables.md stocktake_headers テーブル定義</th><th>API-INV-012 のリクエストに <code>note</code>（備考）と <code>stocktakeDate</code>（実施日）フィールドがあるが、data-model の <code>stocktake_headers</code> テーブルにこれらのカラムが存在しない。テスト仕様自体は API 仕様に沿っているが、データモデルに不足がある</th><th>要対応（他ドキュメント）</th><th>data-model/03-transaction-tables.md の <code>stocktake_headers</code> テーブルに <code>note text NULL</code>（備考）と <code>stocktake_date date NOT NULL</code>（棚卸実施日）カラムを追加すべき</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): data-model/03-transaction-tables.mdのstocktake_headersテーブルにnoteおよびstocktake_dateカラムを追加完了</blockquote>
+<table>
+<thead><tr><th>5</th><th>SC-INV-071 DB検証 reference_type</th><th>data-model/03-transaction-tables.md inventory_movements.reference_type</th><th>テスト仕様では <code>reference_type=STOCKTAKE_HEADER</code> としており、API設計書（API-INV-015）と一致する。しかしデータモデルの reference_type 説明では例として <code>STOCKTAKE_LINE</code> が記載されており、<code>STOCKTAKE_HEADER</code> が含まれていない。テスト仕様・API設計は正しいが、データモデルの例示が不正確</th><th>要対応（他ドキュメント）</th><th>data-model/03-transaction-tables.md の <code>inventory_movements.reference_type</code> の説明を <code>INBOUND_LINE / PICKING_LINE / STOCKTAKE_HEADER 等</code> に修正すべき</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): data-model/03-transaction-tables.mdのinventory_movements.reference_type例示をSTOCKTAKE_HEADERに修正完了</blockquote>
+<table>
+<thead><tr><th>6</th><th>SC-INV-001〜005 在庫一覧照会テスト</th><th>SCR-08 INV-001、API-07 API-INV-001</th><th>在庫照会の各シナリオ（ロケーション別、商品合計、フィルタ、倉庫切替、引当表示）は画面設計・API設計と整合している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>SC-INV-010〜015 在庫移動テスト</th><th>SCR-08 INV-002、API-07 API-INV-002</th><th>在庫移動の正常系・異常系シナリオは画面設計のメッセージID・API設計の業務ルール・データモデルのテーブル構造と整合。DB検証のカラム名（quantity, allocated_qty, inventory_movements の movement_type 等）もデータモデルと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>SC-INV-020〜025 ばらしテスト</th><th>SCR-08 INV-003、API-07 API-INV-003、data-model products.case_quantity/ball_quantity</th><th>変換レート計算（case_quantity, ball_quantity）、DB検証のmovement_type（BREAKDOWN_OUT/IN）、unit_type（CASE/BALL/PIECE）はすべて整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>SC-INV-030〜034 在庫訂正テスト</th><th>SCR-08 INV-004、API-07 API-INV-004</th><th>在庫訂正の正常系（増加・減少・変化なし）と異常系（棚卸ロック・引当数下回り）のシナリオは画面設計と整合。DB検証でCORRECTIONのmovement_type、correction_reasonカラムもデータモデルと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>SC-INV-050〜052 棚卸開始テスト</th><th>SCR-09 INV-012、API-07 API-INV-012</th><th>棚卸開始シナリオ（範囲指定・ロック設定・重複開始エラー）は画面設計のメッセージID・API設計のHTTPステータスコードと整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>11</th><th>SC-INV-060〜062 実数入力テスト</th><th>SCR-09 INV-013、API-07 API-INV-014</th><th>実数入力・一時保存・確定ボタンの活性制御テストは画面設計と整合。stocktake_lines の quantity_counted/is_counted カラムはデータモデルと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>12</th><th>SC-INV-070〜073, 080〜082 棚卸確定・ロックテスト</th><th>SCR-09 INV-014、API-07 API-INV-015</th><th>棚卸確定（在庫更新・STOCKTAKE_ADJUSTMENT記録・ロック解除）とロック中操作ブロックのテストは設計書と整合。HTTPステータス409の確認もAPI設計と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-MST-master-management">
+<h1>レビュー記録票: TST-MST-master-management.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-MST-master-management.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>1</td></tr>
+<tr><td>指摘なし</td><td>6</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Part A 共通パラメタライズドテスト マスタ種別テーブル（倉庫・棟・エリア・ロケーションの「操作可能ロール」列）</td><td>API-02-master-facility.md（各APIの認可ロール）、07-auth-architecture.md（機能別アクセス権限マトリクス: マスタ管理（更新）= SYSTEM_ADMIN + WAREHOUSE_MANAGER）</td><td>倉庫・棟・エリア・ロケーションの操作可能ロールが <code>SYSTEM_ADMIN</code> のみと記載されていたが、API設計書およびアーキテクチャブループリントの権限マトリクスでは <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> と定義されている。テスト仕様書のロールを修正した。</td><td>対象ファイル修正済み</td><td><code>SYSTEM_ADMIN</code> → <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> に修正</td></tr>
+<tr><td>2</td><td>（対象外: 画面設計書）</td><td>SCR-04-master-warehouse.md（対象ロール: SYSTEM_ADMIN のみ）、SCR-02-master-facility.md（対象ロール: SYSTEM_ADMIN のみ）</td><td>画面設計書（SCR-04, SCR-02）では倉庫・棟・エリア・ロケーション管理画面の対象ロールが <code>SYSTEM_ADMIN</code> のみと記載されているが、API設計書（API-02）および認可アーキテクチャ（07-auth-architecture.md 権限マトリクス）では <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> と定義されている。SSOT（07-auth-architecture.md）に従い、画面設計書側の修正が必要。</td><td>要対応（他ドキュメント）</td><td>SCR-04-master-warehouse.md および SCR-02-master-facility.md の対象ロールを <code>SYSTEM_ADMIN, WAREHOUSE_MANAGER</code> に修正する必要あり</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): SCR-04-master-warehouse.mdおよびSCR-02-master-facility.mdの対象ロールをSYSTEM_ADMIN, WAREHOUSE_MANAGERに修正完了</blockquote>
+<table>
+<thead><tr><th>3</th><th>Part A SC-C05〜SC-C12 DB検証</th><th>data-model/02-master-tables.md</th><th>DB検証のカラム名（<code>is_active</code>, <code>version</code>, <code>created_by</code>, <code>updated_by</code>）がデータモデル定義と一致していることを確認。問題なし。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>4</th><th>Part B SC-PRD01〜PRD05</th><th>functional-requirements/01-master-management.md（商品マスタ ビジネスルール）、API-04-master-product.md</th><th>商品マスタ固有シナリオ（ロット管理フラグ・賞味期限管理フラグの在庫存在時変更不可、在庫あり商品の無効化不可、出荷禁止フラグ切り替え）が要件・API設計と整合していることを確認。APIメソッド（PATCH）・エンドポイント・エラーコードも一致。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>Part C SC-PAR01〜PAR05</th><th>API-03-master-partner.md（API-MST-PAR-005 無効化/有効化 ビジネスルール）、functional-requirements/01-master-management.md</th><th>取引先マスタ固有シナリオのステータスチェック（PLANNED/CONFIRMED/INSPECTING, PENDING/ALLOCATED/PICKING/INSPECTING）がAPI設計書のビジネスルールと一致。エラーコード（<code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code>, <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code>）も正確。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>Part D SC-WH01〜WH04</th><th>functional-requirements/01-master-management.md（倉庫マスタ ビジネスルール）、API-02-master-facility.md</th><th>倉庫マスタ固有シナリオ（在庫あり無効化不可、倉庫切替プルダウン動作、倉庫管理画面の独立性）が要件と一致。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>Part E SC-FAC01〜FAC13</th><th>functional-requirements/01-master-management.md（棟・エリア・ロケーション ビジネスルール）、data-model/02-master-tables.md、API-02-master-facility.md</th><th>施設階層シナリオ（コード一意性スコープ、無効化制約、入荷/出荷/返品エリア1ロケーション制約、棚卸中無効化不可）が要件・API設計・データモデルと整合。エラーコード（<code>CANNOT_DEACTIVATE_HAS_CHILDREN</code>, <code>CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS</code>等）も正確。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>Part F SC-USR01〜USR09</th><th>functional-requirements/01-master-management.md（ユーザーマスタ ビジネスルール）、API-05-master-user.md、data-model/02-master-tables.md</th><th>ユーザーマスタ固有シナリオ（初期パスワード・パスワードバリデーション・自己ロール変更/無効化禁止・アカウントロック解除・初回ログインフラグ）が要件・API設計・データモデルと整合。SC-USR04/USR05でPUT APIを使用しているが、これはAPI-MST-USR-004（ユーザー更新）の仕様と一致。</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-OUT-outbound">
+<h1>レビュー記録票: TST-OUT-outbound.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-OUT-outbound.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>5</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>11</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-OUT-018 DB検証 #5, #6</td><td>data-model/03-transaction-tables.md (inventory_movements)</td><td><code>move_type</code> は正しくは <code>movement_type</code>。また <code>qty</code> は正しくは <code>quantity</code>。データモデルのカラム名と不一致</td><td>対象ファイル修正済み</td><td><code>movement_type='OUTBOUND'</code>, <code>quantity=10</code> に修正。<code>reference_id</code>, <code>reference_type</code> を追加</td></tr>
+<tr><td>2</td><td>SC-OUT-020 DB検証 #5</td><td>data-model/03-transaction-tables.md (inventory_movements)</td><td>同上。<code>move_type</code> → <code>movement_type</code>、<code>qty</code> → <code>quantity</code> に修正</td><td>対象ファイル修正済み</td><td><code>movement_type='OUTBOUND'</code>, <code>quantity</code> に修正</td></tr>
+<tr><td>3</td><td>SC-OUT-015/016 DB検証 #2</td><td>data-model/03-transaction-tables.md (outbound_slip_lines)</td><td>データモデルには <code>inspected_qty</code>（検品数）と <code>shipped_qty</code>（最終出荷数）の両カラムが定義されている。テスト仕様では検品時に <code>shipped_qty</code> を使用していたが、データモデル（SSOT）に合わせて <code>inspected_qty</code> に修正</td><td>対象ファイル修正済み</td><td><code>shipped_qty</code> → <code>inspected_qty</code> に修正（SC-OUT-015, 016, 017 の DB検証）</td></tr>
+<tr><td>4</td><td>SC-OUT-017 DB検証 #1</td><td>data-model/03-transaction-tables.md (outbound_slip_lines)</td><td><code>shipped_qty=NULL</code> と記載されていたが、データモデルでは <code>shipped_qty</code> は NOT NULL, default 0 と定義。検品数は <code>inspected_qty</code>（NULL許容）に記録されるべき</td><td>対象ファイル修正済み</td><td><code>shipped_qty=NULL</code> → <code>inspected_qty=NULL</code> に修正</td></tr>
+<tr><td>5</td><td>テストデータ準備SQL</td><td>data-model/02-master-tables.md (products, partners), data-model/03-transaction-tables.md (inventories)</td><td>(1) products テーブルに存在しない <code>unit_type</code> カラムを使用。(2) products の必須カラム（<code>case_quantity</code>, <code>ball_quantity</code>, <code>storage_condition</code> 等）が欠落。(3) partners の必須カラム（<code>is_active</code>, <code>created_by</code>, <code>updated_by</code>）が欠落。(4) inventories の必須カラム <code>unit_type</code> が欠落</td><td>対象ファイル修正済み</td><td>SQL を正しいテーブルスキーマに合わせて修正</td></tr>
+<tr><td>6</td><td>API-OUT-021 補足事項 vs データモデル</td><td>functional-design/API-08-outbound.md (API-OUT-021), data-model/03-transaction-tables.md</td><td>API設計書の補足事項で「inspected_qty カラムは存在しない。検品数量は shipped_qty に格納する」と記載されているが、データモデル（SSOT）では <code>inspected_qty</code> と <code>shipped_qty</code> の両カラムが定義されている。SSOTルールに基づきデータモデル側が正であるため、API設計書の補足事項を修正する必要がある</td><td>要対応（他ドキュメント）</td><td>API-08-outbound.md の API-OUT-021 補足事項を修正し、<code>inspected_qty</code> カラムを使用するよう更新する</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-08-outbound.mdのAPI-OUT-021補足事項をinspected_qtyに記録する旨に修正完了</blockquote>
+<table>
+<thead><tr><th>7</th><th>inventory_movements の movement_type='OUTBOUND' 説明</th><th>data-model/03-transaction-tables.md (inventory_movements)</th><th>データモデルでは <code>OUTBOUND</code> の説明が「出庫（ピッキング完了）」となっているが、実際の使用箇所（API-OUT-022 出荷完了登録）では出荷確定時の在庫減算で使用される。ピッキング完了時には在庫変動は発生しないため、説明を修正すべき</th><th>要対応（他ドキュメント）</th><th>data-model/03-transaction-tables.md の movement_type='OUTBOUND' の説明を「出庫（出荷確定）」に修正する</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): 未修正（movement_type説明は正確に確認要）。記録票に注記追加</blockquote>
+<table>
+<thead><tr><th>8</th><th>SC-OUT-010 キャンセル可能ステータス</th><th>functional-requirements/04-outbound-management.md (セクション10), functional-design/API-08-outbound.md (API-OUT-005)</th><th>機能要件定義書では「出荷完了以外のステータスの受注をキャンセルできる」「ピッキング中の受注をキャンセルする場合、ピッキング指示から当該受注明細を除外する」と記載。一方、API設計書ではキャンセル可能ステータスを ORDERED/PARTIAL_ALLOCATED/ALLOCATED に限定。テスト仕様はAPI設計に準拠しているが、機能要件との不整合が存在する</th><th>要対応（他ドキュメント）</th><th>機能要件定義書とAPI設計書のキャンセル可能ステータスの範囲を統一する。PICKING_COMPLETED/INSPECTING のキャンセル可否を確定し、いずれかを修正する</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): 04-outbound-management.mdのキャンセル範囲をALLOCATEDまでに修正し、API設計書と統一完了</blockquote>
+<table>
+<thead><tr><th>9</th><th>SC-OUT-001〜020 のテストステップ・期待結果</th><th>functional-design/SCR-10-outbound.md, functional-design/API-08-outbound.md</th><th>テストステップの画面遷移、メッセージID、API エンドポイント、確認ダイアログのメッセージ文が画面設計書・API設計書と一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>SC-OUT-006 ステータスフィルタ</th><th>functional-design/API-08-outbound.md (API-OUT-001), data-model/03-transaction-tables.md</th><th>テストで使用するステータス値（ORDERED, ALLOCATED, SHIPPED, CANCELLED）がデータモデルおよびAPI設計書のステータス定義と一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>11</th><th>SC-OUT-011/012 ピッキング指示作成・ばらし未完了ブロック</th><th>functional-requirements/04a-allocation.md, functional-design/API-08-outbound.md (API-OUT-012)</th><th>ばらし指示ステータス（INSTRUCTED）、ピッキング指示番号形式（PIC-yyyyMMdd-NNN）、エラーコード（UNPACK_NOT_COMPLETED）がAPI設計書・機能要件と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-RPT-reports">
+<h1>レビュー記録票: TST-RPT-reports.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: docs/test-specifications/TST-RPT-reports.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>13</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>0</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>15</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>2.3 検索条件パラメータ RPT-07行</td><td>API-10-report.md API-RPT-007</td><td>パラメータ名 <code>locationCode</code> はAPI設計書では <code>locationCodePrefix</code> と定義されている</td><td>対象ファイル修正済み</td><td><code>locationCodePrefix</code> に修正</td></tr>
+<tr><td>2</td><td>2.3 検索条件パラメータ RPT-08行</td><td>API-10-report.md API-RPT-008</td><td><code>locationCode</code> はAPI-RPT-008のクエリパラメータに存在しない（APIは <code>warehouseId</code>, <code>productId</code>, <code>dateFrom</code>, <code>dateTo</code> のみ）</td><td>対象ファイル修正済み</td><td><code>locationCode</code> を削除</td></tr>
+<tr><td>3</td><td>2.3 検索条件パラメータ RPT-09行</td><td>API-10-report.md API-RPT-009</td><td>パラメータ名 <code>dateFrom</code>/<code>dateTo</code> はAPI設計書では <code>correctionDateFrom</code>/<code>correctionDateTo</code> と定義されている</td><td>対象ファイル修正済み</td><td><code>correctionDateFrom</code>/<code>correctionDateTo</code> に修正</td></tr>
+<tr><td>4</td><td>2.3 検索条件パラメータ RPT-10行</td><td>API-10-report.md API-RPT-010</td><td><code>warehouseId</code> はAPI-RPT-010のクエリパラメータに存在しない。APIは <code>stocktakeId</code> または <code>buildingId</code> + <code>areaId</code> を使用する</td><td>対象ファイル修正済み</td><td><code>stocktakeId</code>（または <code>buildingId</code> + <code>areaId</code>）に修正</td></tr>
+<tr><td>5</td><td>2.3 検索条件パラメータ RPT-11行</td><td>API-10-report.md API-RPT-011</td><td><code>warehouseId</code> はAPI-RPT-011のクエリパラメータに存在しない。APIは <code>stocktakeId</code> のみを使用する</td><td>対象ファイル修正済み</td><td><code>stocktakeId</code> のみに修正</td></tr>
+<tr><td>6</td><td>2.3 検索条件パラメータ RPT-12行</td><td>API-10-report.md API-RPT-012</td><td>パラメータ名 <code>instructionId</code> はAPI設計書では <code>pickingInstructionId</code> と定義されている。また <code>warehouseId</code> はAPI-RPT-012のパラメータに存在しない</td><td>対象ファイル修正済み</td><td><code>pickingInstructionId</code> に修正</td></tr>
+<tr><td>7</td><td>2.3 検索条件パラメータ RPT-13行</td><td>API-10-report.md API-RPT-013</td><td>パラメータ名 <code>slipIds</code>（複数形）はAPI設計書では <code>slipId</code>（単数形）と定義されている</td><td>対象ファイル修正済み</td><td><code>slipId</code> に修正</td></tr>
+<tr><td>8</td><td>2.3 検索条件パラメータ RPT-14行</td><td>API-10-report.md API-RPT-014</td><td>パラメータ名 <code>dateFrom</code>/<code>dateTo</code> はAPI設計書では <code>plannedDateFrom</code>/<code>plannedDateTo</code> と定義されている</td><td>対象ファイル修正済み</td><td><code>plannedDateFrom</code>/<code>plannedDateTo</code> に修正</td></tr>
+<tr><td>9</td><td>2.3 検索条件パラメータ RPT-17行</td><td>API-10-report.md API-RPT-017</td><td>パラメータ名 <code>businessDate</code> はAPI設計書では <code>targetBusinessDate</code> と定義されている</td><td>対象ファイル修正済み</td><td><code>targetBusinessDate</code> に修正。テストステップ内のURL例・Playwrightコード例も同時修正</td></tr>
+<tr><td>10</td><td>2.3 検索条件パラメータ RPT-18行</td><td>API-10-report.md API-RPT-018</td><td>パラメータ名 <code>dateFrom</code>/<code>dateTo</code> はAPI設計書では <code>returnDateFrom</code>/<code>returnDateTo</code> と定義されている</td><td>対象ファイル修正済み</td><td><code>returnDateFrom</code>/<code>returnDateTo</code> に修正</td></tr>
+<tr><td>11</td><td>2.3 SC-RPT06-002</td><td>API-10-report.md API-RPT-006 業務ロジック</td><td>「異常系: 日替処理未実行の営業日指定」で404エラーを期待しているが、API設計書では「指定 batchBusinessDate の日替処理が実行されていない場合は空配列（<code>[]</code>）を返す（404 ではない）」と定義されている</td><td>対象ファイル修正済み</td><td>シナリオ名を「正常系: 日替処理未実行の営業日指定で空配列が返る」に修正</td></tr>
+<tr><td>12</td><td>SC-RPT10-002 期待結果</td><td>RPT-10-stocktake-list.md 特記事項</td><td>テストシナリオで「hideBookQty=false の場合にPDFに帳簿数量が表示される」ことを期待しているが、RPT-10設計書の特記事項に「帳簿数量（systemQuantity）はPDFに表示しない」「PDFテンプレートでは描画しない」と明記されており、hideBookQtyの値にかかわらずPDFでは常に帳簿数量は非表示</td><td>対象ファイル修正済み</td><td>期待結果を「PDFに帳簿数量が含まれないこと」に修正。根拠の注記を追加</td></tr>
+<tr><td>13</td><td>8. Playwrightコード例 SC-RPT10-001</td><td>API-10-report.md API-RPT-010</td><td>Playwrightコードで <code>warehouseId: '1'</code> を指定しているが、API-RPT-010のクエリパラメータに <code>warehouseId</code> は存在しない</td><td>対象ファイル修正済み</td><td><code>warehouseId</code> パラメータを削除</td></tr>
+<tr><td>14</td><td>API-10-report.md API-RPT-010</td><td>functional-design/RPT-10-stocktake-list.md, functional-requirements/05-reports.md</td><td><code>hideBookQty</code> パラメータがAPI設計書（API-RPT-010）のクエリパラメータ一覧に定義されていない。機能要件定義書とRPT-10レポート設計書では <code>hideBookQty=true</code> によるPDF帳簿数量非表示が記述されているが、APIのリクエスト仕様に反映されていない</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-010 クエリパラメータに <code>hideBookQty</code> (Boolean, 任意, デフォルト: true) を追加する必要がある</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-10-report.mdのAPI-RPT-010クエリパラメータにhideBookQtyパラメータを追加完了</blockquote>
+<table>
+<thead><tr><th>15</th><th>API-10-report.md API-RPT-018</th><th>functional-requirements/08-returns.md</th><th>機能要件定義書では返品種別として INBOUND / INVENTORY / OUTBOUND の3種別が定義されているが、API-RPT-018の <code>returnType</code> フィルタパラメータは <code>INBOUND</code> / <code>OUTBOUND</code> のみ対応（<code>INVENTORY</code>（在庫返品）が欠落）。テスト仕様書のテストデータにも在庫返品が含まれていない</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-018 で <code>returnType</code> の値に <code>INVENTORY</code> を追加するか、意図的に除外している場合はその理由を明記する必要がある</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-10-report.mdのAPI-RPT-018 returnTypeにINVENTORYを追加完了（RTN側レビューと重複指摘）</blockquote>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-TST-RTN-returns">
+<h1>レビュー記録票: TST-RTN-returns.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-20<br><strong>対象ファイル</strong>: <code>docs/test-specifications/TST-RTN-returns.md</code><br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>4</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>11</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SC-001 DB検証 #1: <code>slip_number</code></td><td>data-model/03-transaction-tables.md（return_slipsテーブル）</td><td><code>return_slips</code> テーブルの伝票番号カラムは <code>return_number</code> であるが、テスト仕様書では <code>slip_number</code> と記載されていた</td><td>対象ファイル修正済み</td><td><code>slip_number</code> → <code>return_number</code> に修正</td></tr>
+<tr><td>2</td><td>SC-006 テストステップ #2: <code>totalElements=4</code></td><td>functional-design/API-10-report.md（API-RPT-018）</td><td>API-RPT-018はJSON配列を返すAPIであり、ページングレスポンス（<code>totalElements</code>フィールド）ではない。ページングレスポンスを返すのはAPI-RTN-002（返品一覧取得）の方</td><td>対象ファイル修正済み</td><td>確認方法を <code>totalElements=4</code> → <code>JSON配列の要素数=4</code> に修正。ステップ1にAPIパスを追記</td></tr>
+<tr><td>3</td><td>SC-007 テストステップ #3</td><td>functional-design/SCR-14-returns.md（イベント一覧 EVT-RTN001-007〜008）</td><td>在庫超過エラー（MSG-E-RTN001-007）はサーバーサイドで返されるエラーバナーであり、確認ダイアログ[OK]クリック後のAPI応答として表示される。テストステップに確認ダイアログのOKクリックが欠落していた</td><td>対象ファイル修正済み</td><td>「[登録]」の後に「→確認ダイアログ [OK]」を追加。また返品理由の入力も欠落していたため追記</td></tr>
+<tr><td>4</td><td>SC-008 テストステップ #2 / SC-009 テストステップ #2</td><td>functional-design/SCR-14-returns.md（メッセージ一覧）</td><td>SC-007と同様、引当済みエラー（MSG-E-RTN001-008）・棚卸ロックエラー（MSG-E-RTN001-009）もサーバーサイドのエラーバナーであり、確認ダイアログ[OK]後に表示される。テストステップに確認ダイアログのOKクリックが欠落していた</td><td>対象ファイル修正済み</td><td>「[登録]」の後に「→確認ダイアログ [OK]」を追加。返品理由の入力も追記</td></tr>
+<tr><td>5</td><td>SC-006全体</td><td>functional-design/API-10-report.md（API-RPT-018 リクエスト仕様）</td><td>API-RPT-018の<code>returnType</code>クエリパラメータの説明に<code>INBOUND</code> / <code>OUTBOUND</code>のみ記載されており、<code>INVENTORY</code>（在庫返品）が含まれていない。SC-006のテストデータには在庫返品1件が含まれるが、API側で<code>INVENTORY</code>がフィルタリング対象として定義されていない</td><td>要対応（他ドキュメント）</td><td><code>docs/functional-design/API-10-report.md</code> のAPI-RPT-018 <code>returnType</code>パラメータ説明に <code>INVENTORY</code> を追加する必要あり</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): API-10-report.mdのAPI-RPT-018 returnTypeパラメータにINVENTORYを追加完了</blockquote>
+<table>
+<thead><tr><th>6</th><th>SC-002 DB検証 #3 / データモデル</th><th>data-model/03-transaction-tables.md（return_slipsテーブル <code>return_reason</code> 定義）</th><th><code>return_slips.return_reason</code> のコメントで <code>EXCESS_QUANTITY</code> の日本語名が「過剰入荷」と記載されているが、機能要件定義書（08-returns.md）およびAPI設計書（API-13-returns.md）では「数量過剰」と定義されている。SSOTに従えばAPI設計書の「数量過剰」が正</th><th>要対応（他ドキュメント）</th><th><code>docs/data-model/03-transaction-tables.md</code> の <code>return_slips.return_reason</code> コメントを「過剰入荷」→「数量過剰」に修正する必要あり</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-20): data-model/03-transaction-tables.mdのreturn_slips.return_reasonのEXCESS_QUANTITY説明を「数量過剰」に修正完了</blockquote>
+<table>
+<thead><tr><th>7</th><th>SC-001〜SC-014 全体構成</th><th>functional-requirements/08-returns.md</th><th>テストシナリオが機能要件の業務ルール（1伝票1商品、即時減算、引当保護、棚卸ロック保護、在庫マイナス禁止、入荷/出荷返品の在庫不変）を網羅していることを確認した</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>SC-001〜SC-003 伝票番号形式</th><th>functional-design/API-13-returns.md（伝票番号採番ルール）</th><th>入荷返品=RTN-I-、在庫返品=RTN-S-、出荷返品=RTN-O- のプレフィックスがAPI設計書の採番ルールと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>SC-005 返品理由コード全6種</th><th>functional-design/API-13-returns.md（返品理由コード定義 SSOT）</th><th>QUALITY_DEFECT / EXCESS_QUANTITY / WRONG_DELIVERY / EXPIRED / DAMAGED / OTHER の全6種がテストされており、SSOTの定義と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>SC-013 メッセージID</th><th>functional-design/SCR-14-returns.md（メッセージ一覧）</th><th>必須項目未入力のバリデーションメッセージID（MSG-E-RTN001-001〜006, 010）が画面設計書のメッセージ一覧と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>11</th><th>SC-012 ロット・期限管理</th><th>functional-design/SCR-14-returns.md（画面項目 RTN-LOT, RTN-EXPIRY） / data-model/03-transaction-tables.md（return_slips.lot_number, expiry_date）</th><th>ロット番号・賞味期限フィールドの表示条件（lot_manage_flag, expiry_manage_flag）およびDB保存カラムが設計書・データモデルと一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>

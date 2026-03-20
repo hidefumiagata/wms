@@ -6,7 +6,7 @@
 |------|------|
 | **RDBMS** | Azure Database for PostgreSQL Flexible Server |
 | **文字コード** | UTF-8 |
-| **タイムゾーン** | Asia/Tokyo（アプリ層で変換。DB保存はUTC） |
+| **タイムゾーン** | Asia/Tokyo（JST）固定。DB接続・アプリ層ともにJSTで統一し、タイムゾーン変換は行わない |
 | **主キー** | 全テーブル `id bigserial PRIMARY KEY`（サロゲートキー） |
 | **論理削除** | マスタテーブルは `is_active boolean` フラグで管理。物理削除は行わない |
 | **スキーマ管理** | Flyway マイグレーション |
@@ -35,6 +35,7 @@
 |---------|-----|------|
 | `id` | bigserial | PK |
 | `is_active` | boolean NOT NULL DEFAULT true | 有効/無効フラグ（論理削除） |
+| `version` | integer NOT NULL DEFAULT 0 | 楽観的ロック用バージョン番号（JPA `@Version`。更新時に自動インクリメント） |
 | `created_at` | timestamptz NOT NULL DEFAULT now() | 作成日時 |
 | `created_by` | bigint FK → users.id | 作成者 |
 | `updated_at` | timestamptz NOT NULL DEFAULT now() | 更新日時 |
@@ -104,6 +105,7 @@ product_name    varchar NOT NULL          -- 登録時コピー
 | `users` | ユーザーマスタ | ログインユーザー。ロール・ロック状態を管理 |
 | `refresh_tokens` | リフレッシュトークン | JWT リフレッシュトークン管理 |
 | `system_parameters` | システムパラメータ | ロケーション収容上限等の可変設定値 |
+| `password_reset_tokens` | パスワードリセットトークン | パスワードリセット用トークンの管理 |
 
 ### トランザクション系（入荷）
 
@@ -120,6 +122,7 @@ product_name    varchar NOT NULL          -- 登録時コピー
 | `outbound_slip_lines` | 出荷明細 | 商品明細 |
 | `picking_instructions` | ピッキング指示ヘッダ | 複数受注をまとめたピッキング指示 |
 | `picking_instruction_lines` | ピッキング指示明細 | ロケーション単位のピッキング明細。出荷明細の分割ピッキングに対応 |
+| `allocation_details` | 引当明細 | 受注明細とロケーション在庫の引当紐付け |
 
 ### トランザクション系（在庫）
 
@@ -129,6 +132,7 @@ product_name    varchar NOT NULL          -- 登録時コピー
 | `inventory_movements` | 在庫変動履歴 | 入庫・出庫・移動・ばらし・訂正・棚卸の全変動履歴 |
 | `stocktake_headers` | 棚卸ヘッダ | 棚卸セッションのヘッダ |
 | `stocktake_lines` | 棚卸明細 | ロケーション・商品単位の実数と差異 |
+| `unpack_instructions` | ばらし指示 | 引当時に自動生成されるばらし指示の管理 |
 
 ### バッチ・集計系
 
@@ -141,6 +145,8 @@ product_name    varchar NOT NULL          -- 登録時コピー
 | `inventory_snapshots` | 在庫スナップショット | 営業日末時点の在庫数量サマリー |
 | `unreceived_list_records` | 未入荷リスト（確定） | 日替処理で確定した未入荷リスト |
 | `unshipped_list_records` | 未出荷リスト（確定） | 日替処理で確定した未出荷リスト |
+| `return_slips` | 返品伝票 | 返品伝票の管理 |
+| `if_executions` | 外部連携I/F実行履歴 | 外部連携インターフェースの実行履歴 |
 
 ### バックアップ系
 

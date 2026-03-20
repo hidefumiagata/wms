@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(sort echo:*)"
+      "Bash(sort echo:*)",
+      "Bash(node docs/scripts/build-docs.js --validate)",
+      "Bash(node docs/scripts/build-docs.js)"
     ]
   }
 }

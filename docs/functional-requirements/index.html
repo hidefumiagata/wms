@@ -60,18 +60,144 @@
     <p style="color:#888;margin-top:8px;font-size:0.9rem;">Functional Requirements</p>
   </div>
   
+  
   <div class="toc">
     <strong>目次</strong>
     <ol>
-        <li><a href="#01-master-management">1. 機能要件定義書 — マスタ管理</a></li>
-        <li><a href="#02-inbound-management">2. 機能要件定義書 — 入荷管理</a></li>
-        <li><a href="#03-inventory-management">3. 機能要件定義書 — 在庫管理</a></li>
-        <li><a href="#04-outbound-management">4. 機能要件定義書 — 出荷管理</a></li>
-        <li><a href="#05-reports">5. 機能要件定義書 — レポート</a></li>
-        <li><a href="#06-batch-processing">6. 機能要件定義書 — バッチ処理</a></li>
-        <li><a href="#07-interface">7. 機能要件定義書 — 外部連携I/F</a></li>
+        <li><a href="#00-authentication">1. 機能要件定義書 — 認証・ログイン</a></li>
+        <li><a href="#01-master-management">2. 機能要件定義書 — マスタ管理</a></li>
+        <li><a href="#01a-system-parameters">3. 機能要件定義書 — システムパラメータ管理</a></li>
+        <li><a href="#02-inbound-management">4. 機能要件定義書 — 入荷管理</a></li>
+        <li><a href="#03-inventory-management">5. 機能要件定義書 — 在庫管理</a></li>
+        <li><a href="#04-outbound-management">6. 機能要件定義書 — 出荷管理</a></li>
+        <li><a href="#04a-allocation">7. 機能要件定義書 — 在庫引当</a></li>
+        <li><a href="#05-reports">8. 機能要件定義書 — レポート</a></li>
+        <li><a href="#06-batch-processing">9. 機能要件定義書 — バッチ処理</a></li>
+        <li><a href="#07-interface">10. 機能要件定義書 — 外部連携I/F</a></li>
+        <li><a href="#08-returns">11. 機能要件定義書 — 返品管理</a></li>
     </ol>
   </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="00-authentication">
+<h1>機能要件定義書 — 認証・ログイン</h1>
+<blockquote>認証方式・トークン設計・セキュリティ仕様の詳細は
+<p><a href="../architecture-blueprint/07-auth-architecture.md" target="_blank">07-auth-architecture.md</a>、<br><a href="../architecture-blueprint/10-security-architecture.md" target="_blank">10-security-architecture.md</a> を参照</blockquote></p>
+<h2>概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>認証方式</strong></td><td>JWT + httpOnly Cookie（SameSite=Lax）</td></tr>
+<tr><td><strong>セッション有効期間</strong></td><td>最終操作から1時間（リフレッシュトークンのスライディング方式）</td></tr>
+<tr><td><strong>パスワードポリシー</strong></td><td>8〜128文字、英大文字・英小文字・数字を各1文字以上必須</td></tr>
+<tr><td><strong>ログイン失敗ロック</strong></td><td>連続5回失敗でアカウントロック。解除はSYSTEM_ADMINのみ</td></tr>
+<tr><td><strong>メール送信基盤</strong></td><td>Azure Communication Services（Email）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>業務フロー</h2>
+<h3>通常ログインフロー</h3>
+<div class="mermaid">flowchart TD
+    U1["ログイン画面を開く\n📋 AUTH-001"]
+    U2["ユーザーID・パスワードを入力"]
+    SY1{"認証チェック"}
+    SY2{"初回ログイン？"}
+    SY3["パスワード変更画面へ\n強制リダイレクト\n📋 AUTH-002\n（変更完了まで他操作ブロック）"]
+    SY4["ホーム画面へ遷移"]
+    SY5["エラーメッセージ表示\n「ユーザーIDまたは\nパスワードが正しくありません」"]
+    SY6{"5回連続失敗？"}
+    SY7["アカウントロック\n「アカウントがロックされました。\n管理者に連絡してください」"]
+
+    U1 --> U2
+    U2 --> SY1
+    SY1 -->|"成功"| SY2
+    SY1 -->|"失敗"| SY6
+    SY6 -->|"いいえ"| SY5
+    SY6 -->|"はい"| SY7
+    SY5 --> U2
+    SY2 -->|"はい"| SY3
+    SY2 -->|"いいえ"| SY4
+    SY3 -->|"変更完了"| SY4</div>
+<h3>パスワードリセットフロー</h3>
+<div class="mermaid">flowchart TD
+    U1["ログイン画面の\n「パスワードを忘れた方」をクリック"]
+    U2["ユーザーIDまたは\nメールアドレスを入力\n📋 AUTH-003"]
+    SY1{"ユーザー検索"}
+    SY2["登録済みメールアドレスに\nリセットリンクを送信"]
+    SY3["「メールを送信しました」\nメッセージ表示\n（ユーザー存在有無に関わらず同一メッセージ）"]
+    U3["メール内のリンクをクリック"]
+    U4["新パスワードを入力\n📋 AUTH-004"]
+    SY4["パスワードを更新\nリセットトークンを無効化"]
+    SY5["ログイン画面へリダイレクト\n「パスワードを再設定しました」"]
+
+    U1 --> U2
+    U2 --> SY1
+    SY1 -->|"存在する"| SY2
+    SY1 -->|"存在しない"| SY3
+    SY2 --> SY3
+    SY3 --> U3
+    U3 --> U4
+    U4 --> SY4
+    SY4 --> SY5</div>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. ログイン（AUTH-001）</h3>
+<ul><li style="margin-left:0px">ユーザーID・パスワードを入力してログインする</li><li style="margin-left:0px">認証成功時：httpOnly Cookie にJWTトークンをセットし、ホーム画面へ遷移する</li><li style="margin-left:0px">認証失敗時：「ユーザーIDまたはパスワードが正しくありません」を表示する（IDとPWのどちらが間違いかは区別しない）</li><li style="margin-left:0px">アカウントロック時：「アカウントがロックされました。管理者に連絡してください」を表示する</li><li style="margin-left:0px">ログイン成功時に失敗カウンタをリセットする</li></ul>
+<h3>2. 初回パスワード変更（AUTH-002）</h3>
+<ul><li style="margin-left:0px">初回ログイン（<code>password_change_required</code> フラグON）時にパスワード変更画面へ強制リダイレクトする</li><li style="margin-left:0px"><strong>変更完了までサイドメニュー・他画面への遷移を一切ブロックする</strong></li><li style="margin-left:0px">旧パスワード + 新パスワード + 新パスワード確認を入力する</li><li style="margin-left:0px">パスワードポリシー（8〜128文字、英大文字・英小文字・数字を各1文字以上）を満たさない場合はエラー</li><li style="margin-left:0px">旧パスワードが一致しない場合はエラー</li><li style="margin-left:0px">変更成功後に <code>password_change_required</code> フラグをOFFに更新し、ホーム画面へ遷移する</li></ul>
+<h3>3. パスワード変更（AUTH-002、ログイン後）</h3>
+<ul><li style="margin-left:0px">ログイン済みユーザーが自身のパスワードを変更できる</li><li style="margin-left:0px">ヘッダーのユーザーメニューからアクセスする</li><li style="margin-left:0px">旧パスワード + 新パスワード + 新パスワード確認を入力する</li><li style="margin-left:0px">パスワードポリシーを満たさない場合はエラー</li><li style="margin-left:0px">旧パスワードが一致しない場合はエラー</li><li style="margin-left:0px">パスワード変更APIの連続5回失敗でもアカウントロック（ログイン失敗ロックと同一の仕組み）</li><li style="margin-left:0px">変更成功時にトースト通知「パスワードを変更しました」を表示する</li></ul>
+<h3>4. パスワードリセット申請（AUTH-003）</h3>
+<ul><li style="margin-left:0px">ログイン画面の「パスワードを忘れた方」リンクからアクセスする</li><li style="margin-left:0px">ユーザーIDまたはメールアドレスを入力してリセットを申請する</li><li style="margin-left:0px">入力値に該当するユーザーが存在する場合、登録済みメールアドレスにリセットリンクを送信する</li><li style="margin-left:0px"><strong>ユーザーが存在しない場合も同一のメッセージを表示する</strong>（「メールを送信しました。届かない場合は管理者にお問い合わせください」）。ユーザーの存在有無を外部に露出させない</li><li style="margin-left:0px">リセットリンクの有効期限は <strong>30分</strong></li><li style="margin-left:0px">リセットトークンはDBで管理し、使用済みトークンは無効化する</li></ul>
+<h3>5. パスワード再設定（AUTH-004）</h3>
+<ul><li style="margin-left:0px">メール内のリセットリンクからアクセスする</li><li style="margin-left:0px">新パスワード + 新パスワード確認を入力する（旧パスワードの入力は不要）</li><li style="margin-left:0px">パスワードポリシーを満たさない場合はエラー</li><li style="margin-left:0px">リセットトークンが期限切れまたは使用済みの場合は「リンクが無効です。再度パスワードリセットを申請してください」を表示する</li><li style="margin-left:0px">変更成功時にリセットトークンを無効化し、ログイン画面へリダイレクトする。「パスワードを再設定しました」メッセージを表示する</li><li style="margin-left:0px">アカウントがロック中の場合も、パスワードリセットは可能とする（リセット完了時にロックを解除し、失敗カウンタもリセットする）</li></ul>
+<h3>6. ログアウト</h3>
+<ul><li style="margin-left:0px">ヘッダーのログアウトボタンから実行する</li><li style="margin-left:0px">サーバー側：リフレッシュトークンをDBから削除し、httpOnly Cookie を削除する</li><li style="margin-left:0px">フロントエンド側：Piniaストア（authStore, systemStore）をクリアする</li><li style="margin-left:0px">ログイン画面にリダイレクトし、トースト通知「ログアウトしました」をフェードアウト表示する</li></ul>
+<hr>
+<h2>セッションタイムアウト</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>タイムアウト時間</strong></td><td>最終操作から1時間</td></tr>
+<tr><td><strong>フロントエンドタイマー</strong></td><td>最終API呼び出しから55分経過時点で警告ダイアログを表示（「まもなくセッションが切れます。操作を続けますか？」）。「続ける」ボタンで <code>POST /api/v1/auth/refresh</code> を呼び出してセッション延長</td></tr>
+<tr><td><strong>API 401 フォールバック</strong></td><td>フロントタイマーを超えてしまった場合、次のAPI呼び出し時に401を受信。リフレッシュ失敗時はログイン画面へリダイレクトし、「セッションがタイムアウトしました」メッセージを表示する</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>メール送信仕様</h2>
+<h3>リセットメール</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>送信サービス</strong></td><td>Azure Communication Services（Email）</td></tr>
+<tr><td><strong>送信元アドレス</strong></td><td><code>noreply@{ドメイン}</code>（Azure Communication Servicesのドメイン）</td></tr>
+<tr><td><strong>件名</strong></td><td>「【WMS】パスワードリセットのご案内」</td></tr>
+<tr><td><strong>本文</strong></td><td>パスワードリセットリンク（有効期限30分）を含む。HTMLメール + テキストメールの両方を送信</td></tr>
+<tr><td><strong>リセットリンク形式</strong></td><td><code>https://{フロントエンドURL}/auth/reset-password?token={リセットトークン}</code></td></tr>
+<p></tbody><br></table></p>
+<h3>リセットトークン管理</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>トークン形式</strong></td><td>ランダム文字列（UUID v4等）。推測不可能であること</td></tr>
+<tr><td><strong>保存方式</strong></td><td>DBの <code>password_reset_tokens</code> テーブルにハッシュ化して保存</td></tr>
+<tr><td><strong>有効期限</strong></td><td>30分</td></tr>
+<tr><td><strong>使用回数</strong></td><td>1回のみ。使用済みトークンは無効化する</td></tr>
+<tr><td><strong>同一ユーザーの複数申請</strong></td><td>新規トークン発行時に、同一ユーザーの未使用トークンを無効化する</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>エラーメッセージの安全性</strong></td><td>ログイン失敗時にユーザーIDの存在有無を露出させない。パスワードリセット時も同様</td></tr>
+<tr><td><strong>ロック通知</strong></td><td>アカウントロック時は「ロックされました」を明示する（ロック状態の隠蔽より、ユーザーの次のアクション（管理者連絡）を明確にすることを優先）</td></tr>
+<tr><td><strong>パスワードポリシー</strong></td><td>8〜128文字、英大文字・英小文字・数字を各1文字以上必須。フロントエンド・バックエンド両方でチェック</td></tr>
+<tr><td><strong>初回変更の強制</strong></td><td>初回ログイン時はパスワード変更完了まで他操作を一切ブロックする</td></tr>
+<tr><td><strong>パスワード変更失敗ロック</strong></td><td>パスワード変更APIの連続5回失敗でもアカウントロック（ログイン失敗ロックと同一カウンタ）</td></tr>
+<tr><td><strong>パスワードリセットとロック解除</strong></td><td>パスワードリセット完了時にアカウントロックを解除し、失敗カウンタをリセットする</td></tr>
+<tr><td><strong>セッションタイムアウト</strong></td><td>55分で警告ダイアログ、60分で強制ログアウト。フロントタイマー + API 401の二重チェック</td></tr>
+<tr><td><strong>ログアウト表示</strong></td><td>トースト通知「ログアウトしました」をフェードアウト表示</td></tr>
+<p></tbody><br></table></p>
+</div>
 
 <hr class="doc-separator">
 <div class="markdown-body" id="01-master-management">
@@ -220,6 +346,16 @@
 <p></tbody><br></table></p>
 <h3>ビジネスルール</h3>
 <ul><li style="margin-left:0px">倉庫コードはシステム全体で一意</li><li style="margin-left:0px">倉庫コードは登録後に変更不可</li><li style="margin-left:0px">フロントエンドのヘッダーに倉庫切り替えプルダウンを常設し、選択中の倉庫で全業務画面をフィルタする</li><li style="margin-left:0px"><strong>倉庫マスタ管理画面（倉庫一覧・登録・編集）はヘッダーの倉庫切替の影響を受けない</strong>（全倉庫を一覧表示・管理する性質のため）</li><li style="margin-left:0px">在庫が存在する倉庫は無効化不可</li></ul>
+<h4>倉庫切替の動作仕様</h4>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>デフォルト倉庫</strong></td><td>ログイン直後は有効な倉庫の中で倉庫コード昇順の先頭を自動選択する</td></tr>
+<tr><td><strong>データ反映タイミング</strong></td><td>画面のデータはボタン操作（検索・登録・更新等）を押すまでサーバーに反映されない</td></tr>
+<tr><td><strong>切替時の編集中データ</strong></td><td>倉庫を切り替えた場合、編集中・入力中のデータは破棄され、新しい倉庫のデータに切り替わる。確認ダイアログは表示しない</td></tr>
+<tr><td><strong>切替時の一覧画面</strong></td><td>倉庫を切り替えると一覧画面は新しい倉庫のデータで自動的に再検索される</td></tr>
+<tr><td><strong>Piniaストア管理</strong></td><td>選択中倉庫IDは <code>systemStore.selectedWarehouseId</code> で管理する。全業務画面のAPI呼び出しに倉庫IDを自動付与する</td></tr>
+<p></tbody><br></table></p>
 <hr>
 <h2>4. 棟マスタ</h2>
 <h3>機能一覧</h3>
@@ -319,6 +455,69 @@
 </div>
 
 <hr class="doc-separator">
+<div class="markdown-body" id="01a-system-parameters">
+<h1>機能要件定義書 — システムパラメータ管理</h1>
+<h2>概要</h2>
+<p>システム全体の動作を制御する設定値を管理する画面。パラメータの値の変更のみ可能で、パラメータの追加・削除はFlywayマイグレーション（開発者作業）で行う。</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>操作可能ロール</strong></td><td>SYSTEM_ADMIN のみ</td></tr>
+<tr><td><strong>操作</strong></td><td>値の参照・変更のみ（追加・削除は不可）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>業務フロー</h2>
+<div class="mermaid">flowchart TD
+    subgraph ADMIN["👔 システム管理者"]
+        A1["システムパラメータ一覧を確認\n📋 SYS-001 パラメータ一覧"]
+        A2["パラメータ値を変更\n📋 SYS-001 インライン編集"]
+    end
+
+    subgraph SYS["⚙️ システム（自動処理）"]
+        SY1["値のバリデーション\nパラメータを保存"]
+    end
+
+    A1 --> A2
+    A2 --> SY1
+    SY1 --> A1</div>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. パラメータ一覧照会（SYS-001）</h3>
+<ul><li style="margin-left:0px">登録済みのシステムパラメータを一覧表示する</li><li style="margin-left:0px">カテゴリでグルーピングして表示する</li><li style="margin-left:0px">各パラメータのキー・表示名・現在値・説明・デフォルト値を表示する</li></ul>
+<h3>2. パラメータ値変更（SYS-001 インライン編集）</h3>
+<ul><li style="margin-left:0px">一覧画面上でパラメータ値をインライン編集して保存する</li><li style="margin-left:0px">値の型（整数・文字列等）に応じたバリデーションを行う</li><li style="margin-left:0px">変更前の値を確認できる（変更前→変更後の表示）</li><li style="margin-left:0px">保存時に確認ダイアログを表示する（「パラメータを変更します。よろしいですか？」）</li><li style="margin-left:0px">変更はリアルタイムに反映される（アプリ再起動不要）</li></ul>
+<hr>
+<h2>パラメータ一覧</h2>
+<h3>在庫管理カテゴリ</h3>
+<table>
+<thead><tr><th>パラメータキー</th><th>表示名</th><th>型</th><th>デフォルト値</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>LOCATION_CAPACITY_CASE</code></td><td>ロケーション収容上限（ケース）</td><td>整数</td><td>1</td><td>1ロケーションあたりのケース最大数</td></tr>
+<tr><td><code>LOCATION_CAPACITY_BALL</code></td><td>ロケーション収容上限（ボール）</td><td>整数</td><td>6</td><td>1ロケーションあたりのボール最大数</td></tr>
+<tr><td><code>LOCATION_CAPACITY_PIECE</code></td><td>ロケーション収容上限（バラ）</td><td>整数</td><td>100</td><td>1ロケーションあたりのバラ最大数</td></tr>
+<p></tbody><br></table></p>
+<h3>認証・セキュリティカテゴリ</h3>
+<table>
+<thead><tr><th>パラメータキー</th><th>表示名</th><th>型</th><th>デフォルト値</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>LOGIN_FAILURE_LOCK_COUNT</code></td><td>ログイン失敗ロック回数</td><td>整数</td><td>5</td><td>連続ログイン失敗でアカウントをロックする回数</td></tr>
+<tr><td><code>SESSION_TIMEOUT_MINUTES</code></td><td>セッションタイムアウト（分）</td><td>整数</td><td>60</td><td>最終操作からセッションが失効するまでの時間（分）</td></tr>
+<tr><td><code>PASSWORD_RESET_EXPIRY_MINUTES</code></td><td>パスワードリセットリンク有効期限（分）</td><td>整数</td><td>30</td><td>パスワードリセットリンクの有効期限（分）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>変更のみ</strong></td><td>画面からはパラメータの値の変更のみ可能。パラメータの追加・削除はFlywayマイグレーションで行う</td></tr>
+<tr><td><strong>バリデーション</strong></td><td>整数型パラメータは正の整数のみ許可。型に応じたバリデーションを実施</td></tr>
+<tr><td><strong>即時反映</strong></td><td>変更はアプリケーション再起動なしに即時反映される。バックエンドはパラメータ値をキャッシュせず、都度DBから取得する</td></tr>
+<tr><td><strong>監査カラム</strong></td><td>変更時に <code>updated_at</code>・<code>updated_by</code> を記録する。誰がいつ変更したかを追跡できる</td></tr>
+<tr><td><strong>操作権限</strong></td><td>SYSTEM_ADMIN のみ。他ロールにはサイドメニューに表示しない</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
 <div class="markdown-body" id="02-inbound-management">
 <h1>機能要件定義書 — 入荷管理</h1>
 <h2>入荷種別</h2>
@@ -365,7 +564,10 @@
     EV2 --> S1
     S1 --> S2
     S2 --> S3
-    S3 --> CHK{差異あり？}
+    S3 --> EXPCHK{賞味期限チェック\n期限切れ？}
+    EXPCHK -->|"期限切れ"| EXPERR["エラー：入荷不可\n賞味期限が営業日以前"]
+    EXPERR --> S3
+    EXPCHK -->|"OK or 対象外"| CHK{差異あり？}
     CHK -->|"なし（予定通り）"| S4
     CHK -->|"あり（数量修正）"| S3b["入荷数を修正して確定\n📋 INB-003 入荷検品"]
     S3b --> S4
@@ -398,7 +600,7 @@
 <h3>5. 入荷キャンセル</h3>
 <ul><li style="margin-left:0px">「入庫完了」以外のステータスの入荷予定をキャンセルできる</li><li style="margin-left:0px">キャンセルされた入荷予定は修正不可（再登録が必要）</li><li style="margin-left:0px">キャンセル時の在庫戻し処理は以下の条件で発動する：</li><li style="margin-left:20px">ステータスが「一部入庫」の場合：入庫確定済み明細の在庫数量を在庫から減算して戻す</li><li style="margin-left:20px">ステータスが「検品中」以下（入荷予定・入荷確認済・検品中）の場合：在庫への影響なし（検品は在庫を変動させない）</li></ul>
 <h3>6. 入荷検品</h3>
-<ul><li style="margin-left:0px">伝票番号を条件に検品画面を開き、商品明細単位で入荷数を入力する</li><li style="margin-left:0px"><strong>入荷数の初期値は入荷予定数と同数</strong>にプリセットする。予定通り入荷していればそのまま確定ボタン1クリックで完了できる</li><li style="margin-left:0px">差異がある明細のみ入荷数を修正して確定する</li><li style="margin-left:0px">最初の検品入力でステータスが「検品中」に遷移する</li><li style="margin-left:0px">検品数が予定数と異なる場合も、検品数をそのまま確定できる（差異は記録として保持）</li><li style="margin-left:0px">入力済みの検品数は確定前であれば修正可能</li><li style="margin-left:0px">検品実施前に <strong>入荷検品レポート</strong>（伝票番号・入荷予定日で絞り込み可）をPDF出力して作業帳票として使用できる</li></ul>
+<ul><li style="margin-left:0px">伝票番号を条件に検品画面を開き、商品明細単位で入荷数を入力する</li><li style="margin-left:0px"><strong>入荷数の初期値は入荷予定数と同数</strong>にプリセットする。予定通り入荷していればそのまま確定ボタン1クリックで完了できる</li><li style="margin-left:0px">差異がある明細のみ入荷数を修正して確定する</li><li style="margin-left:0px">最初の検品入力でステータスが「検品中」に遷移する</li><li style="margin-left:0px">検品数が予定数と異なる場合も、検品数をそのまま確定できる（差異は記録として保持）</li><li style="margin-left:0px">入力済みの検品数は確定前であれば修正可能</li><li style="margin-left:0px"><strong>賞味期限管理対象商品</strong>（<code>expiry_manage_flag = true</code>）の場合、検品時に賞味期限を入力する。入力された賞味期限が営業日以前（期限切れ）の場合はエラーとし、入荷を受け付けない（エラーメッセージ：「賞味期限が営業日以前の商品は入荷できません」）</li><li style="margin-left:0px">検品実施前に <strong>入荷検品レポート</strong>（伝票番号・入荷予定日で絞り込み可）をPDF出力して作業帳票として使用できる</li></ul>
 <h3>7. 入庫指示・確定</h3>
 <ul><li style="margin-left:0px">検品済みの商品明細ごとに入庫先ロケーションを指定して入庫を確定する</li><li style="margin-left:0px"><strong>ロケーション自動割当</strong>：システムが以下の優先順で候補ロケーションを初期表示する</li></ul>
 <ol><li>同一商品の既存在庫があるロケーション</li><li>在庫ゼロの空きロケーション（先着順）</li></ol>
@@ -418,6 +620,7 @@
 <tr><td>倉庫振替入荷のキャンセル</td><td>倉庫振替入荷は単独でキャンセルできる（振替元の出荷伝票とは独立。在庫型倉庫のため連動しない）</td></tr>
 <tr><td>倉庫コードの保持</td><td>全入荷レコードに倉庫コードを保持する（選択中倉庫を自動セット）</td></tr>
 <tr><td>トランへのマスタ情報コピー</td><td>入荷データには商品コード・商品名・取引先コード・取引先名・倉庫コード・倉庫名等をコピー保持する</td></tr>
+<tr><td><strong>期限切れ商品の入荷防止</strong></td><td>賞味期限管理対象商品（<code>expiry_manage_flag = true</code>）の入荷検品時、入力された賞味期限が営業日以前（期限切れ）の場合は入荷を受け付けない</td></tr>
 <p></tbody><br></table></p>
 </div>
 
@@ -583,14 +786,13 @@
     SY1 --> M5</div>
 <hr>
 <h2>ステータス遷移</h2>
-<pre><code class="lang-">受注 → 引当済 → ピッキング中 → 出荷検品中 → 出荷完了
-                                      ↑
-                               (一部明細のみ検品完了時は「ピッキング中」継続)</code></pre>
+<pre><code class="lang-">受注 → 一部引当 → 引当済 → ピッキング中 → 出荷検品中 → 出荷完了</code></pre>
 <table>
 <thead><tr><th>ステータス</th><th>説明</th></tr></thead>
 <tbody>
 <tr><td><strong>受注</strong></td><td>受注データが登録された初期状態。在庫未引当</td></tr>
-<tr><td><strong>引当済</strong></td><td>全明細の在庫引当が完了した状態</td></tr>
+<tr><td><strong>一部引当</strong></td><td>一部の明細または数量のみ引当済み。不足分が残っている状態</td></tr>
+<tr><td><strong>引当済（ALLOCATED）</strong></td><td>全明細の在庫引当が完了した状態。引当完了はピッキング指示済みを意味する。独立した「ピッキング中」ステータスは設けず、引当完了後にピッキング指示が作成される運用とする</td></tr>
 <tr><td><strong>ピッキング中</strong></td><td>ピッキング指示が作成された状態</td></tr>
 <tr><td><strong>出荷検品中</strong></td><td>少なくとも1明細の出荷検品が開始された状態</td></tr>
 <tr><td><strong>出荷完了</strong></td><td>全明細の出荷検品・確定が完了した状態</td></tr>
@@ -609,7 +811,8 @@
 <h3>4. 受注一覧照会</h3>
 <ul><li style="margin-left:0px">登録済みの受注を一覧表示する</li><li style="margin-left:0px">ステータス・出荷予定日・出荷先で絞り込める</li></ul>
 <h3>5. 在庫引当</h3>
-<ul><li style="margin-left:0px">受注一覧から1件または複数件を選択して一括で在庫引当を実行できる</li><li style="margin-left:0px">引当ロジック：商品 × 荷姿ごとに <strong>FIFO（先入庫順）</strong> でロケーションから在庫を引当する</li><li style="margin-left:0px">引当時に荷姿の不一致がある場合（例：在庫はケースだが受注はバラ指定）、<strong>ばらし指示を同時に発行できる</strong>（ばらし後の在庫を自動で引当対象とする）</li><li style="margin-left:0px">在庫が不足している場合は不足明細を表示してユーザーが対応を判断できる（一部引当・引当見送りどちらも可）</li><li style="margin-left:0px">引当完了でステータスが「引当済」に遷移する</li></ul>
+<blockquote>在庫引当は独立モジュール（<code>allocation</code>）として実装する。詳細は <a href="04a-allocation.md" target="_blank">04a-allocation.md</a> を参照。</blockquote>
+<ul><li style="margin-left:0px">受注を選択して引当実行画面（在庫引当モジュール）から実行する</li><li style="margin-left:0px">FIFO/FEFO による自動引当、荷姿ばらし自動実行、部分引当に対応</li><li style="margin-left:0px">引当完了でステータスが「引当済」、部分引当の場合は「一部引当」に遷移する</li></ul>
 <h3>6. ピッキング指示作成</h3>
 <ul><li style="margin-left:0px">「引当済」の受注を複数まとめてピッキング指示1件として作成できる（バッチピッキング）</li><li style="margin-left:0px">ピッキング対象エリアを指定してリストを生成することで、そのエリア内の商品を効率的に回収できる</li><li style="margin-left:0px">ピッキングリストを帳票出力できる（ロケーション順にソートされた作業リスト）</li><li style="margin-left:0px">指示作成後にステータスが「ピッキング中」に遷移する</li><li style="margin-left:0px">ピッキング完了後、ピッキング指示画面（OUT-013）に対象受注の一覧を表示し、受注ごとに「出荷検品へ」ボタンから出荷検品画面（OUT-021）へ個別に遷移する</li></ul>
 <h3>7. 出荷検品</h3>
@@ -619,7 +822,7 @@
 <h3>9. 配送指示</h3>
 <ul><li style="margin-left:0px">出荷完了した受注に対して配送情報を登録できる</li><li style="margin-left:0px">配送業者・送り状番号を入力して管理する</li><li style="margin-left:0px">配送リストを帳票出力できる（出荷完了した受注の配送情報一覧）</li><li style="margin-left:0px">操作可能ロール：SYSTEM_ADMIN・WAREHOUSE_MANAGER・WAREHOUSE_STAFF</li></ul>
 <h3>10. 受注キャンセル</h3>
-<ul><li style="margin-left:0px">「出荷完了」以外のステータスの受注をキャンセルできる</li><li style="margin-left:0px">引当済みの在庫がある場合はキャンセル時に引当を解放する</li><li style="margin-left:0px">「ピッキング中」ステータスの受注をキャンセルする場合、その受注を含むピッキング指示から当該受注の明細を除外する（他の受注明細はピッキング継続）</li></ul>
+<ul><li style="margin-left:0px">「受注（ORDERED）」「一部引当（PARTIAL_ALLOCATED）」「引当済（ALLOCATED）」のステータスの受注をキャンセルできる（PICKING_COMPLETED以降はキャンセル不可）</li><li style="margin-left:0px">引当済みの在庫がある場合はキャンセル時に引当を解放する</li></ul>
 <hr>
 <h2>ビジネスルール</h2>
 <table>
@@ -627,14 +830,165 @@
 <tbody>
 <tr><td><strong>営業日基準</strong></td><td>全操作は現在営業日を基準とする。「今日」「当日」「本日」はすべて現在営業日を意味する。現在営業日は日替処理（BAT-001）の実行によってのみ更新される</td></tr>
 <tr><td>手動登録とCSV取り込みの共存</td><td>どちらの方法で作成した受注も同一の業務フローで処理する</td></tr>
-<tr><td>引当はFIFO</td><td>同一商品 × 荷姿の在庫が複数ロケーションにある場合、先に入庫したロケーションから優先して引当する</td></tr>
-<tr><td>引当時のばらし</td><td>荷姿不一致時のばらし指示は引当操作と同時に実行できる。ばらし後の在庫数はシステムが自動計算する</td></tr>
+<tr><td>引当ルール</td><td>在庫引当モジュール（<a href="04a-allocation.md" target="_blank">04a-allocation.md</a>）に従う。FIFO/FEFO、ばらし自動実行、部分引当に対応</td></tr>
 <tr><td>検品差異の扱い</td><td>予定数と検品数の差異はデータとして記録するが、確定を妨げない</td></tr>
 <tr><td>在庫減算タイミング</td><td>引当時は在庫を仮確保（引当数として管理）し、出荷確定時に実際の在庫から減算する</td></tr>
-<tr><td>ピッキング指示後キャンセル</td><td>ピッキング中の受注をキャンセルした場合、そのピッキング指示から当該受注明細を除外する。ピッキング指示内の全受注がキャンセルされた場合はピッキング指示自体を無効化する</td></tr>
+<tr><td>キャンセル可能範囲</td><td>キャンセル可能なステータスは ORDERED、PARTIAL_ALLOCATED、ALLOCATED のみ。PICKING_COMPLETED 以降はキャンセル不可</td></tr>
 <tr><td>倉庫振替出荷のキャンセル</td><td>倉庫振替出荷は単独でキャンセルできる（振替先の入荷伝票とは独立。在庫型倉庫のため連動しない）</td></tr>
 <tr><td>倉庫コードの保持</td><td>全出荷レコードに倉庫コードを保持する（選択中倉庫を自動セット）</td></tr>
 <tr><td>トランへのマスタ情報コピー</td><td>受注データには商品コード・商品名・荷姿・取引先コード・取引先名・倉庫コード・倉庫名等をコピー保持する</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="04a-allocation">
+<h1>機能要件定義書 — 在庫引当</h1>
+<h2>概要</h2>
+<p>受注データに対して在庫を引き当て、ピッキング可能な状態にするモジュール。出荷管理（受注登録）と在庫管理の中間に位置し、独立した画面・APIを持つ。</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>モジュール</strong></td><td><code>allocation</code></td></tr>
+<tr><td><strong>操作可能ロール</strong></td><td>SYSTEM_ADMIN、WAREHOUSE_MANAGER</td></tr>
+<tr><td><strong>前提</strong></td><td>受注が「受注」ステータスであること</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>業務フロー</h2>
+<div class="mermaid">flowchart TD
+    subgraph MGR["👔 倉庫マネージャー"]
+        M1["受注を選択して\n引当を実行\n📋 ALL-001 引当実行"]
+        M2["引当済み受注を確認\n📋 ALL-001 引当済み一覧タブ"]
+        M3["引当を手動解放\n📋 ALL-001 引当解放ボタン"]
+    end
+
+    subgraph SYS["⚙️ システム（自動処理）"]
+        SY1["引当アルゴリズム実行\n（FIFO / FEFO）"]
+        SY2{"荷姿不一致\nまたは不足？"}
+        SY3["ばらし自動実行\n（在庫変動記録）"]
+        SY4["引当結果を記録\n受注ステータス更新"]
+        SY5["引当解放\n引当数を在庫に戻す"]
+    end
+
+    M1 --> SY1
+    SY1 --> SY2
+    SY2 -->|"ばらし必要"| SY3
+    SY3 --> SY4
+    SY2 -->|"そのまま引当可能"| SY4
+    SY4 --> M2
+
+    M2 --> M3
+    M3 --> SY5</div>
+<hr>
+<h2>引当アルゴリズム</h2>
+<h3>基本ルール</h3>
+<p>受注単位（1受注の全明細をまとめて）で引当を実行する。明細ごとに以下のアルゴリズムで在庫を割り当てる。</p>
+<h3>引当優先順位</h3>
+<table>
+<thead><tr><th>優先度</th><th>条件</th><th>適用対象</th></tr></thead>
+<tbody>
+<tr><td><strong>1（最優先）</strong></td><td>賞味/使用期限が短い順（FEFO: First Expiry, First Out）</td><td>賞味/使用期限管理フラグONの商品</td></tr>
+<tr><td><strong>2</strong></td><td>入庫日時が古い順（FIFO: First In, First Out）</td><td>全商品共通（FEFO同率の場合もFIFOで決定）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入庫日時は <code>inventory_movements</code> テーブルの入庫タイプ（INBOUND）の日時を基準とする。</blockquote>
+<h3>荷姿ばらし指示</h3>
+<p>引当対象の荷姿で在庫が不足している場合、システムが引当と同時にばらし指示を自動生成する。</p>
+<p><strong>ばらし指示のステータス管理:</strong></p>
+<pre><code class="lang-">指示済（INSTRUCTED） → 完了（COMPLETED）</code></pre>
+<table>
+<thead><tr><th>ステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><strong>指示済</strong></td><td>引当実行時にシステムがばらし指示を自動生成した状態。在庫はまだ変動していない</td></tr>
+<tr><td><strong>完了</strong></td><td>倉庫スタッフが現場でばらし作業を実施し、完了を記録した状態。在庫が変動する</td></tr>
+<p></tbody><br></table></p>
+<p><strong>ばらし指示ルール:</strong></p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>トリガー</strong></td><td>引当実行時に、指定荷姿の在庫（有効在庫）が受注数量に不足している場合</td></tr>
+<tr><td><strong>ばらし対象</strong></td><td>不足分を充足するために必要な最小数のより大きい荷姿</td></tr>
+<tr><td><strong>ばらし優先順位</strong></td><td>小さい荷姿から優先（ボール→バラ を ケース→バラ より先に実行）</td></tr>
+<tr><td><strong>指示生成</strong></td><td>引当実行と同時にばらし指示を自動生成する。引当結果画面にばらし指示の内容を表示する</td></tr>
+<tr><td><strong>引当の仮確保</strong></td><td>ばらし指示生成時に、ばらし元の在庫を引当数（<code>allocated_qty</code>）として仮確保する。ばらし完了前でも他の引当に取られないようにする</td></tr>
+<tr><td><strong>在庫変動タイミング</strong></td><td>ばらし指示を「完了」にしたタイミングで在庫が変動する（ばらし元の荷姿を減算、ばらし先の荷姿を加算）</td></tr>
+<tr><td><strong>在庫変動記録</strong></td><td>ばらし完了時に <code>inventory_movements</code> に種別「BREAKDOWN_OUT / BREAKDOWN_IN」として記録する</td></tr>
+<tr><td><strong>ピッキング開始条件</strong></td><td>ばらし指示が「完了」にならないとピッキング指示を作成できない</td></tr>
+<p></tbody><br></table></p>
+<p><strong>例: バラ10個の引当指示に対し、バラ在庫5 + ボール在庫1（ボール入数=6）の場合</strong></p>
+<ol><li>バラ5を引当（<code>allocated_qty</code> += 5）</li><li>ボール1のばらし指示を自動生成（ボール1 → バラ6）。ボールの<code>allocated_qty</code> += 1</li><li>倉庫スタッフが現場でボールをばらし、完了を記録</li><li>在庫変動: ボール -= 1（<code>allocated_qty</code> も -= 1）、バラ += 6</li><li>新たに生まれたバラ6のうち5を引当（<code>allocated_qty</code> += 5）</li><li>合計バラ10が引当済み</li></ol>
+<h3>部分引当</h3>
+<p>在庫が不足している場合（ばらし実行後も不足の場合）、引当可能な数量のみを引当する（部分引当）。</p>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>動作</strong></td><td>在庫がある分だけ引当し、不足分は「未引当」として残す</td></tr>
+<tr><td><strong>受注ステータス</strong></td><td>全明細が完全引当 →「引当済」/ 一部未引当あり →「一部引当」</td></tr>
+<tr><td><strong>未引当の表示</strong></td><td>引当結果画面に未引当明細と不足数量を表示する</td></tr>
+<tr><td><strong>再引当</strong></td><td>「一部引当」状態の受注は再度引当を実行できる（在庫補充後に不足分を引当）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>ステータス遷移</h2>
+<p>出荷管理の受注ステータスに「一部引当」を追加する。</p>
+<pre><code class="lang-">受注 → 一部引当 → 引当済 → ピッキング中 → 出荷検品中 → 出荷完了</code></pre>
+<table>
+<thead><tr><th>ステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><strong>受注</strong></td><td>受注データが登録された初期状態。在庫未引当</td></tr>
+<tr><td><strong>一部引当</strong></td><td>一部の明細または数量のみ引当済み。不足分が残っている状態</td></tr>
+<tr><td><strong>引当済</strong></td><td>全明細の在庫引当が完了した状態</td></tr>
+<p></tbody><br></table></p>
+<blockquote>「一部引当」から「引当済」への遷移は、再引当で全明細の引当が完了した時点で自動的に行われる。</blockquote>
+<hr>
+<h2>引当データの管理</h2>
+<h3>引当数の管理</h3>
+<code>inventories</code> テーブルに <code>allocated_qty</code>（引当数）カラムを追加して管理する。
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>在庫数（quantity）</strong></td><td>ロケーション上の物理的な在庫数</td></tr>
+<tr><td><strong>引当数（allocated_qty）</strong></td><td>引当済みの数量。出荷確定まで保持</td></tr>
+<tr><td><strong>有効在庫数</strong></td><td><code>quantity - allocated_qty</code>（新規引当・移動・ばらし等で利用可能な数量）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>引当処理は有効在庫数（<code>quantity - allocated_qty</code>）に対して行う。引当数がquantityを超えることはない。</blockquote>
+<h3>引当明細の記録</h3>
+<p>引当実行時に、受注明細とロケーション在庫の紐付けを記録する。ピッキング指示作成時にこの紐付けを使用する。</p>
+<table>
+<thead><tr><th>記録項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>受注明細ID</td><td>どの受注明細に対する引当か</td></tr>
+<tr><td>ロケーションID</td><td>どのロケーションから引当したか</td></tr>
+<tr><td>引当数量</td><td>そのロケーションからの引当数</td></tr>
+<tr><td>ロット番号</td><td>ロット管理品の場合</td></tr>
+<tr><td>賞味/使用期限日</td><td>期限管理品の場合</td></tr>
+<p></tbody><br></table></p>
+<blockquote>1つの受注明細が複数ロケーションから引当される場合がある（在庫が分散している場合）。</blockquote>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 引当実行</h3>
+<ul><li style="margin-left:0px">「受注」または「一部引当」ステータスの受注を1件以上選択して一括引当を実行する</li><li style="margin-left:0px">引当は受注単位で実行する（受注内の全明細をまとめて処理）</li><li style="margin-left:0px">引当アルゴリズムに従い、FIFO/FEFOで自動的にロケーションを割り当てる</li><li style="margin-left:0px">荷姿不一致・不足時はばらし指示を自動生成して引当を計画する</li><li style="margin-left:0px">在庫不足時は部分引当を行い、結果画面に未引当明細を表示する</li><li style="margin-left:0px">引当結果（引当されたロケーション・数量・ばらし指示の内容）を画面に表示する</li></ul>
+<h3>1a. ばらし完了登録</h3>
+<ul><li style="margin-left:0px">引当時に生成されたばらし指示の一覧を表示する</li><li style="margin-left:0px">倉庫スタッフが現場でばらし作業を実施後、ばらし指示を「完了」にする</li><li style="margin-left:0px">完了時に在庫が変動する（ばらし元の荷姿を減算、ばらし先の荷姿を加算）</li><li style="margin-left:0px">全てのばらし指示が完了しないとピッキング指示を作成できない</li></ul>
+<h3>2. 引当済み受注一覧（引当実行画面のタブ）</h3>
+<ul><li style="margin-left:0px">引当済み（「一部引当」「引当済」ステータス）の受注を一覧表示する</li><li style="margin-left:0px">各受注の引当状況（全量引当 / 一部引当）を確認できる</li><li style="margin-left:0px">受注を選択して引当解放を実行できる</li></ul>
+<h3>3. 引当解放</h3>
+<ul><li style="margin-left:0px">引当済みの受注を選択して引当を解放する（受注単位）</li><li style="margin-left:0px">解放された引当数は有効在庫に戻る（<code>allocated_qty</code> を減算）</li><li style="margin-left:0px">引当解放後の受注ステータスは「受注」に戻る</li><li style="margin-left:0px">「ピッキング中」以降のステータスの受注は引当解放できない</li></ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>営業日基準</strong></td><td>全操作は現在営業日を基準とする。現在営業日は日替処理（BAT-001）の実行によってのみ更新される</td></tr>
+<tr><td><strong>引当単位</strong></td><td>受注単位で引当を実行する。明細単位の個別引当は行わない</td></tr>
+<tr><td><strong>FIFO / FEFO</strong></td><td>賞味/使用期限管理品はFEFO（期限短い順）、それ以外はFIFO（入庫日時古い順）で引当する</td></tr>
+<tr><td><strong>ばらし指示</strong></td><td>荷姿不足時はシステムが引当と同時にばらし指示を自動生成する。ばらし優先順はボール→バラ、ケース→バラ、ケース→ボールの順</td></tr>
+<tr><td><strong>ばらしステータス管理</strong></td><td>ばらし指示は「指示済」→「完了」の2ステータスで管理する。完了時に在庫が変動する</td></tr>
+<tr><td><strong>ばらしとピッキング</strong></td><td>ばらし指示が全件「完了」にならないとピッキング指示を作成できない</td></tr>
+<tr><td><strong>部分引当</strong></td><td>在庫不足時は引当可能な分だけ引当する。全量が揃わなくても引当を実行できる</td></tr>
+<tr><td><strong>引当対象在庫</strong></td><td>有効在庫数（<code>quantity - allocated_qty</code>）が対象。他の受注で引当済みの在庫は対象外</td></tr>
+<tr><td><strong>引当解放</strong></td><td>受注単位で手動解放可能。「ピッキング中」以降は解放不可</td></tr>
+<tr><td><strong>キャンセル時自動解放</strong></td><td>受注キャンセル時は引当を自動的に解放する</td></tr>
+<tr><td><strong>棚卸ロック中ロケーション</strong></td><td>棚卸中のロケーションの在庫は引当対象外とする</td></tr>
+<tr><td><strong>出荷禁止商品</strong></td><td>出荷禁止フラグONの商品は引当対象外とする</td></tr>
+<tr><td><strong>倉庫コードの保持</strong></td><td>引当データに選択中倉庫コードを保持する</td></tr>
 <p></tbody><br></table></p>
 </div>
 
@@ -645,7 +999,7 @@
 <table>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
-<tr><td><strong>出力形式</strong></td><td>PDFダウンロード</td></tr>
+<tr><td><strong>出力形式</strong></td><td>JSON/CSV/PDF（API経由で出力）</td></tr>
 <tr><td><strong>配置方針</strong></td><td>各業務メニュー内に配置（レポート専用メニューは設けない）</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -655,12 +1009,12 @@
     subgraph USER["👔 倉庫マネージャー / 👷 倉庫スタッフ"]
         U1["業務画面から\nレポート出力を選択"]
         U2["絞り込み条件を指定\n（期間・取引先・商品 等）"]
-        U3["PDF出力ボタンを押す"]
-        U4["PDFをダウンロード\n印刷して現場で使用"]
+        U3["レポート出力ボタンを押す"]
+        U4["レポートをダウンロード\n印刷して現場で使用"]
     end
 
     subgraph SYS["⚙️ システム（自動処理）"]
-        SY1["条件に合致するデータを取得\nPDFを生成してダウンロード応答"]
+        SY1["条件に合致するデータを取得\nレポート応答（JSON/CSV/PDF）"]
     end
 
     U1 --> U2
@@ -668,15 +1022,16 @@
     U3 --> SY1
     SY1 --> U4</div>
 <hr>
+<p>※RPT-02は欠番</p>
 <h2>入荷管理メニュー内レポート</h2>
 <h3>1. 入荷検品レポート</h3>
-<ul><li style="margin-left:0px">入荷検品の作業帳票として使用するPDF</li><li style="margin-left:0px"><strong>伝票番号・入荷予定日</strong> で絞り込んで出力する</li><li style="margin-left:0px">伝票番号・入荷予定日・仕入先・商品明細（商品コード・商品名・荷姿・入荷予定数・入荷数記入欄）を含む</li><li style="margin-left:0px">倉庫スタッフが現場での検品作業に携行して使用する</li></ul>
+<ul><li style="margin-left:0px">入荷検品の作業帳票として使用するPDF</li><li style="margin-left:0px"><strong>伝票番号・入荷予定日</strong> で絞り込んで出力する</li><li style="margin-left:0px">伝票番号・入荷予定日・仕入先・商品明細（商品コード・商品名・荷姿別数量（ケース/バラ）・入荷数記入欄）を含む</li><li style="margin-left:20px">※ケース数量・バラ数量をそれぞれ個別列で表示する。荷姿列は設けない</li><li style="margin-left:0px">倉庫スタッフが現場での検品作業に携行して使用する</li></ul>
 <h3>3. 入荷予定レポート</h3>
 <ul><li style="margin-left:0px">指定期間・仕入先・ステータスで絞り込んだ入荷予定の一覧を出力する</li><li style="margin-left:0px">入荷予定日・仕入先・商品・予定数量・ステータスを含む</li></ul>
 <h3>4. 入庫実績レポート</h3>
 <ul><li style="margin-left:0px">指定期間・仕入先・商品で絞り込んだ入庫実績の一覧を出力する</li><li style="margin-left:0px">入荷予定数・検品数・差異数を並べて確認できる</li></ul>
 <h3>5. 未入荷リスト（リアルタイム）</h3>
-<ul><li style="margin-left:0px">バッチ処理不要。画面表示時点のデータをリアルタイムで出力する</li><li style="margin-left:0px"><strong>対象</strong>：現在営業日の入荷予定日の入荷予定のうち、入庫完了していないもの</li><li style="margin-left:0px">入荷予定日・仕入先・商品・予定数量・現在ステータスを含む</li><li style="margin-left:0px">現在営業日の業務状況確認・督促に使用する</li></ul>
+<ul><li style="margin-left:0px">バッチ処理不要。画面表示時点のデータをリアルタイムで出力する</li><li style="margin-left:0px"><strong>対象</strong>：指定基準日（asOfDate）以前の入荷予定日を持ち、ステータスが入庫完了でない入荷伝票</li><li style="margin-left:0px">入荷予定日・仕入先・商品・予定数量・現在ステータスを含む</li><li style="margin-left:0px">現在営業日の業務状況確認・督促に使用する</li></ul>
 <h3>6. 未入荷リスト（確定）</h3>
 <ul><li style="margin-left:0px">日替処理で自動生成されるデータをもとに出力する</li><li style="margin-left:0px"><strong>対象</strong>：前日以前の入荷予定日を過ぎても入庫完了していない入荷予定（日替処理確定済み）</li><li style="margin-left:0px">入荷予定日・仕入先・商品・予定数量・現在ステータスを含む</li><li style="margin-left:0px">翌日以降の未処理案件の管理・報告に使用する</li></ul>
 <hr>
@@ -688,7 +1043,7 @@
 <h3>9. 在庫訂正一覧</h3>
 <ul><li style="margin-left:0px">指定期間に実施した在庫訂正の一覧を出力する</li><li style="margin-left:0px">訂正日時・対象ロケーション・商品・荷姿・訂正前数量・訂正後数量・訂正理由・実施者を含む</li></ul>
 <h3>10. 棚卸リスト</h3>
-<ul><li style="margin-left:0px">棚卸開始時に出力する作業用帳票</li><li style="margin-left:0px">対象ロケーション範囲・商品・荷姿・棚卸前在庫数を含む（実数記入欄あり）</li><li style="margin-left:0px">ロケーションコード順にソートして出力する</li></ul>
+<ul><li style="margin-left:0px">棚卸開始時に出力する作業用帳票</li><li style="margin-left:0px">対象ロケーション範囲・商品・荷姿・棚卸前在庫数を含む（実数記入欄あり）</li><li style="margin-left:20px">※PDF出力時は帳簿数量カラムを非表示にできる（<code>hideBookQty=true</code> パラメータ）。現場カウント時に帳簿数量が見えると先入観でカウント精度が下がるため</li><li style="margin-left:0px">ロケーションコード順にソートして出力する</li></ul>
 <h3>11. 棚卸結果レポート</h3>
 <ul><li style="margin-left:0px">棚卸確定後に出力する</li><li style="margin-left:0px">ロケーション・商品・荷姿・棚卸前数量・実数・差異数を含む</li><li style="margin-left:0px">差異があった明細を識別できる</li></ul>
 <hr>
@@ -696,17 +1051,17 @@
 <h3>12. ピッキング指示書</h3>
 <ul><li style="margin-left:0px">ピッキング指示作成時に出力する作業用帳票</li><li style="margin-left:0px">指定エリア内のロケーション順にソートして出力する（効率的なピッキング動線を実現）</li><li style="margin-left:0px">ロケーション・商品・荷姿・ピッキング数量・対応受注番号を含む</li></ul>
 <h3>13. 出荷検品レポート</h3>
-<ul><li style="margin-left:0px">指定期間・出荷先・商品で絞り込んだ出荷検品実績の一覧を出力する</li><li style="margin-left:0px">受注数量・出荷数量・差異数を並べて確認できる</li></ul>
+<ul><li style="margin-left:0px">指定された出荷伝票ID（単数または複数指定可）の検品結果を出力する</li><li style="margin-left:0px">受注数量・出荷数量・差異数を並べて確認できる</li></ul>
 <h3>14. 配送リスト</h3>
-<ul><li style="margin-left:0px">出荷完了した受注の配送情報一覧を出力する</li><li style="margin-left:0px">出荷先・配送業者・送り状番号・商品・数量を含む</li><li style="margin-left:0px">指定期間・配送業者で絞り込める</li></ul>
+<ul><li style="margin-left:0px">出荷完了した受注の配送情報一覧を出力する</li><li style="margin-left:0px">伝票ヘッダー（出荷先、配送業者、送り状番号等）+ 商品明細（商品コード、商品名、数量、荷姿）を含む</li><li style="margin-left:0px">指定期間・配送業者で絞り込める</li></ul>
 <h3>15. 未出荷リスト（リアルタイム）</h3>
-<ul><li style="margin-left:0px">バッチ処理不要。画面表示時点のデータをリアルタイムで出力する</li><li style="margin-left:0px"><strong>対象</strong>：現在営業日の出荷予定日の受注のうち、出荷完了していないもの</li><li style="margin-left:0px">出荷予定日・出荷先・商品・受注数量・現在ステータスを含む</li><li style="margin-left:0px">現在営業日の業務状況確認・出荷督促に使用する</li></ul>
+<ul><li style="margin-left:0px">バッチ処理不要。画面表示時点のデータをリアルタイムで出力する</li><li style="margin-left:0px"><strong>対象</strong>：基準日（asOfDate）以前の出荷予定日で、出荷完了していない伝票</li><li style="margin-left:0px">出荷予定日・出荷先・商品・受注数量・現在ステータスを含む</li><li style="margin-left:0px">現在営業日の業務状況確認・出荷督促に使用する</li></ul>
 <h3>16. 未出荷リスト（確定）</h3>
 <ul><li style="margin-left:0px">日替処理で自動生成されるデータをもとに出力する</li><li style="margin-left:0px"><strong>対象</strong>：前日以前の出荷予定日を過ぎても出荷完了していない受注（日替処理確定済み）</li><li style="margin-left:0px">出荷予定日・出荷先・商品・受注数量・現在ステータスを含む</li><li style="margin-left:0px">翌日以降の未処理案件の管理・報告・取引先対応に使用する</li></ul>
 <hr>
 <h2>バッチ処理メニュー内レポート</h2>
 <h3>17. 日次集計レポート</h3>
-<ul><li style="margin-left:0px">日替処理実行後に出力できる</li><li style="margin-left:0px">対象営業日の入荷・出荷・在庫の集計サマリーを出力する</li><li style="margin-left:0px">入荷件数・入荷数量合計、出荷件数・出荷数量合計、在庫数量（営業日末時点）を含む</li></ul>
+<ul><li style="margin-left:0px">日替処理実行後に出力できる</li><li style="margin-left:0px">対象営業日の入荷・出荷・在庫の集計サマリーを出力する</li><li style="margin-left:0px">入荷件数・入荷数量合計、出荷件数・出荷数量合計、在庫数量（営業日末時点）、未入荷件数、未出荷件数を含む</li></ul>
 </div>
 
 <hr class="doc-separator">
@@ -766,11 +1121,11 @@
     M2 --> M3</div>
 <hr>
 <h2>日替処理の内容</h2>
-<p>5種を以下の順序で内部的に順番に実行する。いずれか1つが失敗した場合は処理を中断する。</p>
+<p>5種を以下の順序で内部的に順番に実行する。各ステップの完了状態をDBに記録し、いずれか1つが失敗した場合は処理を中断する。</p>
 <table>
 <thead><tr><th>順序</th><th>処理名</th><th>内容</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><strong>営業日更新</strong></td><td>システムの現在営業日を翌営業日に更新する</td></tr>
+<tr><td>1</td><td><strong>営業日更新</strong></td><td>システムの現在営業日を翌営業日に更新する。冪等性あり（既に更新済みの場合はスキップ）</td></tr>
 <tr><td>2</td><td><strong>入荷実績集計</strong></td><td>対象営業日の入庫完了データを集計し、入荷実績サマリーを生成する</td></tr>
 <tr><td>3</td><td><strong>出荷実績集計</strong></td><td>対象営業日の出荷完了データを集計し、出荷実績サマリーを生成する</td></tr>
 <tr><td>4</td><td><strong>在庫集計</strong></td><td>対象営業日末時点の在庫数量サマリーを生成する</td></tr>
@@ -792,9 +1147,10 @@
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td>処理順序</td><td>5種は定義された順序で実行する。順序の変更・スキップは不可</td></tr>
-<tr><td>途中失敗時の扱い</td><td>いずれかの処理が失敗した場合は残りの処理を中断し、エラーを記録する。再実行時は最初から全処理を実行する</td></tr>
-<tr><td>二重実行防止</td><td>同一営業日の処理済みフラグをDBで管理し、二重実行をエラーで防止する</td></tr>
-<tr><td>実行履歴の保持</td><td>全ての実行履歴（成功・失敗を問わず）を記録する</td></tr>
+<tr><td>途中失敗時の扱い</td><td>いずれかの処理が失敗した場合は残りの処理を中断し、エラーを記録する。再実行時は各ステップの完了状態を確認し、<strong>完了済みのステップはスキップして未完了のステップから再開する</strong></td></tr>
+<tr><td>営業日更新の冪等性</td><td>Step1（営業日更新）は冪等に実装する。現在営業日が対象営業日の翌日に既に更新されている場合はスキップする。これにより途中失敗→再実行で営業日が二重に進むことを防止する</td></tr>
+<tr><td>二重実行防止</td><td>対象営業日の全ステップ完了フラグをDBで管理し、全ステップ完了済みの営業日に対する再実行をエラーで防止する</td></tr>
+<tr><td>実行履歴の保持</td><td>全ての実行履歴（成功・失敗を問わず）をステップ単位で記録する</td></tr>
 <p></tbody><br></table></p>
 </div>
 
@@ -873,6 +1229,119 @@
 <tr><td>取り込み後の扱い</td><td>IFX-001 で取り込んだ入荷予定データは入荷管理の「入荷予定」ステータスで登録される</td></tr>
 <tr><td>取り込み後の扱い</td><td>IFX-002 で取り込んだ受注データは出荷管理の「受注」ステータスで登録される</td></tr>
 <tr><td><strong>営業日基準</strong></td><td>CSVファイルの取り込み処理によって登録されるデータの日付基準は現在営業日とする。取り込み実行時点の現在営業日がトランザクションデータの登録日として記録される</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="08-returns">
+<h1>機能要件定義書 — 返品管理</h1>
+<h2>返品種別</h2>
+<table>
+<thead><tr><th>種別</th><th>種別コード</th><th>伝票プレフィックス</th><th>説明</th><th>在庫への影響</th></tr></thead>
+<tbody>
+<tr><td><strong>入荷返品</strong></td><td>INBOUND</td><td>RTN-I</td><td>入荷検品時に問題のあった商品を仕入先に返品する。入庫前のため在庫に載っていない</td><td>なし</td></tr>
+<tr><td><strong>在庫返品</strong></td><td>INVENTORY</td><td>RTN-S</td><td>倉庫に在庫している商品に問題があり仕入先に返品する</td><td>即時減算</td></tr>
+<tr><td><strong>出荷返品</strong></td><td>OUTBOUND</td><td>RTN-O</td><td>出荷先から返品された商品を在庫に入れず仕入先に返品する</td><td>なし</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>入庫前 vs 入庫後</strong>: 入荷検品中に不良が見つかった場合は「入荷返品」、入庫完了後に倉庫在庫から返品する場合は「在庫返品」として登録する。</blockquote>
+<blockquote><strong>出荷先からの良品受入について</strong>: 出荷先から返品された商品が良品で在庫に戻す場合は、通常の入荷予定登録（入荷管理）で受入処理を行う。返品管理モジュールは仕入先への返品のみを扱い、顧客からの良品受入は入荷管理で代替する。</blockquote>
+<hr>
+<h2>業務フロー</h2>
+<div class="mermaid">flowchart TD
+    subgraph TRIGGER["🌐 返品トリガー"]
+        T1(["入荷検品で\n不良を発見"])
+        T2(["在庫品に\n問題を発見"])
+        T3(["出荷先から\n返品を受領"])
+    end
+
+    subgraph STAFF["👷 倉庫スタッフ / 倉庫マネージャー"]
+        R1["返品画面を開く\n📋 RTN-001 返品登録"]
+        R2["返品種別を選択\n（入荷返品 / 在庫返品 / 出荷返品）"]
+        R3["商品・数量・荷姿・\n返品理由を入力"]
+        R4["（任意）関連伝票番号を入力\n入荷返品：入荷伝票番号\n出荷返品：出荷伝票番号"]
+        R5["返品を登録"]
+    end
+
+    subgraph SYS["⚙️ システム（自動処理）"]
+        SY1{"返品種別は？"}
+        SY2["在庫から即時減算\n（inventory_movements記録）"]
+        SY3["返品伝票を登録\n（在庫変動なし）"]
+        SY4["返品完了"]
+    end
+
+    T1 -->|"検品画面から遷移"| R1
+    T2 -->|"直接起動"| R1
+    T3 -->|"直接起動"| R1
+    R1 --> R2
+    R2 --> R3
+    R3 --> R4
+    R4 --> R5
+    R5 --> SY1
+    SY1 -->|"在庫返品"| SY2
+    SY1 -->|"入荷返品 / 出荷返品"| SY3
+    SY2 --> SY4
+    SY3 --> SY4</div>
+<hr>
+<h2>ステータス遷移</h2>
+<pre><code class="lang-">登録済 → 完了</code></pre>
+<table>
+<thead><tr><th>ステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><strong>登録済</strong></td><td>返品伝票が登録された状態</td></tr>
+<tr><td><strong>完了</strong></td><td>返品処理が完了した状態（在庫返品の場合は在庫減算も完了）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>返品はシンプルな2段階フローとする。仕入先への返送管理（配送追跡等）はスコープ外。</blockquote>
+<hr>
+<h2>機能一覧</h2>
+<h3>1. 返品登録</h3>
+<ul><li style="margin-left:0px">返品画面（RTN-001）から返品伝票を登録する</li><li style="margin-left:0px"><strong>1伝票1商品</strong>（1つの返品伝票に載せる商品は1つのみ）</li><li style="margin-left:0px">入力項目:</li><li style="margin-left:20px">返品種別（入荷返品 / 在庫返品 / 出荷返品）— 必須</li><li style="margin-left:20px">商品（商品コードで検索・選択）— 必須</li><li style="margin-left:20px">数量 — 必須</li><li style="margin-left:20px">荷姿（ケース / ボール / バラ）— 必須</li><li style="margin-left:20px">返品理由（選択肢 + 備考）— 必須（備考は任意）</li><li style="margin-left:20px">関連伝票番号 — 入荷返品・出荷返品の場合は入力可能（任意）</li><li style="margin-left:20px">ロット番号 — ロット管理商品の場合は入力可能（任意）</li><li style="margin-left:20px">賞味期限 — 期限管理商品の場合は入力可能（任意）</li><li style="margin-left:0px">登録と同時にステータスは「完了」になる（登録 = 完了の即時処理）</li></ul>
+<h3>2. 返品理由</h3>
+<p>返品理由は以下の定型選択肢 + 備考欄で管理する。</p>
+<table>
+<thead><tr><th>理由コード</th><th>理由名</th></tr></thead>
+<tbody>
+<tr><td>QUALITY_DEFECT</td><td>品質不良</td></tr>
+<tr><td>EXCESS_QUANTITY</td><td>数量過剰</td></tr>
+<tr><td>WRONG_DELIVERY</td><td>誤配送</td></tr>
+<tr><td>EXPIRED</td><td>期限切れ</td></tr>
+<tr><td>DAMAGED</td><td>破損</td></tr>
+<tr><td>OTHER</td><td>その他</td></tr>
+<p></tbody><br></table></p>
+<ul><li style="margin-left:0px">「その他」選択時は備考欄の入力を必須とする</li><li style="margin-left:0px">備考欄は全理由コードで入力可能（任意）</li></ul>
+<h3>3. 入荷返品（種別固有ルール）</h3>
+<ul><li style="margin-left:0px">入荷検品画面（INB-003）から返品画面を呼び出せる（リンクボタン）</li><li style="margin-left:0px">関連伝票番号として入荷伝票番号を入力可能</li><li style="margin-left:0px"><strong>在庫への影響なし</strong>（入庫前の商品のため、在庫テーブルへの書き込みは発生しない）</li><li style="margin-left:0px">inventory_movements には記録しない</li></ul>
+<h3>4. 在庫返品（種別固有ルール）</h3>
+<ul><li style="margin-left:0px">返品画面を直接起動して登録する</li><li style="margin-left:0px">在庫から<strong>即時に数量を減算</strong>する</li><li style="margin-left:0px">減算対象の在庫はロケーション・商品・荷姿で特定する（ロケーション選択が必要）</li><li style="margin-left:0px"><strong>引当済み在庫は返品不可</strong>（<code>allocated_qty &gt; 0</code> の在庫レコードからの返品は拒否する）</li><li style="margin-left:0px"><strong>棚卸ロック中のロケーションからの返品は不可</strong></li><li style="margin-left:0px"><strong>在庫マイナス禁止</strong>（返品数量が現在庫数を超える場合は拒否する）</li><li style="margin-left:0px">inventory_movements に <code>RETURN_OUT</code> として記録する</li></ul>
+<h3>5. 出荷返品（種別固有ルール）</h3>
+<ul><li style="margin-left:0px">返品画面を直接起動して登録する</li><li style="margin-left:0px">関連伝票番号として出荷伝票番号を入力可能</li><li style="margin-left:0px"><strong>在庫への影響なし</strong>（出荷先から戻った商品を在庫に入れず、直接仕入先に返品する）</li><li style="margin-left:0px">inventory_movements には記録しない</li></ul>
+<h3>6. 返品一覧照会</h3>
+<ul><li style="margin-left:0px">返品レポート（RPT-18）で代替する（専用の一覧画面は設けない）</li><li style="margin-left:0px">検索条件: 返品種別・返品日範囲・仕入先・商品・返品理由</li></ul>
+<hr>
+<h2>他機能への影響</h2>
+<h3>入荷実績レポート（RPT-04）への影響</h3>
+<ul><li style="margin-left:0px">入荷実績レポートに<strong>返品数量列</strong>を追加する</li><li style="margin-left:0px">表示内容: 入荷予定数・検品数・返品数・差異数</li><li style="margin-left:0px">差異数の計算: <code>差異数 = 検品数 - 返品数 - 入荷予定数</code></li><li style="margin-left:0px">入荷返品のみが対象（在庫返品・出荷返品は含まない）</li></ul>
+<h3>日次集計レポート（RPT-17）への影響</h3>
+<ul><li style="margin-left:0px">日次集計に<strong>返品数量合計</strong>（バラ換算）を追加する</li><li style="margin-left:0px">3種別の合計を表示する</li></ul>
+<h3>返品レポート（RPT-18）</h3>
+<ul><li style="margin-left:0px">返品専用のレポートを新設する</li><li style="margin-left:0px">検索条件: 返品種別・返品日範囲・仕入先・商品・返品理由</li><li style="margin-left:0px">出力項目: 返品伝票番号・返品種別・返品日・商品コード・商品名・数量・荷姿・返品理由・関連伝票番号・仕入先名</li><li style="margin-left:0px">出力形式: JSON/CSV/PDF（API経由）</li></ul>
+<h3>入荷検品画面（INB-003）への影響</h3>
+<ul><li style="margin-left:0px">入荷検品画面に「返品登録」ボタンを追加する</li><li style="margin-left:0px">ボタン押下で返品画面に遷移し、返品種別「入荷返品」・入荷伝票番号がプリセットされる</li></ul>
+<hr>
+<h2>ビジネスルール</h2>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>営業日基準</strong></td><td>全操作は現在営業日を基準とする。返品日は登録時の現在営業日が自動セットされる</td></tr>
+<tr><td><strong>1伝票1商品</strong></td><td>1つの返品伝票に載せる商品は1つのみ。複数商品を返品する場合は伝票を分ける</td></tr>
+<tr><td><strong>在庫返品の即時減算</strong></td><td>在庫返品は登録と同時に在庫を減算する。取り消し不可（誤登録の場合は在庫訂正で対応）</td></tr>
+<tr><td><strong>入荷返品・出荷返品は在庫不変</strong></td><td>在庫テーブルへの書き込みは発生しない</td></tr>
+<tr><td><strong>引当済み在庫の保護</strong></td><td>引当済み在庫（<code>allocated_qty &gt; 0</code>）は返品対象にできない</td></tr>
+<tr><td><strong>棚卸ロック中の保護</strong></td><td>棚卸ロック中のロケーションからの在庫返品は不可</td></tr>
+<tr><td><strong>在庫マイナス禁止</strong></td><td>返品数量が現在庫数（<code>quantity - allocated_qty</code>）を超える場合は拒否する</td></tr>
+<tr><td><strong>返品伝票の修正不可</strong></td><td>登録済みの返品伝票は修正・削除不可。誤登録の場合は在庫訂正で対応する</td></tr>
+<tr><td><strong>倉庫コードの保持</strong></td><td>全返品レコードに倉庫コードを保持する（選択中倉庫を自動セット）</td></tr>
+<tr><td><strong>トランへのマスタ情報コピー</strong></td><td>返品データには商品コード・商品名・取引先コード・取引先名・倉庫コード・倉庫名等をコピー保持する</td></tr>
+<tr><td><strong>仕入先への返送管理はスコープ外</strong></td><td>RMA番号・配送追跡等の返送プロセスは管理しない</td></tr>
 <p></tbody><br></table></p>
 </div>
 </main>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RTN-001 返品登録 — WMS</title>
+  <link rel="stylesheet" href="_wms-design.css">
+  <style>
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header extras === */
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 4px 10px; cursor: pointer;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar submenu === */
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; text-decoration: none;
+      border-left: 3px solid transparent; transition: all 0.12s;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    /* === Form Card Section === */
+    .form-card {
+      background: var(--color-white); border: 1px solid var(--color-gray-200);
+      border-radius: var(--border-radius-lg); padding: 24px; margin-bottom: 16px;
+    }
+    .form-card-title {
+      font-size: 15px; font-weight: 700; color: var(--color-gray-900);
+      margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--color-gray-200);
+    }
+    .form-row {
+      display: flex; gap: 16px; margin-bottom: 0;
+    }
+    .form-row .form-group {
+      flex: 1;
+    }
+    .form-group-inline {
+      display: flex; gap: 8px; align-items: flex-start;
+    }
+    .form-group-inline .form-input { flex: 1; }
+    .form-textarea {
+      width: 100%; padding: 9px 12px; border: 1.5px solid var(--color-gray-300);
+      border-radius: var(--border-radius); font-family: var(--font-family); font-size: 14px;
+      color: var(--color-gray-900); background: var(--color-white); transition: border-color 0.15s;
+      outline: none; resize: vertical;
+    }
+    .form-textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(161,0,255,0.15); }
+
+    /* === Conditional Section Indicator === */
+    .conditional-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: var(--color-info);
+      background: var(--color-info-bg); padding: 2px 10px; border-radius: 999px;
+      margin-left: 8px; vertical-align: middle;
+    }
+
+    /* === Warning highlight for allocated qty === */
+    .warning-value {
+      color: var(--color-error); font-weight: 700;
+    }
+
+    /* === Form Footer === */
+    .form-footer {
+      display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;
+    }
+
+    /* === Read-only display value === */
+    .display-value {
+      padding: 9px 12px; background: var(--color-gray-100); border: 1.5px solid var(--color-gray-200);
+      border-radius: var(--border-radius); font-size: 14px; color: var(--color-gray-600);
+      min-height: 38px; display: flex; align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">RTN-001</span>
+    <span>返品登録</span>
+    <span style="color:#444">|</span>
+    <span>URL: /returns/new</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: WAREHOUSE_MANAGER, WAREHOUSE_STAFF</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span>M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">&#9660;</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/18</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">&#128230;</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">&#128202;</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">&#128666;</span> 出荷管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-gray-200);font-weight:600"><span class="icon">&#128260;</span> 返品管理</a>
+        <ul class="sidebar-submenu">
+          <li><a href="#" class="active">返品登録</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">&#128450;</span> マスタ管理</a></li>
+      <li><a href="#"><span class="icon">&#128200;</span> レポート</a></li>
+      <li><a href="#"><span class="icon">&#9881;</span> バッチ管理</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span>&#8250;</span> 返品管理 <span>&#8250;</span> 返品登録
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">返品登録</h1>
+    </div>
+
+    <!-- Section 1: 基本情報 -->
+    <div class="form-card">
+      <div class="form-card-title">基本情報</div>
+
+      <div class="form-group">
+        <label class="form-label required">返品種別</label>
+        <select class="form-select" style="max-width:280px">
+          <option value="">-- 選択してください --</option>
+          <option>入荷返品</option>
+          <option selected>在庫返品</option>
+          <option>出荷返品</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">商品コード</label>
+        <div class="form-group-inline" style="max-width:400px">
+          <input type="text" class="form-input" value="SKU-00123" placeholder="商品コードを入力">
+          <button class="btn btn-secondary btn-sm">検索</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">商品名</label>
+        <div class="display-value" style="max-width:400px">ドライカレー 200g</div>
+      </div>
+
+      <div class="form-row" style="max-width:400px">
+        <div class="form-group">
+          <label class="form-label required">数量</label>
+          <input type="number" class="form-input" value="5" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label required">荷姿</label>
+          <select class="form-select">
+            <option value="">-- 選択 --</option>
+            <option selected>ケース</option>
+            <option>ボール</option>
+            <option>バラ</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: 在庫返品セクション（条件付き表示） -->
+    <div class="form-card">
+      <div class="form-card-title">
+        在庫情報
+        <span class="conditional-badge">在庫返品時のみ表示</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">ロケーション</label>
+        <select class="form-select" style="max-width:320px">
+          <option value="">-- 選択してください --</option>
+          <option selected>A-01-A-01-01-01</option>
+          <option>A-01-A-01-01-02</option>
+          <option>B-02-B-01-02-01</option>
+        </select>
+      </div>
+
+      <div class="form-row" style="max-width:400px">
+        <div class="form-group">
+          <label class="form-label">現在在庫数</label>
+          <div class="display-value">10 ケース</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">有効在庫数</label>
+          <div class="display-value"><span class="warning-value">8 ケース</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: 取引先・理由 -->
+    <div class="form-card">
+      <div class="form-card-title">取引先・理由</div>
+
+      <div class="form-group">
+        <label class="form-label">仕入先</label>
+        <div class="form-group-inline" style="max-width:400px">
+          <input type="text" class="form-input" value="東京食品 株式会社" placeholder="仕入先を入力">
+          <button class="btn btn-secondary btn-sm">検索</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">返品理由</label>
+        <select class="form-select" style="max-width:280px">
+          <option value="">-- 選択してください --</option>
+          <option selected>品質不良</option>
+          <option>数量過剰</option>
+          <option>誤配送</option>
+          <option>期限切れ</option>
+          <option>破損</option>
+          <option>その他</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">返品理由備考</label>
+        <textarea class="form-textarea" rows="3" style="max-width:500px" placeholder="返品理由の詳細を入力（「その他」選択時は必須、最大500文字）"></textarea>
+      </div>
+    </div>
+
+    <!-- Section 4: 条件付き表示項目 -->
+    <div class="form-card">
+      <div class="form-card-title">
+        追加情報
+        <span class="conditional-badge">条件付き表示</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">関連伝票番号</label>
+        <input type="text" class="form-input" style="max-width:300px" placeholder="入荷/出荷伝票番号を入力（入荷返品・出荷返品時）">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ロット番号</label>
+        <input type="text" class="form-input" style="max-width:300px" value="LOT-2026-001" placeholder="ロット番号を入力（ロット管理商品時）">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">賞味期限</label>
+        <input type="date" class="form-input" style="max-width:200px" value="2027-06-30">
+      </div>
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="form-footer">
+      <button class="btn btn-ghost">キャンセル</button>
+      <button class="btn btn-primary">登録</button>
+    </div>
+
+  </main>
+
+</body>
+</html>

@@ -60,11 +60,12 @@
     <p style="color:#888;margin-top:8px;font-size:0.9rem;">Project Plan</p>
   </div>
   
+  
   <div class="toc">
     <strong>目次</strong>
     <ol>
         <li><a href="#01-project-charter">1. プロジェクト憲章 (Project Charter)</a></li>
-        <li><a href="#02-wbs-draft">2. WBS（作業分解構造）ドラフト</a></li>
+        <li><a href="#02-wbs-draft">2. WBS（作業分解構造）</a></li>
         <li><a href="#03-requirements-management-plan">3. 要件管理計画 (Requirements Management Plan)</a></li>
         <li><a href="#05-cost-management-plan">4. コスト管理計画書 (Cost Management Plan)</a></li>
         <li><a href="#06-quality-management-plan">5. 品質管理計画 (Quality Management Plan)</a></li>
@@ -106,6 +107,9 @@
 <tr><td><strong>マスタ管理</strong></td><td>商品・取引先・倉庫・棟・エリア・ロケーション・ユーザ</td></tr>
 <tr><td><strong>レポート</strong></td><td>入荷検品・入荷予定・入庫実績・未入荷リスト（リアルタイム）・未入荷リスト（確定）・在庫一覧・在庫推移・在庫訂正一覧・棚卸リスト・棚卸結果・ピッキング指示書・出荷検品・配送リスト・未出荷リスト（リアルタイム）・未出荷リスト（確定）・日次集計（全16種、詳細は機能要件定義書参照）</td></tr>
 <tr><td><strong>外部連携I/F</strong></td><td>入荷予定取り込みI/F・受注取り込みI/F</td></tr>
+<tr><td><strong>システムパラメータ管理</strong></td><td>システム動作パラメータの管理（営業日、倉庫設定等）</td></tr>
+<tr><td><strong>在庫引当</strong></td><td>受注に対する在庫引当（独立モジュール）</td></tr>
+<tr><td><strong>返品管理</strong></td><td>返品受付・返品入庫・在庫戻し</td></tr>
 <tr><td><strong>バッチ処理</strong></td><td>日替処理（営業日更新・入荷実績集計・出荷実績集計・在庫集計・トランデータバックアップ）</td></tr>
 <p></tbody><br></table></p>
 <h3>対象外機能（Out of Scope）</h3>
@@ -153,13 +157,10 @@
 
 <hr class="doc-separator">
 <div class="markdown-body" id="02-wbs-draft">
-<h1>WBS（作業分解構造）ドラフト</h1>
-<blockquote><strong>ステータス</strong>: ドラフト（暫定）
-<p><strong>注記</strong>: アーキテクチャ設計・運用設計が確定した後に拡充する。<br>現時点では機能スコープの骨格のみ定義。</blockquote></p>
-<h2>未決定・後で追加が必要な領域</h2>
-<ul><li style="margin-left:0px">インフラ詳細（Terraformベース確定、具体的リソース構成はアーキテクチャで決定）</li><li style="margin-left:0px">アプリ共通機能（ログ出力方式・保存先・エラーハンドリング等）</li><li style="margin-left:0px">運用設計（ITILベースの業務フロー・インシデント管理方法）</li><li style="margin-left:0px">セキュリティ設計</li><li style="margin-left:0px">監視・アラート設計</li></ul>
+<h1>WBS（作業分解構造）</h1>
+<blockquote><strong>ステータス</strong>: 確定（設計フェーズの全機能を反映済み）</blockquote>
 <hr>
-<h2>WBS 骨格（ドラフト）</h2>
+<h2>WBS</h2>
 <pre><code class="lang-">1. WMS Project
 ├── 1.1 プロジェクト管理
 │   ├── 1.1.1 計画書作成
@@ -170,13 +171,19 @@
 │   ├── 1.2.1 アーキテクチャ設計
 │   ├── 1.2.2 開発環境構築
 │   ├── 1.2.3 インフラ構築（Azure、Terraformベース）
-│   └── 1.2.4 CI/CD パイプライン構築
+│   ├── 1.2.4 CI/CD パイプライン構築
+│   ├── 1.2.5 アプリ共通機能（ログ出力・エラーハンドリング・認証基盤）
+│   ├── 1.2.6 セキュリティ設計・実装
+│   └── 1.2.7 監視・アラート設計
 │
 ├── 1.3 マスタ管理
 │   ├── 1.3.1 商品マスタ（設計/実装/テスト）
 │   ├── 1.3.2 取引先マスタ（設計/実装/テスト）
-│   ├── 1.3.3 ロケーションマスタ（設計/実装/テスト）
-│   └── 1.3.4 ユーザマスタ（設計/実装/テスト）
+│   ├── 1.3.3 倉庫マスタ（設計/実装/テスト）
+│   ├── 1.3.4 棟マスタ（設計/実装/テスト）
+│   ├── 1.3.5 エリアマスタ（設計/実装/テスト）
+│   ├── 1.3.6 ロケーションマスタ（設計/実装/テスト）
+│   └── 1.3.7 ユーザマスタ（設計/実装/テスト）
 │
 ├── 1.4 入荷管理
 │   ├── 1.4.1 入荷予定取り込み（設計/実装/テスト）
@@ -194,30 +201,50 @@
 │   ├── 1.6.3 出荷検品（設計/実装/テスト）
 │   └── 1.6.4 配送指示（設計/実装/テスト）
 │
-├── 1.7 レポート
-│   ├── 1.7.1 入荷予定レポート（設計/実装/テスト）
-│   ├── 1.7.2 入庫実績レポート（設計/実装/テスト）
-│   ├── 1.7.3 在庫一覧レポート（設計/実装/テスト）
-│   ├── 1.7.4 ピッキング指示書（設計/実装/テスト）
-│   ├── 1.7.5 出荷検品レポート（設計/実装/テスト）
-│   └── 1.7.6 配送リスト（設計/実装/テスト）
+├── 1.7 引当管理
+│   ├── 1.7.1 自動引当（FIFO/FEFO）（設計/実装/テスト）
+│   ├── 1.7.2 部分引当（設計/実装/テスト）
+│   └── 1.7.3 引当解除（設計/実装/テスト）
 │
-├── 1.8 外部連携I/F
-│   ├── 1.8.1 入荷予定取り込みI/F（設計/実装/テスト）
-│   └── 1.8.2 受注取り込みI/F（設計/実装/テスト）
+├── 1.8 返品管理
+│   ├── 1.8.1 返品受付（設計/実装/テスト）
+│   ├── 1.8.2 返品検品（設計/実装/テスト）
+│   └── 1.8.3 返品入庫（設計/実装/テスト）
 │
-├── 1.9 バッチ処理
-│   ├── 1.9.1 営業日更新（設計/実装/テスト）
-│   ├── 1.9.2 入荷実績集計（設計/実装/テスト）
-│   ├── 1.9.3 出荷実績集計（設計/実装/テスト）
-│   ├── 1.9.4 在庫集計（設計/実装/テスト）
-│   └── 1.9.5 トランデータバックアップ（設計/実装/テスト）
+├── 1.9 システムパラメータ管理
+│   └── 1.9.1 システムパラメータCRUD（設計/実装/テスト）
 │
-└── 1.10 リリース
-    ├── 1.10.1 統合テスト
-    ├── 1.10.2 パフォーマンステスト
-    ├── 1.10.3 本番デプロイ
-    └── 1.10.4 GitHub公開・README整備</code></pre>
+├── 1.10 レポート
+│   ├── 1.10.1  RPT-01 入荷検品帳票（設計/実装/テスト）
+│   ├── 1.10.2  RPT-03 入荷予定表（設計/実装/テスト）
+│   ├── 1.10.3  RPT-04 入荷実績表（設計/実装/テスト）
+│   ├── 1.10.4  RPT-05 未入荷一覧（リアルタイム）（設計/実装/テスト）
+│   ├── 1.10.5  RPT-06 未入荷一覧（確定）（設計/実装/テスト）
+│   ├── 1.10.6  RPT-07 在庫一覧（設計/実装/テスト）
+│   ├── 1.10.7  RPT-08 在庫推移表（設計/実装/テスト）
+│   ├── 1.10.8  RPT-09 在庫補正一覧（設計/実装/テスト）
+│   ├── 1.10.9  RPT-10 棚卸リスト（設計/実装/テスト）
+│   ├── 1.10.10 RPT-11 棚卸結果表（設計/実装/テスト）
+│   ├── 1.10.11 RPT-12 ピッキング指示書（設計/実装/テスト）
+│   ├── 1.10.12 RPT-13 出荷検品帳票（設計/実装/テスト）
+│   ├── 1.10.13 RPT-14 配送リスト（設計/実装/テスト）
+│   ├── 1.10.14 RPT-15 未出荷一覧（リアルタイム）（設計/実装/テスト）
+│   ├── 1.10.15 RPT-16 未出荷一覧（確定）（設計/実装/テスト）
+│   ├── 1.10.16 RPT-17 日次サマリ（設計/実装/テスト）
+│   └── 1.10.17 RPT-18 返品帳票（設計/実装/テスト）
+│
+├── 1.11 外部連携I/F
+│   ├── 1.11.1 IF-01 入荷予定取り込みI/F（設計/実装/テスト）
+│   ├── 1.11.2 IF-02 受注取り込みI/F（設計/実装/テスト）
+│   └── 1.11.3 I/F管理画面（設計/実装/テスト）
+│
+├── 1.12 バッチ処理
+│   └── 1.12.1 BAT-01 日替処理（営業日更新）（設計/実装/テスト）
+│
+└── 1.13 リリース
+    ├── 1.13.1 統合テスト
+    ├── 1.13.2 本番デプロイ
+    └── 1.13.3 GitHub公開・README整備</code></pre>
 </div>
 
 <hr class="doc-separator">
@@ -231,20 +258,8 @@
   └── 設計ドキュメント（機能ID参照）
         └── 実装（GitHub Issue ID参照）
               └── テストケース（機能ID + Issue ID参照）</code></pre>
-<h2>3. 機能IDの体系（暫定）</h2>
-<table>
-<thead><tr><th>プレフィックス</th><th>カテゴリ</th><th>例</th></tr></thead>
-<tbody>
-<tr><td><code>WMS-MST</code></td><td>マスタ管理</td><td>WMS-MST-001</td></tr>
-<tr><td><code>WMS-INB</code></td><td>入荷管理</td><td>WMS-INB-001</td></tr>
-<tr><td><code>WMS-INV</code></td><td>在庫管理</td><td>WMS-INV-001</td></tr>
-<tr><td><code>WMS-SHP</code></td><td>出荷管理</td><td>WMS-SHP-001</td></tr>
-<tr><td><code>WMS-RPT</code></td><td>レポート</td><td>WMS-RPT-001</td></tr>
-<tr><td><code>WMS-IFX</code></td><td>外部連携I/F</td><td>WMS-IFX-001</td></tr>
-<tr><td><code>WMS-BAT</code></td><td>バッチ処理</td><td>WMS-BAT-001</td></tr>
-<tr><td><code>WMS-INF</code></td><td>インフラ/基盤</td><td>WMS-INF-001</td></tr>
-<p></tbody><br></table></p>
-<blockquote><strong>注記</strong>: 機能IDの詳細は機能要件定義書作成時に確定する。</blockquote>
+<h2>3. 機能IDの体系</h2>
+<blockquote>機能IDのプレフィックス一覧は <a href="../functional-design/_id-registry.md" target="_blank">_id-registry.md</a> を参照。</blockquote>
 <h2>4. 要件フォーマット</h2>
 <p>機能仕様書形式で記述し、各機能について以下を明記する：</p>
 <ul><li style="margin-left:0px"><strong>機能ID</strong></li><li style="margin-left:0px"><strong>機能名</strong></li><li style="margin-left:0px"><strong>概要</strong></li><li style="margin-left:0px"><strong>画面仕様</strong>（画面レイアウト・操作フロー）</li><li style="margin-left:0px"><strong>API仕様</strong>（エンドポイント・リクエスト/レスポンス）</li><li style="margin-left:0px"><strong>DB仕様</strong>（テーブル・カラム・制約）</li><li style="margin-left:0px"><strong>関連GitHub Issue ID</strong></li></ul>
@@ -347,33 +362,8 @@
 <tr><td><strong>マージ条件</strong></td><td>CI全通過 + オーナー承認</td></tr>
 <p></tbody><br></table></p>
 <h2>3. テスト方針</h2>
-<h3>3.1 単体テスト</h3>
-<table>
-<thead><tr><th>項目</th><th>内容</th></tr></thead>
-<tbody>
-<tr><td><strong>対象</strong></td><td>フロントエンド・バックエンド各コンポーネント</td></tr>
-<tr><td><strong>カバレッジ基準</strong></td><td>C0 / C1 / C2 すべて100%</td></tr>
-<tr><td><strong>外部接続</strong></td><td>すべてモック / スタブで代替</td></tr>
-<tr><td><strong>実行環境</strong></td><td>ローカル / CI自動実行</td></tr>
-<p></tbody><br></table></p>
-<h3>3.2 結合テスト</h3>
-<table>
-<thead><tr><th>項目</th><th>内容</th></tr></thead>
-<tbody>
-<tr><td><strong>対象</strong></td><td>画面 〜 API 〜 DB の結合</td></tr>
-<tr><td><strong>テストシナリオ</strong></td><td>機能設計書のユースケースごとに作成</td></tr>
-<tr><td><strong>テストデータ</strong></td><td>ユースケース整理後に整備・事前投入</td></tr>
-<tr><td><strong>実行環境</strong></td><td>ローカル</td></tr>
-<p></tbody><br></table></p>
-<h3>3.3 E2Eテスト</h3>
-<table>
-<thead><tr><th>項目</th><th>内容</th></tr></thead>
-<tbody>
-<tr><td><strong>対象</strong></td><td>本番相当データ量での結合テスト相当シナリオ</td></tr>
-<tr><td><strong>テストシナリオ</strong></td><td>結合テストと同等のユースケース</td></tr>
-<tr><td><strong>実行環境</strong></td><td>本番環境（デプロイ後）</td></tr>
-<p></tbody><br></table></p>
-<h3>3.4 パフォーマンステスト</h3>
+<blockquote>テスト戦略・方針・完了基準の詳細は <a href="../test-specifications/00-test-plan.md" target="_blank">test-specifications/00-test-plan.md</a> を参照。</blockquote>
+<h3>3.1 パフォーマンステスト</h3>
 <p>スコープ外（コスト上の理由）</p>
 <h2>4. CI/CD パイプライン</h2>
 <h3>4.1 CI（継続的インテグレーション）</h3>
@@ -487,6 +477,9 @@
 <tr><td>R4</td><td>Azureの無料枠・低コストプラン超過</td><td>予期せぬコスト</td><td>設計段階でリソース試算、Azureコストアラート設定</td></tr>
 <tr><td>R5</td><td>1週間で完成しない</td><td>ShowCase未達</td><td>MVP優先、機能は段階的リリース</td></tr>
 <tr><td>R6</td><td>GitHubへの誤ったコードや認証情報の公開</td><td>セキュリティ事故</td><td>.gitignore徹底、シークレット管理ルール徹底</td></tr>
+<tr><td>R7</td><td>コールドスタート遅延（Container Apps min replicas=0）</td><td>ユーザ体験低下</td><td>Startup Probe設定、Spring Boot Lazy Init有効化</td></tr>
+<tr><td>R8</td><td>PostgreSQL B1ms性能制約</td><td>レスポンス遅延</td><td>インデックス最適化、クエリチューニング</td></tr>
+<tr><td>R9</td><td>Blob Storage静的ホスティング制限（SPAルーティング非対応）</td><td>画面遷移エラー</td><td>Azure Front Door経由でSPAルーティング対応</td></tr>
 <p></tbody><br></table></p>
 </div>
 
@@ -503,7 +496,7 @@
 <tr><td><strong>実績</strong></td><td>業界標準または広く採用されているもの優先</td></tr>
 <p></tbody><br></table></p>
 <h2>具体的な技術スタック</h2>
-<p>アーキテクチャ設計フェーズで選定する。</p>
+<p>技術スタックはCLAUDE.mdおよびarchitecture-design/02-system-architecture.mdで確定済み。</p>
 </div>
 
 <hr class="doc-separator">

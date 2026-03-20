@@ -220,7 +220,10 @@
         <h1 class="page-title">入荷予定詳細</h1>
         <span class="tag tag-confirmed">入荷確認済</span>
       </div>
-      <button class="btn btn-ghost btn-sm">📄 検品レポート出力</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <a href="RTN-001-return-register.html?returnType=INBOUND&relatedSlipNumber=INB-20260318-0001" class="btn btn-secondary btn-sm" style="text-decoration:none">🔄 返品登録</a>
+        <button class="btn btn-ghost btn-sm">📄 検品レポート出力</button>
+      </div>
     </div>
 
     <!-- Basic Info Card -->
@@ -334,8 +337,9 @@
         <li>入荷確認済 → [検品へ →] [キャンセル] ボタンを表示 <em>（現在の画面状態）</em></li>
         <li>検品中 → [検品続行 →] [入庫確定へ →] [キャンセル] ボタンを表示</li>
         <li>一部入庫 → [入庫確定へ →] [キャンセル] ボタンを表示</li>
-        <li>入庫完了 → ボタンなし（参照のみ）</li>
+        <li>入庫完了 → [返品登録] ボタンを表示（参照 + 返品操作のみ）</li>
         <li>キャンセル → ボタンなし（参照のみ）</li>
+        <li style="margin-top:4px;color:#6B21A8"><strong>※ [返品登録] ボタンはステータス「入荷確認済」「検品中」「一部入庫」「入庫完了」で表示（VIEWER非表示）</strong></li>
       </ul>
     </div>
 

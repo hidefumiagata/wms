@@ -16,20 +16,9 @@
               └── テストケース（機能ID + Issue ID参照）
 ```
 
-## 3. 機能IDの体系（暫定）
+## 3. 機能IDの体系
 
-| プレフィックス | カテゴリ | 例 |
-|--------------|---------|-----|
-| `WMS-MST` | マスタ管理 | WMS-MST-001 |
-| `WMS-INB` | 入荷管理 | WMS-INB-001 |
-| `WMS-INV` | 在庫管理 | WMS-INV-001 |
-| `WMS-SHP` | 出荷管理 | WMS-SHP-001 |
-| `WMS-RPT` | レポート | WMS-RPT-001 |
-| `WMS-IFX` | 外部連携I/F | WMS-IFX-001 |
-| `WMS-BAT` | バッチ処理 | WMS-BAT-001 |
-| `WMS-INF` | インフラ/基盤 | WMS-INF-001 |
-
-> **注記**: 機能IDの詳細は機能要件定義書作成時に確定する。
+> 機能IDのプレフィックス一覧は [_id-registry.md](../functional-design/_id-registry.md) を参照。
 
 ## 4. 要件フォーマット
 

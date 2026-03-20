@@ -11,4 +11,4 @@
 
 ## 具体的な技術スタック
 
-アーキテクチャ設計フェーズで選定する。
+技術スタックはCLAUDE.mdおよびarchitecture-design/02-system-architecture.mdで確定済み。

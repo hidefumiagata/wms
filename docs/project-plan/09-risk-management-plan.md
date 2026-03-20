@@ -10,3 +10,6 @@
 | R4 | Azureの無料枠・低コストプラン超過 | 予期せぬコスト | 設計段階でリソース試算、Azureコストアラート設定 |
 | R5 | 1週間で完成しない | ShowCase未達 | MVP優先、機能は段階的リリース |
 | R6 | GitHubへの誤ったコードや認証情報の公開 | セキュリティ事故 | .gitignore徹底、シークレット管理ルール徹底 |
+| R7 | コールドスタート遅延（Container Apps min replicas=0） | ユーザ体験低下 | Startup Probe設定、Spring Boot Lazy Init有効化 |
+| R8 | PostgreSQL B1ms性能制約 | レスポンス遅延 | インデックス最適化、クエリチューニング |
+| R9 | Blob Storage静的ホスティング制限（SPAルーティング非対応） | 画面遷移エラー | Azure Front Door経由でSPAルーティング対応 |

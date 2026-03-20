@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能設計書 — 帳票設計 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../index.html">Home</a> &rsaquo; <a href="index.html">機能設計書</a> &rsaquo; 帳票設計
+</nav>
+<main>
+  <div style="margin-bottom:24px;">
+    <h1 style="font-size:1.6rem;color:#1a1a2e;">📊 帳票設計</h1>
+    <p style="color:#888;margin-top:8px;font-size:0.9rem;">Report Design</p>
+  </div>
+  
+  
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#RPT-01-inbound-inspection">1. レポート設計書 — 入荷検品レポート</a></li>
+        <li><a href="#RPT-03-inbound-plan">2. レポート設計書 — 入荷予定レポート</a></li>
+        <li><a href="#RPT-04-inbound-result">3. レポート設計書 — 入庫実績レポート</a></li>
+        <li><a href="#RPT-05-unreceived-realtime">4. レポート設計書 — 未入荷リスト（リアルタイム）</a></li>
+        <li><a href="#RPT-06-unreceived-confirmed">5. レポート設計書 — 未入荷リスト（確定）</a></li>
+        <li><a href="#RPT-07-inventory">6. レポート設計書 — 在庫一覧レポート</a></li>
+        <li><a href="#RPT-08-inventory-transition">7. レポート設計書 — 在庫推移レポート</a></li>
+        <li><a href="#RPT-09-inventory-correction">8. レポート設計書 — 在庫訂正一覧</a></li>
+        <li><a href="#RPT-10-stocktake-list">9. レポート設計書 — 棚卸リスト</a></li>
+        <li><a href="#RPT-11-stocktake-result">10. レポート設計書 — 棚卸結果レポート</a></li>
+        <li><a href="#RPT-12-picking-instruction">11. レポート設計書 — ピッキング指示書</a></li>
+        <li><a href="#RPT-13-shipping-inspection">12. レポート設計書 — 出荷検品レポート</a></li>
+        <li><a href="#RPT-14-delivery-list">13. レポート設計書 — 配送リスト</a></li>
+        <li><a href="#RPT-15-unshipped-realtime">14. レポート設計書 — 未出荷リスト（リアルタイム）</a></li>
+        <li><a href="#RPT-16-unshipped-confirmed">15. レポート設計書 — 未出荷リスト（確定）</a></li>
+        <li><a href="#RPT-17-daily-summary">16. レポート設計書 — 日次集計レポート</a></li>
+        <li><a href="#RPT-18-returns">17. レポート設計書 — 返品レポート</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-01-inbound-inspection">
+<h1>レポート設計書 — 入荷検品レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-01</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>入荷検品レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫スタッフ・倉庫管理者が、入荷検品完了後に検品結果を確認・記録するために使用する。予定数と検品数の差異を品目ごとに把握し、仕入先への過不足連絡や入庫作業の判断材料とする</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-001</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INB-003（入荷予定詳細画面）から「検品レポート」ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-001 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報）</h3>
+<p>共通ヘッダー（<a href="_standard-report.md" target="_blank">_standard-report.md</a> 参照）に加え、以下の伝票情報を1ページ目に表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>伝票番号</td><td>左</td><td><code>slipNumber</code>（例: <code>INB-2026-00123</code>）</td></tr>
+<tr><td>仕入先名</td><td>左</td><td><code>supplierName</code>（例: <code>テスト仕入先A</code>）</td></tr>
+<tr><td>入荷予定日</td><td>右</td><td><code>plannedDate</code>（例: <code>2026-03-14</code>）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>これらの情報はAPIレスポンスの先頭行から取得する（1伝票=全行同一値）。</blockquote>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>商品コード</td><td><code>productCode</code></td><td>28</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>商品名</td><td><code>productName</code></td><td>50</td><td>左</td><td>—</td><td>長い場合は折り返し</td></tr>
+<tr><td>4</td><td>ケース入数</td><td><code>casQuantity</code></td><td>18</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>5</td><td>予定数(ケース)</td><td><code>plannedQuantityCas</code></td><td>20</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>6</td><td>検品数(ケース)</td><td><code>inspectedQuantityCas</code></td><td>20</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>7</td><td>差異(ケース)</td><td><code>diffQuantityCas</code></td><td>18</td><td>右</td><td>整数</td><td>差異!=0 は太字</td></tr>
+<tr><td>8</td><td>予定数(バラ)</td><td><code>plannedQuantityPcs</code></td><td>20</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>9</td><td>検品数(バラ)</td><td><code>inspectedQuantityPcs</code></td><td>20</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>10</td><td>差異(バラ)</td><td><code>diffQuantityPcs</code></td><td>18</td><td>右</td><td>整数</td><td>差異!=0 は太字</td></tr>
+<tr><td>11</td><td>ロット番号</td><td><code>lotNumber</code></td><td>22</td><td>左</td><td>—</td><td>ロット管理OFF: 「—」</td></tr>
+<tr><td>12</td><td>期限日</td><td><code>expiryDate</code></td><td>20</td><td>中</td><td>日付</td><td>期限管理OFF: 「—」</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 8 + 28 + 50 + 18 + 20 + 20 + 18 + 20 + 20 + 18 + 22 + 20 = <strong>262mm</strong>（A4横の印字可能幅 277mm 以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<p>グルーピングなし（フラットリスト）。1伝票の明細を行番号順に表示する。</p>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>予定数(ケース)列</td><td>全行の <code>plannedQuantityCas</code> 合計値</td></tr>
+<tr><td>検品数(ケース)列</td><td>全行の <code>inspectedQuantityCas</code> 合計値</td></tr>
+<tr><td>差異(ケース)列</td><td>全行の <code>diffQuantityCas</code> 合計値</td></tr>
+<tr><td>予定数(バラ)列</td><td>全行の <code>plannedQuantityPcs</code> 合計値</td></tr>
+<tr><td>検品数(バラ)列</td><td>全行の <code>inspectedQuantityPcs</code> 合計値</td></tr>
+<tr><td>差異(バラ)列</td><td>全行の <code>diffQuantityPcs</code> 合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>25行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>なし（グルーピングなし）</td></tr>
+<tr><td>孤立行防止</td><td>合計行が次ページに単独で送られる場合、直前の明細行とともに改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ 入荷検品レポート                                            出力日時: 2026-03-17 14:30   │
+│ 倉庫: 東京第一倉庫 (WH-001)                                出力者: 山田 太郎             │
+│ 伝票番号: INB-2026-00123    仕入先: テスト仕入先A           入荷予定日: 2026-03-14       │
+├────┬──────┬────────────┬──────┬──────┬──────┬──────┬──────┬──────┬──────┬────────┬────────┤
+│No. │商品CD│  商品名    │CS入数│予(CS)│検(CS)│差(CS)│予(pc)│検(pc)│差(pc)│ロット  │ 期限日 │
+├────┼──────┼────────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼────────┤
+│  1 │P-001 │商品A       │   10 │    5 │    5 │    0 │   50 │   50 │    0 │LOT-001 │2027-03 │
+│  2 │P-002 │商品B       │   12 │    3 │    2 │   -1 │   36 │   24 │  -12 │LOT-002 │2027-06 │ ← ピンク背景
+│  3 │P-003 │商品C（ロン…│    8 │   10 │   10 │    0 │   80 │   80 │    0 │  —     │  —     │
+│  4 │P-004 │商品D       │    6 │    2 │    3 │    1 │   12 │   18 │    6 │LOT-004 │2027-09 │ ← ピンク背景
+├────┴──────┼────────────┼──────┼──────┼──────┼──────┼──────┼──────┼──────┼────────┼────────┤
+│           │   合計     │      │   20 │   20 │    0 │  178 │  172 │   -6 │        │        │
+├───────────┴────────────┴──────┴──────┴──────┴──────┴──────┴──────┴──────┴────────┴────────┤
+│ WMS ShowCase                                                          Page 1 / 1         │
+└──────────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>差異行の強調表示</strong>: 差異数がゼロでない行（<code>diffQuantityPcs != 0</code> または <code>diffQuantityCas != 0</code>）は、行全体の背景色をピンク（<code>#FFF1F1</code>）で強調表示する。差異数の値自体は太字で表示する</li><li style="margin-left:0px"><strong>ロット管理OFF商品</strong>: 商品の <code>lot_manage_flag</code> が <code>false</code> の場合、ロット番号列は「—」（emダッシュ）で表示する</li><li style="margin-left:0px"><strong>期限管理OFF商品</strong>: 商品の <code>expiry_manage_flag</code> が <code>false</code> の場合、期限日列は「—」（emダッシュ）で表示する</li><li style="margin-left:0px"><strong>データ0件</strong>: 入荷伝票に明細が存在しない場合（通常は発生しない）、明細テーブル領域に「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px"><strong>未検品明細</strong>: 検品未実施（<code>inspected_qty</code> が NULL）の明細行は、検品数列・差異列を「—」で表示する</li><li style="margin-left:0px"><strong>テンプレートファイル配置</strong>: <code>backend/src/main/resources/templates/reports/RPT-01.html</code></li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-03-inbound-plan">
+<h1>レポート設計書 — 入荷予定レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-03</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>入荷予定レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者・現場担当者が、指定期間内の入荷予定を仕入先別に把握し、入荷作業の計画・人員配置・保管場所の準備に活用する。</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-003</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INB-001（入荷予定一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-003 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（_standard-report.md 参照）</p>
+<p>抽出条件サマリー例: <code>期間: 2026-03-01 ～ 2026-03-31 / ステータス: 入荷予定</code></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>グループ内通し番号</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>40</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>入荷予定日</td><td><code>plannedDate</code></td><td>28</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>65</td><td>左</td><td>—</td><td>長い場合は末尾省略</td></tr>
+<tr><td>6</td><td>予定数(ケース)</td><td><code>plannedQuantityCas</code></td><td>28</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>7</td><td>予定数(バラ)</td><td><code>plannedQuantityPcs</code></td><td>28</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>8</td><td>ステータス</td><td><code>statusLabel</code></td><td>30</td><td>中</td><td>—</td><td>日本語表示名</td></tr>
+<tr><td></td><td><strong>合計</strong></td><td></td><td><strong>257</strong></td><td></td><td></td><td>A4横277mm以内</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅の合計は用紙の印字可能幅（A4横: 約277mm）以内に収めている。残余20mmはカラム間パディングに使用。</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: supplierName（仕入先名）
+グループヘッダー: 「仕入先: {supplierName}」を太字で表示（明細テーブルの上部に1行）
+小計行: 予定数(ケース)、予定数(バラ) の合計をグループ末尾に表示
+ページブレーク: グループ単位で改ページしない（連続印刷）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル（太字）</td></tr>
+<tr><td>予定数(ケース)列</td><td>全行の予定数(ケース)合計値</td></tr>
+<tr><td>予定数(バラ)列</td><td>全行の予定数(バラ)合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────┐
+│ 入荷予定レポート                              出力日時: 2026-03-17 14:30  │
+│ 倉庫: 東京第一倉庫 (WH-001)                   出力者: admin              │
+│ 条件: 期間: 2026-03-01 ～ 2026-03-31                                     │
+├──────────────────────────────────────────────────────────────────────────┤
+│ 仕入先: テスト仕入先A (SP-001)                                            │
+├────┬──────────────┬────────────┬──────────┬──────────────────┬────────┬────────┬──────────┤
+│ No.│ 伝票番号     │ 入荷予定日 │商品コード│ 商品名           │予(ケース)│予(バラ) │ステータス│
+├────┼──────────────┼────────────┼──────────┼──────────────────┼────────┼────────┼──────────┤
+│  1 │INB-2026-00124│ 2026-03-15 │ P-002    │ 商品B            │     10 │    100 │入荷予定  │
+│  2 │INB-2026-00125│ 2026-03-16 │ P-003    │ 商品C            │      5 │     50 │検品中    │
+├────┴──────────────┴────────────┴──────────┼──────────────────┼────────┼────────┼──────────┤
+│                                          │ 小計             │     15 │    150 │          │
+├──────────────────────────────────────────────────────────────────────────┤
+│ 仕入先: テスト仕入先B (SP-002)                                            │
+├────┬──────────────┬────────────┬──────────┬──────────────────┬────────┬────────┬──────────┤
+│  1 │INB-2026-00130│ 2026-03-18 │ P-001    │ 商品A            │     20 │    200 │入荷予定  │
+├────┴──────────────┴────────────┴──────────┼──────────────────┼────────┼────────┼──────────┤
+│                                          │ 小計             │     20 │    200 │          │
+├──────────────────────────────────────────┼──────────────────┼────────┼────────┼──────────┤
+│                                          │ 合計             │     35 │    350 │          │
+├──────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                              Page 1 / 1    │
+└──────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px">ステータスが <code>CANCELLED</code>（キャンセル）の行は取り消し線スタイル（テキスト色: <code>#999999</code>）で表示する</li><li style="margin-left:0px">ステータスが <code>STORED</code>（入庫完了）の行は背景色をライトグリーン（<code>#F0FFF0</code>）で表示する</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px">ソート順は仕入先名（昇順）→ 入荷予定日（昇順）→ 伝票番号（昇順）。詳細は API-RPT-003 のデータ取得仕様を参照</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-04-inbound-result">
+<h1>レポート設計書 — 入庫実績レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-04</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>入庫実績レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者が、指定期間内に入庫完了した実績を仕入先別に確認し、入荷精度の分析・仕入先への報告・在庫配置状況の把握に活用する。</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-004</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INB-006（入庫実績照会画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-004 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（_standard-report.md 参照）</p>
+<p>抽出条件サマリー例: <code>期間: 2026-03-01 ～ 2026-03-31 / 仕入先: テスト仕入先A</code></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>グループ内通し番号</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>38</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>入庫日</td><td><code>storedDate</code></td><td>25</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>28</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>52</td><td>左</td><td>—</td><td>長い場合は末尾省略</td></tr>
+<tr><td>6</td><td>予定数(ケース)</td><td><code>plannedQuantityCas</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>7</td><td>検品数(ケース)</td><td><code>inspectedQuantityCas</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>8</td><td>差異(ケース)</td><td><code>diffQuantityCas</code></td><td>20</td><td>右</td><td>整数</td><td>正の場合「+」付き</td></tr>
+<tr><td>9</td><td>返品数量</td><td><code>returnQuantity</code></td><td>20</td><td>右</td><td>整数</td><td>3桁カンマ区切り。返品なし時は「—」</td></tr>
+<tr><td>10</td><td>格納ロケーション</td><td><code>storedLocationCode</code></td><td>36</td><td>左</td><td>—</td><td></td></tr>
+<tr><td></td><td><strong>合計</strong></td><td></td><td><strong>261</strong></td><td></td><td></td><td>A4横277mm以内</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅の合計は用紙の印字可能幅（A4横: 約277mm）以内に収めている。残余16mmはカラム間パディングに使用。</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: supplierName（仕入先名）
+グループヘッダー: 「仕入先: {supplierName}」を太字で表示（明細テーブルの上部に1行）
+小計行: 予定数(ケース)、検品数(ケース)、差異(ケース)、返品数量 の合計をグループ末尾に表示
+ページブレーク: グループ単位で改ページしない（連続印刷）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル（太字）</td></tr>
+<tr><td>予定数(ケース)列</td><td>全行の予定数(ケース)合計値</td></tr>
+<tr><td>検品数(ケース)列</td><td>全行の検品数(ケース)合計値</td></tr>
+<tr><td>差異(ケース)列</td><td>全行の差異(ケース)合計値</td></tr>
+<tr><td>返品数量列</td><td>全行の返品数量合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌───────────────────────────────────────────────────────────────────────────────────┐
+│ 入庫実績レポート                                     出力日時: 2026-03-17 14:30    │
+│ 倉庫: 東京第一倉庫 (WH-001)                          出力者: admin                │
+│ 条件: 期間: 2026-03-01 ～ 2026-03-31 / 仕入先: 全仕入先                            │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│ 仕入先: テスト仕入先A (SP-001)                                                     │
+├────┬─────────────┬──────────┬────────┬──────────────┬──────┬──────┬──────┬──────┬──────────────┤
+│ No.│ 伝票番号    │ 入庫日   │商品CD  │ 商品名       │予(Cs)│検(Cs)│差(Cs)│返品数│格納ロケーション│
+├────┼─────────────┼──────────┼────────┼──────────────┼──────┼──────┼──────┼──────┼──────────────┤
+│  1 │INB-2026-0120│2026-03-10│ P-001  │ 商品A        │   10 │   10 │    0 │    2 │A-01-A-01-01-01│
+│  2 │INB-2026-0121│2026-03-12│ P-002  │ 商品B        │    5 │    4 │   -1 │    — │A-01-A-01-02-01│
+├────┴─────────────┴──────────┴────────┼──────────────┼──────┼──────┼──────┼──────┼──────────────┤
+│                                      │ 小計         │   15 │   14 │   -1 │    2 │              │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│ 仕入先: テスト仕入先B (SP-002)                                                     │
+├────┬─────────────┬──────────┬────────┬──────────────┬──────┬──────┬──────┬──────┬──────────────┤
+│  1 │INB-2026-0130│2026-03-15│ P-003  │ 商品C        │   20 │   20 │    0 │    — │B-01-A-02-01-01│
+├────┴─────────────┴──────────┴────────┼──────────────┼──────┼──────┼──────┼──────┼──────────────┤
+│                                      │ 小計         │   20 │   20 │    0 │    0 │              │
+├──────────────────────────────────────┼──────────────┼──────┼──────┼──────┼──────┼──────────────┤
+│                                      │ 合計         │   35 │   34 │   -1 │    2 │              │
+├───────────────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                                       Page 1 / 1    │
+└───────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px">差異がある行（<code>diffQuantityCas != 0</code>）は背景色をピンク（<code>#FFF1F1</code>）で強調表示する</li><li style="margin-left:0px">差異列の値が正の場合は <code>+</code> 符号を付ける（例: <code>+2</code>）、負の場合はマイナス符号をそのまま表示（例: <code>-1</code>）、ゼロの場合は <code>0</code> と表示</li><li style="margin-left:0px">対象データは入庫完了（<code>status = 'STORED'</code>）のレコードのみ。詳細は API-RPT-004 の業務ロジックを参照</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px"><strong>返品数量</strong>: 返品数量は入荷返品（<code>return_type='INBOUND'</code>）のうち、当該入荷伝票に紐づくもののみ表示する。返品がない場合は「—」（emダッシュ）で表示</li><li style="margin-left:0px">ソート順は仕入先名（昇順）→ 入庫日（昇順）→ 伝票番号（昇順）。詳細は API-RPT-004 のデータ取得仕様を参照</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-05-unreceived-realtime">
+<h1>レポート設計書 — 未入荷リスト（リアルタイム）</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-05</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>未入荷リスト（リアルタイム）</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫担当者・管理者が、入荷予定日を過ぎてもまだ入荷完了していない伝票・明細をリアルタイムで確認し、仕入先への督促や入荷作業の優先度判断に使用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-005</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INB-001（入荷一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-005 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーに加え、以下を表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>抽出条件</td><td>基準日（asOfDate）を表示（例: 「基準日: 2026-03-17」）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>グループ内通番</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>40</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>入荷予定日</td><td><code>plannedDate</code></td><td>28</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>4</td><td>遅延日数</td><td><code>delayDays</code></td><td>20</td><td>右</td><td>整数 + 「日」</td><td>例: <code>5日</code></td></tr>
+<tr><td>5</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>6</td><td>商品名</td><td><code>productName</code></td><td>60</td><td>左</td><td>—</td><td>長い場合は末尾省略</td></tr>
+<tr><td>7</td><td>予定数(ケース)</td><td><code>plannedQuantityCas</code></td><td>25</td><td>右</td><td>整数（3桁カンマ）</td><td></td></tr>
+<tr><td>8</td><td>ステータス</td><td><code>statusLabel</code></td><td>30</td><td>中</td><td>—</td><td>日本語ラベル表示</td></tr>
+<tr><td>9</td><td>備考</td><td>—</td><td>34</td><td>左</td><td>—</td><td>将来拡張用。現時点は空欄</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 40 + 28 + 20 + 30 + 60 + 25 + 30 + 34 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: supplierName（仕入先名）
+グループヘッダー: 仕入先名を太字で1行表示（例: 「■ テスト仕入先B」）
+小計行: グループ末尾に「予定数(ケース)」列の小計、および明細件数を表示
+ページブレーク: グループ単位で改ページしない（グループ途中でのページ跨ぎを許容）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>予定数(ケース)列</td><td>全明細行の予定数合計</td></tr>
+<p></tbody><br></table></p>
+<p>加えて、総明細件数を合計行に表示する（例: 「合計 15件」）。</p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループヘッダーが最終行に来る場合は改ページし、次ページ先頭から開始する</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────┐
+│ 未入荷リスト（リアルタイム）                    出力日時: 2026-03-17 14:30 │
+│ 倉庫: 東京第一倉庫 (WH-001)                    出力者: admin             │
+│ 条件: 基準日: 2026-03-17                                                 │
+├──────────────────────────────────────────────────────────────────────────┤
+│ ■ テスト仕入先A                                                          │
+├────┬──────────┬──────────┬──────┬───────┬────────────┬───────┬─────┬────┤
+│ No.│ 伝票番号  │入荷予定日 │遅延  │商品CD │ 商品名      │予定数 │状態 │備考│
+│    │          │          │日数  │       │            │(ケース)│     │    │
+├────┼──────────┼──────────┼──────┼───────┼────────────┼───────┼─────┼────┤
+│  1 │INB-00100 │2026-03-10│   7日│P-001  │商品A        │    10 │入荷 │    │
+│    │          │          │      │       │            │       │予定 │    │
+│  2 │INB-00102 │2026-03-12│   5日│P-002  │商品B        │     5 │検品 │    │
+│    │          │          │      │       │            │       │済   │    │
+├────┴──────────┴──────────┴──────┴───────┼────────────┼───────┼─────┼────┤
+│                              小計 2件   │            │    15 │     │    │
+├─────────────────────────────────────────┴────────────┴───────┴─────┴────┤
+│ ■ テスト仕入先B                                                          │
+├────┬──────────┬──────────┬──────┬───────┬────────────┬───────┬─────┬────┤
+│  1 │INB-00115 │2026-03-12│   5日│P-003  │商品C        │     5 │検品 │    │
+│    │          │          │      │       │            │       │済   │    │
+├────┴──────────┴──────────┴──────┴───────┼────────────┼───────┼─────┼────┤
+│                              小計 1件   │            │     5 │     │    │
+├─────────────────────────────────────────┼────────────┼───────┼─────┼────┤
+│                            合計 3件     │   合計     │    20 │     │    │
+├─────────────────────────────────────────┴────────────┴───────┴─────┴────┤
+│ WMS ShowCase                                          Page 1 / 1       │
+└──────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>リアルタイムデータ取得</strong>: 本レポートは <code>inbound_slips</code> テーブルをリアルタイムに参照するため、出力タイミングによって結果が変動する。確定時点のスナップショットが必要な場合は RPT-06（未入荷リスト（確定））を使用すること。</li><li style="margin-left:0px"><strong>ソート順</strong>: 仕入先名（昇順） → 入荷予定日（昇順。予定日が古い＝遅延が大きい順が上位）で出力する。データ取得仕様の詳細は API-RPT-005 の業務ロジックを参照。</li><li style="margin-left:0px"><strong>遅延日数の強調表示</strong>: 遅延日数が7日以上の行は背景色をピンク（<code>#FFF1F1</code>）にして視覚的に強調する。</li><li style="margin-left:0px"><strong>データ0件の場合</strong>: 明細テーブルの代わりに「該当する未入荷データはありません」メッセージを中央表示する。</li><li style="margin-left:0px"><strong>件数上限</strong>: API仕様により最大10,000件。上限超過時はPDFヘッダーの条件行に「※ 10,000件を超過したため一部のみ表示」と注記する。</li><li style="margin-left:0px"><strong>キャンセル・入庫完了済除外</strong>: ステータスが <code>STORED</code>（入庫完了）および <code>CANCELLED</code>（キャンセル）の伝票は対象外。対象ステータスの詳細は API-RPT-005 の業務ロジックを参照。</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-06-unreceived-confirmed">
+<h1>レポート設計書 — 未入荷リスト（確定）</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-06</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>未入荷リスト（確定）</td></tr>
+<tr><td><strong>用途</strong></td><td>日替処理（バッチ）で確定されたスナップショットとして、営業日末時点の未入荷状況を振り返り・報告・エビデンスとして使用する。過去日の未入荷状況を遡って確認する際にも利用される</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-006</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INB-001（入荷一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-006 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーに加え、以下を表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>営業日基準日</td><td>バッチ処理営業日（batchBusinessDate）を明示表示（例: 「営業日基準日: 2026-03-14（日替確定）」）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>グループ内通番</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>40</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>入荷予定日</td><td><code>plannedDate</code></td><td>28</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>4</td><td>遅延日数</td><td>（計算値）</td><td>20</td><td>右</td><td>整数 + 「日」</td><td><code>batchBusinessDate - plannedDate</code> で算出</td></tr>
+<tr><td>5</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>6</td><td>商品名</td><td><code>productName</code></td><td>60</td><td>左</td><td>—</td><td>長い場合は末尾省略</td></tr>
+<tr><td>7</td><td>予定数(ケース)</td><td><code>plannedQuantityCas</code></td><td>25</td><td>右</td><td>整数（3桁カンマ）</td><td></td></tr>
+<tr><td>8</td><td>バッチ時点ステータス</td><td><code>statusAtBatch</code></td><td>30</td><td>中</td><td>—</td><td>ステータスコードを日本語ラベルに変換して表示</td></tr>
+<tr><td>9</td><td>備考</td><td>—</td><td>34</td><td>左</td><td>—</td><td>将来拡張用。現時点は空欄</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 40 + 28 + 20 + 30 + 60 + 25 + 30 + 34 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: supplierName（仕入先名）
+グループヘッダー: 仕入先名を太字で1行表示（例: 「■ テスト仕入先B」）
+小計行: グループ末尾に「予定数(ケース)」列の小計、および明細件数を表示
+ページブレーク: グループ単位で改ページしない（グループ途中でのページ跨ぎを許容）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>予定数(ケース)列</td><td>全明細行の予定数合計</td></tr>
+<p></tbody><br></table></p>
+<p>加えて、総明細件数を合計行に表示する（例: 「合計 15件」）。</p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループヘッダーが最終行に来る場合は改ページし、次ページ先頭から開始する</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────┐
+│ 未入荷リスト（確定）                            出力日時: 2026-03-17 14:30 │
+│ 倉庫: 東京第一倉庫 (WH-001)                    出力者: admin             │
+│ 条件: 営業日基準日: 2026-03-14（日替確定）                                │
+├──────────────────────────────────────────────────────────────────────────┤
+│ ■ テスト仕入先A                                                          │
+├────┬──────────┬──────────┬──────┬───────┬────────────┬───────┬─────┬────┤
+│ No.│ 伝票番号  │入荷予定日 │遅延  │商品CD │ 商品名      │予定数 │BATCHｽ│備考│
+│    │          │          │日数  │       │            │(ケース)│ﾃｰﾀｽ │    │
+├────┼──────────┼──────────┼──────┼───────┼────────────┼───────┼─────┼────┤
+│  1 │INB-00100 │2026-03-10│   4日│P-001  │商品A        │    10 │入荷 │    │
+│    │          │          │      │       │            │       │予定 │    │
+│  2 │INB-00102 │2026-03-12│   2日│P-002  │商品B        │     5 │検品 │    │
+│    │          │          │      │       │            │       │済   │    │
+├────┴──────────┴──────────┴──────┴───────┼────────────┼───────┼─────┼────┤
+│                              小計 2件   │            │    15 │     │    │
+├─────────────────────────────────────────┴────────────┴───────┴─────┴────┤
+│ ■ テスト仕入先B                                                          │
+├────┬──────────┬──────────┬──────┬───────┬────────────┬───────┬─────┬────┤
+│  1 │INB-00115 │2026-03-12│   2日│P-003  │商品C        │     5 │検品 │    │
+│    │          │          │      │       │            │       │済   │    │
+├────┴──────────┴──────────┴──────┴───────┼────────────┼───────┼─────┼────┤
+│                              小計 1件   │            │     5 │     │    │
+├─────────────────────────────────────────┼────────────┼───────┼─────┼────┤
+│                            合計 3件     │   合計     │    20 │     │    │
+├─────────────────────────────────────────┴────────────┴───────┴─────┴────┤
+│ WMS ShowCase                                          Page 1 / 1       │
+└──────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>確定データ（スナップショット）</strong>: 本レポートは日替処理（バッチ）で <code>unreceived_list_records</code> テーブルに保存された確定データを参照する。RPT-05（未入荷リスト（リアルタイム））とは異なり、出力タイミングに関わらず指定営業日末時点の状態が再現される。過去日のデータを遡って出力する用途にも適している。</li><li style="margin-left:0px"><strong>営業日基準日の明示</strong>: ヘッダーに「営業日基準日」を明示し、どの営業日時点のスナップショットであるかを明確にする。RPT-05のヘッダーが「基準日」であるのに対し、本レポートでは「営業日基準日（日替確定）」と表記して区別する。</li><li style="margin-left:0px"><strong>遅延日数の算出</strong>: API-RPT-006 のレスポンスには <code>delayDays</code> フィールドが含まれないため、PDF生成時に <code>batchBusinessDate - plannedDate</code> で算出する。</li><li style="margin-left:0px"><strong>遅延日数の強調表示</strong>: 遅延日数が7日以上の行は背景色をピンク（<code>#FFF1F1</code>）にして視覚的に強調する。</li><li style="margin-left:0px"><strong>ソート順</strong>: 仕入先名（昇順） → 入荷予定日（昇順。予定日が古い＝遅延が大きい順が上位）で出力する。データ取得仕様の詳細は API-RPT-006 の業務ロジックを参照。</li><li style="margin-left:0px"><strong>データ0件の場合</strong>: 指定した営業日の日替処理が未実行の場合、またはデータが存在しない場合は、明細テーブルの代わりに「該当する未入荷データはありません（指定営業日の日替処理が実行されていない可能性があります）」メッセージを中央表示する。</li><li style="margin-left:0px"><strong>キャンセル・入庫完了済除外</strong>: 日替処理時点で <code>STORED</code>（入庫完了）および <code>CANCELLED</code>（キャンセル）のステータスだった伝票はスナップショットに含まれない。対象ステータスの詳細は API-RPT-006 の業務ロジックを参照。</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-07-inventory">
+<h1>レポート設計書 — 在庫一覧レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-07</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>在庫一覧レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者・スタッフが、指定倉庫の現在在庫をロケーション・商品・ロット単位で確認するために使用する。在庫棚卸の事前確認、在庫状況の定期報告に利用。</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-007</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INV-001（在庫一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-007 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（_standard-report.md 参照）。</p>
+<p>抽出条件サマリー表示例: <code>ロケーション: A-01-* / 荷姿: ケース / 保管条件: 常温</code></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>グループ内連番</td></tr>
+<tr><td>2</td><td>ロケーションコード</td><td><code>locationCode</code></td><td>38</td><td>左</td><td>文字列</td><td>エリア→ロケーション順ソート</td></tr>
+<tr><td>3</td><td>棟名</td><td><code>buildingName</code></td><td>25</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>4</td><td>エリア名</td><td><code>areaName</code></td><td>30</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>5</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td>CAS/BAL/PCS表示</td></tr>
+<tr><td>6</td><td>ロット番号</td><td><code>lotNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>ロット管理OFF時は「—」</td></tr>
+<tr><td>7</td><td>期限日</td><td><code>expiryDate</code></td><td>22</td><td>中</td><td>日付</td><td>期限管理OFF時は「—」</td></tr>
+<tr><td>8</td><td>在庫数量</td><td><code>quantity</code></td><td>22</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>9</td><td>引当数量</td><td><code>allocatedQty</code></td><td>22</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>10</td><td>有効在庫数</td><td><code>availableQty</code></td><td>22</td><td>右</td><td>整数</td><td><code>quantity - allocatedQty</code>。3桁カンマ区切り</td></tr>
+<tr><td>11</td><td>商品コード</td><td><code>productCode</code></td><td>25</td><td>左</td><td>文字列</td><td>グループヘッダーにも表示</td></tr>
+<tr><td>12</td><td>商品名</td><td><code>productName</code></td><td>18</td><td>左</td><td>文字列</td><td>幅超過時は末尾省略</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 8 + 38 + 25 + 30 + 15 + 30 + 22 + 22 + 22 + 22 + 25 + 18 = <strong>277mm</strong>（A4横印字可能幅に収まる）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: productCode（商品コード）
+グループヘッダー: 商品コード + 商品名を太字で1行表示（例: 「P-001 商品A」）
+小計行: 在庫数量・引当数量・有効在庫数の合計を表示
+ページブレーク: グループ単位で改ページしない（グループ途中で改ページ可）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>No.〜エリア名列</td><td>「合計」ラベル（太字）</td></tr>
+<tr><td>在庫数量列</td><td>全行の在庫数量合計</td></tr>
+<tr><td>引当数量列</td><td>全行の引当数量合計</td></tr>
+<tr><td>有効在庫数列</td><td>全行の有効在庫数合計</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>40行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ 在庫一覧レポート                                              出力日時: 2026-03-17 14:30 │
+│ 倉庫: 東京第一倉庫 (WH-001)                                  出力者: admin              │
+│ 条件: ロケーション: A-* / 荷姿: 全て                                                     │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ ■ P-001 商品A                                                                           │
+├────┬──────────┬──────┬───────┬─────┬───────┬──────────┬───────┬───────┬───────┬─────┬────┤
+│ No.│ロケーション│ 棟名  │エリア名│荷姿 │ロット番号│  期限日   │在庫数量│引当数量│有効在庫│商品CD│商品名│
+├────┼──────────┼──────┼───────┼─────┼───────┼──────────┼───────┼───────┼───────┼─────┼────┤
+│  1 │A-01-A-01 │ 1号棟 │保管A  │ CAS │LOT-001│2027-03-14│    100│     20│     80│P-001│商品A│
+│  2 │A-01-A-02 │ 1号棟 │保管A  │ PCS │LOT-002│2027-06-30│     50│      0│     50│P-001│商品A│
+├────┴──────────┴──────┴───────┴─────┴───────┼──────────┼───────┼───────┼───────┼─────┴────┤
+│                                   小計     │          │    150│     20│    130│          │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ ■ P-002 商品B                                                                           │
+├────┬──────────┬──────┬───────┬─────┬───────┬──────────┬───────┬───────┬───────┬─────┬────┤
+│  1 │A-02-B-01 │ 2号棟 │保管B  │ BAL │  —    │   —      │     30│     10│     20│P-002│商品B│
+├────┴──────────┴──────┴───────┴─────┴───────┼──────────┼───────┼───────┼───────┼─────┴────┤
+│                                   小計     │          │     30│     10│     20│          │
+├────────────────────────────────────────────┼──────────┼───────┼───────┼───────┤          │
+│                                   合計     │          │    180│     30│    150│          │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                                          Page 1 / 1        │
+└──────────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px">在庫数量が0のレコードは出力対象外（API側で <code>quantity &gt; 0</code> フィルタ済み）。</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を「—」で表示する。</li><li style="margin-left:0px">期限管理フラグOFFの商品は期限日列を「—」で表示する。</li><li style="margin-left:0px">有効在庫数（<code>availableQty</code>）が0の行は背景色を薄い灰色（<code>#F5F5F5</code>）にして視認性を高める。</li><li style="margin-left:0px">有効在庫数がマイナスとなることはデータ制約上発生しないが、万一表示される場合は赤字（<code>#FF0000</code>）で表示する。</li><li style="margin-left:0px">ソート順: 商品コード昇順（グルーピングキー） → エリアコード昇順 → ロケーションコード昇順（グループ内ソート）。</li><li style="margin-left:0px">データ取得仕様・フィルタ条件マッピングは <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-007 業務ロジックを参照。</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する。</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-08-inventory-transition">
+<h1>レポート設計書 — 在庫推移レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-08</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>在庫推移レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者が、指定期間における特定商品の在庫変動履歴（入荷・出荷・移動・訂正・ばらし等）を時系列で確認するために使用する。在庫差異の原因調査、入出庫実績の分析に利用。</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-008</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INV-001（在庫一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-008 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>1ページ目のみ、対象商品の基本情報を追加表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>対象商品</td><td>商品コード + 商品名（例: <code>P-001 商品A</code>）</td></tr>
+<tr><td>対象期間</td><td><code>期間: 2026-03-01 ~ 2026-03-17</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>通し番号</td></tr>
+<tr><td>2</td><td>変動日</td><td><code>movementDate</code></td><td>25</td><td>中</td><td>日付</td><td><code>yyyy-MM-dd</code></td></tr>
+<tr><td>3</td><td>変動種別</td><td><code>movementTypeLabel</code></td><td>30</td><td>左</td><td>文字列</td><td>日本語ラベル表示</td></tr>
+<tr><td>4</td><td>ロケーションコード</td><td><code>locationCode</code></td><td>38</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>5</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td>CAS/BAL/PCS表示</td></tr>
+<tr><td>6</td><td>ロット番号</td><td><code>lotNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>ロット管理OFF時は「—」</td></tr>
+<tr><td>7</td><td>変動前数量</td><td><code>quantityBefore</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>8</td><td>変動数</td><td><code>quantityChange</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ。増加は正、減少は負</td></tr>
+<tr><td>9</td><td>変動後数量</td><td><code>quantityAfter</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>10</td><td>参照番号</td><td><code>referenceNumber</code></td><td>56</td><td>左</td><td>文字列</td><td>入荷伝票番号・出荷伝票番号等</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 8 + 25 + 30 + 38 + 15 + 30 + 25 + 25 + 25 + 56 = <strong>277mm</strong>（A4横印字可能幅に収まる）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: movementDate（変動日）
+グループヘッダー: 変動日を太字で1行表示（例: 「2026-03-10」）
+小計行: 変動数の日次合計を表示（日ごとの純増減）
+ページブレーク: グループ単位で改ページしない（グループ途中で改ページ可）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>No.〜ロケーションコード列</td><td>「期間合計」ラベル（太字）</td></tr>
+<tr><td>変動数列</td><td>全行の変動数合計（期間中の純増減）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>40行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│ 在庫推移レポート                                              出力日時: 2026-03-17 14:30 │
+│ 倉庫: 東京第一倉庫 (WH-001)                                  出力者: admin              │
+│ 対象商品: P-001 商品A                                                                    │
+│ 条件: 期間: 2026-03-01 ~ 2026-03-17                                                     │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ ■ 2026-03-10                                                                            │
+├────┬──────────┬──────────┬──────────┬─────┬───────┬───────┬──────┬───────┬──────────────┤
+│ No.│  変動日   │ 変動種別  │ロケーション│荷姿 │ロット番号│変動前  │変動数 │変動後  │  参照番号     │
+├────┼──────────┼──────────┼──────────┼─────┼───────┼───────┼──────┼───────┼──────────────┤
+│  1 │2026-03-10│ 入庫     │A-01-A-01 │ CAS │LOT-001│      5│   +10│     15│INB-2026-00120│
+│  2 │2026-03-10│ 在庫移動出│A-01-A-01 │ CAS │LOT-001│     15│    -3│     12│              │
+│  3 │2026-03-10│ 在庫移動入│A-02-B-01 │ CAS │LOT-001│      0│    +3│      3│              │
+├────┴──────────┴──────────┴──────────┴─────┴───────┼───────┼──────┼───────┤              │
+│                                     日次小計      │       │   +10│       │              │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ ■ 2026-03-12                                                                            │
+├────┬──────────┬──────────┬──────────┬─────┬───────┬───────┬──────┬───────┬──────────────┤
+│  4 │2026-03-12│ 出庫     │A-01-A-01 │ CAS │LOT-001│     12│    -5│      7│OUT-2026-00045│
+├────┴──────────┴──────────┴──────────┴─────┴───────┼───────┼──────┼───────┤              │
+│                                     日次小計      │       │    -5│       │              │
+├───────────────────────────────────────────────────┼───────┼──────┼───────┤              │
+│                                     期間合計      │       │    +5│       │              │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                                          Page 1 / 1        │
+└──────────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px">変動種別（<code>movementType</code>）の日本語ラベル対応は以下の通り:</li></ul>
+<p>  | movementType | 表示ラベル |<br>  |-------------|-----------|<br>  | <code>INBOUND</code> | 入庫 |<br>  | <code>OUTBOUND</code> | 出庫 |<br>  | <code>MOVE_OUT</code> | 在庫移動出 |<br>  | <code>MOVE_IN</code> | 在庫移動入 |<br>  | <code>BREAKDOWN_OUT</code> | ばらし出 |<br>  | <code>BREAKDOWN_IN</code> | ばらし入 |<br>  | <code>CORRECTION</code> | 在庫訂正 |<br>  | <code>STOCKTAKE_ADJUSTMENT</code> | 棚卸調整 |<br>  | <code>INBOUND_CANCEL</code> | 入荷キャンセル |</p>
+<ul><li style="margin-left:0px">変動数が正（増加）の場合は黒字、負（減少）の場合は赤字（<code>#FF0000</code>）で表示する。</li><li style="margin-left:0px">変動種別が <code>CORRECTION</code>（在庫訂正）の行は背景色を薄い黄色（<code>#FFFFF0</code>）にして視認性を高める。</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を「—」で表示する。</li><li style="margin-left:0px"><code>dateFrom</code> 未指定時は当月1日、<code>dateTo</code> 未指定時は本日がデフォルト（API側で制御）。</li><li style="margin-left:0px">データ取得仕様・フィルタ条件マッピングは <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-008 業務ロジックを参照。</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する。</li><li style="margin-left:0px">2ヶ月以上前のデータはバックアップ対象のため参照できない場合がある旨を、該当時にヘッダー条件行の下に注記表示する。</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-09-inventory-correction">
+<h1>レポート設計書 — 在庫訂正一覧</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-09</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>在庫訂正一覧</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者・監査担当者が、指定倉庫・期間における在庫訂正の実施履歴を確認するために使用する。監査・内部統制の証跡として、訂正前後の数量・差異・訂正理由・実施者を一覧で把握し、不正や誤操作の検知に活用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-009</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INV-004（在庫訂正登録）から「訂正一覧レポート」ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-009 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（<a href="_standard-report.md" target="_blank">_standard-report.md</a> 参照）。</p>
+<p>抽出条件サマリー表示例: <code>期間: 2026-03-01 〜 2026-03-17</code></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>訂正日</td><td><code>correctionDate</code></td><td>25</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>3</td><td>ロケーション</td><td><code>locationCode</code></td><td>35</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>25</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>55</td><td>左</td><td>—</td><td>長い場合は末尾省略（<code>...</code>）</td></tr>
+<tr><td>6</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>—</td><td>CAS / BAL / PCS</td></tr>
+<tr><td>7</td><td>訂正前数量</td><td><code>quantityBefore</code></td><td>22</td><td>右</td><td>3桁カンマ</td><td></td></tr>
+<tr><td>8</td><td>訂正後数量</td><td><code>quantityAfter</code></td><td>22</td><td>右</td><td>3桁カンマ</td><td></td></tr>
+<tr><td>9</td><td>変動数</td><td><code>quantityChange</code></td><td>22</td><td>右</td><td>3桁カンマ（符号付き）</td><td>正値は <code>+N</code>、負値は <code>-N</code> で表示</td></tr>
+<tr><td>10</td><td>訂正理由</td><td><code>reason</code></td><td>46</td><td>左</td><td>—</td><td>長い場合は末尾省略（<code>...</code>）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 25 + 35 + 25 + 55 + 15 + 22 + 22 + 22 + 46 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<p>グルーピングなし（フラットリスト）。訂正日（<code>correctionDate</code>）昇順、同一日内はロケーションコード（<code>locationCode</code>）昇順でソートする。</p>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>変動数列</td><td>全行の <code>quantityChange</code> の合計値（純増減）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>なし</td></tr>
+<tr><td>孤立行防止</td><td>該当なし（フラットリスト）</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────┐
+│ 在庫訂正一覧                                     出力日時: 2026-03-17 14:30  │
+│ 倉庫: 東京第一倉庫 (WH-001)                       出力者: 田中 太郎          │
+│ 条件: 期間: 2026-03-01 〜 2026-03-17                                        │
+├────┬──────────┬────────────┬────────┬──────────────┬────┬──────┬──────┬──────┬────────────────┤
+│ No.│ 訂正日   │ロケーション│商品ｺｰﾄﾞ│   商品名     │荷姿│訂正前│訂正後│変動数│    訂正理由    │
+├────┼──────────┼────────────┼────────┼──────────────┼────┼──────┼──────┼──────┼────────────────┤
+│  1 │2026-03-05│A-01-A-01.. │P-001   │商品A         │CAS │    10│     9│    -1│棚卸差異調整    │ ← 薄赤背景
+│  2 │2026-03-07│A-01-A-02.. │P-003   │商品C         │PCS │    20│    25│    +5│入荷漏れ補正    │ ← 薄青背景
+│  3 │2026-03-10│B-01-B-01.. │P-002   │商品B         │BAL │    15│    12│    -3│破損品除外      │ ← 薄赤背景
+│  : │    :     │     :      │  :     │     :        │ :  │   :  │   :  │   :  │      :         │
+├────┴──────────┼────────────┴────────┼──────────────┼────┼──────┼──────┼──────┼────────────────┤
+│              │                     │   合計       │    │      │      │    +1│                │
+├──────────────┴─────────────────────┴──────────────┴────┴──────┴──────┴──────┴────────────────┤
+│ WMS ShowCase                                                             Page 1 / 1         │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>行の条件付き背景色</strong>: 変動数（<code>quantityChange</code>）の正負で行背景色を切り替える</li><li style="margin-left:20px">増加訂正（<code>quantityChange &gt; 0</code>）: 薄青（<code>#F0F4FF</code>）</li><li style="margin-left:20px">減少訂正（<code>quantityChange &lt; 0</code>）: 薄赤（<code>#FFF1F1</code>）</li><li style="margin-left:20px">変動なし（<code>quantityChange = 0</code>）: 背景色なし（白）</li><li style="margin-left:0px"><strong>変動数の符号表示</strong>: 正値には <code>+</code> を明示的に付与する（例: <code>+5</code>）。負値はそのまま表示（例: <code>-3</code>）</li><li style="margin-left:0px"><strong>監査証跡としての重要性</strong>: 本レポートは監査・内部統制の証跡として使用されるため、実施者（<code>operatorName</code>）の表示は必須。APIレスポンスの <code>operatorName</code> はPDFでは出力者とは別に各行で表示されるが、カラム幅の制約から明細テーブルには含めず、訂正理由列の末尾に <code>（実施者名）</code> を括弧付きで追記する形式とする</li><li style="margin-left:0px"><strong>データ0件の場合</strong>: 「該当する在庫訂正データがありません」メッセージを明細テーブル部分の中央に表示する</li><li style="margin-left:0px"><strong>ソート順</strong>: 訂正日（<code>correctionDate</code>）昇順。同一日内はロケーションコード昇順</li><li style="margin-left:0px"><strong>データ取得仕様</strong>: <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-009 業務ロジックを参照</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-10-stocktake-list">
+<h1>レポート設計書 — 棚卸リスト</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-10</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>棚卸リスト</td></tr>
+<tr><td><strong>用途</strong></td><td>棚卸開始時に現場スタッフへ配布する実数入力用リスト。ロケーション×商品の一覧を印刷し、スタッフが現場を回りながら実数を手書きで記入する。帳簿数量はあえて表示しない（先入観なく実数を数えてもらうため）</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-010</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INV-012（棚卸開始）、INV-013（棚卸実施）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-010 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーに加え、以下を表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>棚卸番号</td><td><code>stocktake_number</code>（棚卸ID指定時のみ。プレビュー時は「プレビュー」と表示）</td></tr>
+<tr><td>対象範囲</td><td><code>target_description</code>（例: <code>A棟 1F全エリア</code>）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>ロケーション</td><td><code>locationCode</code></td><td>42</td><td>左</td><td>文字列</td><td>ロケーションコード</td></tr>
+<tr><td>3</td><td>エリア名</td><td><code>areaName</code></td><td>35</td><td>左</td><td>文字列</td><td>エリア名</td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>文字列</td><td>—</td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>55</td><td>左</td><td>文字列</td><td>長い場合は末尾省略（...）</td></tr>
+<tr><td>6</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td><code>CAS</code>/<code>BAL</code>/<code>PCS</code></td></tr>
+<tr><td>7</td><td>ロット番号</td><td><code>lotNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>ロット管理対象外は <code>—</code></td></tr>
+<tr><td>8</td><td>期限日</td><td><code>expiryDate</code></td><td>25</td><td>中</td><td><code>yyyy-MM-dd</code></td><td>期限管理対象外は <code>—</code></td></tr>
+<tr><td>9</td><td>実数（記入欄）</td><td>—</td><td>35</td><td>—</td><td>—</td><td><strong>空欄（枠線のみ）</strong>。手書き記入用</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 42 + 35 + 30 + 55 + 15 + 30 + 25 + 35 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: locationCode（ロケーションコード）
+小計行: なし（実数記入用リストのため数量集計は不要）
+グループヘッダー: ロケーションコードが変わるタイミングで区切り線を太線化（視認性向上）
+ページブレーク: グループ単位で改ページしない（用紙節約のためフラットに連続印刷）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計行数」ラベル</td></tr>
+<tr><td>実数（記入欄）列</td><td>全行数を表示（例: <code>120 行</code>）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>30行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>同一ロケーションの最終行が次ページに1行だけ送られる場合、ロケーショングループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌─────────────────────────────────────────────────────────────────────────────┐
+│ 棚卸リスト                                        出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                        出力者: admin           │
+│ 棚卸番号: ST-2026-00042  対象: A棟 1F全エリア                               │
+├────┬──────────┬────────┬───────┬──────────┬────┬───────┬──────┬──────────┤
+│ No.│ロケーション│エリア名 │商品ｺｰﾄﾞ│ 商品名    │荷姿│ﾛｯﾄ番号 │期限日 │実数(記入)│
+├────┼──────────┼────────┼───────┼──────────┼────┼───────┼──────┼──────────┤
+│  1 │A-01-A-01 │保管A    │P-001  │商品AAAAA  │CAS │LOT-001│2026-12-31│          │
+│  2 │A-01-A-01 │保管A    │P-002  │商品BBBBB  │PCS │—      │—        │          │
+│────│──────────│────────│───────│──────────│────│───────│─────────│──────────│
+│  3 │A-01-A-02 │保管A    │P-003  │商品CCCCC  │BAL │LOT-003│2027-06-30│          │
+│  4 │A-01-A-02 │保管A    │P-004  │商品DDDDD  │CAS │LOT-004│2027-09-15│          │
+│  : │   :      │   :    │  :    │   :      │ :  │  :    │  :   │          │
+├────┴──────────┴────────┴───────┼──────────┼────┼───────┼──────┼──────────┤
+│                               │合計行数   │    │       │      │   120 行 │
+├───────────────────────────────┴──────────┴────┴───────┴──────┴──────────┤
+│ WMS ShowCase                                           Page 1 / 4       │
+└─────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>帳簿数量（systemQuantity）はPDFに表示しない</strong>: 先入観なく実数を数えてもらうため、意図的に帳簿数量カラムを除外している。JSON/CSV出力では <code>systemQuantity</code> フィールドが含まれるが、PDFテンプレートでは描画しない</li><li style="margin-left:0px"><strong>実数記入欄</strong>: 列9はデータを持たない空の枠線列であり、現場スタッフが手書きで実数を記入するためのスペース。枠線は黒（#000000）、内部は白（#FFFFFF）で描画する。行高さは通常の6mmではなく <strong>8mm</strong> とし、手書きしやすいスペースを確保する</li><li style="margin-left:0px"><strong>ソート順</strong>: ロケーションコード昇順（第1キー）→ 商品コード昇順（第2キー）。現場の動線に合わせてロケーション順に巡回できるようにする</li><li style="margin-left:0px"><strong>ロケーション区切り</strong>: ロケーションコードが切り替わる行の上に太い区切り線（1pt）を描画し、ロケーションの変わり目を視覚的に識別しやすくする</li><li style="margin-left:0px">データ0件の場合は「対象データがありません」メッセージをテーブル領域の中央に表示する</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を <code>—</code> で表示する</li><li style="margin-left:0px">期限管理フラグOFFの商品は期限日列を <code>—</code> で表示する</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-11-stocktake-result">
+<h1>レポート設計書 — 棚卸結果レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-11</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>棚卸結果レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>棚卸確定後の結果レポート。帳簿数量と実数の突き合わせ結果を一覧表示し、差異がある行を強調表示する。倉庫管理者が棚卸結果を確認・承認する際、および監査証跡として使用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-011</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>INV-014（棚卸確定）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-011 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーに加え、以下を表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>棚卸番号</td><td><code>stocktake_number</code></td></tr>
+<tr><td>ステータス</td><td><code>status</code>（<code>CONFIRMED</code>: 確定済 / <code>STARTED</code>: 棚卸中）</td></tr>
+<tr><td>棚卸開始日時</td><td><code>started_at</code>（<code>yyyy-MM-dd HH:mm</code>）</td></tr>
+<tr><td>棚卸確定日時</td><td><code>confirmed_at</code>（<code>yyyy-MM-dd HH:mm</code>。未確定時は <code>—</code>）</td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>グループ内通し番号</td></tr>
+<tr><td>2</td><td>ロケーション</td><td><code>locationCode</code></td><td>40</td><td>左</td><td>文字列</td><td>ロケーションコード</td></tr>
+<tr><td>3</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>文字列</td><td>—</td></tr>
+<tr><td>4</td><td>商品名</td><td><code>productName</code></td><td>52</td><td>左</td><td>文字列</td><td>長い場合は末尾省略（...）</td></tr>
+<tr><td>5</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td><code>CASE</code>/<code>BALL</code>/<code>PIECE</code></td></tr>
+<tr><td>6</td><td>ロット番号</td><td><code>lotNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>ロット管理対象外は <code>—</code></td></tr>
+<tr><td>7</td><td>帳簿数</td><td><code>systemQuantity</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>8</td><td>実数</td><td><code>actualQuantity</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り。未入力は <code>—</code></td></tr>
+<tr><td>9</td><td>差異数</td><td><code>diffQuantity</code></td><td>25</td><td>右</td><td>整数</td><td>3桁カンマ区切り。正値は <code>+N</code>、負値は <code>-N</code>。未入力は <code>—</code></td></tr>
+<tr><td>10</td><td>差異率</td><td><code>diffRate</code></td><td>25</td><td>右</td><td>割合（%）</td><td>小数第1位。<code>systemQuantity=0</code> の場合は <code>—</code></td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 40 + 30 + 52 + 15 + 30 + 25 + 25 + 25 + 25 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: locationCode（ロケーションコード）
+グループヘッダー: ロケーションコードを太字で表示（グループの先頭行に統合表示）
+小計行: ロケーションごとの小計を表示
+  - 帳簿数列: ロケーション内の帳簿数合計
+  - 実数列: ロケーション内の実数合計
+  - 差異数列: ロケーション内の差異数合計
+  - 差異率列: —（小計行では非表示）
+ページブレーク: グループ単位で改ページしない</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「総合計」ラベル（太字）</td></tr>
+<tr><td>帳簿数列</td><td>全行の帳簿数合計</td></tr>
+<tr><td>実数列</td><td>全行の実数合計</td></tr>
+<tr><td>差異数列</td><td>全行の差異数合計</td></tr>
+<tr><td>差異率列</td><td>—（合計行では非表示）</td></tr>
+<p></tbody><br></table></p>
+<p>合計行の下に差異サマリーを追加表示する。</p>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>1行目</td><td>「過剰（プラス差異）合計: +{N}」（差異数 > 0 の行の差異数合計）</td></tr>
+<tr><td>2行目</td><td>「不足（マイナス差異）合計: -{N}」（差異数 < 0 の行の差異数絶対値合計）</td></tr>
+<tr><td>3行目</td><td>「差異あり明細数: {N} / {TOTAL} 件」</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>30行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>同一ロケーションの最終行が次ページに1行だけ送られる場合、ロケーショングループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────┐
+│ 棚卸結果レポート                                    出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                          出力者: admin           │
+│ 棚卸番号: ST-2026-00042  ステータス: 確定済                                   │
+│ 棚卸開始: 2026-03-15 09:00  棚卸確定: 2026-03-17 12:00                       │
+├────┬─────────┬──────┬─────────┬────┬───────┬──────┬──────┬──────┬──────┤
+│ No.│ﾛｹｰｼｮﾝ   │商品ｺｰﾄﾞ│ 商品名   │荷姿│ﾛｯﾄ番号 │帳簿数│ 実数 │差異数│差異率│
+├────┼─────────┼──────┼─────────┼────┼───────┼──────┼──────┼──────┼──────┤
+│  1 │A-01-A-01│P-001 │商品AAAAA │CASE│LOT-001│    10│    10│     0│ 0.0% │
+│  2 │A-01-A-01│P-002 │商品BBBBB │PIECE│—      │    50│    47│    -3│-6.0% │ ← ピンク背景
+│────│─────────│──────│─────────│────│───────│──────│──────│──────│──────│
+│    │         │      │ 小計    │    │       │    60│    57│    -3│      │
+├────┼─────────┼──────┼─────────┼────┼───────┼──────┼──────┼──────┼──────┤
+│  3 │A-01-A-02│P-003 │商品CCCCC │BALL│LOT-003│    20│    22│    +2│+10.0%│ ← ピンク背景
+│  4 │A-01-A-02│P-004 │商品DDDDD │CASE│LOT-004│    30│    30│     0│ 0.0% │
+│────│─────────│──────│─────────│────│───────│──────│──────│──────│──────│
+│    │         │      │ 小計    │    │       │    50│    52│    +2│      │
+│  : │   :     │  :   │   :     │ :  │  :    │  :   │  :   │  :   │  :   │
+├────┴─────────┴──────┼─────────┼────┼───────┼──────┼──────┼──────┼──────┤
+│                     │ 総合計  │    │       │   110│   109│    -1│      │
+├─────────────────────┴─────────┴────┴───────┴──────┴──────┴──────┴──────┤
+│ 過剰（プラス差異）合計: +2                                                │
+│ 不足（マイナス差異）合計: -3                                               │
+│ 差異あり明細数: 2 / 4 件                                                  │
+├────────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                             Page 1 / 1       │
+└──────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>差異行の強調表示</strong>: <code>diffQuantity != 0</code> の明細行は背景色をピンク（<code>#FFF1F1</code>）で描画する。差異が0またはnullの行は通常背景（白）</li><li style="margin-left:0px"><strong>差異数の符号表示</strong>: 正の差異は <code>+</code> を付けて表示（例: <code>+2</code>）、負の差異はそのまま（例: <code>-3</code>）。0の場合は <code>0</code> と表示する</li><li style="margin-left:0px"><strong>差異サマリー</strong>: 合計行の下に過剰合計・不足合計・差異あり明細数を表示し、棚卸結果の全体像を把握しやすくする</li><li style="margin-left:0px"><strong>未確定時の出力</strong>: 棚卸ステータスが <code>STARTED</code>（未確定）の場合でも出力可能。ヘッダーのステータスに「棚卸中」と表示され、確定日時は <code>—</code> となる。未入力行の実数・差異数・差異率は <code>—</code> で表示する</li><li style="margin-left:0px"><strong>ソート順</strong>: ロケーションコード昇順（第1キー）→ 商品コード昇順（第2キー）</li><li style="margin-left:0px">データ0件の場合は「対象データがありません」メッセージをテーブル領域の中央に表示する</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を <code>—</code> で表示する</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-12-picking-instruction">
+<h1>レポート設計書 — ピッキング指示書</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-12</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>ピッキング指示書</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫現場スタッフがピッキング作業時に携行する作業帳票。ロケーション巡回順（昇順）に商品・数量を一覧し、動線効率を最適化する。バッチピッキング（複数受注まとめ）にも対応</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-012</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>縦（Portrait）— 現場で片手持ちするため</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>OUT-011（ピッキング指示一覧）、OUT-013（ピッキング完了入力）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-012 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報）</h3>
+<p>共通ヘッダーに加え、以下の情報を1ページ目に表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>ピッキング指示番号</td><td>レポートタイトル下・左</td><td><code>指示No: {instructionNumber}</code></td></tr>
+<tr><td>ステータス</td><td>ピッキング指示番号の右</td><td><code>ステータス: {status}</code></td></tr>
+<tr><td>作成日時</td><td>右寄せ</td><td><code>作成日時: {createdAt}</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<p>現場帳票のため文字サイズを <strong>10pt</strong>（通常9pt）、行高さを <strong>8mm</strong>（通常6mm）に拡大する。</p>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>ロケーション</td><td><code>locationCode</code></td><td>35</td><td>左</td><td>文字列</td><td>ピッキング元ロケーション</td></tr>
+<tr><td>3</td><td>商品コード</td><td><code>productCode</code></td><td>25</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>4</td><td>商品名</td><td><code>productName</code></td><td>40</td><td>左</td><td>文字列</td><td>長い場合は末尾省略</td></tr>
+<tr><td>5</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td>CASE/BALL/PIECE</td></tr>
+<tr><td>6</td><td>指示数</td><td><code>instructedQuantity</code></td><td>15</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>7</td><td>ロット番号</td><td><code>lotNumber</code></td><td>25</td><td>左</td><td>文字列</td><td>未管理の場合は <code>—</code></td></tr>
+<tr><td>8</td><td>受注No.</td><td><code>outboundSlipNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>対応する出荷伝票番号</td></tr>
+<tr><td>9</td><td>出荷先</td><td><code>customerName</code></td><td>30</td><td>左</td><td>文字列</td><td>長い場合は末尾省略</td></tr>
+<tr><td>10</td><td>済</td><td>—</td><td>10</td><td>中</td><td>—</td><td>空のチェック欄（□）。ピッキング完了チェック用</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 35 + 25 + 40 + 15 + 15 + 25 + 30 + 30 + 10 = <strong>235mm</strong> ≦ A4縦印字可能幅 約190mm</blockquote>
+<p><strong>注</strong>: A4縦の印字可能幅（190mm）に収めるため、文字サイズ10ptでの実装時にカラム幅を比例縮小する。上記は論理幅の比率定義であり、実装テンプレートで <code>%</code> 指定に変換する。</p>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>比率(%)</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>4</td></tr>
+<tr><td>2</td><td>ロケーション</td><td>15</td></tr>
+<tr><td>3</td><td>商品コード</td><td>11</td></tr>
+<tr><td>4</td><td>商品名</td><td>17</td></tr>
+<tr><td>5</td><td>荷姿</td><td>6</td></tr>
+<tr><td>6</td><td>指示数</td><td>6</td></tr>
+<tr><td>7</td><td>ロット番号</td><td>11</td></tr>
+<tr><td>8</td><td>受注No.</td><td>13</td></tr>
+<tr><td>9</td><td>出荷先</td><td>13</td></tr>
+<tr><td>10</td><td>済</td><td>4</td></tr>
+<p></tbody><br></table></p>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: locationCode（ロケーションコード）
+グループヘッダー: ロケーションコードを太字・背景色グレー（#F0F0F0）で表示
+小計行: 各ロケーションの指示数量合計を表示
+ページブレーク: グループ単位で改ページしない（連続表示）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>指示数列</td><td>全行の指示数量合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>20行/ページ（行高さ8mmのため通常より少なめ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────┐
+│ ピッキング指示書                 出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)     出力者: yamada           │
+│ 指示No: PICK-2026-00010         ステータス: 作成済        │
+├────┬────────┬──────┬────────┬───┬────┬──────┬───────┬───────┬──┤
+│ No.│ロケーション│商品CD │ 商品名  │荷姿│指示数│ロットNo│ 受注No. │ 出荷先 │済│
+├────┼────────┼──────┼────────┼───┼────┼──────┼───────┼───────┼──┤
+│【A-01-A-01-01-01】                                           │
+├────┼────────┼──────┼────────┼───┼────┼──────┼───────┼───────┼──┤
+│  1 │A-01-.. │P-001 │商品A    │CAS│   3│LOT-01│OUT-050│出荷先A│□│
+│  2 │A-01-.. │P-003 │商品C    │PCS│  10│  —   │OUT-051│出荷先B│□│
+│    │        │      │  小計   │   │  13│      │       │       │  │
+├────┼────────┼──────┼────────┼───┼────┼──────┼───────┼───────┼──┤
+│【A-01-A-02-01-03】                                           │
+├────┼────────┼──────┼────────┼───┼────┼──────┼───────┼───────┼──┤
+│  3 │A-01-.. │P-002 │商品B    │BAL│   5│LOT-02│OUT-050│出荷先A│□│
+│    │        │      │  小計   │   │   5│      │       │       │  │
+├────┴────────┼──────┼────────┼───┼────┼──────┼───────┼───────┼──┤
+│             │      │  合計   │   │  18│      │       │       │  │
+├─────────────┴──────┴────────┴───┴────┴──────┴───────┴───────┴──┤
+│ WMS ShowCase                                    Page 1 / 1    │
+└──────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>視認性重視</strong>: 現場帳票のため文字サイズ10pt / 行高さ8mm。手袋着用でも読みやすいレイアウトとする</li><li style="margin-left:0px"><strong>チェック欄</strong>: 「済」列に空の <code>□</code> を印字する。ピッキング完了時にスタッフがペンでチェックする運用を想定</li><li style="margin-left:0px"><strong>ソート順</strong>: ロケーションコード昇順 → 商品コード昇順。倉庫内の巡回動線を最適化する</li><li style="margin-left:0px"><strong>ロット番号</strong>: ロット管理フラグOFFの商品は <code>—</code>（emダッシュ）で表示</li><li style="margin-left:0px"><strong>データ0件</strong>: ピッキング指示明細が0件の場合は「ピッキング対象がありません」メッセージを中央表示</li><li style="margin-left:0px"><strong>バッチピッキング対応</strong>: 複数受注をまとめたピッキング指示の場合、受注No.列で対応する出荷伝票を識別可能</li><li style="margin-left:0px"><strong>データ取得仕様</strong>: API-RPT-012 のデータ取得仕様を参照（<a href="API-10-report.md" target="_blank">API-10-report.md</a>）</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-13-shipping-inspection">
+<h1>レポート設計書 — 出荷検品レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-13</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>出荷検品レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>出荷検品完了後の結果確認レポート。受注伝票単位で、指示数（ピッキング数）vs 検品数 vs 差異を一覧表示し、検品精度の確認・記録に使用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-013</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>OUT-021（出荷検品画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-013 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報）</h3>
+<p>共通ヘッダーに加え、以下の情報を1ページ目に表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>出荷伝票番号</td><td>レポートタイトル下・左</td><td><code>伝票No: {slipNumber}</code></td></tr>
+<tr><td>出荷先</td><td>伝票番号の右</td><td><code>出荷先: {customerName}</code></td></tr>
+<tr><td>出荷予定日</td><td>右寄せ</td><td><code>出荷予定日: {plannedShipDate}</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>12</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>商品コード</td><td><code>productCode</code></td><td>35</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>3</td><td>商品名</td><td><code>productName</code></td><td>70</td><td>左</td><td>文字列</td><td></td></tr>
+<tr><td>4</td><td>荷姿</td><td><code>unitType</code></td><td>25</td><td>中</td><td>文字列</td><td>CASE/BALL/PIECE</td></tr>
+<tr><td>5</td><td>ピッキング数</td><td><code>pickedQuantity</code></td><td>35</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>6</td><td>検品数</td><td><code>inspectedQuantity</code></td><td>35</td><td>右</td><td>整数</td><td>3桁カンマ区切り</td></tr>
+<tr><td>7</td><td>差異</td><td><code>diffQuantity</code></td><td>30</td><td>右</td><td>整数</td><td>3桁カンマ区切り。0以外を強調</td></tr>
+<tr><td>8</td><td>判定</td><td>（導出）</td><td>35</td><td>中</td><td>文字列</td><td>差異0: <code>OK</code> / 差異あり: <code>NG</code></td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 12 + 35 + 70 + 25 + 35 + 35 + 30 + 35 = <strong>277mm</strong> = A4横印字可能幅</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<p>グルーピングなし（フラットリスト）。1出荷伝票の全明細を連続表示する。</p>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>ピッキング数列</td><td>全行のピッキング数合計</td></tr>
+<tr><td>検品数列</td><td>全行の検品数合計</td></tr>
+<tr><td>差異列</td><td>全行の差異合計</td></tr>
+<tr><td>判定列</td><td>差異合計が0: <code>ALL OK</code> / それ以外: <code>NG あり</code></td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>なし（グルーピングなし）</td></tr>
+<tr><td>孤立行防止</td><td>合計行が次ページに単独で送られる場合、直前2行とともに改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌───────────────────────────────────────────────────────────────────────┐
+│ 出荷検品レポート                              出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                   出力者: admin            │
+│ 伝票No: OUT-2026-00050    出荷先: テスト出荷先A  出荷予定日: 2026-03-15  │
+├────┬──────────┬─────────────────┬──────┬────────┬────────┬──────┬──────┤
+│ No.│ 商品コード │     商品名       │ 荷姿 │ﾋﾟｯｷﾝｸﾞ数│ 検品数  │ 差異 │ 判定 │
+├────┼──────────┼─────────────────┼──────┼────────┼────────┼──────┼──────┤
+│  1 │ P-001    │ 商品A            │ CASE │      3 │      3 │    0 │  OK  │
+│  2 │ P-002    │ 商品B            │ BALL │      5 │      5 │    0 │  OK  │
+│  3 │ P-003    │ 商品C            │ PIECE│     10 │      8 │   -2 │  NG  │ ← 背景ピンク
+│  : │  :       │  :               │  :   │    :   │    :   │  :   │  :   │
+├────┴──────────┼─────────────────┼──────┼────────┼────────┼──────┼──────┤
+│               │      合計        │      │     18 │     16 │   -2 │NGあり│
+├───────────────┴─────────────────┴──────┴────────┴────────┴──────┴──────┤
+│ WMS ShowCase                                          Page 1 / 1      │
+└───────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>差異行の強調表示</strong>: <code>diffQuantity != 0</code> の行は背景色をピンク（<code>#FFF1F1</code>）、差異列の文字色を赤（<code>#D32F2F</code>）にする</li><li style="margin-left:0px"><strong>判定列</strong>: APIレスポンスには含まれない導出フィールド。テンプレート側で <code>diffQuantity == 0</code> なら <code>OK</code>、それ以外は <code>NG</code> を表示</li><li style="margin-left:0px"><strong>合計行の判定</strong>: 差異合計が0の場合は <code>ALL OK</code>（緑文字 <code>#2E7D32</code>）、差異ありの場合は <code>NG あり</code>（赤文字 <code>#D32F2F</code>）</li><li style="margin-left:0px"><strong>データ0件</strong>: 出荷明細が0件の場合は「該当データがありません」メッセージを中央表示</li><li style="margin-left:0px"><strong>出力タイミング</strong>: 出荷検品完了後（ステータスが <code>INSPECTING</code> 以降）に出力可能。検品前のデータはピッキング数のみ表示し、検品数・差異は <code>—</code> で表示</li><li style="margin-left:0px"><strong>データ取得仕様</strong>: API-RPT-013 のデータ取得仕様を参照（<a href="API-10-report.md" target="_blank">API-10-report.md</a>）</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-14-delivery-list">
+<h1>レポート設計書 — 配送リスト</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-14</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>配送リスト</td></tr>
+<tr><td><strong>用途</strong></td><td>出荷済み・出荷予定の配送情報一覧。倉庫担当者が配送業者への引渡し確認・出荷実績の照合に使用する（ステータス絞り込みにより出荷完了分のみの出力も可能）</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-014</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>OUT-001（受注一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-014 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（_standard-report.md 参照）</p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<p>本レポートは <strong>ヘッダー行（伝票情報）</strong> と <strong>明細行（商品情報）</strong> の2段構成で出力する。</p>
+<h4>ヘッダー行（伝票単位）</h4>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>H1</td><td>伝票番号</td><td><code>slipNumber</code></td><td>35</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>H2</td><td>出荷先名</td><td><code>customerName</code></td><td>50</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>H3</td><td>出荷予定日</td><td><code>plannedShipDate</code></td><td>25</td><td>中</td><td>日付</td><td><code>yyyy-MM-dd</code></td></tr>
+<tr><td>H4</td><td>ステータス</td><td><code>statusLabel</code></td><td>25</td><td>中</td><td>—</td><td>日本語表示名</td></tr>
+<tr><td>H5</td><td>配送業者</td><td><code>carrier</code></td><td>30</td><td>左</td><td>—</td><td>未設定時は「—」</td></tr>
+<tr><td>H6</td><td>送り状番号</td><td><code>trackingNumber</code></td><td>30</td><td>左</td><td>—</td><td>未設定時は「—」</td></tr>
+<p></tbody><br></table></p>
+<blockquote>ヘッダー行は背景色（薄灰）で視覚的に区別する。幅は明細行と共有するため、上記は論理的な配置を示す。</blockquote>
+<h4>明細行（商品単位）</h4>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>D1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>伝票内の連番</td></tr>
+<tr><td>D2</td><td>商品コード</td><td><code>lines[].productCode</code></td><td>35</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>D3</td><td>商品名</td><td><code>lines[].productName</code></td><td>92</td><td>左</td><td>—</td><td>長い場合は折り返し</td></tr>
+<tr><td>D4</td><td>荷姿</td><td><code>lines[].unitType</code></td><td>20</td><td>中</td><td>—</td><td>CS/pcs等</td></tr>
+<tr><td>D5</td><td>数量</td><td><code>lines[].quantity</code></td><td>20</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>D6</td><td>（余白）</td><td>—</td><td>102</td><td>—</td><td>—</td><td>ヘッダー行の後半列と位置を揃えるための余白</td></tr>
+<p></tbody><br></table></p>
+<blockquote>明細行の幅合計: 8 + 35 + 92 + 20 + 20 + 102 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: slipNumber（出荷伝票番号）
+表示構成:
+  ヘッダー行: 伝票番号・出荷先名・出荷予定日・ステータス・配送業者・送り状番号（背景色: 薄灰）
+  明細行: 商品コード・商品名・荷姿・数量（ヘッダー行の直下に表示）
+  伝票小計行: 数量の合計を表示
+ページブレーク: グループ単位で改ページしない（自動改ページのみ）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「総合計」ラベル</td></tr>
+<tr><td>数量列</td><td>全伝票の数量合計</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>30行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌─────────────────────────────────────────────────────────────────────────┐
+│ 配送リスト                                     出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                    出力者: admin            │
+│ 条件: 期間: 2026-03-15 〜 2026-03-17                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│ ▼ OUT-00050 │ 出荷先A │ 2026-03-15 │ 出荷完了 │ ヤマト │ 123456        │
+│ ┌────┬──────────┬────────────────────────┬──────┬──────┐               │
+│ │ No.│商品コード │ 商品名                 │ 荷姿 │ 数量 │               │
+│ ├────┼──────────┼────────────────────────┼──────┼──────┤               │
+│ │  1 │P-001     │ 商品A（テスト用）       │ CS   │    3 │               │
+│ │  2 │P-002     │ 商品B（サンプル品）     │ pcs  │   20 │               │
+│ ├────┴──────────┴────────────────────────┼──────┼──────┤               │
+│ │                           伝票小計     │      │   23 │               │
+│ └────────────────────────────────────────┴──────┴──────┘               │
+│                                                                         │
+│ ▼ OUT-00051 │ 出荷先A │ 2026-03-15 │ 出荷完了 │ ヤマト │ 123457        │
+│ ┌────┬──────────┬────────────────────────┬──────┬──────┐               │
+│ │ No.│商品コード │ 商品名                 │ 荷姿 │ 数量 │               │
+│ ├────┼──────────┼────────────────────────┼──────┼──────┤               │
+│ │  1 │P-003     │ 商品C                  │ CS   │    5 │               │
+│ │  2 │P-004     │ 商品D（大型）           │ pcs  │   10 │               │
+│ ├────┴──────────┴────────────────────────┼──────┼──────┤               │
+│ │                           伝票小計     │      │   15 │               │
+│ └────────────────────────────────────────┴──────┴──────┘               │
+│                                                                         │
+│ ▼ OUT-00055 │ 出荷先B │ 2026-03-16 │ 出荷完了 │ 佐川 │ 789012         │
+│ ┌────┬──────────┬────────────────────────┬──────┬──────┐               │
+│ │ No.│商品コード │ 商品名                 │ 荷姿 │ 数量 │               │
+│ ├────┼──────────┼────────────────────────┼──────┼──────┤               │
+│ │  1 │P-001     │ 商品A（テスト用）       │ CS   │    2 │               │
+│ ├────┴──────────┴────────────────────────┼──────┼──────┤               │
+│ │                           伝票小計     │      │    2 │               │
+│ └────────────────────────────────────────┴──────┴──────┘               │
+│                                                                         │
+│ ┌────────────────────────────────────────┬──────┬──────┐               │
+│ │                             総合計     │      │   40 │               │
+│ └────────────────────────────────────────┴──────┴──────┘               │
+│ WMS ShowCase                                              Page 1 / 1   │
+└─────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px">配送業者・送り状番号が未設定（null）の場合は「—」（emダッシュ）で表示する</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px">ステータスは <code>statusLabel</code>（日本語表示名）を使用する（コード値は表示しない）</li><li style="margin-left:0px">ヘッダー行（▼マーク付き）は背景色（薄灰 <code>#F5F5F5</code>）で表示し、伝票単位の区切りを明確にする</li><li style="margin-left:0px">明細行はヘッダー行の直下にインデント表示し、商品コード・商品名・荷姿・数量を表示する</li><li style="margin-left:0px">1伝票に複数商品がある場合、明細行を商品数分繰り返す。伝票小計行で数量を合計表示する</li><li style="margin-left:0px">データ取得仕様・ビジネスルールは <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-014 業務ロジックを参照</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-15-unshipped-realtime">
+<h1>レポート設計書 — 未出荷リスト（リアルタイム）</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-15</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>未出荷リスト（リアルタイム）</td></tr>
+<tr><td><strong>用途</strong></td><td>出荷予定日を過ぎてまだ出荷完了していない受注のリアルタイム一覧。倉庫管理者・担当者が出荷遅延の把握と出荷督促に使用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-015</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>OUT-001（受注一覧画面）から出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-015 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（_standard-report.md 参照）</p>
+<p>抽出条件のサマリーには基準日（asOfDate）を表示する。例: 「基準日: 2026-03-17」</p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>35</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>出荷先名</td><td><code>customerName</code></td><td>45</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>4</td><td>出荷予定日</td><td><code>plannedShipDate</code></td><td>25</td><td>中</td><td>日付</td><td><code>yyyy-MM-dd</code></td></tr>
+<tr><td>5</td><td>遅延日数</td><td><code>delayDays</code></td><td>18</td><td>右</td><td>整数</td><td><code>asOfDate - plannedShipDate</code></td></tr>
+<tr><td>6</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>7</td><td>商品名</td><td><code>productName</code></td><td>50</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>8</td><td>数量(CS)</td><td><code>totalQuantityCas</code></td><td>16</td><td>右</td><td>整数</td><td>ケース合計</td></tr>
+<tr><td>9</td><td>ステータス</td><td><code>statusLabel</code></td><td>25</td><td>中</td><td>—</td><td>日本語表示名</td></tr>
+<tr><td>10</td><td>遅延度</td><td>（導出）</td><td>25</td><td>中</td><td>—</td><td>遅延日数に応じた分類</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 8 + 35 + 45 + 25 + 18 + 30 + 50 + 16 + 25 + 25 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: customerName（出荷先名）
+グループヘッダー: 「出荷先: {出荷先名}」を太字で表示
+小計行: 数量(CS) の合計を表示、伝票件数を表示
+ソート順: グループ内は plannedShipDate ASC（予定日が古い順＝遅延が大きい順）
+ページブレーク: グループ単位で改ページしない（自動改ページのみ）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル + 全伝票件数（例:「合計（15件）」）</td></tr>
+<tr><td>数量(CS)列</td><td>全行のケース数量合計</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>30行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────┐
+│ 未出荷リスト（リアルタイム）                         出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                         出力者: admin            │
+│ 条件: 基準日: 2026-03-17                                                     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ ■ 出荷先: テスト出荷先A                                                       │
+├────┬──────────┬─────────┬──────────┬────┬───────┬───────────┬──┬──────┬──────┤
+│ No.│ 伝票番号  │出荷先名  │出荷予定日│遅延│商品ｺｰﾄﾞ│ 商品名     │CS│ｽﾃｰﾀｽ │遅延度│
+├────┼──────────┼─────────┼──────────┼────┼───────┼───────────┼──┼──────┼──────┤
+│  1 │OUT-00040 │出荷先A   │2026-03-12│  5 │P-001  │商品A      │ 3│受注済み│★★★  │
+│  2 │OUT-00042 │出荷先A   │2026-03-14│  3 │P-003  │商品C      │ 5│ﾋﾟｯｷﾝｸﾞ完了│★★   │
+│  3 │OUT-00048 │出荷先A   │2026-03-16│  1 │P-002  │商品B      │ 2│一部引当│★    │
+├────┴──────────┴─────────┴──────────┴────┼───────┼───────────┼──┼──────┼──────┤
+│                                  小計（3件）│       │           │10│      │      │
+│                                                                              │
+│ ■ 出荷先: テスト出荷先B                                                       │
+├────┬──────────┬─────────┬──────────┬────┬───────┬───────────┬──┬──────┬──────┤
+│  4 │OUT-00045 │出荷先B   │2026-03-15│  2 │P-002  │商品B      │ 3│出荷検品中│★★   │
+├────┴──────────┴─────────┴──────────┴────┼───────┼───────────┼──┼──────┼──────┤
+│                                  小計（1件）│       │           │ 3│      │      │
+├─────────────────────────────────────────┼───────┼───────────┼──┼──────┼──────┤
+│                              合計（4件）  │       │           │13│      │      │
+├─────────────────────────────────────────┴───────┴───────────┴──┴──────┴──────┤
+│ WMS ShowCase                                                    Page 1 / 1   │
+└──────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>遅延度の分類</strong>: 遅延日数に応じて以下の分類を「遅延度」列に表示する</li><li style="margin-left:20px">1日: ★（軽度）</li><li style="margin-left:20px">2〜3日: ★★（中度）</li><li style="margin-left:20px">4日以上: ★★★（重度）</li><li style="margin-left:0px"><strong>条件付き書式（行の背景色）</strong>: 遅延度に応じて行の背景色を変更する</li><li style="margin-left:20px">遅延1日: 背景色なし（白）</li><li style="margin-left:20px">遅延2〜3日: 薄黄色（#FFFDE7）</li><li style="margin-left:20px">遅延4日以上: 薄赤色（#FFF1F1）</li><li style="margin-left:0px">データ0件の場合は「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px">ステータスは <code>statusLabel</code>（日本語表示名）を使用する（コード値は表示しない）</li><li style="margin-left:0px">ソート順はグループ内で出荷予定日昇順（遅延が大きい順に上から表示）</li><li style="margin-left:0px"><code>SHIPPED</code>（出荷完了）・<code>CANCELLED</code>（キャンセル）ステータスの伝票は対象外（API側で除外済み）</li><li style="margin-left:0px">データ取得仕様・ビジネスルールは <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-015 業務ロジックを参照</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-16-unshipped-confirmed">
+<h1>レポート設計書 — 未出荷リスト（確定）</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-16</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>未出荷リスト（確定）</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者・倉庫スタッフが、日替処理で確定した営業日末時点の未出荷伝票を確認するために使用する。出荷遅延の把握、翌日の出荷優先順位決定、出荷先への遅延連絡の判断材料とする</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-016</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>OUT-001（受注一覧画面）から「未出荷リスト（確定）」ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-016 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報）</h3>
+<p>共通ヘッダー（<a href="_standard-report.md" target="_blank">_standard-report.md</a> 参照）に加え、以下の情報を1ページ目に表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>バッチ処理営業日</td><td>左</td><td><code>batchBusinessDate</code>（例: <code>2026-03-14</code>）</td></tr>
+<tr><td>対象件数</td><td>右</td><td>「対象: {N}件」（明細行の総件数）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>抽出条件サマリーには「バッチ処理営業日: 2026-03-14」を表示する。</blockquote>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>伝票番号</td><td><code>slipNumber</code></td><td>40</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>出荷先名</td><td><code>customerName</code></td><td>55</td><td>左</td><td>—</td><td>長い場合は折り返し</td></tr>
+<tr><td>4</td><td>出荷予定日</td><td><code>plannedShipDate</code></td><td>28</td><td>中</td><td>日付</td><td></td></tr>
+<tr><td>5</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>6</td><td>商品名</td><td><code>productName</code></td><td>55</td><td>左</td><td>—</td><td>長い場合は折り返し</td></tr>
+<tr><td>7</td><td>数量(ケース)</td><td><code>totalQuantityCas</code></td><td>25</td><td>右</td><td>整数</td><td></td></tr>
+<tr><td>8</td><td>ステータス</td><td><code>statusAtBatch</code></td><td>34</td><td>中</td><td>—</td><td>ステータスラベルで表示</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 40 + 55 + 28 + 30 + 55 + 25 + 34 = <strong>277mm</strong>（A4横の印字可能幅 277mm 以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: slipNumber（出荷伝票番号）
+小計行: 数量(ケース)の合計を表示
+グループヘッダー: なし（伝票番号は各行に表示。同一伝票の2行目以降は伝票番号・出荷先名・出荷予定日・ステータスを省略表示「〃」）
+ページブレーク: グループ単位で改ページしない</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル</td></tr>
+<tr><td>数量(ケース)列</td><td>全行の <code>totalQuantityCas</code> 合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>30行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>同一伝票番号の最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌────────────────────────────────────────────────────────────────────────────────────┐
+│ 未出荷リスト（確定）                                    出力日時: 2026-03-17 14:30   │
+│ 倉庫: 東京第一倉庫 (WH-001)                            出力者: 山田 太郎             │
+│ 条件: バッチ処理営業日: 2026-03-14                      対象: 5件                    │
+├────┬──────────┬──────────────┬──────────┬──────┬──────────────┬──────┬──────────────┤
+│No. │伝票番号   │出荷先名       │出荷予定日 │商品CD│  商品名       │数(CS)│ステータス     │
+├────┼──────────┼──────────────┼──────────┼──────┼──────────────┼──────┼──────────────┤
+│  1 │OUT-00045 │テスト出荷先B   │2026-03-12│P-002 │商品B          │    3 │ピッキング中   │
+│  2 │OUT-00045 │     〃        │    〃    │P-005 │商品E          │    1 │     〃        │
+│  3 │OUT-00050 │テスト出荷先C   │2026-03-13│P-001 │商品A          │   10 │受注           │
+│  4 │OUT-00052 │テスト出荷先A   │2026-03-14│P-003 │商品C          │    5 │ピッキング指示済│
+│  5 │OUT-00052 │     〃        │    〃    │P-004 │商品D          │    2 │     〃        │
+├────┴──────────┼──────────────┼──────────┼──────┼──────────────┼──────┼──────────────┤
+│               │              │          │      │   合計        │   21 │              │
+├───────────────┴──────────────┴──────────┴──────┴──────────────┴──────┴──────────────┤
+│ WMS ShowCase                                                    Page 1 / 1         │
+└────────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>RPT-15（リアルタイム版）との関係</strong>: 本レポート（RPT-16）はRPT-15（未出荷リスト・リアルタイム）と類似の目的を持つが、レイアウトは異なる。RPT-15は出荷先別グルーピング・遅延日数・遅延度列を含む10列構成であるのに対し、RPT-16は伝票番号別グルーピングの8列構成である。主な違いはデータ取得タイミングにある。RPT-15は <code>outbound_slips</code> テーブルをリアルタイムに参照するのに対し、RPT-16は日替処理で <code>unshipped_list_records</code> テーブルに確定されたスナップショットデータを参照する</li><li style="margin-left:0px"><strong>データ取得元</strong>: <code>unshipped_list_records</code> テーブル（日替処理で生成）。データ取得仕様の詳細は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-016 業務ロジックを参照</li><li style="margin-left:0px"><strong>ステータス表示</strong>: <code>statusAtBatch</code> フィールドのステータスコードを以下のラベルに変換して表示する</li><li style="margin-left:20px"><code>ORDERED</code> → 受注</li><li style="margin-left:20px"><code>PARTIAL_ALLOCATED</code> → 一部引当</li><li style="margin-left:20px"><code>ALLOCATED</code> → 引当完了</li><li style="margin-left:20px"><code>PICKING_COMPLETED</code> → ピッキング完了</li><li style="margin-left:20px"><code>INSPECTING</code> → 出荷検品中</li><li style="margin-left:0px"><strong>遅延行の強調表示</strong>: 出荷予定日がバッチ処理営業日より前の行（遅延している行）は、行全体の背景色を薄い赤（<code>#FFF1F1</code>）で強調表示する</li><li style="margin-left:0px"><strong>同一伝票の省略表示</strong>: 同一伝票番号の2行目以降は、伝票番号・出荷先名・出荷予定日・ステータスを「〃」で省略表示し、視認性を向上させる</li><li style="margin-left:0px"><strong>データ0件</strong>: 指定営業日に未出荷データが存在しない場合、明細テーブル領域に「該当データがありません」メッセージを中央表示する</li><li style="margin-left:0px"><strong>ソート順</strong>: 出荷予定日（ASC）→ 伝票番号（ASC）→ 商品コード（ASC）の順でソートする</li><li style="margin-left:0px"><strong>テンプレートファイル配置</strong>: <code>backend/src/main/resources/templates/reports/RPT-16.html</code></li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-17-daily-summary">
+<h1>レポート設計書 — 日次集計レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-17</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>日次集計レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者が、日替処理完了後に1日の業務実績サマリーを確認するために使用する。入荷・出荷・在庫の概況と未処理アラートを一覧し、翌日の業務計画や経営報告の材料とする</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-017</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>縦（Portrait）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>BAT-002（バッチ実行履歴一覧画面）から「日次集計レポート出力」ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-017 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報）</h3>
+<p>共通ヘッダー（<a href="_standard-report.md" target="_blank">_standard-report.md</a> 参照）に加え、以下の情報を1ページ目に表示する。</p>
+<table>
+<thead><tr><th>要素</th><th>位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>対象営業日</td><td>左</td><td><code>businessDate</code>（例: <code>2026-03-14</code>）</td></tr>
+<tr><td>対象倉庫数</td><td>右</td><td>「対象倉庫: {N}件」（レスポンス配列の要素数）</td></tr>
+<p></tbody><br></table></p>
+<blockquote>抽出条件サマリーには「対象営業日: 2026-03-14」を表示する。倉庫の絞り込みは行わず全倉庫を出力する。</blockquote>
+<h3>2.2. セクション構成</h3>
+<p>本レポートは通常の1テーブル形式ではなく、倉庫ごとに以下の5セクションを繰り返す構成とする。</p>
+<pre><code class="lang-">倉庫ごとのブロック:
+  ┌─ 倉庫ヘッダー（倉庫名）
+  ├─ セクション1: 入荷サマリー
+  ├─ セクション2: 出荷サマリー
+  ├─ セクション3: 返品サマリー
+  ├─ セクション4: 在庫サマリー
+  └─ セクション5: 未処理アラート</code></pre>
+<h3>2.3. 倉庫ヘッダー</h3>
+<p>各倉庫ブロックの先頭に倉庫名を太字・大きめ（11pt Bold）で表示する。</p>
+<pre><code class="lang-">■ 東京DC（倉庫ID: 1）</code></pre>
+<h3>2.4. セクション1: 入荷サマリー</h3>
+<p>セクションタイトル: 「入荷実績」（10pt Bold、下線付き）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>入荷件数</td><td><code>inboundCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>入庫完了伝票数</td></tr>
+<tr><td>2</td><td>入荷明細行数</td><td><code>inboundLineCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td></td></tr>
+<tr><td>3</td><td>入荷数量合計</td><td><code>inboundQuantityTotal</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>バラ換算</td></tr>
+<p></tbody><br></table></p>
+<blockquote>レイアウト形式: 2列のキー・バリュー形式（左に項目名、右に値）。幅合計: 95 + 95 = 190mm（A4縦の印字可能幅 190mm）</blockquote>
+<h3>2.5. セクション2: 出荷サマリー</h3>
+<p>セクションタイトル: 「出荷実績」（10pt Bold、下線付き）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>出荷件数</td><td><code>outboundCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>出荷完了伝票数</td></tr>
+<tr><td>2</td><td>出荷明細行数</td><td><code>outboundLineCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td></td></tr>
+<tr><td>3</td><td>出荷数量合計</td><td><code>outboundQuantityTotal</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>バラ換算</td></tr>
+<p></tbody><br></table></p>
+<h3>2.6. セクション3: 返品サマリー</h3>
+<p>セクションタイトル: 「返品実績」（10pt Bold、下線付き）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>返品件数</td><td><code>returnCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>当日返品処理完了伝票数</td></tr>
+<tr><td>2</td><td>返品数量合計（バラ換算）</td><td><code>returnQuantityTotal</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>バラ換算</td></tr>
+<p></tbody><br></table></p>
+<h3>2.7. セクション4: 在庫サマリー</h3>
+<p>セクションタイトル: 「在庫状況」（10pt Bold、下線付き）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>在庫総数量</td><td><code>inventoryQuantityTotal</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>営業日末時点・バラ換算</td></tr>
+<p></tbody><br></table></p>
+<blockquote>在庫金額は対象外。在庫訂正件数は日次集計APIのレスポンスに含まれないため本レポートでは表示しない。</blockquote>
+<h3>2.8. セクション5: 未処理アラート</h3>
+<p>セクションタイトル: 「未処理アラート」（10pt Bold、下線付き、背景色: <code>#FFF8E1</code>）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>未入荷件数</td><td><code>unreceivedCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>累積件数</td></tr>
+<tr><td>2</td><td>未出荷件数</td><td><code>unshippedCount</code></td><td>95 / 95</td><td>項目名: 左 / 値: 右</td><td>整数</td><td>累積件数</td></tr>
+<p></tbody><br></table></p>
+<h3>2.9. 全倉庫合計（最終セクション）</h3>
+<p>全倉庫の個別ブロック出力後、最終ページにレポート全体の合計を表示する。</p>
+<p>セクションタイトル: 「全倉庫合計」（11pt Bold、上に区切り線）</p>
+<table>
+<thead><tr><th>#</th><th>項目名</th><th>導出方法</th><th>書式</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>入荷件数合計</td><td>全倉庫の <code>inboundCount</code> を合算</td><td>整数</td></tr>
+<tr><td>2</td><td>入荷数量合計</td><td>全倉庫の <code>inboundQuantityTotal</code> を合算</td><td>整数</td></tr>
+<tr><td>3</td><td>出荷件数合計</td><td>全倉庫の <code>outboundCount</code> を合算</td><td>整数</td></tr>
+<tr><td>4</td><td>出荷数量合計</td><td>全倉庫の <code>outboundQuantityTotal</code> を合算</td><td>整数</td></tr>
+<tr><td>5</td><td>返品件数合計</td><td>全倉庫の <code>returnCount</code> を合算</td><td>整数</td></tr>
+<tr><td>6</td><td>返品数量合計</td><td>全倉庫の <code>returnQuantityTotal</code> を合算</td><td>整数</td></tr>
+<tr><td>7</td><td>在庫総数量合計</td><td>全倉庫の <code>inventoryQuantityTotal</code> を合算</td><td>整数</td></tr>
+<tr><td>8</td><td>未入荷件数合計</td><td>全倉庫の <code>unreceivedCount</code> を合算</td><td>整数</td></tr>
+<tr><td>9</td><td>未出荷件数合計</td><td>全倉庫の <code>unshippedCount</code> を合算</td><td>整数</td></tr>
+<p></tbody><br></table></p>
+<h3>2.10. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>倉庫ブロック改ページ</td><td>1倉庫ブロック（5セクション）が現在ページに収まらない場合、倉庫ブロックごと改ページする</td></tr>
+<tr><td>全倉庫合計改ページ</td><td>全倉庫合計セクションが現在ページに収まらない場合、改ページして新ページに出力する</td></tr>
+<tr><td>倉庫ブロック分割防止</td><td>1つの倉庫ブロックはページをまたがない（必ず同一ページ内に収める）</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────┐
+│ 日次集計レポート          出力日時: 2026-03-17 │
+│ 対象営業日: 2026-03-14    出力者: 山田 太郎    │
+│                          対象倉庫: 2件         │
+├──────────────────────────────────────────────┤
+│                                              │
+│ ■ 東京DC（倉庫ID: 1）                         │
+│                                              │
+│ ── 入荷実績 ──────────────────────────────── │
+│ 入荷件数                              12     │
+│ 入荷明細行数                          45     │
+│ 入荷数量合計（バラ換算）           1,230     │
+│                                              │
+│ ── 出荷実績 ──────────────────────────────── │
+│ 出荷件数                               8     │
+│ 出荷明細行数                          30     │
+│ 出荷数量合計（バラ換算）             870     │
+│                                              │
+│ ── 返品実績 ──────────────────────────────── │
+│ 返品件数                               2     │
+│ 返品数量合計（バラ換算）             150     │
+│                                              │
+│ ── 在庫状況 ──────────────────────────────── │
+│ 在庫総数量（バラ換算）             5,600     │
+│                                              │
+│ ── 未処理アラート ────────────── [背景#FFF8E1] │
+│ 未入荷件数                             3     │
+│ 未出荷件数                             1     │
+│                                              │
+│ ─────────────────────────────────────────── │
+│                                              │
+│ ■ 大阪DC（倉庫ID: 2）                         │
+│                                              │
+│ ── 入荷実績 ──────────────────────────────── │
+│ 入荷件数                               5     │
+│ 入荷明細行数                          18     │
+│ 入荷数量合計（バラ換算）             520     │
+│                                              │
+│ ── 出荷実績 ──────────────────────────────── │
+│ 出荷件数                               3     │
+│ 出荷明細行数                          12     │
+│ 出荷数量合計（バラ換算）             340     │
+│                                              │
+│ ── 返品実績 ──────────────────────────────── │
+│ 返品件数                               1     │
+│ 返品数量合計（バラ換算）              60     │
+│                                              │
+│ ── 在庫状況 ──────────────────────────────── │
+│ 在庫総数量（バラ換算）             3,200     │
+│                                              │
+│ ── 未処理アラート ────────────── [背景#FFF8E1] │
+│ 未入荷件数                             0     │
+│ 未出荷件数                             2     │
+│                                              │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│ ■ 全倉庫合計                                  │
+│                                              │
+│ 入荷件数合計                          17     │
+│ 入荷数量合計（バラ換算）           1,750     │
+│ 出荷件数合計                          11     │
+│ 出荷数量合計（バラ換算）           1,210     │
+│ 返品件数合計                           3     │
+│ 返品数量合計（バラ換算）             210     │
+│ 在庫総数量合計（バラ換算）         8,800     │
+│ 未入荷件数合計                         3     │
+│ 未出荷件数合計                         3     │
+│                                              │
+├──────────────────────────────────────────────┤
+│ WMS ShowCase                    Page 1 / 1   │
+└──────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>複数セクション構成</strong>: 本レポートは通常の明細テーブル形式ではなく、倉庫ごとに5セクション（入荷・出荷・返品・在庫・未処理アラート）のキー・バリュー形式で構成される。テンプレートHTML側ではThymeleafの <code>th:each</code> で倉庫ブロックを繰り返し出力する</li><li style="margin-left:0px"><strong>データソース</strong>: 日替処理で生成された <code>inbound_summaries</code>、<code>outbound_summaries</code>、<code>return_slips</code>、<code>inventory_snapshots</code>、<code>unreceived_list_records</code>、<code>unshipped_list_records</code> の6テーブルから集計。データ取得仕様の詳細は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-017 業務ロジックを参照</li><li style="margin-left:0px"><strong>日替処理完了前提</strong>: 対象営業日の日替処理が <code>SUCCESS</code> で完了していない場合はAPIが 404 を返すため、レポート生成不可。画面側でエラーメッセージを表示する</li><li style="margin-left:0px"><strong>未処理アラートの強調</strong>: 未入荷件数または未出荷件数が1件以上の場合、該当行の値を赤色（<code>#D32F2F</code>）太字で表示する。0件の場合は通常色で表示する</li><li style="margin-left:0px"><strong>全倉庫合計セクション</strong>: 倉庫が1件のみの場合でも全倉庫合計セクションは表示する（将来の複数倉庫対応を見越して）</li><li style="margin-left:0px"><strong>数量の単位</strong>: <code>inboundQuantityTotal</code>、<code>outboundQuantityTotal</code>、<code>returnQuantityTotal</code>、<code>inventoryQuantityTotal</code> はすべてバラ（PCS）換算の合計値。各項目名の末尾に「（バラ換算）」を付記する</li><li style="margin-left:0px"><strong>データ0件</strong>: 対象営業日に全倉庫で入出荷実績がなく、在庫スナップショットのみ存在する場合でもレポートは生成される。入荷・出荷の件数は 0 と表示される</li><li style="margin-left:0px"><strong>テンプレートファイル配置</strong>: <code>backend/src/main/resources/templates/reports/RPT-17.html</code></li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="RPT-18-returns">
+<h1>レポート設計書 — 返品レポート</h1>
+<h2>1. レポート概要</h2>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>レポートID</strong></td><td><code>RPT-18</code></td></tr>
+<tr><td><strong>レポート名</strong></td><td>返品レポート</td></tr>
+<tr><td><strong>用途</strong></td><td>倉庫管理者・品質管理担当者が、指定倉庫・期間における返品実績を返品種別ごとに一覧照会し、返品理由の分析・仕入先への報告・返品率の把握に活用する</td></tr>
+<tr><td><strong>対応API</strong></td><td><code>API-RPT-018</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
+<tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
+<tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
+<tr><td><strong>呼び出し元画面</strong></td><td>RTN-001（返品登録画面）からレポート出力ボタンで呼び出し</td></tr>
+<p></tbody><br></table></p>
+<blockquote>入力パラメータ（検索条件）は <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-018 を参照。</blockquote>
+<h2>2. PDFレイアウト</h2>
+<h3>2.1. ヘッダー（1ページ目のみ追加表示する情報がある場合）</h3>
+<p>共通ヘッダーのみ（<a href="_standard-report.md" target="_blank">_standard-report.md</a> 参照）。</p>
+<p>抽出条件サマリー表示例: <code>期間: 2026-03-01 〜 2026-03-31 / 返品種別: 入荷返品 / 仕入先: テスト仕入先A</code></p>
+<h3>2.2. 明細テーブル カラム定義</h3>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>8</td><td>右</td><td>整数</td><td>グループ内通し番号</td></tr>
+<tr><td>2</td><td>返品伝票番号</td><td><code>returnNumber</code></td><td>35</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>3</td><td>返品日</td><td><code>returnDate</code></td><td>25</td><td>中</td><td><code>yyyy-MM-dd</code></td><td></td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>25</td><td>左</td><td>—</td><td></td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>45</td><td>左</td><td>—</td><td>長い場合は末尾省略（<code>...</code>）</td></tr>
+<tr><td>6</td><td>数量</td><td><code>quantity</code></td><td>20</td><td>右</td><td>3桁カンマ</td><td></td></tr>
+<tr><td>7</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>—</td><td>CAS / BAL / PCS</td></tr>
+<tr><td>8</td><td>返品理由</td><td><code>returnReasonLabel</code></td><td>35</td><td>左</td><td>—</td><td>長い場合は末尾省略（<code>...</code>）</td></tr>
+<tr><td>9</td><td>関連伝票番号</td><td><code>relatedSlipNumber</code></td><td>35</td><td>左</td><td>—</td><td>入荷伝票番号 or 出荷伝票番号</td></tr>
+<tr><td>10</td><td>仕入先名</td><td><code>partnerName</code></td><td>34</td><td>左</td><td>—</td><td>長い場合は末尾省略（<code>...</code>）</td></tr>
+<tr><td></td><td><strong>合計</strong></td><td></td><td><strong>277</strong></td><td></td><td></td><td>A4横の印字可能幅以内</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 8 + 35 + 25 + 25 + 45 + 20 + 15 + 35 + 35 + 34 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h3>2.3. グルーピング・小計</h3>
+<pre><code class="lang-">グルーピングキー: returnTypeLabel（返品種別）
+グループヘッダー: 「返品種別: {returnTypeLabel}」を太字で表示（明細テーブルの上部に1行）
+小計行: 数量（quantity）の合計をグループ末尾に表示
+ページブレーク: グループ単位で改ページしない（連続印刷）</code></pre>
+<h3>2.4. 合計行（テーブル末尾）</h3>
+<table>
+<thead><tr><th>表示位置</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>商品名列</td><td>「合計」ラベル（太字）</td></tr>
+<tr><td>数量列</td><td>全行の数量合計値</td></tr>
+<p></tbody><br></table></p>
+<h3>2.5. ページブレークルール</h3>
+<table>
+<thead><tr><th>ルール</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>行数制限</td><td>35行/ページ（超過時に自動改ページ）</td></tr>
+<tr><td>グループ改ページ</td><td>しない</td></tr>
+<tr><td>孤立行防止</td><td>グループの最終行が次ページに1行だけ送られる場合、グループごと改ページする</td></tr>
+<p></tbody><br></table></p>
+<h2>3. レイアウトイメージ</h2>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────┐
+│ 返品レポート                                    出力日時: 2026-03-17 14:30    │
+│ 倉庫: 東京第一倉庫 (WH-001)                     出力者: admin                │
+│ 条件: 期間: 2026-03-01 ～ 2026-03-31 / 返品種別: 全種別                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ 返品種別: 入荷返品                                                           │
+├────┬──────────────┬──────────┬────────┬────────────┬──────┬────┬────────┬──────────────┬──────────┤
+│ No.│返品伝票番号  │ 返品日   │商品CD  │  商品名    │ 数量 │荷姿│返品理由│関連伝票番号  │仕入先名  │
+├────┼──────────────┼──────────┼────────┼────────────┼──────┼────┼────────┼──────────────┼──────────┤
+│  1 │RTN-2026-0010 │2026-03-05│ P-001  │ 商品A      │   10 │CAS │品質不良│INB-2026-0120 │仕入先A   │
+│  2 │RTN-2026-0012 │2026-03-08│ P-003  │ 商品C      │    5 │PCS │数量過剰│INB-2026-0130 │仕入先B   │
+├────┴──────────────┴──────────┴────────┼────────────┼──────┼────┼────────┼──────────────┼──────────┤
+│                                       │ 小計       │   15 │    │        │              │          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ 返品種別: 出荷返品                                                           │
+├────┬──────────────┬──────────┬────────┬────────────┬──────┬────┬────────┬──────────────┬──────────┤
+│ No.│返品伝票番号  │ 返品日   │商品CD  │  商品名    │ 数量 │荷姿│返品理由│関連伝票番号  │仕入先名  │
+├────┼──────────────┼──────────┼────────┼────────────┼──────┼────┼────────┼──────────────┼──────────┤
+│  1 │RTN-2026-0015 │2026-03-10│ P-002  │ 商品B      │    3 │BAL │顧客返品│OUT-2026-0050 │仕入先A   │
+├────┴──────────────┴──────────┴────────┼────────────┼──────┼────┼────────┼──────────────┼──────────┤
+│                                       │ 小計       │    3 │    │        │              │          │
+├───────────────────────────────────────┼────────────┼──────┼────┼────────┼──────────────┼──────────┤
+│                                       │ 合計       │   18 │    │        │              │          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ WMS ShowCase                                                  Page 1 / 1    │
+└──────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2>4. 特記事項</h2>
+<ul><li style="margin-left:0px"><strong>ソート順</strong>: 返品種別（<code>returnTypeLabel</code>）昇順 → 返品日（<code>returnDate</code>）昇順 → 返品伝票番号（<code>returnNumber</code>）昇順。詳細は API-RPT-018 のデータ取得仕様を参照</li><li style="margin-left:0px"><strong>関連伝票番号の表示</strong>: 入荷返品の場合は入荷伝票番号、出荷返品の場合は出荷伝票番号を表示する。関連伝票がない場合は「—」（emダッシュ）で表示</li><li style="margin-left:0px"><strong>仕入先名の表示</strong>: 入荷返品の場合は入荷伝票の仕入先名、出荷返品の場合は出荷伝票の届け先パートナー名を表示する</li><li style="margin-left:0px"><strong>仕入先名が未指定の場合</strong>: 取引先（仕入先）が未指定の返品伝票の場合、仕入先名カラムは空欄（<code>—</code>）で表示する</li><li style="margin-left:0px"><strong>データ0件の場合</strong>: 「該当する返品データがありません」メッセージを明細テーブル部分の中央に表示する</li><li style="margin-left:0px"><strong>データ取得仕様</strong>: <a href="API-10-report.md" target="_blank">API-10-report.md</a> の API-RPT-018 業務ロジックを参照</li><li style="margin-left:0px"><strong>テンプレートファイル配置</strong>: <code>backend/src/main/resources/templates/reports/RPT-18.html</code></li></ul>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>

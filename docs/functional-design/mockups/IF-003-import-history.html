@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IF-003 取り込み履歴 — WMS</title>
+  <link rel="stylesheet" href="_wms-design.css">
+  <style>
+    /* === Mockup Meta Bar === */
+    .mockup-meta {
+      position: fixed; top: 0; left: 0; right: 0; height: 32px;
+      background: #000; color: #888; font-size: 11px;
+      display: flex; align-items: center; padding: 0 16px; gap: 24px; z-index: 999;
+    }
+    .mockup-meta .screen-id { color: var(--color-primary-light); font-weight: 700; }
+    body { padding-top: 32px; }
+    .app-header { top: 32px; }
+    .app-sidebar { top: calc(var(--header-height) + 32px); }
+    .app-main { margin-top: calc(var(--header-height) + 32px); }
+
+    /* === Header extras === */
+    .header-divider { width: 1px; height: 24px; background: #333; }
+    .warehouse-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: #1A1A1A; border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 6px 12px; color: var(--color-gray-300); font-size: 13px; cursor: pointer;
+    }
+    .warehouse-badge .dot { width: 7px; height: 7px; background: var(--color-primary); border-radius: 50%; }
+    .warehouse-badge .caret { color: var(--color-gray-500); font-size: 10px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+    .header-right .user-info { font-size: 13px; color: var(--color-gray-400); }
+    .header-right .user-info strong { color: var(--color-gray-200); }
+    .business-date { font-size: 13px; color: var(--color-gray-400); border: 1px solid #444; border-radius: 4px; padding: 3px 10px; display: flex; align-items: center; gap: 4px; }
+    .business-date strong { color: #4ade80; font-weight: 600; }
+    .btn-logout {
+      font-size: 12px; color: var(--color-gray-500); background: none;
+      border: 1px solid #333; border-radius: var(--border-radius);
+      padding: 4px 10px; cursor: pointer;
+    }
+    .btn-logout:hover { color: var(--color-white); border-color: #555; }
+
+    /* === Sidebar submenu === */
+    .sidebar-submenu { list-style: none; }
+    .sidebar-submenu li a {
+      display: flex; align-items: center; gap: 8px; padding: 8px 20px 8px 36px;
+      color: var(--color-gray-500); font-size: 12px; text-decoration: none;
+      border-left: 3px solid transparent; transition: all 0.12s;
+    }
+    .sidebar-submenu li a:hover { background: #1E1E1E; color: var(--color-gray-300); }
+    .sidebar-submenu li a.active {
+      background: rgba(161,0,255,0.12); color: var(--color-primary-light);
+      border-left-color: var(--color-primary);
+    }
+
+    /* === Date range separator === */
+    .date-separator {
+      display: flex; align-items: center; color: var(--color-gray-500);
+      font-size: 14px; padding: 0 8px;
+    }
+
+    /* === Result status badges === */
+    .status-completed {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: var(--color-success-bg); color: var(--color-success);
+    }
+    .status-discarded {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: var(--color-gray-100); color: var(--color-gray-600);
+    }
+    .status-failed {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: var(--color-error-bg); color: var(--color-error);
+    }
+
+    /* === IF type badge === */
+    .iftype-badge {
+      display: inline-flex; padding: 2px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 600;
+      background: var(--color-info-bg); color: var(--color-info);
+    }
+
+    /* === Error count highlight === */
+    .error-highlight { color: var(--color-error); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <!-- Mockup Meta Bar -->
+  <div class="mockup-meta">
+    <span class="screen-id">IF-003</span>
+    <span>取り込み履歴</span>
+    <span style="color:#444">|</span>
+    <span>URL: /interface/history</span>
+    <span style="color:#444">|</span>
+    <span>対象ロール: SYSTEM_ADMIN, WAREHOUSE_MANAGER</span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">W<span>M</span>S</div>
+    <div class="header-divider"></div>
+    <div class="warehouse-badge">
+      <span class="dot"></span>
+      <span>東京DC</span>
+      <span class="caret">&#9660;</span>
+    </div>
+    <div class="header-right">
+      <div class="business-date">営業日: <strong>2026/03/20</strong></div>
+      <div class="user-info">ログイン中: <strong>山田 太郎</strong></div>
+      <button class="btn-logout">ログアウト</button>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="app-sidebar">
+    <div class="sidebar-section">業務メニュー</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">&#128230;</span> 入荷管理</a></li>
+      <li><a href="#"><span class="icon">&#128202;</span> 在庫管理</a></li>
+      <li><a href="#"><span class="icon">&#128666;</span> 出荷管理</a></li>
+      <li><a href="#"><span class="icon">&#128260;</span> 返品管理</a></li>
+    </ul>
+    <div class="sidebar-section" style="margin-top:8px">管理</div>
+    <ul class="sidebar-menu">
+      <li><a href="#"><span class="icon">&#128450;</span> マスタ管理</a></li>
+      <li><a href="#"><span class="icon">&#128200;</span> レポート</a></li>
+      <li><a href="#"><span class="icon">&#9881;</span> バッチ管理</a></li>
+      <li>
+        <a href="#" style="color:var(--color-gray-200);font-weight:600"><span class="icon">&#128279;</span> 外部連携</a>
+        <ul class="sidebar-submenu">
+          <li><a href="IF-001-file-list.html">ファイル一覧</a></li>
+          <li><a href="IF-003-import-history.html" class="active">取り込み履歴</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="app-main">
+
+    <div class="breadcrumb">
+      ホーム <span>&#8250;</span> I/F管理 <span>&#8250;</span> 取り込み履歴
+    </div>
+
+    <div class="page-header">
+      <h1 class="page-title">取り込み履歴</h1>
+    </div>
+
+    <!-- Search Form -->
+    <div class="filter-bar">
+      <div class="form-group">
+        <label class="form-label">I/F種別</label>
+        <select class="form-select">
+          <option selected>すべて</option>
+          <option>入荷予定 (IFX-001)</option>
+          <option>受注 (IFX-002)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">実行日（From）</label>
+        <input type="date" class="form-input" value="2026-02-20">
+      </div>
+      <div style="display:flex; align-items:center; padding-top:18px;">
+        <span class="date-separator">~</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">実行日（To）</label>
+        <input type="date" class="form-input" value="2026-03-20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">結果ステータス</label>
+        <select class="form-select">
+          <option selected>すべて</option>
+          <option>完了 (COMPLETED)</option>
+          <option>破棄 (DISCARDED)</option>
+          <option>失敗 (FAILED)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ファイル名</label>
+        <input type="text" class="form-input" placeholder="部分一致検索">
+      </div>
+      <div style="display:flex; gap:8px; padding-top:18px;">
+        <button class="btn btn-primary btn-sm">検索</button>
+        <button class="btn btn-ghost btn-sm">クリア</button>
+      </div>
+    </div>
+
+    <!-- Result Table -->
+    <div class="card">
+      <div class="toolbar">
+        <div class="toolbar-left"></div>
+        <div class="toolbar-right">全 3件</div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th style="width:160px">実行日時</th>
+              <th style="width:90px">I/F種別</th>
+              <th>ファイル名</th>
+              <th style="width:65px; text-align:right">総件数</th>
+              <th style="width:65px; text-align:right">成功</th>
+              <th style="width:65px; text-align:right">エラー</th>
+              <th style="width:100px">モード</th>
+              <th style="width:80px">結果</th>
+              <th style="width:90px">実行者</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>2026/03/20 14:30:05</td>
+              <td><span class="iftype-badge">入荷予定</span></td>
+              <td style="font-weight:600">INB-PLAN-001.csv</td>
+              <td style="text-align:right">100</td>
+              <td style="text-align:right">97</td>
+              <td style="text-align:right"><span class="error-highlight">3</span></td>
+              <td>成功行のみ</td>
+              <td><span class="status-completed">完了</span></td>
+              <td>山田 太郎</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>2026/03/20 10:22:18</td>
+              <td><span class="iftype-badge">受注</span></td>
+              <td style="font-weight:600">ORD-001.csv</td>
+              <td style="text-align:right">50</td>
+              <td style="text-align:right">50</td>
+              <td style="text-align:right">0</td>
+              <td>成功行のみ</td>
+              <td><span class="status-completed">完了</span></td>
+              <td>山田 太郎</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>2026/03/19 09:15:42</td>
+              <td><span class="iftype-badge">入荷予定</span></td>
+              <td style="font-weight:600">INB-PLAN-005.csv</td>
+              <td style="text-align:right">200</td>
+              <td style="text-align:right">0</td>
+              <td style="text-align:right"><span class="error-highlight">200</span></td>
+              <td>全件破棄</td>
+              <td><span class="status-discarded">破棄</span></td>
+              <td>佐藤 花子</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <span style="color:var(--color-gray-500); font-size:12px; margin-right:12px;">20件/ページ</span>
+        <button disabled>&laquo;</button>
+        <button class="active">1</button>
+        <button disabled>&raquo;</button>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

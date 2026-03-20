@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能設計書 — 画面設計 レビュー記録 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../../index.html">Home</a> &rsaquo; <a href="../index.html">機能設計書</a> &rsaquo; 機能設計書 — 画面設計 レビュー記録
+</nav>
+<main>
+  <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 機能設計書 — 画面設計 レビュー記録</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem;">1 件のレビュー記録票</p>
+    </div>
+    <a href="../index-screen.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      ← ドキュメントに戻る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#review-records">1. 画面設計レビュー記録票</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records">
+<h1>画面設計レビュー記録票</h1>
+<blockquote>作成日: 2026-03-13
+<p>対象: 全画面仕様書（02〜07）および HTMLモックアップ（全45画面）<br>レビュー方針: 画面仕様側の誤りは即時修正。要件定義書側の修正が必要な場合は本票に記録してユーザーレビューを待つ。</blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>要件定義書修正要</strong></td><td><strong>22件</strong></td></tr>
+<tr><td><strong>うち対応済</strong></td><td><strong>21件</strong></td></tr>
+<tr><td><strong>保留（API仕様書作成時に対応）</strong></td><td><strong>1件</strong>（#14）</td></tr>
+<tr><td><strong>画面仕様修正済</strong>（レビュー時に自動修正）</td><td><strong>6件</strong></td></tr>
+<tr><td>指摘事項なし</td><td>69件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td><strong>97件</strong></td></tr>
+<p></tbody><br></table></p>
+<h3>要件定義書修正要の対象ファイル別内訳</h3>
+<table>
+<thead><tr><th>対象ファイル</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><code>docs/functional-requirements/01-master-management.md</code></td><td>9件</td></tr>
+<tr><td><code>docs/functional-requirements/02-inbound-management.md</code></td><td>4件</td></tr>
+<tr><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>6件</td></tr>
+<tr><td><code>docs/functional-requirements/04-outbound-management.md</code></td><td>1件</td></tr>
+<tr><td><code>docs/architecture-blueprint/10-security-architecture.md</code></td><td>1件</td></tr>
+<tr><td><code>docs/functional-design/01-screen-overview.md</code></td><td>1件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>凡例</h2>
+<table>
+<thead><tr><th>分類</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>画面仕様修正済</code></td><td>画面仕様書・HTMLモックアップ側の誤りを検出し、即時修正して対応済み</td></tr>
+<tr><td><code>要件定義書修正要</code></td><td>要件定義書側への追記・修正が必要。ユーザーレビュー後に対応する</td></tr>
+<tr><td><code>指摘事項なし</code></td><td>整合性に問題なし</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>グループ別レビュー記録</h2>
+<hr>
+<h3>AUTH — 認証（AUTH-002）</h3>
+<p>対象成果物: <code>02-screen-auth.md</code> / <code>AUTH-002-change-password.html</code><br>参照ドキュメント: <code>docs/architecture-blueprint/10-security-architecture.md</code>、<code>03-frontend-architecture.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>A-1</td><td>AUTH-002</td><td><code>10-security-architecture.md</code> パスワード管理</td><td>パスワードポリシー「8文字以上」が画面仕様のバリデーション・メッセージと整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-2</td><td>AUTH-002</td><td><code>10-security-architecture.md</code> 初回フラグ</td><td><code>password_change_required</code> フラグの管理をPiniaストアで行う設計が整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-3</td><td>AUTH-002</td><td><code>10-security-architecture.md</code></td><td><code>POST /api/v1/auth/change-password</code> エンドポイントが画面仕様に正しく記載</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-4</td><td>AUTH-002</td><td><code>07-auth-architecture.md</code></td><td>対象ロール「全ロール」と認証アーキテクチャが整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-5</td><td>AUTH-002</td><td><code>13-non-functional-requirements.md</code></td><td>ナビゲーションガードによる迂回防止設計が非機能要件と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-6</td><td>AUTH-002</td><td><code>13-non-functional-requirements.md</code></td><td>BCryptハッシュはバックエンド実装の関心事であり画面設計への影響なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-7</td><td>AUTH-002</td><td><code>03-frontend-architecture.md</code> フォームバリデーション</td><td>画面仕様に「Element Plus フォームバリデーション」と記述していたが「VeeValidate + Zod」が確定技術のため修正</td><td><strong>画面仕様修正済</strong></td><td><code>02-screen-auth.md</code> メッセージ一覧の実装備考を「VeeValidate + Zod」に修正済</td></tr>
+<tr><td>A-8</td><td>AUTH-002</td><td><code>03-frontend-architecture.md</code></td><td>401エラー時のリダイレクト処理が画面仕様のイベント一覧と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>A-9</td><td>AUTH-002</td><td><code>10-security-architecture.md</code> ログイン失敗ロック</td><td><code>POST /api/v1/auth/change-password</code> の連続失敗に対するロックポリシーが未定義</td><td><strong>要件定義書修正要</strong></td><td><code>10-security-architecture.md</code> の「パスワード管理」テーブルにパスワード変更API連続失敗ロックポリシーを追記すること</td></tr>
+<tr><td>A-10</td><td>AUTH-002</td><td><code>13-non-functional-requirements.md</code></td><td>多言語対応（vue-i18n）は「日本語で作成→後で英語翻訳」の方針であり問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>MST-商品 — 商品マスタ（MST-001/002/003）</h3>
+<p>対象成果物: <code>03-screen-master-product.md</code> / <code>MST-001〜003.html</code><br>参照ドキュメント: <code>docs/functional-requirements/01-master-management.md</code> セクション1</p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>MP-1</td><td>MST-001</td><td>01-master-management.md 機能一覧</td><td>無効化/有効化ボタンが一覧操作列に設計済みで整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-2</td><td>MST-001</td><td>01-master-management.md ビジネスルール</td><td>無効化確認ダイアログに業務影響（入荷・出荷・棚卸の新規登録で選択不可）を明示済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-3</td><td>MST-001</td><td>01-master-management.md</td><td>有効/無効絞り込みの初期値「有効のみ」は業務上妥当。要件に初期値の明示なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-4</td><td>MST-001</td><td>01-master-management.md 管理項目</td><td>一覧の表示列に「賞味/使用期限管理フラグ」「出荷禁止フラグ」を含めない設計とした。全フラグを一覧で確認するか否かの方針が未明記</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §1 機能一覧「商品一覧照会」に商品一覧の表示列範囲を明記すること</td></tr>
+<tr><td>MP-5</td><td>MST-002</td><td>01-master-management.md「カテゴリ」</td><td>カテゴリの選択肢・管理方式（固定値 or 別マスタ）が未定義。暫定で「飲料/食品/日用品/その他」を定義</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §1 管理項目にカテゴリの入力方式（固定値 or 別マスタ）と選択肢を定義すること</td></tr>
+<tr><td>MP-6</td><td>MST-002</td><td>01-master-management.md「単位」</td><td>単位の入力方式（自由入力 or セレクト）が未定義。自由テキスト入力で設計したが運用一貫性の観点でセレクト方式が望ましい可能性あり</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §1 管理項目に単位の入力方式を明記すること</td></tr>
+<tr><td>MP-7</td><td>MST-002/003</td><td>01-master-management.md ビジネスルール</td><td>商品コードの重複チェック（フォーカスアウト時＋登録時）を設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-8</td><td>MST-003</td><td>01-master-management.md</td><td>商品コードをreadonly＋「変更不可」バッジで表示。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-9</td><td>MST-003</td><td>01-master-management.md</td><td>在庫存在時のロット管理フラグdisabled化・警告バッジ・ツールチップを設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-10</td><td>全画面</td><td>01-master-management.md アクセス権限</td><td>全画面の対象ロールをSYSTEM_ADMINのみとし、サイドバー仕様と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-11</td><td>MST-002/003</td><td>01-master-management.md「ケース入数」</td><td>フォームヒントに正確な定義（1ケースに含まれるボール数）を反映済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MP-12</td><td>MST-001</td><td>01-master-management.md 共通設計方針</td><td>CSVインポートボタンを除外済み（CSVインポート不要の方針と整合）</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>MST-取引先・倉庫 — 取引先・倉庫マスタ（MST-011〜023）</h3>
+<p>対象成果物: <code>03-screen-master-partner-warehouse.md</code> / <code>MST-011〜023.html</code><br>参照ドキュメント: <code>docs/functional-requirements/01-master-management.md</code> セクション2・3</p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>MPW-1</td><td>MST-011</td><td>01-master-management.md §2 機能一覧</td><td>無効化/有効化ボタンを一覧操作列に設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-2</td><td>MST-011</td><td>01-master-management.md §2 管理項目</td><td>担当者名・メールアドレスを一覧から省略。詳細確認は編集画面で可能。業務上問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-3</td><td>MST-011</td><td>01-master-management.md §2 ビジネスルール</td><td>無効化確認ダイアログに「入荷・出荷登録で選択不可になります」を明示済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-4</td><td>MST-012/013</td><td>01-master-management.md §2</td><td>取引先コード登録後変更不可のルールをフォームヒント・readonly化で明示。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-5</td><td>MST-012</td><td>01-master-management.md §2 ビジネスルール</td><td>種別ごとの入荷元/出荷先選択可否ルールをフォームヒントに補足。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-6</td><td>MST-012</td><td>01-master-management.md §2 管理項目</td><td>取引先コードのフォーマット規則（文字種・最大長）が要件定義書に未記載</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §2 管理項目に取引先コードのフォーマット規則を追記すること</td></tr>
+<tr><td>MPW-7</td><td>MST-013</td><td>01-master-management.md §2</td><td>ページタイトル付近に有効/無効の現在状態をバッジ表示。妥当な設計</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-8</td><td>MST-021</td><td>01-master-management.md §3 ビジネスルール</td><td>在庫存在時の無効化不可ルールをdisabledボタン＋ツールチップで明示。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-9</td><td>MST-021</td><td>01-master-management.md §3</td><td>エラーメッセージMSG-E-041を定義済み。APIエラーレスポンスはバックエンド設計書に委ねる</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-10</td><td>MST-022</td><td>01-master-management.md §3 管理項目</td><td>倉庫登録時の有効フラグを「ON固定」とした（登録直後に無効化するケースは想定外）が、要件定義書に明示なし</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §3（および全マスタ共通）に「登録時の有効フラグはON固定」を追記すること</td></tr>
+<tr><td>MPW-11</td><td>MST-022</td><td>01-master-management.md §3 管理項目</td><td>倉庫コードのフォーマット規則が未記載</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §3 管理項目に倉庫コードのフォーマット規則を追記すること</td></tr>
+<tr><td>MPW-12</td><td>MST-023</td><td>01-master-management.md §3</td><td>編集画面でも在庫の有無をinfo-noteで通知する設計。妥当</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-13</td><td>MST-021〜023</td><td>01-master-management.md 共通設計方針</td><td>CSVインポートボタンを除外済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-14</td><td>全画面</td><td>01-screen-overview.md 共通仕様</td><td>倉庫マスタ管理画面は全倉庫を管理する性質上、ヘッダーの倉庫切替の影響を受けないが、この仕様が明文化されていない</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §3 または <code>01-screen-overview.md</code> 共通仕様に「倉庫マスタ管理画面はヘッダーの倉庫切替の影響を受けない（全倉庫一覧を表示する）」旨を明記すること</td></tr>
+<tr><td>MPW-15</td><td>全画面</td><td>01-screen-overview.md テンプレート</td><td>5セクション構成に完全準拠</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MPW-16</td><td>全画面</td><td>01-master-management.md アクセス権限</td><td>全画面のロールがSYSTEM_ADMINのみであることとサイドバー仕様が整合</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>MST-棟・エリア・ロケーション（MST-031〜053）</h3>
+<p>対象成果物: <code>03-screen-master-facility.md</code> / <code>MST-031〜053.html</code><br>参照ドキュメント: <code>docs/functional-requirements/01-master-management.md</code> セクション4・5・6</p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>MF-1〜9</td><td>MST-031〜053</td><td>01-master-management.md §4・5・6</td><td>棟/エリア/ロケーション各画面の設計が要件定義と全項目整合していることを確認。コード登録後変更不可ルール、配下エンティティ存在時の無効化不可ルール、ロケーションコードフォーマット（<code>棟-フロア-エリア-棚-段-並び</code>）の自動補完UIも含め問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<blockquote>レビュー指摘事項なし（9画面全て整合確認済み）</blockquote>
+<hr>
+<h3>MST-ユーザー（MST-061/062/063）</h3>
+<p>対象成果物: <code>03-screen-master-user.md</code> / <code>MST-061〜063.html</code><br>参照ドキュメント: <code>docs/functional-requirements/01-master-management.md</code> セクション7、<code>docs/architecture-blueprint/07-auth-architecture.md</code>、<code>10-security-architecture.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>MU-1</td><td>MST-061</td><td>01-master-management.md §7 機能一覧</td><td>「ユーザー無効化/有効化」が独立機能として記載されているが、画面設計では編集画面（MST-063）のステータス変更で実現する方針とした。要件定義書に補足が必要</td><td><strong>要件定義書修正要</strong></td><td><code>01-master-management.md</code> §7 機能一覧に「有効/無効の切り替えは編集画面のステータスフィールドから行う」旨を補足すること</td></tr>
+<tr><td>MU-2</td><td>MST-061</td><td><code>10-security-architecture.md</code> ログイン失敗ロック</td><td>一覧からの直接ロック解除ボタン＋編集画面のアラートバナーからも解除できる設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-3</td><td>MST-062</td><td><code>10-security-architecture.md</code> パスワード管理</td><td>初期パスワードポリシー「8文字以上」をフォームヒント・バリデーションに反映。BCryptはバックエンド処理</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-4</td><td>MST-062</td><td>01-master-management.md §7 ビジネスルール</td><td>「SYSTEM_ADMINが初期パスワードを設定する」要件を登録フォームに初期パスワード欄として設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-5</td><td>MST-062</td><td><code>10-security-architecture.md</code> 初回ログイン</td><td>初回ログインフラグはバックエンド自動設定のため登録フォームには表示不要。問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-6</td><td>MST-063</td><td>01-master-management.md §7 ビジネスルール</td><td>自分自身のロール変更・無効化不可ルールをdisabled制御で仕様化。API側にも同様チェックが必要な旨を備考に明記</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-7</td><td>MST-063</td><td><code>07-auth-architecture.md</code> ロール定義</td><td>4ロールの定義がアーキテクチャと一致</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-8</td><td>MST-061</td><td>01-screen-overview.md 共通仕様</td><td>CSVインポートボタンを除外済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-9</td><td>MST-061</td><td>01-master-management.md §7 管理項目</td><td>メールアドレスを一覧に表示する設計（管理者の連絡先確認用途として妥当）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-10</td><td>MST-062</td><td>01-master-management.md §7</td><td>「初回ログインフラグ」と<code>password_change_required</code>の用語統一が保たれている</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>MU-11</td><td>全画面</td><td><code>07-auth-architecture.md</code> 機能別アクセス権限マトリクス</td><td>ユーザー管理はSYSTEM_ADMINのみ。サイドバー仕様と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>INB — 入荷管理（INB-002〜006）</h3>
+<p>対象成果物: <code>04-screen-inbound.md</code> / <code>INB-002〜006.html</code><br>参照ドキュメント: <code>docs/functional-requirements/02-inbound-management.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>I-1</td><td>INB-002</td><td>02-inbound-management.md §1</td><td>同一伝票内での同一商品コードの重複可否が未定義。画面仕様ではエラーとして弾く設計とした</td><td><strong>要件定義書修正要</strong></td><td><code>02-inbound-management.md</code> §1 に「同一伝票内の商品コード重複は不可」を追記すること</td></tr>
+<tr><td>I-2</td><td>INB-002</td><td>02-inbound-management.md §1</td><td>入荷予定日の日付制約（過去日不可等）が未記載。画面仕様では「当日以降」として設計</td><td><strong>要件定義書修正要</strong></td><td><code>02-inbound-management.md</code> §1 に入荷予定日の日付制約（当日以降か否か）を明記すること</td></tr>
+<tr><td>I-3</td><td>INB-003</td><td>02-inbound-management.md §5</td><td>キャンセル時の在庫戻し処理の発動条件（ステータス段階・在庫状態）が詳細化されていない</td><td><strong>要件定義書修正要</strong></td><td><code>02-inbound-management.md</code> §5 にキャンセル時在庫戻しの発動条件（ステータスと在庫状態）を詳細化すること</td></tr>
+<tr><td>I-4</td><td>INB-003</td><td>02-inbound-management.md §5</td><td>キャンセルボタンの表示条件を「入庫完了・キャンセル以外」に修正（キャンセル済への再キャンセル防止）</td><td><strong>画面仕様修正済</strong></td><td><code>04-screen-inbound.md</code> INB003-BTN03の表示条件を「入庫完了・キャンセル以外」に修正済</td></tr>
+<tr><td>I-5</td><td>INB-004</td><td>02-inbound-management.md §6</td><td>「最初の検品入力でステータスが検品中に遷移」→保存操作時（PUT APIコール時）に遷移する設計で整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-6</td><td>INB-004</td><td>02-inbound-management.md §6</td><td>確定前の検品数修正可の要件を画面仕様で設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-7</td><td>INB-005</td><td>02-inbound-management.md §7</td><td>個別確定・全件一括確定の両方をボタンとして設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-8</td><td>INB-005</td><td>02-inbound-management.md §7</td><td>ロケーション自動割当の優先順序を「★既存在庫あり」「○空きロケーション」として可視化。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-9</td><td>INB-006</td><td>02-inbound-management.md §8</td><td>照会の単位（伝票単位 or 明細単位）が未定義。明細単位で設計したため、同一伝票の複数明細が複数行表示される</td><td><strong>要件定義書修正要</strong></td><td><code>02-inbound-management.md</code> §8 に照会の単位（伝票単位 or 明細単位）を明記すること</td></tr>
+<tr><td>I-10</td><td>INB-006</td><td>02-inbound-management.md §8</td><td>予定数量・検品数・差異数の3列表示が要件と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-11</td><td>全画面</td><td>02-inbound-management.md ビジネスルール「修正不可」</td><td>INB-002は新規登録専用、INB-003には編集ボタンを設けない設計で整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>I-12</td><td>INB-002</td><td>02-inbound-management.md ビジネスルール「倉庫コードの保持」</td><td>入力フォームに倉庫フィールドを設けず、ヘッダー選択中倉庫コードをAPIリクエスト時に自動セットする想定。API設計時に仕様確認が必要</td><td><strong>要件定義書修正要</strong></td><td>API仕様書作成時に「入荷予定登録APIは選択中倉庫コードを自動付与する」旨を記載すること</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>INV-在庫操作 — 在庫照会・移動・ばらし・訂正（INV-001〜004）</h3>
+<p>対象成果物: <code>05-screen-inventory-ops.md</code> / <code>INV-001〜004.html</code><br>参照ドキュメント: <code>docs/functional-requirements/03-inventory-management.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>IO-1</td><td>INV-001</td><td>03-inventory-management.md §1</td><td>「ロケーション別」タブ＋「商品合計」タブの2モード設計が要件の両要求を満たす</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-2</td><td>INV-001</td><td>03-inventory-management.md §1</td><td>バラ換算合計列を商品合計タブに追加したが、この要件が要件定義書に未記載</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> §1 に「商品ごとの全荷姿バラ換算合計も表示できる」旨を追記すること</td></tr>
+<tr><td>IO-3</td><td>INV-001</td><td>03-inventory-management.md ビジネスルール「棚卸ロック」</td><td>棚卸ロック中ロケーションの視覚的表示（タグ等）が画面仕様に未定義</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> または在庫一覧画面仕様に棚卸ロック中ロケーションの視覚表示要件を追加すること</td></tr>
+<tr><td>IO-4</td><td>INV-002</td><td>03-inventory-management.md §2</td><td>移動元在庫不足エラー・移動先ロケーション・商品・数量の設計が整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-5</td><td>INV-002</td><td>03-inventory-management.md §ロケーション収容制約</td><td>充填率プレビューバーをUX向上のため追加したが要件定義書に記載なし</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> §ロケーション収容制約に「在庫移動画面での移動後充填率プレビュー表示」要件を追記すること</td></tr>
+<tr><td>IO-6</td><td>INV-002</td><td>03-inventory-management.md ビジネスルール「ロケーション単一商品」</td><td>異なる商品の移動先エラーを設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-7</td><td>INV-003</td><td>03-inventory-management.md §3</td><td>ばらし方向制約（まとめは対象外）をグレーアウトで実現。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-8</td><td>INV-003</td><td>03-inventory-management.md ビジネスルール「荷姿変換の自動計算」</td><td>端数エラーをリアルタイムチェックするプレビューカードで設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-9</td><td>INV-003</td><td>03-inventory-management.md §3</td><td>ばらし先ロケーションを任意入力（空欄=元と同一）で設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-10</td><td>INV-004</td><td>03-inventory-management.md §4</td><td>訂正理由必須・履歴記録・削除修正不可をフォーム設計・警告バナーで表現。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-11</td><td>INV-004</td><td>03-inventory-management.md §4</td><td>RPT-009（訂正一覧レポート）呼出ボタンを配置済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-12</td><td>INV-004</td><td>03-inventory-management.md ビジネスルール「在庫マイナス禁止」</td><td>在庫訂正への「訂正後数量は0以上」ルールが要件定義書のビジネスルール表に明示されていない</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> §ビジネスルール「在庫マイナス禁止」の対象に「在庫訂正（訂正後数量は0以上）」を追記すること</td></tr>
+<tr><td>IO-13</td><td>全画面</td><td>01-screen-overview.md</td><td>共通バリデーション仕様に準拠。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IO-14</td><td>全画面</td><td>01-screen-overview.md</td><td>権限エラー（403/401）は共通仕様に委ねる設計。問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>INV-棚卸 — 棚卸管理（INV-011〜014）</h3>
+<p>対象成果物: <code>05-screen-inventory-stocktake.md</code> / <code>INV-011〜014.html</code><br>参照ドキュメント: <code>docs/functional-requirements/03-inventory-management.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>IS-1</td><td>INV-011〜014</td><td>03-inventory-management.md §5</td><td>棚卸4ステップフローが画面分割と整合（INV-013が実数入力、INV-014が差異確認+確定）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-2</td><td>INV-012</td><td>03-inventory-management.md §5 ステップ1</td><td>棚卸リスト帳票を棚卸開始前（対象ロケーション選択後）でも出力可能とする設計だが、要件に明示なし</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> §5 ステップ1 に「対象ロケーション選択後であれば棚卸開始前でも棚卸リストを出力できる」と追記すること</td></tr>
+<tr><td>IS-3</td><td>INV-013</td><td>03-inventory-management.md §在庫の管理単位</td><td>在庫の3軸（ロケーション×商品×荷姿）が棚卸実数入力テーブルに反映。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-4</td><td>INV-013</td><td>03-inventory-management.md ビジネスルール「棚卸ロック」</td><td>棚卸ロックの案内を警告バナーで表示、確定時に自動解除する設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-5</td><td>INV-013</td><td>01-screen-overview.md 共通バリデーション</td><td>実数入力欄のバリデーション（0以上の整数）をMSGで定義。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-6</td><td>INV-014</td><td>03-inventory-management.md ビジネスルール</td><td>棚卸確定時の在庫更新とRPT-011（棚卸結果レポート）出力をまとめて設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-7</td><td>INV-014</td><td>03-inventory-management.md ビジネスルール「トランへのマスタ情報コピー」</td><td>トラン生成はバックエンドAPI側の関心事。フロントエンド画面仕様への影響なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-8</td><td>INV-011</td><td>01-screen-overview.md 全画面一覧</td><td>画面ID・URL・対象ロールが一覧と一致</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-9</td><td>INV-012</td><td>01-screen-overview.md サイドバー</td><td>INV-012はWAREHOUSE_MANAGER専用。INV-011の「棚卸開始」ボタンをWAREHOUSE_MANAGERのみ表示する設計で対処済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-10</td><td>INV-013</td><td>01-screen-overview.md 共通権限エラー</td><td>403エラーは共通仕様に委ねる。問題なし</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>IS-11</td><td>INV-014</td><td>03-inventory-management.md §5</td><td>「差異ありのみ表示」フィルターはフロントエンド完結の設計。大規模棚卸での明細数上限が未定義</td><td><strong>要件定義書修正要</strong></td><td><code>03-inventory-management.md</code> §5 または非機能要件に一回の棚卸で扱う最大明細数の目安を定義すること</td></tr>
+<tr><td>IS-12</td><td>INV-013/014</td><td>03-inventory-management.md §荷姿の種類</td><td>荷姿3種（ケース/ボール/バラ）がテーブルに反映。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>OUT — 出荷管理（OUT-001〜022）</h3>
+<p>対象成果物: <code>06-screen-outbound.md</code> / <code>OUT-001〜022.html</code><br>参照ドキュメント: <code>docs/functional-requirements/04-outbound-management.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>O-1</td><td>OUT-002</td><td>04-outbound-management.md §2 倉庫振替登録</td><td>倉庫振替時に出荷伝票＋入荷伝票を同時生成する仕様の説明がイベント一覧に不足していた</td><td><strong>画面仕様修正済</strong></td><td><code>06-screen-outbound.md</code> EVT-OUT-002-006に「倉庫振替時は振替先倉庫の入荷伝票を自動生成する」旨を追記済</td></tr>
+<tr><td>O-2</td><td>OUT-001</td><td>04-outbound-management.md §5 在庫引当</td><td>引当時のばらし指示発行はINV-003のスコープ。本画面ではMSG-E-101で「在庫不足・荷姿不一致の場合はダイアログで詳細表示」として対応済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>O-3</td><td>OUT-011</td><td>04-outbound-management.md §6 ピッキング指示</td><td>RPT-012（ピッキングリスト帳票）呼出ボタンをOUT-011に配置済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>O-4</td><td>OUT-013</td><td>04-outbound-management.md §6・§7</td><td>ピッキング完了後に「どの受注の検品を行うか」を選択するフローが未定義。1ピッキング指示が複数受注を含む場合の検品遷移設計が必要</td><td><strong>要件定義書修正要</strong></td><td><code>04-outbound-management.md</code> §6 に「バッチピッキング後の受注別検品遷移フロー」を追記すること（案A: 対象受注リストダイアログ、案B: 受注グルーピング表示）</td></tr>
+<tr><td>O-5</td><td>OUT-021</td><td>04-outbound-management.md §7 出荷検品</td><td>途中保存と出荷確定への遷移を分離する設計が必要だった。MSG-S-107「検品数を保存しました」を追加して途中保存を許容</td><td><strong>画面仕様修正済</strong></td><td><code>06-screen-outbound.md</code> OUT-021にMSG-S-107を追加し途中保存フローを明示済</td></tr>
+<tr><td>O-6</td><td>OUT-022</td><td>04-outbound-management.md §8・§9</td><td>出荷確定と配送情報入力を同一画面にまとめた設計（効率性の観点から妥当）</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>O-7</td><td>OUT-003</td><td>04-outbound-management.md §10 受注キャンセル</td><td>ピッキング中キャンセル時の警告メッセージMSG-W-104に「ピッキング指示から当該明細が除外されます」の補足が不足</td><td>画面仕様修正要（次版）</td><td>次版でMSG-W-104の文言を補足修正すること</td></tr>
+<tr><td>O-8</td><td>OUT-012</td><td>01-screen-overview.md 画面ID体系</td><td>ピッキング指示番号プレフィックス「PIC」が01-screen-overview.mdの画面ID体系表に未定義</td><td><strong>要件定義書修正要</strong></td><td><code>01-screen-overview.md</code> の画面ID体系表に「PIC: ピッキング指示（OUT内部エンティティの伝票番号体系）」を追記するか、データモデル側で管理方針を明記すること</td></tr>
+<tr><td>O-9</td><td>全画面</td><td>01-screen-overview.md 共通バリデーション</td><td>共通バリデーション仕様に準拠。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>O-10</td><td>OUT-022</td><td>04-outbound-management.md §9</td><td>RPT-014（配送リスト）への導線をOUT-003にも追加するとUX向上につながる（現状はOUT-001のみ）。改善提案として記録</td><td>指摘事項なし</td><td>改善提案</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>BAT — バッチ管理（BAT-001/002）</h3>
+<p>対象成果物: <code>07-screen-batch.md</code> / <code>BAT-001〜002.html</code><br>参照ドキュメント: <code>docs/functional-requirements/06-batch-processing.md</code>、<code>docs/functional-requirements/05-reports.md</code></p>
+<table>
+<thead><tr><th>No</th><th>対象画面</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>B-1</td><td>BAT-001</td><td>06-batch-processing.md §日替処理の内容</td><td>5ステップに加え「未入荷リスト・未出荷リストの自動生成」が日替処理に含まれるが実行結果カードに未反映だった</td><td><strong>画面仕様修正済</strong></td><td><code>07-screen-batch.md</code> にBAT001-RESULT-UNINBOUND / UNOUTBOUND 項目を追加済</td></tr>
+<tr><td>B-2</td><td>BAT-001</td><td>06-batch-processing.md §ビジネスルール</td><td>「再実行時は最初から全処理を実行」のルールがモックアップの失敗時説明文に未反映だった</td><td><strong>画面仕様修正済</strong></td><td>HTMLモックアップ（BAT-001-daily-close.html）の失敗ブロックに再実行案内文を追記済</td></tr>
+<tr><td>B-3</td><td>BAT-002</td><td>01-screen-overview.md §RPT-017</td><td>RPT-017の呼出元がBAT-002であることが01-screen-overview.mdに明記済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>B-4</td><td>BAT-002</td><td>05-reports.md §17 日次集計レポート</td><td>レポート出力内容（入荷件数・数量、出荷件数・数量、在庫数量）が要件と整合。未入荷・未出荷件数も追加済み</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>B-5</td><td>BAT-001/002</td><td>06-batch-processing.md §実行方式「実行権限」</td><td>両画面のロール設定がSYSTEM_ADMIN・WAREHOUSE_MANAGERのみ。サイドバー仕様と整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>B-6</td><td>BAT-001</td><td>06-batch-processing.md §ビジネスルール「処理中断」</td><td>失敗時の中断・ステップ強調表示をモックアップで設計済み。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>B-7</td><td>BAT-002</td><td>06-batch-processing.md §機能一覧</td><td>エラー内容を詳細ドロワー（インライン展開）に格納する設計が要件趣旨と矛盾しない</td><td>指摘事項なし</td><td>—</td></tr>
+<tr><td>B-8</td><td>BAT-001</td><td>06-batch-processing.md §日替処理の内容</td><td>1回の操作で5処理を実行する設計。整合</td><td>指摘事項なし</td><td>—</td></tr>
+<p></tbody><br></table></p>
+<blockquote>要件定義書側の修正が必要な事項は検出されなかった</blockquote>
+<hr>
+<h2>要件定義書修正要 — 一覧（ユーザーレビュー用）</h2>
+<table>
+<thead><tr><th>#</th><th>修正対象ファイル</th><th>修正箇所</th><th>修正内容</th><th>優先度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>docs/architecture-blueprint/10-security-architecture.md</code></td><td>パスワード管理テーブル</td><td><del>パスワード変更API（<code>POST /api/v1/auth/change-password</code>）の連続失敗ロックポリシーを追記</del> ログインと同一ポリシー（連続5回失敗でロック）を適用。ログイン失敗ロックセクションに追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>2</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§1 機能一覧「商品一覧照会」</td><td><del>商品一覧の表示列範囲（全フラグを表示するか否か）を明記</del> 表示列を「商品コード・商品名・保管条件・危険物フラグ・ロット管理フラグ・有効/無効」と明記。賞味/使用期限・出荷禁止フラグは編集画面のみ</td><td><strong>対応済</strong></td></tr>
+<tr><td>3</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§1 管理項目「カテゴリ」</td><td><del>カテゴリの入力方式（固定値 or 別マスタ化）と選択肢を定義</del> カテゴリ項目を削除（不要と判断）</td><td><strong>対応済</strong></td></tr>
+<tr><td>4</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§1 管理項目「単位」</td><td><del>単位の入力方式（自由入力 or 選択式）を明記</del> 単位は荷姿（ケース/ボール/バラ）で代替するため項目自体を削除。01-master-management.md §1・02-master-tables.md products テーブルから <code>unit</code> カラムを削除済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>5</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§2 管理項目</td><td><del>取引先コードのフォーマット規則（文字種・最大長）を追記</del> 「半角英数字・記号、50文字以内」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>6</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§2・3（全マスタ共通）</td><td><del>登録時の有効フラグ初期値（ON固定）を明記</del> 共通設計方針セクションに「全マスタ共通。新規登録時の有効フラグはON固定」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>7</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§3 管理項目</td><td><del>倉庫コードのフォーマット規則を追記</del> 「英大文字4文字固定」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>8</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§3 または <code>01-screen-overview.md</code></td><td><del>倉庫マスタ管理画面はヘッダーの倉庫切替の影響を受けない（全倉庫一覧を表示）旨を明記</del> §3 ビジネスルールに追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>9</td><td><code>docs/functional-requirements/01-master-management.md</code></td><td>§7 機能一覧</td><td><del>「ユーザー無効化/有効化」は編集画面のステータスフィールドで実現する旨を補足</del> 機能一覧に「切り替えはユーザー編集画面のステータスフィールドから行う」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>10</td><td><code>docs/functional-requirements/02-inbound-management.md</code></td><td>§1 入荷予定登録（手動）</td><td><del>同一伝票内の商品コード重複不可を追記</del></td><td><strong>対応済</strong></td></tr>
+<tr><td>11</td><td><code>docs/functional-requirements/02-inbound-management.md</code></td><td>§1 入荷予定登録（手動）</td><td><del>入荷予定日の日付制約（当日以降か否か）を明記</del> 業務日付以降に設定</td><td><strong>対応済</strong></td></tr>
+<tr><td>12</td><td><code>docs/functional-requirements/02-inbound-management.md</code></td><td>§5 入荷キャンセル</td><td><del>キャンセル時の在庫戻し発動条件（ステータス段階・在庫状態）を詳細化</del></td><td><strong>対応済</strong></td></tr>
+<tr><td>13</td><td><code>docs/functional-requirements/02-inbound-management.md</code></td><td>§8 入荷実績照会</td><td><del>照会の単位（伝票単位 or 明細単位）を明記</del> 伝票単位（2段階表示）と確定。追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>14</td><td>（API仕様書）</td><td>入荷予定登録API</td><td>選択中倉庫コードを自動付与する仕様を記載（API仕様書作成時に対応） — <strong>保留</strong>（API仕様書作成フェーズで対応）</td><td>低</td></tr>
+<tr><td>15</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§1 在庫照会</td><td>商品ごとの全荷姿バラ換算合計も表示できる旨を追記</td><td>低</td></tr>
+<tr><td>16</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§1（または画面仕様）</td><td><del>棚卸ロック中ロケーションの在庫一覧での視覚表示要件を追記</del> §1 在庫照会に「ロックアイコンまたはバッジを付与」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>17</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§ロケーション収容制約</td><td><del>在庫移動画面での充填率プレビュー表示要件を追記</del> ロケーション収容制約セクションに「在庫移動画面では移動後の充填率をプレビュー表示する」を追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>18</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§ビジネスルール「在庫マイナス禁止」</td><td><del>在庫訂正への「訂正後数量は0以上」ルール適用を明示</del> ビジネスルール表の「在庫マイナス禁止」行に追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>19</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§5 棚卸 ステップ1</td><td>棚卸開始前（対象ロケーション選択後）でも棚卸リストを出力できる旨を追記</td><td>低</td></tr>
+<tr><td>20</td><td><code>docs/functional-requirements/03-inventory-management.md</code></td><td>§5 または非機能要件</td><td><del>一回の棚卸で扱う最大明細数の目安（パフォーマンス設計の前提）を定義</del> 2,000行を上限として §5 に追記済み</td><td><strong>対応済</strong></td></tr>
+<tr><td>21</td><td><code>docs/functional-requirements/04-outbound-management.md</code></td><td>§6 ピッキング指示作成</td><td><del>バッチピッキング後の受注別検品遷移フローを追記</del> OUT-013に対象受注一覧＋「出荷検品へ」ボタンで個別遷移する方式を追記</td><td><strong>対応済</strong></td></tr>
+<tr><td>22</td><td><code>docs/functional-design/01-screen-overview.md</code></td><td>画面ID体系表</td><td><del>ピッキング指示番号プレフィックス「PIC」の位置付けを追記</del> 画面ID体系表に「PIC: ピッキング指示（OUT内部エンティティの伝票番号体系）」を追記済み</td><td><strong>対応済</strong></td></tr>
+<p></tbody><br></table></p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>

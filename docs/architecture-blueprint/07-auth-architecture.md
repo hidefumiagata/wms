@@ -7,8 +7,8 @@
 | **方式** | JWT（JSON Web Token）+ httpOnly Cookie |
 | **実装** | Spring Security + jjwt |
 | **トークン保存** | httpOnly Cookie（XSS対策） |
-| **CSRF対策** | SameSite=Strict + CSRFトークン |
-| **トークン有効期限** | アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから1時間で失効） |
+| **CSRF対策** | SameSite=Lax（httpOnly Cookie の SameSite 属性による CSRF 対策。CSRFトークンは不要。Lax はトップレベルナビゲーション（リンク遷移）ではCookieを送信するため、ブックマークやメール内リンクからのアクセスで再ログインを強制されない） |
+| **トークン有効期限** | アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから24時間で失効） |
 
 ## 認証フロー
 
@@ -57,6 +57,16 @@ sequenceDiagram
 | **外部連携I/F** | ✅ | ✅ | ✗ | ✗ |
 | **営業日取得**（GET /api/v1/system/business-date） | ✅ | ✅ | ✅ | ✅ |
 
+### パスワードリセット（セルフサービス）
+
+| 項目 | 内容 |
+|------|------|
+| **申請** | ログイン画面の「パスワードを忘れた方」リンクから、ユーザーIDまたはメールアドレスを入力して申請 |
+| **メール送信** | Azure Communication Services（Email）でリセットリンクを送信 |
+| **トークン有効期限** | 30分（システムパラメータで変更可能） |
+| **トークン管理** | `password_reset_tokens` テーブルにハッシュ化して保存。使用済み・期限切れは無効 |
+| **ロック解除** | パスワードリセット完了時にアカウントロックを解除し、失敗カウンタをリセットする |
+
 ### Spring Security 実装方針
 
 ```java
@@ -64,4 +74,10 @@ sequenceDiagram
 @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
 @PostMapping("/api/v1/batch/daily-close")
 public ResponseEntity<Void> runDailyClose() { ... }
+
+@PostMapping("/api/v1/auth/password-reset/request")
+public ResponseEntity<Void> requestPasswordReset(...) { ... }
+
+@PostMapping("/api/v1/auth/password-reset/confirm")
+public ResponseEntity<Void> confirmPasswordReset(...) { ... }
 ```

@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アーキテクチャ設計書 — レビュー記録 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../../index.html">Home</a> &rsaquo; <a href="../index.html">アーキテクチャ設計書</a> &rsaquo; アーキテクチャ設計書 — レビュー記録
+</nav>
+<main>
+  <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 アーキテクチャ設計書 — レビュー記録</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem;">16 件のレビュー記録票</p>
+    </div>
+    <a href="../index.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      ← ドキュメントに戻る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#cross-review-consistency">1. アーキテクチャ設計書 整合性検証レポート</a></li>
+        <li><a href="#cross-review-ssot">2. アーキテクチャ設計書 SSOT準拠チェックレポート</a></li>
+        <li><a href="#cross-review-summary">3. アーキテクチャ設計書 横断レビューサマリー</a></li>
+        <li><a href="#review-01-overall-architecture">4. アーキテクチャ設計レビュー記録票 — 全体アーキテクチャ</a></li>
+        <li><a href="#review-02-system-architecture">5. アーキテクチャ設計レビュー記録票 — システムアーキテクチャ</a></li>
+        <li><a href="#review-03-frontend-architecture">6. アーキテクチャ設計レビュー記録票 — フロントエンドアーキテクチャ</a></li>
+        <li><a href="#review-04-backend-architecture">7. アーキテクチャ設計レビュー記録票 — バックエンドアーキテクチャ</a></li>
+        <li><a href="#review-05-database-architecture">8. アーキテクチャ設計レビュー記録票 — データベースアーキテクチャ</a></li>
+        <li><a href="#review-06-infrastructure-architecture">9. アーキテクチャ設計レビュー記録票 — インフラストラクチャアーキテクチャ</a></li>
+        <li><a href="#review-07-auth-architecture">10. アーキテクチャ設計レビュー記録票 — 認証アーキテクチャ</a></li>
+        <li><a href="#review-08-common-infrastructure">11. アーキテクチャ設計レビュー記録票 — 共通基盤</a></li>
+        <li><a href="#review-09-interface-architecture">12. アーキテクチャ設計レビュー記録票 — インターフェースアーキテクチャ</a></li>
+        <li><a href="#review-10-security-architecture">13. アーキテクチャ設計レビュー記録票 — セキュリティアーキテクチャ</a></li>
+        <li><a href="#review-11-monitoring-operations">14. アーキテクチャ設計レビュー記録票 — 監視・運用</a></li>
+        <li><a href="#review-12-development-deploy">15. アーキテクチャ設計レビュー記録票 — 開発・デプロイ</a></li>
+        <li><a href="#review-13-non-functional-requirements">16. アーキテクチャ設計レビュー記録票 — 非機能要件</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="cross-review-consistency">
+<h1>アーキテクチャ設計書 整合性検証レポート</h1>
+<blockquote>検証日: 2026-03-18
+<p>検証担当: シニアテクニカルアーキテクト（AI）</blockquote></p>
+<h2>検証サマリー</h2>
+<table>
+<thead><tr><th>#</th><th>検証観点</th><th>結果</th><th>重大度</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>HikariCP接続数 vs PostgreSQL max_connections</td><td>✅ 解決済み（2026-03-18）</td><td>Critical</td></tr>
+<tr><td>2</td><td>ErrorResponse DTO の定義整合性</td><td>✅ 解決済み（2026-03-18）</td><td>Medium</td></tr>
+<tr><td>3</td><td>認証フローの整合性</td><td>整合</td><td>-</td></tr>
+<tr><td>4</td><td>パスワードリセットトークンのハッシュ方式</td><td>✅ 解決済み（2026-03-18）</td><td>Medium</td></tr>
+<tr><td>5</td><td>スケーリング設定の整合性</td><td>✅ 解決済み（2026-03-18）</td><td>High</td></tr>
+<tr><td>6</td><td>ログ・トレーシング設計の整合性</td><td>✅ 解決済み（2026-03-19）</td><td>Low</td></tr>
+<tr><td>7</td><td>Terraform モジュール構成の整合性</td><td>✅ 解決済み（2026-03-19）</td><td>Low</td></tr>
+<tr><td>8</td><td>BaseEntity / 監査カラムの整合性</td><td>✅ 解決済み（2026-03-18）</td><td>Medium</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>不整合の詳細</h2>
+<h3><del>不整合 #1: HikariCP接続数 — prd環境の理論最大接続数がDB上限を大幅超過</del> <strong>✅ 解決済み（2026-03-18）</strong></h3>
+<ul><li style="margin-left:0px"><strong>解決内容</strong>: HikariCP poolSizeをdev=5/prd=10に全設計書（02-system-architecture.md、05-database-architecture.md、13-non-functional-requirements.md）で統一。prd環境: 5レプリカ x 10 = 50接続でDB上限内に収まる構成に修正済み。</li><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/02-system-architecture.md</code> セクション4.5, 4.6</li><li style="margin-left:20px"><code>docs/architecture-design/05-database-architecture.md</code> セクション5.1, 5.3</li><li style="margin-left:20px"><code>docs/architecture-design/06-infrastructure-architecture.md</code> セクション2.2</li><li style="margin-left:20px"><code>docs/architecture-design/13-non-functional-requirements.md</code> セクション1.3.1, 3.1</li></ul>
+<hr>
+<h3><del>不整合 #2: ErrorResponse DTO のフィールド定義が設計書間で異なる</del> <strong>✅ 解決済み（2026-03-18）</strong></h3>
+<ul><li style="margin-left:0px"><strong>解決内容</strong>: ErrorResponse DTOを08-common-infrastructureの5フィールド構成（code/message/timestamp/traceId/details）に全設計書で統一。04-backend-architecture.mdの3フィールド方針を撤回し、5フィールド構成を採用。</li><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/04-backend-architecture.md</code> セクション4.2</li><li style="margin-left:20px"><code>docs/architecture-design/08-common-infrastructure.md</code> セクション1.1</li><li style="margin-left:20px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code></li></ul>
+<hr>
+<h3>不整合 #3: 認証フローの整合性 — 整合</h3>
+<ul><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/03-frontend-architecture.md</code>（Axios interceptor, refresh queue）</li><li style="margin-left:20px"><code>docs/architecture-design/07-auth-architecture.md</code>（JWT, Cookie, refresh token）</li><li style="margin-left:20px"><code>docs/architecture-design/10-security-architecture.md</code>（CORS, CSRF, セキュリティヘッダー）</li><li style="margin-left:0px"><strong>検証結果</strong>: 整合している</li><li style="margin-left:20px">フロントエンド: Axiosレスポンスインターセプターで401検知 → リフレッシュキュー制御 → POST /api/v1/auth/refresh → 成功時にリトライ / 失敗時にログイン画面遷移</li><li style="margin-left:20px">バックエンド: SecurityFilterChainでCSRF無効化（SameSite=Lax）、JwtAuthenticationFilterでCookieからJWT抽出・検証、認証不要エンドポイントの定義が一致</li><li style="margin-left:20px">セキュリティ: SameSite=Lax、httpOnly Cookie、X-Frame-Options: DENY、HSTS設定が3文書間で一貫</li></ul>
+<hr>
+<h3><del>不整合 #4: パスワードリセットトークンのハッシュ方式</del> <strong>✅ 解決済み（2026-03-18）</strong></h3>
+<ul><li style="margin-left:0px"><strong>解決内容</strong>: パスワードリセットトークンのハッシュ方式をSHA-256、有効期限を30分に全設計書で統一。API-01-auth.mdの「BCrypt」「1時間」の記述も修正済み。</li><li style="margin-left:0px"><strong>統一方針</strong>: パスワードリセットトークンはSHA-256（使い捨て・短寿命のため）、リフレッシュトークンはBCrypt（長寿命のため）で使い分ける設計判断を明記。</li><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/07-auth-architecture.md</code>（認証アーキテクチャ）</li><li style="margin-left:20px"><code>docs/architecture-design/10-security-architecture.md</code> セクション5</li><li style="margin-left:20px"><code>docs/data-model/02-master-tables.md</code>（password_reset_tokensテーブル定義）</li><li style="margin-left:20px"><code>docs/functional-design/API-01-auth.md</code>（認証API設計）</li></ul>
+<hr>
+<h3>不整合 #5: <del>スケーリング設定 — Container Apps の CPU/Memory が設計書間で矛盾</del> <strong>解決済み</strong></h3>
+<ul><li style="margin-left:0px"><strong>解決日</strong>: 2026-03-18</li><li style="margin-left:0px"><strong>解決内容</strong>: 02-system-architecture.md のprd CPU/Memoryを 0.5 vCPU / 1.0 Gi に統一（06-infrastructure-architecture.md、13-non-functional-requirements.md と整合）。環境比較表およびコスト見積もりも修正済み。</li><li style="margin-left:0px"><strong>統一方針</strong>: dev/prd共に 0.5 vCPU / 1.0 Gi。スケールアップが必要な場合は 1.0 vCPU / 2.0 Gi へ変更する（13-non-functional-requirements.md セクション3.2の垂直スケーリング方針に従う）</li></ul>
+<hr>
+<h3>不整合 #6: ログ・トレーシング設計 — TraceIdフィルターのクラス名・traceID長の不一致 — ✅ 対応完了（2026-03-19）</h3>
+<ul><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/04-backend-architecture.md</code> セクション9.2</li><li style="margin-left:20px"><code>docs/architecture-design/08-common-infrastructure.md</code> セクション4.1</li><li style="margin-left:20px"><code>docs/architecture-design/11-monitoring-operations.md</code> セクション1.4</li><li style="margin-left:0px"><strong>04-backend-architecture.md の記述</strong>: クラス名 <code>MdcFilter</code>、traceId は <code>UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;).substring(0, 16)</code>（16文字のHex）</li><li style="margin-left:0px"><strong>08-common-infrastructure.md の記述</strong>: クラス名 <code>TraceIdFilter</code>、traceId は <code>UUID.randomUUID().toString().replace(&quot;-&quot;, &quot;&quot;).substring(0, 16)</code>（16文字のHex）。レスポンスヘッダーに <code>X-Trace-Id</code> を付与する設計あり</li><li style="margin-left:0px"><strong>11-monitoring-operations.md の記述</strong>: 「UUID v4を生成」と記載。HTTPヘッダー <code>X-Trace-Id</code> でフロントエンド→バックエンド間を伝播と記載</li><li style="margin-left:0px"><strong>問題</strong>:</li></ul>
+<ol><li><strong>フィルタークラス名の不一致</strong>: 04-backend-architecture.md は <code>MdcFilter</code>、08-common-infrastructure.md は <code>TraceIdFilter</code></li><li><strong>traceIdの長さの記述差異</strong>: 04/08 は16文字Hexだが、11は「UUID v4」と記載（UUID v4のフル形式は36文字ハイフン込み or 32文字Hex）</li><li>08-common-infrastructure.md にはレスポンスヘッダー <code>X-Trace-Id</code> の出力があるが、04-backend-architecture.md には記載がない</li></ol>
+<ul><li style="margin-left:0px"><strong>推奨解決策</strong>:</li><li style="margin-left:20px">クラス名を <code>TraceIdFilter</code>（08-common-infrastructure.md 側）に統一し、04-backend-architecture.md を修正する</li><li style="margin-left:20px">11-monitoring-operations.md の「UUID v4」を「UUID v4ベースの16文字HexID」に修正する</li><li style="margin-left:20px">レスポンスヘッダー <code>X-Trace-Id</code> の出力有無を統一する</li></ul>
+<blockquote><strong>対応完了</strong> (2026-03-19):
+<ul><li style="margin-left:0px">クラス名を <code>TraceIdFilter</code> に統一（04-backend-architecture.md の <code>MdcFilter</code> を修正）</li><li style="margin-left:0px">traceID 仕様を 32文字Hex に統一（04-backend-architecture.md、08-common-infrastructure.md、11-monitoring-operations.md）</li><li style="margin-left:0px">レスポンスヘッダー <code>X-Trace-Id</code> の出力を全設計書で統一</blockquote></li></ul>
+<hr>
+<h3>不整合 #7: Terraform モジュール構成 — identity モジュールの有無 — ✅ 対応完了（2026-03-19）</h3>
+<ul><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/02-system-architecture.md</code> セクション10.1</li><li style="margin-left:20px"><code>docs/architecture-design/06-infrastructure-architecture.md</code> セクション7.1</li><li style="margin-left:20px"><code>docs/architecture-design/12-development-deploy.md</code> セクション3.7</li><li style="margin-left:0px"><strong>02-system-architecture.md の記述</strong>: <code>modules/</code> 配下に <code>identity/</code>（Managed Identity + ロール割当）モジュールが定義されている</li><li style="margin-left:0px"><strong>06-infrastructure-architecture.md の記述</strong>: <code>modules/</code> 配下に <code>identity/</code> モジュールが存在しない。<code>monitoring/</code> 配下に <code>alerts.tf</code> が追加されている</li><li style="margin-left:0px"><strong>12-development-deploy.md の記述</strong>: Terraform ワークフローは <code>infra/environments/{env}</code> ディレクトリで実行。モジュール構成への言及なし</li><li style="margin-left:0px"><strong>問題</strong>:</li></ul>
+<ol><li><strong><code>identity</code> モジュール</strong>: 02-system-architecture.md にのみ存在し、06-infrastructure-architecture.md には含まれていない</li><li><strong><code>monitoring</code> モジュール内部構成</strong>: 06-infrastructure-architecture.md は <code>alerts.tf</code> を含むが、02-system-architecture.md には記載がない</li><li><strong><code>front-door/</code> の命名</strong>: 02-system-architecture.md は <code>front-door/</code>、06-infrastructure-architecture.md も <code>front-door/</code>（一致）</li></ol>
+<ul><li style="margin-left:0px"><strong>推奨解決策</strong>:</li><li style="margin-left:20px">06-infrastructure-architecture.md のモジュール一覧に <code>identity/</code> を追加する（または02-system-architecture.md から削除してManaged Identity設定を <code>container-apps</code> モジュールに統合する）</li><li style="margin-left:20px">モジュール構成のSSOTを06-infrastructure-architecture.md に定め、02-system-architecture.md は参照リンクとする</li></ul>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q4方針決定により、identity モジュールを container-apps モジュールに統合。02-system-architecture.md から独立 identity モジュールを削除し、Managed Identity 設定を container-apps モジュール内に移動。06-infrastructure-architecture.md をモジュール構成の SSOT とする方針を確定。</blockquote>
+<hr>
+<h3><del>不整合 #8: BaseEntity / 監査カラムの整合性 — version カラムの位置づけ</del> <strong>✅ 解決済み（2026-03-18）</strong></h3>
+<ul><li style="margin-left:0px"><strong>解決内容</strong>: data-model/01-overview.mdのマスタテーブル共通カラムパターンに <code>version integer NOT NULL DEFAULT 0</code> を追加。data-model/02-master-tables.mdの8テーブル（products, partners, warehouses等）にもversionカラムを追加済み。</li><li style="margin-left:0px"><strong>関連ファイル</strong>:</li><li style="margin-left:20px"><code>docs/architecture-design/01-overall-architecture.md</code> セクション3.2</li><li style="margin-left:20px"><code>docs/architecture-design/04-backend-architecture.md</code>（JPA Auditing）</li><li style="margin-left:20px"><code>docs/architecture-design/08-common-infrastructure.md</code>（監査証跡設計）</li><li style="margin-left:20px"><code>docs/data-model/01-overview.md</code>（共通カラム定義）</li><li style="margin-left:20px"><code>docs/data-model/02-master-tables.md</code>（マスタテーブル定義）</li></ul>
+<hr>
+<h2>整合が確認された項目</h2>
+<h3>認証フロー（検証観点 #3）</h3>
+<p>フロントエンドのAxiosインターセプター（リフレッシュキュー制御）、バックエンドのJWT検証フロー、セキュリティヘッダー設定（SameSite=Lax、httpOnly、X-Frame-Options: DENY、HSTS）は3文書間で一貫しており、矛盾は検出されなかった。</p>
+<h3>その他の整合確認項目</h3>
+<table>
+<thead><tr><th>項目</th><th>検証結果</th></tr></thead>
+<tbody>
+<tr><td>PostgreSQL バージョン</td><td>全文書で 16 で統一</td></tr>
+<tr><td>PostgreSQL SKU</td><td>全文書で B1ms (1 vCore, 2 GiB) で統一</td></tr>
+<tr><td>Spring Boot バージョン</td><td>全文書で 3.x + Java 21 で統一</td></tr>
+<tr><td>Container Apps min/max replicas</td><td>02-system と 06-infrastructure で一致（dev: 0/3, prd-east: 1/5, prd-west: 0/5）</td></tr>
+<tr><td>例外クラス階層</td><td>01-overall, 04-backend, 08-common-infrastructure（ブループリント・設計書とも）で一致</td></tr>
+<tr><td>Terraform State 管理</td><td>02-system, 06-infrastructure, 12-development-deploy で一致（stwmsterraform / tfstate / {env}/terraform.tfstate）</td></tr>
+<tr><td>スロークエリログ閾値</td><td>05-database は 500ms、13-non-functional は 1000ms で差異あり（ただし異なる文脈：DBパラメータ vs 監視閾値として許容範囲）</td></tr>
+<tr><td>Front Door ヘルスプローブ</td><td>02-system と 06-infrastructure と 11-monitoring で一致（/actuator/health, 30秒間隔, HTTPS）</td></tr>
+<tr><td>ヘルスプローブ設定</td><td><del>02-system と 06-infrastructure で Startup Probe の設定に差異あり（02: 5秒間隔/30回, 06: 10秒間隔/10回）。ただし 11-monitoring-operations.md は 10秒間隔/30回と別の値</del> ✅ 一部対応済み（2026-03-19）: 02-system-architecture.md と 11-monitoring-operations.md を interval:10秒/failure:30回/timeout:5秒に統一。06-infrastructure-architecture.md は別途対応中</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>推奨優先度</h2>
+<table>
+<thead><tr><th>優先度</th><th>不整合 #</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td><del><strong>P1（即時対応）</strong></del></td><td>#1</td><td><del>HikariCP接続数を設計書間で統一し、prd環境でDB上限を超えない構成に修正</del> ✅ 解決済み（2026-03-18）</td></tr>
+<tr><td><del><strong>P1（即時対応）</strong></del></td><td>#5</td><td><del>Container Apps CPU/Memory をprd環境で統一</del> ✅ 解決済み（2026-03-18）</td></tr>
+<tr><td><del><strong>P2（早期対応）</strong></del></td><td>#8</td><td><del>data-model に <code>version</code> カラムを追加（実装開始前に必須）</del> ✅ 解決済み（2026-03-18）</td></tr>
+<tr><td><del><strong>P2（早期対応）</strong></del></td><td>#2</td><td><del>ErrorResponse DTO のフィールド定義を統一</del> ✅ 解決済み（2026-03-18）</td></tr>
+<tr><td><del><strong>P2（早期対応）</strong></del></td><td>#4</td><td><del>07-auth-architecture.md にパスワードリセットトークン設計を追記</del> ✅ 解決済み（2026-03-18）</td></tr>
+<tr><td><del><strong>P3（次回更新時）</strong></del></td><td>#6</td><td><del>TraceIdフィルターのクラス名・traceID仕様を統一</del> ✅ 対応済み（2026-03-19）</td></tr>
+<tr><td><del><strong>P3（次回更新時）</strong></del></td><td>#7</td><td><del>Terraform identity モジュールの扱いを統一</del> ✅ 対応済み（2026-03-19）: Q4により container-apps に統合</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>補足: ヘルスプローブ設定の軽微な不一致 — ✅ 一部対応済み（2026-03-19）</h2>
+<p>Startup Probe の <code>interval_seconds</code> と <code>failure_count_threshold</code> が3文書で微妙に異なる。</p>
+<table>
+<thead><tr><th>パラメータ</th><th>02-system-architecture</th><th>06-infrastructure-architecture</th><th>11-monitoring-operations</th></tr></thead>
+<tbody>
+<tr><td>間隔</td><td><del>5秒</del> → 10秒 ✅</td><td>10秒</td><td><del>10秒</del> → 10秒 ✅</td></tr>
+<tr><td>失敗閾値</td><td><del>30回</del> → 30回 ✅</td><td>10回</td><td><del>30回</del> → 30回 ✅</td></tr>
+<tr><td>最大待機時間</td><td><del>150秒</del> → 300秒 ✅</td><td>100秒</td><td><del>300秒</del> → 300秒 ✅</td></tr>
+<tr><td>timeout</td><td>→ 5秒 ✅</td><td>—</td><td>→ 5秒 ✅</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Startup Probe パラメータを interval:10秒、failure:30回、timeout:5秒 に 02-system-architecture.md と 11-monitoring-operations.md で統一。06-infrastructure-architecture.md は別途対応中。</blockquote>
+<p>Readiness Probe の間隔も微妙に異なる（02: 10秒, 06: 10秒, 11: 15秒）。</p>
+<p><strong>推奨</strong>: 06-infrastructure-architecture.md の Terraform HCL をSSOTとし、他文書を合わせる。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="cross-review-ssot">
+<h1>アーキテクチャ設計書 SSOT準拠チェックレポート</h1>
+<blockquote>検証日: 2026-03-18
+<p>検証担当: ドキュメント品質管理スペシャリスト（AI）<br>対象: <code>docs/architecture-design/01-overall-architecture.md</code> 〜 <code>13-non-functional-requirements.md</code>（全13本）</blockquote></p>
+<hr>
+<h2>検証サマリー</h2>
+<table>
+<thead><tr><th>セクション</th><th>SSOT違反数</th><th>主な違反内容</th></tr></thead>
+<tbody>
+<tr><td>01-overall-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>02-system-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>03-frontend-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>04-backend-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>05-database-architecture</td><td><del>1件</del> 0件</td><td><del>システムパラメータのデフォルト値をINSERT文に直接記載</del> ✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>06-infrastructure-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>07-auth-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>08-common-infrastructure</td><td>0件</td><td>—</td></tr>
+<tr><td>09-interface-architecture</td><td>0件</td><td>—</td></tr>
+<tr><td>10-security-architecture</td><td><del>2件</del> 0件</td><td><del>パスワードポリシー具体値の散文記載、アカウントロック閾値の散文記載</del> ✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>11-monitoring-operations</td><td>0件</td><td>—</td></tr>
+<tr><td>12-development-deploy</td><td>0件</td><td>—</td></tr>
+<tr><td>13-non-functional-requirements</td><td><del>1件</del> 0件</td><td><del>HikariCP接続数の値が他設計書と不整合</del> ✅ 対応済み（2026-03-18）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>合計: 4件のSSSOT違反（全4件対応済み）</strong></p>
+<hr>
+<h2>SSOT違反の詳細</h2>
+<h3>違反 #1 — ✅ 対応完了（2026-03-19）</h3>
+<ul><li style="margin-left:0px"><strong>ファイル</strong>: <code>docs/architecture-design/10-security-architecture.md</code></li><li style="margin-left:0px"><strong>該当箇所</strong>: セクション6「パスワードポリシー実装設計」（行557〜560付近）</li><li style="margin-left:0px"><strong>違反内容</strong>: <code>PasswordPolicyValidator</code>クラスのJavadocコメントに、パスワードポリシーの具体値「8〜128文字、英大文字・英小文字・数字を各1文字以上必須」が散文として記載されている。セクション冒頭に参照リンクはあるが、コメント中の散文説明がポリシー値の複製に該当する。</li><li style="margin-left:0px"><strong>SSOT定義場所</strong>: <code>architecture-blueprint/10-security-architecture.md</code></li><li style="margin-left:0px"><strong>推奨修正</strong>: Javadocコメントを以下のように変更する:</li></ul>
+<p>  <pre><code class="lang-java">  /**
+   * パスワードポリシーバリデーター。
+   * ポリシー定義値は architecture-blueprint/10-security-architecture.md を参照。
+   */
+  </code></pre><br>  なお、コード内の定数 <code>MIN_LENGTH = 8</code> / <code>MAX_LENGTH = 128</code> やバリデーション実装自体は「実装ガイド」として必要なため違反とはしない。</p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Javadoc コメントからパスワードポリシー具体値の散文記載を除去し、「ポリシー定義値は architecture-blueprint/10-security-architecture.md を参照」に変更</blockquote>
+<h3>違反 #2 — ✅ 対応完了（2026-03-19）</h3>
+<ul><li style="margin-left:0px"><strong>ファイル</strong>: <code>docs/architecture-design/10-security-architecture.md</code></li><li style="margin-left:0px"><strong>該当箇所</strong>: セクション7「アカウントロックポリシー実装設計」（行678付近のフローチャート）</li><li style="margin-left:0px"><strong>違反内容</strong>: Mermaidフローチャート内に <code>failed_login_count &gt;= 5?</code> と具体的なロック閾値「5」が散文的に記載されている。セクション冒頭の参照リンクは正しく設置されているが、フローチャート内のテキストがポリシー値の複製に該当する。</li><li style="margin-left:0px"><strong>SSOT定義場所</strong>: <code>architecture-blueprint/10-security-architecture.md</code></li><li style="margin-left:0px"><strong>推奨修正</strong>: フローチャート内の条件を以下のように変更する:</li></ul>
+<p>  <pre><code class="lang-">  H{failed_login_count &gt;= ロック閾値?}
+  </code></pre><br>  もしくは、フローチャート直下に「※ロック閾値はarchitecture-blueprint/10-security-architecture.mdで定義」と注記を追加する。コード内の <code>MAX_FAILED_ATTEMPTS = 5</code> 定数は実装ガイドとして許容する。</p>
+<blockquote><strong>対応完了</strong> (2026-03-19): フローチャート内の <code>failed_login_count &gt;= 5?</code> を <code>failed_login_count &gt;= ロック閾値?</code> に変更し、フローチャート直下に参照注記を追加</blockquote>
+<h3>違反 #3 — ✅ 対応完了（2026-03-19）</h3>
+<ul><li style="margin-left:0px"><strong>ファイル</strong>: <code>docs/architecture-design/05-database-architecture.md</code></li><li style="margin-left:0px"><strong>該当箇所</strong>: セクション6.6「初期データ投入」（行675〜686付近）</li><li style="margin-left:0px"><strong>違反内容</strong>: <code>V100__insert_initial_system_parameters.sql</code> のINSERT文内に、システムパラメータのデフォルト値が直接記載されている:</li><li style="margin-left:20px"><code>LOCATION_CAPACITY_CASE</code> = <code>1</code></li><li style="margin-left:20px"><code>LOCATION_CAPACITY_BALL</code> = <code>6</code></li><li style="margin-left:20px"><code>LOCATION_CAPACITY_PIECE</code> = <code>100</code></li><li style="margin-left:20px"><code>LOGIN_FAILURE_LOCK_COUNT</code> = <code>5</code></li><li style="margin-left:20px"><code>SESSION_TIMEOUT_MINUTES</code> = <code>60</code></li><li style="margin-left:20px"><code>PASSWORD_RESET_EXPIRY_MINUTES</code> = <code>30</code></li></ul>
+<p>  これはマイグレーションSQLの例示として記載されているが、SSOTルールではシステムパラメータの一覧・デフォルト値は <code>data-model/02-master-tables.md</code> に定義するとされている。</p>
+<ul><li style="margin-left:0px"><strong>SSOT定義場所</strong>: <code>data-model/02-master-tables.md</code>（system_parametersの初期データ）</li><li style="margin-left:0px"><strong>推奨修正</strong>: INSERT文の値部分を省略形にし、参照リンクを追加する:</li></ul>
+<p>  <pre><code class="lang-sql">  -- V100__insert_initial_system_parameters.sql
+  -- システムパラメータ初期データ
+  -- ※ 初期値の定義は data-model/02-master-tables.md を参照
+
+  INSERT INTO system_parameters (param_key, param_value, default_value, ...)
+  VALUES
+    ('LOCATION_CAPACITY_CASE', ..., ...),
+    -- ... 以下省略（data-model/02-master-tables.md の定義に従う）
+  </code></pre></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): INSERT 文内のシステムパラメータ具体値を省略形に変更し、data-model/02-master-tables.md への参照リンクを追加</blockquote>
+<h3><del>違反 #4</del> <strong>✅ 対応済み（2026-03-18）</strong></h3>
+<ul><li style="margin-left:0px"><strong>ファイル</strong>: <code>docs/architecture-design/13-non-functional-requirements.md</code></li><li style="margin-left:0px"><strong>該当箇所</strong>: セクション1.3.1「バックエンドAPI最適化」（行53付近）</li><li style="margin-left:0px"><strong>対応内容</strong>: HikariCP poolSizeをdev=5/prd=10に全設計書（02-system-architecture.md、05-database-architecture.md、13-non-functional-requirements.md）で統一。値の不整合を解消済み。</li></ul>
+<hr>
+<h2>良好な参照パターンの例</h2>
+<p>以下は、SSOTルールを正しく守っている好例である。</p>
+<h3>好例 #1: 01-overall-architecture.md — 技術選定の参照</h3>
+<blockquote>技術選定の根拠は <a href="../architecture-blueprint/01-overall-architecture.md" target="_blank">architecture-blueprint/01-overall-architecture.md</a> を参照。</blockquote>
+<p>技術スタック一覧は記載するが、選定根拠はブループリントへの参照リンクのみとしており、方針の複製を避けている。</p>
+<h3>好例 #2: 05-database-architecture.md — テーブル定義の参照</h3>
+<blockquote>テーブル定義の詳細は <a href="../data-model/02-master-tables.md" target="_blank">データモデル定義書 — マスタ系テーブル</a> を参照。</blockquote>
+<p>インデックス設計は本設計書の責務として記載しつつ、テーブル定義・カラム定義はdata-modelへの参照に留めている。</p>
+<h3>好例 #3: 10-security-architecture.md — セキュリティヘッダー定義の参照</h3>
+<blockquote>ヘッダーの定義（SSOT）は <a href="../architecture-blueprint/10-security-architecture.md" target="_blank">architecture-blueprint/10-security-architecture.md</a> を参照</blockquote>
+<p>セキュリティヘッダーの「値と目的」はブループリントで定義し、本設計書ではSpring Security実装コードのみを記載するパターン。ただし、ヘッダー一覧テーブルで値を再掲している箇所があり、これはヘッダー設定の実装コードとセットで読む必要があるため、実装ガイドとしてボーダーラインだが許容範囲と判定した。</p>
+<h3>好例 #4: 07-auth-architecture.md — 権限マトリクスの参照</h3>
+<blockquote>権限マトリクスの詳細は <a href="../architecture-blueprint/07-auth-architecture.md" target="_blank">architecture-blueprint/07-auth-architecture.md</a> を参照</blockquote>
+<p>権限マトリクスをまるごと複製せず、ブループリントへの参照リンクのみとし、本設計書では <code>@PreAuthorize</code> の実装コード例のみを記載している。</p>
+<h3>好例 #5: 11-monitoring-operations.md — ログ設計の参照</h3>
+<blockquote>ログフォーマット・PIIマスキングの詳細は <a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照。</blockquote>
+<p>ログの方針定義（フォーマット・マスキングルール等）はブループリントに委ね、本設計書ではAzure Monitor/Log Analyticsの具体的な設定・KQLクエリに集中している。</p>
+<h3>好例 #6: 13-non-functional-requirements.md — セキュリティ要件の参照テーブル</h3>
+<p>セクション6.1「セキュリティ要件サマリー」で、各セキュリティ要件を一覧表にまとめつつ、「参照先」カラムでブループリントの該当セクションへのリンクを明示している。要件の詳細値はリンク先に委ねる良い構成。</p>
+<hr>
+<h2>総合評価</h2>
+<p>全13本のアーキテクチャ設計書のうち、SSOT違反は<strong>4件</strong>と少数に留まっている。全体として以下の傾向が確認できた。</p>
+<h3>良好な点</h3>
+<ol><li><strong>全設計書の冒頭に参照ドキュメントが明示されている</strong> — ブループリントとの関係が明確で、読者が方針の出典を辿りやすい。</li><li><strong>テーブル定義・カラム定義の複製が適切に回避されている</strong> — data-modelへの参照リンクが一貫して使用されている。</li><li><strong>ビジネスルールの複製が見られない</strong> — functional-requirementsの業務ルールが転記されているケースは検出されなかった。</li><li><strong>API仕様の複製がない</strong> — functional-design/API-*.mdの内容は適切に参照に留められている。</li></ol>
+<h3>改善すべき点</h3>
+<ol><li><strong>実装コード例中のコメントにポリシー値を記載するパターン</strong> — コード定数（<code>MIN_LENGTH = 8</code>等）は実装ガイドとして必要だが、Javadocやフローチャートに散文で値を記載するのは避けるべき。</li><li><strong>SQL例示に具体的なパラメータ値を含めるパターン</strong> — マイグレーションSQLのサンプルであっても、SSOTで管理される値は省略形＋参照リンクが望ましい。</li><li><strong>複数設計書間の値の不整合</strong> — HikariCPの接続数のように、同じ設計パラメータが複数の設計書に記載され、値が食い違うケースが発生している。SSOTの定義場所を1箇所に限定し、他は参照に留めることで防止可能。</li></ol>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="cross-review-summary">
+<h1>アーキテクチャ設計書 横断レビューサマリー</h1>
+<blockquote>レビュー日: 2026-03-18
+<p>レビュー担当: アーキテクチャ横断レビューアー（AI）<br>対象: 全13本のアーキテクチャ設計レビュー記録票</blockquote></p>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>重大度</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>Critical</td><td>0件</td></tr>
+<tr><td>Major</td><td>4件</td></tr>
+<tr><td>Minor</td><td>14件</td></tr>
+<tr><td>Info（改善提案）</td><td>12件</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>30件</strong></td></tr>
+<p></tbody><br></table></p>
+<p>全13本のレビュー記録票から「要対応」「要アクション」「要確認」「改善提案」に分類された指摘事項を横断的に集約した。Critical（致命的なセキュリティ欠陥・データ整合性破壊）に該当する指摘はゼロであった。Major 4件は実装フェーズ開始前に方針確定が必要な項目であり、早期対応を推奨する。Minor 14件は実装フェーズで順次対応可能、Info 12件は将来改善として記録する。</p>
+<h3>横断的に検出された重複パターン</h3>
+<p>以下の問題が複数レビューで独立して検出されており、影響範囲が広い:</p>
+<ol><li><strong>エラーコード/エラーレスポンス形式の不統一</strong> (No.1) — 3セクションにまたがる</li><li><strong>HikariCP接続数とPostgreSQL上限の不整合</strong> (No.2) — 3セクションにまたがる</li><li><strong>パスワードリセットトークン関連の矛盾</strong> (No.3, No.4) — 3セクションにまたがる</li><li><strong>システムパラメータ動的取得の未設計</strong> (No.9) — 3セクションにまたがる</li></ol>
+<hr>
+<h2>要対応事項一覧</h2>
+<table>
+<thead><tr><th>No</th><th>重大度</th><th>発見元</th><th>関連セクション</th><th>指摘内容</th><th>推奨対応</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Major</td><td>review-04 No.4, review-08 No.1</td><td>04-backend, 08-common, _standard-api.md</td><td><strong>エラーコード体系の不統一</strong>: ブループリントは <code>WMS-E-MST-001</code> 形式、API設計書は <code>PRODUCT_NOT_FOUND</code> フラット形式、ErrorResponseのフィールド名も <code>code</code> vs <code>errorCode</code> で不一致</td><td>✅ <strong>対応済み（2026-03-18）</strong>: 08-common-infrastructureの5フィールド構成（code/message/timestamp/traceId/details）に全設計書で統一</td></tr>
+<tr><td>2</td><td>Major</td><td>review-02 No.22, review-05 No.4, review-13 No.5</td><td>02-system, 05-database, 13-non-functional</td><td><strong>HikariCP接続数がPostgreSQL上限を超過するリスク</strong>: prd環境でmax 5レプリカ x poolSize 20 = 100接続だが、PostgreSQL B1msの上限は50。review-05ではpoolSize=10に設計済みだが、review-02/13では20のまま</td><td>✅ <strong>対応済み（2026-03-18）</strong>: dev=5/prd=10に全設計書で統一。5レプリカ x 10 = 50接続でDB上限内に収まる構成に修正</td></tr>
+<tr><td>3</td><td>Major</td><td>review-07 No.10</td><td>07-auth, API-01-auth, 00-authentication(FR)</td><td><strong>パスワードリセットトークン有効期限の矛盾</strong>: 機能要件定義書とブループリントは「30分」、API設計書(API-AUTH-005)は「1時間」と記載</td><td>✅ <strong>対応済み（2026-03-18）</strong>: SHA-256、有効期限30分に統一。API-01-auth.mdも修正済み</td></tr>
+<tr><td>4</td><td>Major</td><td>review-07 No.9</td><td>07-auth, 10-security, data-model/02</td><td><strong>パスワードリセットトークンのハッシュ方式の矛盾</strong>: データモデル定義書は「SHA-256等」、API設計書は「BCryptでハッシュ化」、セキュリティ設計書は「SHA-256」と記載</td><td>✅ <strong>対応済み（2026-03-18）</strong>: SHA-256に統一。データモデル定義書・API設計書・セキュリティ設計書すべてでSHA-256、有効期限30分に統一</td></tr>
+<tr><td>5</td><td>Minor</td><td>review-08 No.10</td><td>08-common, data-model/02</td><td><strong>マスタテーブルのversionカラム未定義</strong>: 共通基盤でBaseMasterEntityにversionカラム（楽観的ロック）を追加しているが、データモデル定義書にversionカラムの定義がない</td><td>✅ <strong>対応済み（2026-03-18）</strong>: data-model/01-overviewの共通パターンと02-master-tablesの8テーブルにversionカラムを追加</td></tr>
+<tr><td>6</td><td>Minor</td><td>review-03 No.10</td><td>03-frontend</td><td><strong>外部連携I/Fモジュールの欠落</strong>: フロントエンドのディレクトリ構成にinterfaceモジュール（Composable/View/Router）が含まれていない。機能要件ではI/F管理画面が定義されている</td><td>✅ <strong>対応済み（2026-03-19）</strong>: 03-frontend-architecture.md に外部連携I/Fモジュールディレクトリを追加</td></tr>
+<tr><td>7</td><td>Minor</td><td>review-03 No.15</td><td>03-frontend</td><td><strong>Element Plusロケール設定の未記載</strong>: main.tsにElement Plus日本語ロケール設定が未記述。日付ピッカー等のUI文言が英語表示になる</td><td>✅ <strong>対応済み（2026-03-19）</strong>: 03-frontend-architecture.md に Element Plus ロケール設定を追記</td></tr>
+<tr><td>8</td><td>Minor</td><td>review-02 No.10</td><td>02-system, 06-infrastructure(BP)</td><td><strong>Terraformモジュール追加のブループリント未反映</strong>: 設計書で<code>modules/monitoring</code>と<code>modules/identity</code>を新規追加したが、ブループリント側に未記載</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q4方針決定によりidentityモジュールをcontainer-appsに統合</td></tr>
+<tr><td>9</td><td>Minor</td><td>review-04 No.14, review-08 No.13, review-10 No.16</td><td>04-backend, 08-common, 10-security</td><td><strong>システムパラメータの動的取得方針が未設計</strong>: ブループリントでは「キャッシュなし都度DB取得」と定義されているが、設計書のコード例ではハードコード定数を使用。LOGIN_FAILURE_LOCK_COUNT、SESSION_TIMEOUT_MINUTES等が対象</td><td>共通基盤設計書にシステムパラメータ取得のユーティリティクラス設計を追加する。実装時にはsystem_parametersテーブルからの動的取得を使用する</td></tr>
+<tr><td>10</td><td>Minor</td><td>review-08 No.14</td><td>08-common, 06-batch(FR)</td><td><strong>バッチ処理時のSecurityContext設定方針が未定義</strong>: バッチ実行時は認証なし（SYSTEM_USER_ID=0）で動作するが、実行者ユーザーIDが利用可能なため、SecurityContextに設定すべき</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q5方針決定によりバッチSecurityContext=実行者IDを08-common セクション8.6に追加</td></tr>
+<tr><td>11</td><td>Minor</td><td>review-04 No.5</td><td>04-backend, 04a-allocation(FR)</td><td><strong>在庫引当の悲観ロック順序保証の詳細設計が必要</strong>: ロック取得順序（product_id昇順→location_id昇順）とFEFO/FIFOアルゴリズムの組み合わせでロック順序が崩れる可能性がある</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q10方針決定によりロック順序=inventory_id昇順に統一</td></tr>
+<tr><td>12</td><td>Minor</td><td>review-09 No.2</td><td>09-interface, data-model</td><td><strong>if_executionsテーブルのデータモデル未追加</strong>: インターフェース設計書でif_executionsテーブルを定義したが、data-model側に正式なテーブル定義が追加されていない</td><td>data-model/03-transaction-tables.mdまたは新規ファイルにif_executionsテーブル定義を追加する</td></tr>
+<tr><td>13</td><td>Minor</td><td>review-06 No.12</td><td>06-infrastructure, 06-infrastructure(BP)</td><td><strong>ACR Geo-replicationとSKUの矛盾</strong>: ブループリントではprd環境でBasic SKU + Geo-replicationと記載あるが、Geo-replicationにはPremium SKUが必須</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q1方針決定によりACR Basic SKU維持、Geo-replication削除</td></tr>
+<tr><td>14</td><td>Minor</td><td>review-09 No.15</td><td>09-interface, 02-inbound(FR)</td><td><strong>期限切れ商品の入荷防止ルールが機能要件に未記載</strong>: 設計書で期限管理対象商品のexpiry_dateが営業日以前の場合にエラーとするルールを追加したが、機能要件定義書に未記載</td><td>functional-requirements/02-inbound-management.mdのビジネスルールに期限日バリデーションを追記する</td></tr>
+<tr><td>15</td><td>Minor</td><td>review-08 No.7, No.8</td><td>08-common</td><td><strong>棚卸・ばらし指示ステータスEnumの未定義</strong>: StocktakeStatus、UnpackingInstructionStatusのEnum定義が共通基盤に未追加</td><td>✅ <strong>対応済み（2026-03-19）</strong>: StocktakeStatus Enum と UnpackInstructionStatus Enum を08-common-infrastructure.mdに追加</td></tr>
+<tr><td>16</td><td>Minor</td><td>review-07 No.7, No.8</td><td>07-auth</td><td><strong>SecurityConfigコード例の不備</strong>: AccessDeniedHandlerの設定が未反映。ログアウト時のrefresh_token Cookie非送信（Path制限による）の設計判断が未記載</td><td>✅ <strong>対応済み（2026-03-19）</strong>: SecurityConfigにAccessDeniedHandler追加、ログアウト時refresh_token Cookie非送信の設計判断明記</td></tr>
+<tr><td>17</td><td>Minor</td><td>review-04 No.9</td><td>04-backend</td><td><strong>build.gradleにTestcontainers依存が未追加</strong>: テスト戦略でTestcontainersを前提としているが、dependenciesに含まれていない</td><td>✅ <strong>対応済み（2026-03-19）</strong>: build.gradleにTestcontainers依存を追加</td></tr>
+<tr><td>18</td><td>Minor</td><td>review-11 No.6</td><td>11-monitoring, 06-infrastructure(BP)</td><td><strong>監視リソースのDestroy方針が未定義</strong>: Log Analytics Workspace/Application InsightsがTerraform Destroy対象だと過去ログが消失する。常設リソースに含めるべきか未決定</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q2方針決定により環境同居destroy方針を確定</td></tr>
+<tr><td>19</td><td>Info</td><td>review-05 No.15</td><td>05-database</td><td>コールドスタート時のDB接続確立遅延への言及を追加すると良い</td><td>次回設計書改訂時に追記を検討</td></tr>
+<tr><td>20</td><td>Info</td><td>review-06 No.6</td><td>06-infrastructure, 02-system(BP)</td><td>コスト概算値がブループリント(dev ~$9, prd ~$80)と設計書(dev ~$6.30, prd ~$60.50)で差異あり</td><td>ブループリント側の概算値を設計書の詳細見積もりに合わせて更新</td></tr>
+<tr><td>21</td><td>Info</td><td>review-06 No.13</td><td>06-infrastructure</td><td>prd環境のmax_connectionsを100に引き上げ検討（East+West同時接続時）</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q3方針決定によりmax_connections=50維持、注記追加</td></tr>
+<tr><td>22</td><td>Info</td><td>review-12 No.8</td><td>12-development</td><td>VITE_API_BASE_URLのTerraform output→GitHub Variables手動更新の運用手順を追記すべき</td><td>運用手順書作成時に対応</td></tr>
+<tr><td>23</td><td>Info</td><td>review-12 No.9</td><td>12-development</td><td>GitHub Actions Azure LoginをOIDCフェデレーションに移行するとシークレットローテーション不要</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q7方針決定によりOIDC見送り、注記追加</td></tr>
+<tr><td>24</td><td>Info</td><td>review-12 No.10</td><td>12-development</td><td>prd環境のGitHub Environment Protection Rules（手動承認）の有効化</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q8方針決定によりprd Protection Rules有効化をセクション7.4に追加</td></tr>
+<tr><td>25</td><td>Info</td><td>review-12 No.15</td><td>12-development</td><td>prd環境Flywayマイグレーション失敗時のロールバック手順を運用手順書に記載すべき</td><td>運用手順書作成時に対応</td></tr>
+<tr><td>26</td><td>Info</td><td>review-13 No.1</td><td>13-non-functional</td><td>API応答時間目標の測定ポイント（バックエンド処理時間 vs ユーザー体感時間）の違いを明記すべき</td><td>設計書に測定ポイント説明を追記（対応済みとの記載あり）</td></tr>
+<tr><td>27</td><td>Info</td><td>review-13 No.6</td><td>13-non-functional</td><td>Container Appsスケールアウト条件（同時リクエスト20以上/レプリカ）の根拠が不明</td><td>✅ <strong>対応済み（2026-03-19）</strong>: Q6方針決定によりスケールアウト閾値=暫定値として明記</td></tr>
+<tr><td>28</td><td>Info</td><td>review-13 No.7</td><td>13-non-functional</td><td>テストカバレッジ80%の除外対象（自動生成コード、設定クラス等）を明確化すべき</td><td>実装時にJaCoCo除外設定を定義</td></tr>
+<tr><td>29</td><td>Info</td><td>review-13 No.9</td><td>13-non-functional</td><td>DB障害時RTOの「数時間」が曖昧。具体的な手順と所要時間目安を運用手順書に記載すべき</td><td>運用手順書作成時に詳細化</td></tr>
+<tr><td>30</td><td>Info</td><td>review-13 No.13</td><td>13-non-functional</td><td>インデックス再構築・ACRイメージ削除の定期タスク自動化を検討すべき</td><td>運用安定後に自動化検討</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>対応優先度マトリクス</h2>
+<h3>実装フェーズ開始前に対応必須（Major）</h3>
+<table>
+<thead><tr><th>No</th><th>内容</th><th>対応者</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>エラーコード体系の統一方針確定</td><td>アーキテクト</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>2</td><td>HikariCP maximumPoolSizeの統一（全設計書で10に統一）</td><td>アーキテクト</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>3</td><td>パスワードリセットトークン有効期限の統一（30分に修正）</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>4</td><td>パスワードリセットトークンハッシュ方式の統一</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<p></tbody><br></table></p>
+<h3>設計書修正として対応（Minor - ドキュメント修正）</h3>
+<table>
+<thead><tr><th>No</th><th>内容</th><th>対応者</th><th>状況</th></tr></thead>
+<tbody>
+<tr><td>5</td><td>データモデルにversionカラム追加</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>6</td><td>フロントエンドにinterfaceモジュール追加</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>7</td><td>Element Plusロケール設定追記</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>8</td><td>ブループリントにTerraformモジュール追記</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-19）: Q4によりidentity→container-apps統合</td></tr>
+<tr><td>12</td><td>データモデルにif_executionsテーブル追加</td><td>ドキュメント担当</td></tr>
+<tr><td>13</td><td>ブループリントのACR SKU記述修正</td><td>ドキュメント担当</td><td>✅ 対応済み（2026-03-19）: Q1によりBasic SKU維持・Geo-rep削除</td></tr>
+<tr><td>14</td><td>機能要件に期限日バリデーション追記</td><td>ドキュメント担当</td></tr>
+<p></tbody><br></table></p>
+<h3>実装フェーズで対応（Minor - 実装時）</h3>
+<table>
+<thead><tr><th>No</th><th>内容</th><th>対応タイミング</th></tr></thead>
+<tbody>
+<tr><td>9</td><td>システムパラメータ動的取得の実装</td><td>共通基盤実装時</td></tr>
+<tr><td>10</td><td><del>バッチ処理SecurityContext設定</del></td><td><del>バッチ処理実装時</del> ✅ 対応済み（2026-03-19）: Q5により08-common セクション8.6に追加</td></tr>
+<tr><td>11</td><td><del>在庫引当ロック順序の詳細設計</del></td><td><del>引当モジュール実装時</del> ✅ 対応済み（2026-03-19）: Q10によりinventory_id昇順に統一</td></tr>
+<tr><td>15</td><td><del>棚卸・ばらし指示ステータスEnum追加</del></td><td><del>各モジュール実装時</del> ✅ 対応済み（2026-03-19）: StocktakeStatus・UnpackInstructionStatus追加</td></tr>
+<tr><td>16</td><td><del>SecurityConfigコード例の補完</del></td><td><del>認証実装時</del> ✅ 対応済み（2026-03-19）: AccessDeniedHandler追加・refresh_token非送信明記</td></tr>
+<tr><td>17</td><td><del>Testcontainers依存追加</del></td><td><del>プロジェクト初期セットアップ時</del> ✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>18</td><td><del>監視リソースの常設方針確定</del></td><td><del>インフラ構築時</del> ✅ 対応済み（2026-03-19）: Q2により環境同居destroy方針確定</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>セクション間の整合性マトリクス</h2>
+<p>以下のセクション間で矛盾・不整合が検出された:</p>
+<table>
+<thead><tr><th>セクションA</th><th>セクションB</th><th>不整合内容</th><th>対応No</th></tr></thead>
+<tbody>
+<tr><td>08-common (ErrorResponse)</td><td>_standard-api.md (エラーレスポンス)</td><td><del>フィールド名 <code>code</code> vs <code>errorCode</code></del> ✅ 解決済み（2026-03-18）</td><td>1</td></tr>
+<tr><td>02-system (poolSize=20)</td><td>05-database (poolSize=10)</td><td><del>prd環境のHikariCP maximumPoolSize</del> ✅ 解決済み（2026-03-18）</td><td>2</td></tr>
+<tr><td>API-01-auth (1時間)</td><td>00-authentication FR (30分)</td><td><del>パスワードリセットトークン有効期限</del> ✅ 解決済み（2026-03-18）</td><td>3</td></tr>
+<tr><td>data-model/02 (SHA-256)</td><td>API-01-auth (BCrypt)</td><td><del>パスワードリセットトークンハッシュ方式</del> ✅ 解決済み（2026-03-18）</td><td>4</td></tr>
+<tr><td>08-common (version使用)</td><td>data-model/02 (version未定義)</td><td><del>マスタテーブルのversionカラム</del> ✅ 解決済み（2026-03-18）</td><td>5</td></tr>
+<tr><td>06-infra BP (ACR Basic+Geo-rep)</td><td>Azure仕様 (Geo-repはPremium必須)</td><td><del>ACR SKUとGeo-replication</del> ✅ 解決済み（2026-03-19）: Q1によりBasic維持・Geo-rep削除</td><td>13</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-01-overall-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — 全体アーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/01-overall-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: エンタープライズ全体アーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（モジュラーモノリス方針、モジュール構成）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/02-system-architecture.md</code>（Azure構成、通信フロー）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（3層アーキテクチャ、DTO規約）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/05-database-architecture.md</code>（ロック方式、監査カラム）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラ構成）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可方式）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（エラーハンドリング、ロギング）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/09-interface-architecture.md</code>（外部連携方式）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/12-development-deploy.md</code>（開発・デプロイ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/13-non-functional-requirements.md</code>（非機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/05-reports.md</code>（レポート機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携機能要件）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>設計書修正済</strong>（レビュー時に自動修正）</td><td>1件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>0件</td></tr>
+<tr><td>指摘事項なし</td><td>19件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>20件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>モジュラーモノリス方針との整合性</td><td>blueprint/01</td><td>設計書のモジュール構成（10モジュール）がブループリント定義と完全一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>2</td><td>レイヤー構成の整合性</td><td>blueprint/04</td><td>3層アーキテクチャ（Controller/Service/Repository）がブループリント方針に準拠</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>3</td><td>モジュール間依存ルールの整合性</td><td>blueprint/04</td><td>Service直接呼び出し許可、Repository/Controller直接参照禁止がブループリントと一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>4</td><td>DTO規約の整合性</td><td>blueprint/04</td><td>命名規則（Create/Update/Response）、手動マッピング方式がブループリントと一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>5</td><td>ロック方式の整合性</td><td>blueprint/05</td><td>在庫引当に悲観的ロック、マスタに楽観的ロックの使い分けがブループリントと一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>6</td><td>監査カラムの整合性</td><td>blueprint/05, data-model/01</td><td>BaseEntity の <code>created_at/by</code>, <code>updated_at/by</code> がデータモデル定義の共通カラムと一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>7</td><td>エラーハンドリングの整合性</td><td>blueprint/08</td><td>例外クラス階層（WmsException系5クラス）がブループリント定義と完全一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>8</td><td>認証フローの整合性</td><td>blueprint/07, blueprint/10</td><td>JWT + httpOnly Cookie、Spring Security + @PreAuthorizeがブループリント方針と一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>9</td><td>営業日制御の整合性</td><td>blueprint/01, blueprint/08, FR/06</td><td>キャッシュなし都度取得、冪等性確保がブループリントおよび機能要件と一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>10</td><td>入荷管理機能要件の実現可能性</td><td>FR/02</td><td>ステータス遷移（入荷予定→入荷確認済→検品中→一部入庫→入庫完了）がEntity内遷移マップで正しく定義されている</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>11</td><td>在庫管理機能要件の実現可能性</td><td>FR/03</td><td>5軸在庫管理（ロケーション×商品×荷姿×ロット×期限日）がRepository悲観的ロッククエリに正しく反映。NULL対応もIS NULL条件で実装</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>12</td><td>在庫引当機能要件の実現可能性</td><td>FR/04a</td><td>AllocationServiceの設計がFIFO/FEFO引当、ばらし指示自動生成、部分引当の要件を満たす構造</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>13</td><td>出荷管理機能要件の実現可能性</td><td>FR/04</td><td>OutboundServiceのモジュール間連携（allocation, inventory）が出荷フロー（引当→ピッキング→検品→出荷確定）を実現可能</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>14</td><td>バッチ処理機能要件の実現可能性</td><td>FR/06</td><td>DailyCloseServiceのステップ分割設計が、途中失敗→未完了ステップから再開の要件を満たす</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>15</td><td>外部連携機能要件の実現可能性</td><td>FR/07, blueprint/09</td><td>interfacingモジュールのCsvValidation/CsvImportServiceがステートレス2ステップ方式に対応</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>16</td><td>倉庫コンテキストの設計整合性</td><td>FR/01</td><td>Axiosインターセプターによる倉庫ID自動付与が機能要件の倉庫切替仕様と整合。適用除外APIリストも妥当</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>17</td><td>他セクションとの関係マップの網羅性</td><td>全ブループリント</td><td>13セクション（02〜13）との責務分担が明確に定義されている。各セクションで「何を定義するか」が一意に決定可能</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>18</td><td>ADRの網羅性</td><td>全ブループリント</td><td>主要な設計判断7件をADR形式で記録。ブループリントで明示された判断（モジュラーモノリス、Service直接呼び出し、楽観的ロック通知方式、営業日キャッシュなし、DTO手動マッピング、悲観的ロック、バッチTX分割）を網羅</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>19</td><td>SSOT違反の有無</td><td>CLAUDE.md</td><td>ブループリントの内容をそのままコピーしていない。方針はブループリントへの参照リンクで示し、本書は実装方法に専念している。テーブル定義はdata-modelへの参照に留め、複製していない</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>20</td><td>パッケージ構成の一貫性</td><td>設計書内部</td><td><code>shared/util/WarehouseContextHolder.java</code> がパッケージ一覧にあるが、セクション8.2で「暗黙的なスレッドローカル管理は行わず、明示的にパラメータとして渡す」と設計しており矛盾。パッケージ一覧から <code>WarehouseContextHolder.java</code> を削除して修正</td><td>設計書修正済</td><td>修正完了</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-02-system-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — システムアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/02-system-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: システムアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/02-system-architecture.md</code>（システム構成ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（アプリケーション共通基盤）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証・ログイン）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当）</li><li style="margin-left:0px"><code>docs/functional-requirements/05-reports.md</code>（レポート）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携I/F）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（技術スタック確定事項）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td><strong>設計書修正済</strong>（レビュー時に自動修正）</td><td>0件</td></tr>
+<tr><td><strong>要対応</strong>（他ドキュメントへの変更が必要）</td><td>2件</td></tr>
+<tr><td>指摘事項なし</td><td>23件</td></tr>
+<tr><td><strong>総チェック項目</strong></td><td>25件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Azureリソース一覧がブループリントの構成サマリーと整合しているか</td><td>architecture-blueprint/02-system-architecture.md</td><td>全リソース（Container Apps, Blob Storage, PostgreSQL, ACR, Communication Services等）が網羅されている</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>2</td><td>サブスクリプション構成がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>wms-terraform / wms-dev / wms-prd の3サブスクリプション構成が一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>3</td><td>VNet CIDR がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>dev: 10.0.0.0/16, prd-east: 10.1.0.0/16, prd-west: 10.2.0.0/16 で一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>4</td><td>Container Apps のスケーリング設定がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>dev: min:0/max:3, prd-east: min:1/max:5, prd-west: min:0/max:5 で一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>5</td><td>PostgreSQL SKUがブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>dev: B1ms 単一構成, prd: B1ms + Geo-redundant backup で一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>6</td><td>Storage冗長性がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>dev: LRS, prd: GRS で一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>7</td><td>常設リソース（Destroyしない）がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>stwmsterraform + acrwms の2つで一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>8</td><td>フェイルオーバー仕様がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>RPO/RTO、フェイルオーバー方式（Active-Passive）、各コンポーネントの復旧方式が一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>9</td><td>DNS/エンドポイントがブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>dev: Blob直接/CA直接, prd: Front Door経由 で一致</td><td>指摘事項なし</td><td>-</td></tr>
+<tr><td>10</td><td>Terraformディレクトリ構成がブループリントと一致しているか</td><td>architecture-blueprint/06-infrastructure-architecture.md</td><td>基本構成一致。設計書で monitoring / identity モジュールを追加（ブループリントに未記載のモジュール）</td><td>要対応</td><td>ブループリントに monitoring / identity モジュールを追記することを推奨</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q4方針決定により identity モジュールを container-apps モジュールに統合。02-system-architecture.md から独立 identity モジュールを削除し、Managed Identity 設定を container-apps モジュール内に移動</blockquote>
+<table>
+<thead><tr><th>11</th><th>通信フローがブループリントと一致しているか</th><th>architecture-blueprint/02-system-architecture.md</th><th>ユーザー→Blob, ユーザー→CA, CA→PostgreSQL, CA→Blob(I/F), 外部→Blob, CA→Communication Services の全通信フローが網羅</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>12</th><th>CORS設定がブループリントと一致しているか</th><th>architecture-blueprint/02-system-architecture.md</th><th>許可オリジンがBlob Static Website URL（環境別）で一致</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>13</th><th>認証方式（JWT + httpOnly Cookie）がブループリントと一致しているか</th><th>architecture-blueprint/07-auth-architecture.md</th><th>JWT + httpOnly Cookie + SameSite=Lax で一致</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>14</th><th>メール送信基盤がブループリントと一致しているか</th><th>architecture-blueprint/02-system-architecture.md, functional-requirements/00-authentication.md</th><th>Azure Communication Services で一致</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>15</th><th>ロギング設計がブループリントと一致しているか</th><th>architecture-blueprint/08-common-infrastructure.md</th><th>JSON構造化ログ→stdout→Log Analytics→Azure Monitor/Application Insights の構成が一致。SSOTルールに従い詳細はブループリントを参照</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>16</th><th>コスト概算がブループリントと一致しているか</th><th>architecture-blueprint/02-system-architecture.md, 06-infrastructure-architecture.md</th><th>dev ~$9, prd ~$80, 常時維持 ~$5 で一致</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>17</th><th>モジュラーモノリス構成が反映されているか</th><th>architecture-blueprint/01-overall-architecture.md</th><th>非同期通信（メッセージキュー）不要の設計判断を明記。モジュール間通信はJavaメソッド呼び出しで完結</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>18</th><th>SSOTルールに違反する情報重複がないか</th><th>CLAUDE.md（SSOTルール）</th><th>パスワードポリシー値・ステータス遷移等の業務ルールの複製なし。技術方針はブループリントへの参照リンクで処理</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>19</th><th>データモデル設計との整合性があるか</th><th>data-model/01-overview.md</th><th>PostgreSQL設計パラメータ（UTF-8、JST固定、Flyway、B1ms）がデータモデル設計方針と一致</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>20</th><th>バッチ処理のインフラ要件が考慮されているか</th><th>functional-requirements/06-batch-processing.md</th><th>バッチはAPIエンドポイント（POST /api/v1/batch/{name}）として実行。専用バッチインフラ不要の設計をブループリントで確定済み</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>21</th><th>外部連携I/Fのインフラ要件が考慮されているか</th><th>functional-requirements/07-interface.md</th><th>Blob Storage（I/F用）のpending/processedコンテナ構成、Managed Identityによるアクセス制御を設計</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>22</th><th>HikariCP接続数とPostgreSQL接続数上限の整合性</th><th>設計書内部整合</th><th>prd環境でmax5レプリカ x poolSize20 = 100が理論上DB上限50を超える。注意書きとして記載済みだが、maximumPoolSizeを10に下げることを検討推奨</th><th>対応済み</th><th>✅ <strong>対応済み（2026-03-18）</strong>: dev=5/prd=10に全設計書で統一。5レプリカ x 10 = 50接続でDB上限内に収まる構成に修正</th></tr></thead>
+<thead><tr><th>23</th><th>Container Apps サブネットサイズ要件が明記されているか</th><th>Azure公式ドキュメント</th><th>/23以上の要件を明記済み</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<thead><tr><th>24</th><th>コールドスタート対策が具体的か</th><th>設計書内部</th><th>Lazy Initialization、JVMオプション、Startup Probe等の具体策を記載済み</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Startup Probe パラメータを interval:10秒、failure:30回、timeout:5秒 に 02-system-architecture.md で統一（cross-review-consistency で検出された不整合の解消）</blockquote>
+<table>
+<thead><tr><th>25</th><th>Terraform Output→アプリケーション注入の設計が具体的か</th><th>設計書内部</th><th>VITE_API_BASE_URL、CORS、DB接続文字列、ACS接続文字列の注入経路を明記</th><th>指摘事項なし</th><th>-</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>要対応事項の詳細</h2>
+<h3>No.10: Terraformモジュール追加の反映 — ✅ 一部対応済み（2026-03-19）</h3>
+<p>設計書で <code>modules/monitoring</code>（Log Analytics + App Insights + アラート）と <code>modules/identity</code>（Managed Identity + ロール割当）を新規モジュールとして追加した。ブループリント（<code>architecture-blueprint/06-infrastructure-architecture.md</code>）のTerraformディレクトリ構成にこの2モジュールが未記載のため、ブループリント側への追記を推奨する。</p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q4方針決定により identity モジュールを container-apps モジュールに統合。独立 identity モジュールは不要となった。Q1方針決定により ACR Basic SKU 維持・Geo-replication 削除を 02-system-architecture.md に反映。</blockquote>
+<p><strong>対応案:</strong></p>
+<pre><code class="lang-">infra/modules/
+    ...
+    ├── monitoring/            ← 追加
+    └── identity/              ← 追加（→ Q4により container-apps に統合済み）</code></pre>
+<h3>No.22: <del>HikariCP maximumPoolSize のprd環境設定</del> ✅ 対応済み（2026-03-18）</h3>
+<p>dev=5/prd=10に全設計書で統一済み。prd環境: 5レプリカ x 10 = 50接続でPostgreSQL B1msのmax_connections=50以内に収まる構成に修正。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-03-frontend-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — フロントエンドアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/03-frontend-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: フロントエンドアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/05-reports.md</code>（レポート機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携機能要件）</li><li style="margin-left:0px"><code>docs/functional-design/SCR-01-auth.md</code>（画面設計 認証）</li><li style="margin-left:0px"><code>docs/functional-design/SCR-02-master-facility.md</code>（画面設計 マスタ管理）</li><li style="margin-left:0px"><code>docs/functional-design/SCR-07-inbound.md</code>（画面設計 入荷管理）</li><li style="margin-left:0px"><code>docs/functional-design/_standard-screen.md</code>（画面設計 標準テンプレート）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクト指針）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>フロントエンドアーキテクチャ設計書は、ブループリント（03-frontend-architecture.md）の方針を忠実に詳細化し、実装フェーズで必要となる具体的な設計規約・コード例を提供する内容で作成した。</p>
+<p><strong>主な設計内容:</strong></p>
+<ul><li style="margin-left:0px">ディレクトリ構成（モジュール分割方針、全ファイルのツリー表示）</li><li style="margin-left:0px">Vue 3 Composition API 設計規約（Composable内部の構成順序、命名規則）</li><li style="margin-left:0px">Pinia ストア設計（authStore / systemStore の完全な実装コード）</li><li style="margin-left:0px">vue-i18n 多言語対応設計（遅延読み込み、メッセージキー命名規則）</li><li style="margin-left:0px">Element Plus 利用規約（テーマカスタマイズ、コンポーネントマッピング）</li><li style="margin-left:0px">ルーティング設計（認証ガード、ロールチェック、パスワード変更強制）</li><li style="margin-left:0px">API通信層設計（401リフレッシュキュー制御、セッションタイムアウト警告）</li><li style="margin-left:0px">共通コンポーネント設計（WmsTable, WmsSearchForm等 11コンポーネント）</li><li style="margin-left:0px">ビルド・デプロイ設計（Vite設定、Azure Blob Storageデプロイ）</li></ul>
+<p><strong>全体評価:</strong> ブループリントとの整合性は高く、機能要件・画面設計の仕様を網羅的にカバーしている。以下のレビューで検出した指摘事項に対応することで、実装フェーズへの移行に十分な品質となる。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性: Composable設計</td><td><code>03-frontend-architecture.md</code>（BP）</td><td>ブループリントの「1画面1ファイル、画面間共通Composableを作らない」方針を踏襲。Composable一覧が全画面ID（AUTH-001〜SYS-001）と1対1対応しており整合性あり</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>2</td><td>ブループリントとの整合性: Piniaストア</td><td><code>03-frontend-architecture.md</code>（BP）</td><td>authStore / systemStore の2ストア構成を踏襲。<code>passwordChangeRequired</code> フラグを authStore に追加しているが、これは認証要件（AUTH-002）で必要な項目であり妥当</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>3</td><td>ブループリントとの整合性: API通信</td><td><code>03-frontend-architecture.md</code>（BP）</td><td>401リフレッシュフローのキュー制御を具体的に実装。ブループリントのシーケンス図と一致</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>4</td><td>認証フローの網羅性</td><td><code>07-auth-architecture.md</code>, <code>00-authentication.md</code></td><td>ナビゲーションガードにパスワード変更強制（<code>requiresPasswordChange</code>）を実装。AUTH-002の「変更完了まで他操作ブロック」要件を充足</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>5</td><td>セッションタイムアウト</td><td><code>00-authentication.md</code></td><td>55分警告 + 60分強制ログアウトの二重チェックを実装。機能要件の仕様と一致</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>6</td><td>倉庫切替の動作</td><td><code>01-master-management.md</code></td><td>倉庫切替時のwatch検知・再検索パターンを記述。倉庫マスタ管理画面が影響を受けない旨も明記。機能要件と整合</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>7</td><td>SSOTルール準拠</td><td><code>CLAUDE.md</code></td><td>エラーコード体系・パスワードポリシー値・テーブル定義等の具体値は複製せず、参照リンクで示す方針を遵守</td><td>情報</td><td>確認済み</td></tr>
+<tr><td>8</td><td>i18n遅延読み込みの実装詳細</td><td>—</td><td><code>beforeEnter</code> で言語リソースを読み込む方式を記述しているが、言語切替時に既読み込み済みモジュールの新言語リソースを再読み込みするロジックが未記述</td><td>軽微</td><td>未対応（実装フェーズで対応）</td></tr>
+<tr><td>9</td><td>views/ ディレクトリの記載場所</td><td><code>03-frontend-architecture.md</code>（BP）</td><td>ブループリントのディレクトリ構成には <code>views/</code> が含まれているが、設計書本文のメインツリーでは <code>views/</code> を省略し付録Aに分離した。ファイル数が多いための可読性配慮だが、最初のツリーに <code>views/</code> のコメントを追加するとわかりやすい</td><td>軽微</td><td>未対応（読者の参照性向上のため推奨）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 03-frontend-architecture.md のメインツリーに <code>views/</code> の省略コメントを追加</blockquote>
+<table>
+<thead><tr><th>10</th><th>外部連携I/F画面のComposable/View</th><th><code>07-interface.md</code></th><th>外部連携I/F（IFX-001/002）のファイルアップロード画面に対応するComposable・Viewファイルがディレクトリ構成に含まれていない。機能要件ではI/F管理画面が定義されている</th><th>要対応</th><th>未対応（interface/ モジュールのComposable・Viewを追加すべき）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 03-frontend-architecture.md に外部連携I/Fモジュールディレクトリ（<code>composables/interface/</code>、<code>views/interface/</code>、<code>router/routes/interface.ts</code>）を追加</blockquote>
+<table>
+<thead><tr><th>11</th><th>レポート画面のComposable</th><th><code>05-reports.md</code>, <code>_standard-screen.md</code></th><th>レポート出力はダイアログ方式（ReportExportDialog）で実装するため個別のComposableは不要と判断しているが、RPT-001〜RPT-017の出力条件パラメータ管理について明示的に記述があるとよい</th><th>軽微</th><th>未対応（実装フェーズで詳細化）</th></tr></thead>
+<thead><tr><th>12</th><th>テスト設計の詳細</th><th>—</th><th><code>tests/</code> ディレクトリ構成は記述しているが、テスト方針（単体テスト対象範囲、E2Eテストシナリオ方針、カバレッジ目標等）は未記述。テスト仕様書（別ドキュメント）で対応予定と推察される</th><th>情報</th><th>対象外（テスト仕様書で定義）</th></tr></thead>
+<thead><tr><th>13</th><th>エラーハンドリングのAPI型安全性</th><th><code>08-common-infrastructure.md</code></th><th>Composable内のエラーハンドリングで <code>e as { response?: ... }</code> と型アサーションを使用しているが、AxiosError型を直接使用する方がタイプセーフ</th><th>軽微</th><th>未対応（実装時にAxiosError型ガードに変更推奨）</th></tr></thead>
+<thead><tr><th>14</th><th>営業日表示のフォーマット</th><th><code>01-master-management.md</code>, <code>_standard-screen.md</code></th><th>ヘッダーの営業日表示を「YYYY/MM/DD」形式とする仕様は標準テンプレートと一致。systemStoreでは「YYYY-MM-DD」（ISO形式）で保持し、表示時にフォーマット変換する方針は妥当</th><th>情報</th><th>確認済み</th></tr></thead>
+<thead><tr><th>15</th><th>Element Plus日本語ロケール</th><th>—</th><th>Element Plus 自体の日本語ロケール（el-date-picker等のUI文言）の設定が未記述。<code>app.use(ElementPlus, { locale: jaLocale })</code> の設定が必要</th><th>要対応</th><th>未対応（main.tsにElement Plusロケール設定を追加すべき）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 03-frontend-architecture.md に Element Plus 日本語ロケール設定（<code>import ja from 'element-plus/es/locale/lang/ja'</code>）を追記</blockquote>
+<hr>
+<h2>指摘事項サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>情報（確認済み・問題なし）</td><td>8件</td></tr>
+<tr><td>軽微（実装フェーズで対応可）</td><td>4件</td></tr>
+<tr><td>要対応（設計書修正推奨）</td><td>2件</td></tr>
+<p></tbody><br></table></p>
+<h3>要対応事項の詳細</h3>
+<p><strong>No.10: 外部連携I/Fモジュールの追加</strong> ✅ 対応完了（2026-03-19）</p>
+<ul><li style="margin-left:0px"><code>composables/interface/</code> ディレクトリに <code>useInterfaceFileList.ts</code>, <code>useInterfaceImport.ts</code> を追加する</li><li style="margin-left:0px"><code>views/interface/</code> に <code>InterfaceFileList.vue</code>, <code>InterfaceImport.vue</code> を追加する</li><li style="margin-left:0px"><code>router/routes/interface.ts</code> にルート定義を追加する</li><li style="margin-left:0px">優先度: 中（画面数は少ないが、モジュールとして存在することの認識が重要）</li></ul>
+<p><strong>No.15: Element Plus ロケール設定</strong> ✅ 対応完了（2026-03-19）</p>
+<ul><li style="margin-left:0px"><code>main.ts</code> に Element Plus の日本語ロケール設定を追加する</li><li style="margin-left:0px"><code>import ja from 'element-plus/es/locale/lang/ja'</code> を使用</li><li style="margin-left:0px">言語切替時に <code>app.config.globalProperties.$ELEMENT</code> のロケールも切り替える</li><li style="margin-left:0px">優先度: 高（日付ピッカー等のUI文言が英語になる問題を防止）</li></ul>
+<hr>
+<h2>結論</h2>
+<p>本設計書はブループリントの方針を適切に詳細化しており、実装フェーズの着手に十分な品質を有する。要対応2件（外部連携I/Fモジュール追加、Element Plusロケール設定）を設計書に反映した上で、実装フェーズに移行することを推奨する。軽微指摘4件は実装フェーズでの対応で問題ない。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-04-backend-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — バックエンドアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/04-backend-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: バックエンドアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/05-database-architecture.md</code>（データベースアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理機能要件）</li><li style="margin-left:0px"><code>docs/functional-design/API-01-auth.md</code>（認証API設計）</li><li style="margin-left:0px"><code>docs/functional-design/API-06-inbound.md</code>（入荷管理API設計）</li><li style="margin-left:0px"><code>docs/functional-design/_standard-api.md</code>（API標準テンプレート）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>バックエンドアーキテクチャ設計書は、ブループリントの方針に準拠し、Spring Boot 3.x + Java 21 の技術スタックに基づく実装設計を網羅的に記述している。プロジェクト構造、レイヤードアーキテクチャ、DTO設計、例外ハンドリング、バリデーション、トランザクション管理、排他制御、ページネーション、ロギング、テスト戦略の全10セクションを対象とした。</p>
+<p>全体的にブループリントとの整合性は高く、Java 21の機能（Record、Sealed Classes、Pattern Matching、Text Blocks）の活用方針も適切に定義されている。コード例が豊富に含まれており、実装者にとって具体的な指針となる品質を確保している。</p>
+<p>以下のレビューでは、ブループリントとの整合性、機能要件との整合性、API設計書との整合性、内部整合性の4観点でチェックを実施した。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリント整合性</td><td>04-backend-architecture.md（BP）</td><td>パッケージ構成の <code>shared</code> 配下に <code>entity/</code> パッケージ（BaseEntity、AuditorAwareImpl）を追加している。ブループリントには未記載だが、設計として妥当な拡張であり問題なし</td><td>情報</td><td>対応不要</td></tr>
+<tr><td>2</td><td>ブループリント整合性</td><td>08-common-infrastructure.md（BP）</td><td>ブループリントのエラーレスポンスには <code>code</code>/<code>message</code>/<code>timestamp</code>/<code>traceId</code> のフィールドがあるが、設計書では <code>errorCode</code>/<code>message</code>/<code>details</code> としている。API設計書（_standard-api.md）側のフォーマットをSSOTとした設計判断を設計書内に明記済み。妥当</td><td>情報</td><td>対応不要</td></tr>
+<tr><td>3</td><td>ブループリント整合性</td><td>04-backend-architecture.md（BP）</td><td>ブループリントの DTO 命名で <code>{Resource}ListItem</code> パターンが記載されているが、設計書では <code>{Resource}Response</code>（単体と共用）のみ定義。一覧専用DTOが必要な場面では <code>ListItem</code> パターンも使用可能である旨を追記が望ましい</td><td>軽微</td><td>未対応（実装時に判断）</td></tr>
+<tr><td>4</td><td>API設計書整合性</td><td>_standard-api.md</td><td>API設計書のエラーコードは <code>PRODUCT_NOT_FOUND</code> 等のフラット命名だが、ブループリントは <code>WMS-E-MST-001</code> 形式。設計書では後者を採用している。API設計書側のエラーコードとの対応表が未定義であるため、実装フェーズで統一方針の確定が必要</td><td>対応済み</td><td>✅ <strong>対応済み（2026-03-18）</strong>: ErrorResponse DTOを08-common-infrastructureの5フィールド構成（code/message/timestamp/traceId/details）に統一</td></tr>
+<tr><td>5</td><td>機能要件整合性</td><td>04a-allocation.md</td><td>在庫引当の悲観ロックについて、ロック取得順序（product_id昇順 -> location_id昇順）を定義しているが、引当アルゴリズム（FEFO/FIFO）との組み合わせでロック順序が崩れる可能性がある。引当実装時にロック順序保証の詳細設計が必要</td><td>要確認</td><td>未対応（詳細設計で対応）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q10方針決定により、ロック順序を inventory_id 昇順に統一する方針を 04-backend-architecture.md に反映</blockquote>
+<table>
+<thead><tr><th>6</th><th>機能要件整合性</th><th>06-batch-processing.md</th><th>バッチ処理の各ステップを独立トランザクションとする設計は記載されているが、途中失敗時の「完了済みステップをスキップして再開」する仕組みの詳細（ステップ完了フラグの管理方法）は実装時に詳細設計が必要</th><th>情報</th><th>未対応（詳細設計で対応）</th></tr></thead>
+<thead><tr><th>7</th><th>内部整合性</th><th>設計書内</th><th><code>SortValidator</code> で許可フィールドをハードコードしている設計だが、Entity のフィールド追加時にメンテナンス漏れのリスクがある。アノテーションベースの宣言的アプローチも選択肢として検討可能</th><th>軽微</th><th>未対応（実装時に判断）</th></tr></thead>
+<thead><tr><th>8</th><th>セキュリティ整合性</th><th>10-security-architecture.md</th><th>CORS設定で <code>allowCredentials: true</code> を設定する方針が SecurityConfig 骨格に明示されていない。<code>CorsConfig</code> で別途設定する前提だが、設定クラスの責務分担を明確にすべき</th><th>軽微</th><th>未対応（実装時に対応）</th></tr></thead>
+<thead><tr><th>9</th><th>テスト戦略</th><th>設計書内</th><th>Testcontainers を使用する前提で記載されているが、build.gradle の dependencies に <code>testcontainers</code> が含まれていない。依存関係への追加が必要</th><th>軽微</th><th>未対応（実装時に追加）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 04-backend-architecture.md の build.gradle に Testcontainers 依存を追加</blockquote>
+<table>
+<thead><tr><th>10</th><th>ブループリント整合性</th><th>08-common-infrastructure.md（BP）</th><th>ブループリントで定義されているタイムゾーン「JST（Asia/Tokyo）固定」がapplication.ymlとJackson設定で適切に反映されている。整合性OK</th><th>情報</th><th>対応不要</th></tr></thead>
+<thead><tr><th>11</th><th>データモデル整合性</th><th>data-model/01-overview.md</th><th>Entity の BaseEntity で <code>OffsetDateTime</code> を使用しているが、データモデルでは <code>timestamptz</code> を使用。PostgreSQL の <code>timestamptz</code> と Java の <code>OffsetDateTime</code> のマッピングは Hibernate 6.x で標準サポートされており、整合性OK</th><th>情報</th><th>対応不要</th></tr></thead>
+<thead><tr><th>12</th><th>ブループリント整合性</th><th>05-database-architecture.md（BP）</th><th>PK採番方針（BIGSERIAL）が Entity の <code>@GeneratedValue(strategy = GenerationType.IDENTITY)</code> と整合している</th><th>情報</th><th>対応不要</th></tr></thead>
+<thead><tr><th>13</th><th>Lombok使用</th><th>設計書内</th><th>build.gradle に Lombok を依存追加し、Entity で <code>@Getter</code>/<code>@RequiredArgsConstructor</code> を使用している。DTO は Record で代替するため Lombok 不要。Entity のボイラープレート削減のみに限定するのは妥当</th><th>情報</th><th>対応不要</th></tr></thead>
+<thead><tr><th>14</th><th>機能要件整合性</th><th>01a-system-parameters.md</th><th>システムパラメータの「キャッシュせず都度DBから取得」方針が設計書に未記載。ブループリント（08-common-infrastructure.md）には営業日の都度取得が記載されており、同様の方針がシステムパラメータにも適用される。実装時に注意</th><th>情報</th><th>未対応（実装時に対応）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>観点</th><th>評価</th><th>コメント</th></tr></thead>
+<tbody>
+<tr><td><strong>ブループリントとの整合性</strong></td><td>A（良好）</td><td>主要な設計方針（3層アーキテクチャ、DTO規約、エラーハンドリング、ロック方式等）がブループリントと整合している。エラーレスポンス形式の差異はAPI設計書をSSOTとする判断を明記しており妥当</td></tr>
+<tr><td><strong>機能要件の網羅性</strong></td><td>A（良好）</td><td>認証・マスタ管理・入荷・在庫・出荷・引当・バッチの各機能要件に対応する設計パターンが示されている。引当の悲観ロック、バッチの段階的トランザクション等の重要設計も記載済み</td></tr>
+<tr><td><strong>実装可能性</strong></td><td>A（良好）</td><td>コード例が豊富で、Spring Boot 3.x + Java 21 の具体的な実装パターンを示している。実装者がすぐに着手可能な品質</td></tr>
+<tr><td><strong>保守性</strong></td><td>A（良好）</td><td>パッケージ構成、命名規約、テスト戦略が明確に定義されており、長期的な保守性を担保する設計</td></tr>
+<p></tbody><br></table></p>
+<h3>要アクション項目</h3>
+<ol><li><del><strong>No.4</strong>: エラーコード体系の統一方針を実装フェーズ開始前に確定する（ブループリント形式 vs API設計書形式）</del> ✅ 対応済み（2026-03-18）</li><li><del><strong>No.5</strong>: 在庫引当の悲観ロック順序保証の詳細設計を引当モジュール実装時に策定する</del> ✅ 対応済み（2026-03-19）: Q10方針決定によりロック順序=inventory_id昇順に統一</li><li><del><strong>No.9</strong>: build.gradle に Testcontainers 依存を追加する</del> ✅ 対応済み（2026-03-19）: build.gradleにTestcontainers依存を追加</li></ol>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-05-database-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — データベースアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/05-database-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: データベースアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/05-database-architecture.md</code>（データベースアーキテクチャ・ブループリント）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要・設計方針）</li><li style="margin-left:0px"><code>docs/data-model/02-master-tables.md</code>（マスタ系テーブル定義）</li><li style="margin-left:0px"><code>docs/data-model/03-transaction-tables.md</code>（トランザクション系テーブル定義）</li><li style="margin-left:0px"><code>docs/data-model/04-batch-tables.md</code>（バッチ・集計・バックアップ系テーブル定義）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証・ログイン）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当）</li><li style="margin-left:0px"><code>docs/functional-requirements/05-reports.md</code>（レポート）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携I/F）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクト指針）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>本設計書はWMSプロジェクトのデータベース物理設計・運用設計を網羅的に記述している。Azure Database for PostgreSQL Flexible Server（B1ms）のリソース制約を踏まえた実践的なパラメータ設計、全テーブルのインデックス戦略、HikariCPコネクションプール設計、Flywayマイグレーション設計、バックアップ・リストア設計、パフォーマンスチューニング方針を含む。SSOTルールに準拠し、テーブル定義の複製を避けてデータモデル定義書への参照リンクを使用している。</p>
+<p>全体として設計品質は良好であり、ブループリントの方針と矛盾する内容は検出されなかった。以下に詳細なチェック結果を記載する。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td>architecture-blueprint/05-database-architecture.md</td><td>削除方式（論理削除/物理削除+履歴）、ロック方式（楽観的/悲観的）、監査カラム、PK採番（BIGSERIAL）、テーブル分類 — 全てブループリントの方針に準拠している</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>2</td><td>SSOTルール準拠</td><td>CLAUDE.md</td><td>テーブル定義・カラム定義はデータモデル定義書への参照リンクで示し、本設計書には複製していない。パスワードポリシーもセキュリティアーキテクチャへの参照で済ませている</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>3</td><td>PostgreSQL バージョンと NULLS NOT DISTINCT</td><td>data-model/01-overview.md</td><td>在庫テーブルの5軸一意制約で <code>NULLS NOT DISTINCT</code>（PostgreSQL 15以降）を使用。設計書ではPG16を指定しており整合性あり</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>4</td><td>B1ms リソース制約の考慮</td><td>—</td><td><code>max_connections=50</code>、<code>shared_buffers=512MB</code>（RAM 2GiBの25%）、<code>work_mem=4MB</code> はB1msに対して適切。HikariCPの <code>maximum-pool-size=10</code> × 最大3レプリカ = 30接続で余裕あり</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>5</td><td>インデックス設計の網羅性</td><td>data-model/02-master-tables.md, 03-transaction-tables.md, 04-batch-tables.md</td><td>全33テーブルに対してインデックスを定義済み。データモデル定義書で言及されている制約・インデックスを全て含んでいる</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>6</td><td>在庫引当の悲観的ロック</td><td>architecture-blueprint/05-database-architecture.md, functional-requirements/04a-allocation.md</td><td><code>inventories</code> テーブルの <code>SELECT FOR UPDATE</code> による悲観的ロックをトランザクション設計で明記。デッドロック防止策（ID昇順ロック）も記載</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>7</td><td>楽観的ロックの整合性</td><td>architecture-blueprint/05-database-architecture.md</td><td><code>version</code> カラムによる楽観的ロックの対象テーブルとトランザクション境界が整合している。マスタ更新は楽観的ロック、在庫操作は悲観的ロックの使い分けが明確</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>8</td><td>パーティショニング判断</td><td>—</td><td>初期段階ではパーティショニング不適用、データ量見積もり（年間約80MB/トランザクション系）を根拠として妥当。導入基準（1,000万行超）も明記</td><td>適合</td><td>問題なし</td></tr>
+<tr><td>9</td><td>Flyway マイグレーション構成</td><td>architecture-blueprint/04-backend-architecture.md</td><td>バージョン範囲（V001〜V099: スキーマ、V100〜V199: 初期データ、V200〜: 変更）の分類は運用しやすい設計。ファイル構成も依存関係順（users→products→...→backup）に沿っている</td><td>適合</td><td>問題なし</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SSOT違反対応として、V100__insert_initial_system_parameters.sql の INSERT 文内のシステムパラメータ具体値を省略形に変更し、data-model/02-master-tables.md への参照リンクを追加（cross-review-ssot 違反#3 対応）</blockquote>
+<table>
+<thead><tr><th>10</th><th>バックアップ・アーカイブ設計</th><th>data-model/04-batch-tables.md, functional-requirements/06-batch-processing.md</th><th>Azure自動バックアップ（7日間PITR）と業務データアーカイブ（日替処理のバックアップテーブル）の二層構造。データモデル定義書のバックアップ条件（完了済み+2か月超）と整合</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>11</th><th>データ量見積もりの妥当性</th><th>—</th><th>年間約80MB（トランザクション系）+ 80MB（バックアップ系）+ 20MB（集計系）= 約180MB/年。B1msの32GiB初期ストレージで100年以上運用可能な計算。見積もりは保守的で妥当</th><th>情報</th><th>—</th></tr></thead>
+<thead><tr><th>12</th><th>DB認証設計のユーザー分離</th><th>—</th><th><code>wms_admin</code>（管理者）、<code>wms_migration</code>（DDL+DML）、<code>wms_app</code>（DMLのみ）の3ユーザー構成は最小権限の原則に沿っており適切。アプリユーザーにDDL権限を与えていない</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>13</th><th>スロークエリ検知</th><th>—</th><th><code>log_min_duration_statement=500ms</code> の設定と <code>pg_stat_statements</code> の有効化を記載。B1msの性能制約下でのクエリ監視体制として妥当</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>14</th><th>ENUM型不使用の方針</th><th>—</th><th>PostgreSQL ENUM型を使用せず <code>varchar + CHECK制約</code> で管理する方針。Flywayとの相性、値追加の容易さ、Java enum との二重管理回避の観点から適切な判断</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>15</th><th>Container Apps (min replicas=0) との整合</th><th>architecture-blueprint/01-overall-architecture.md</th><th>スケールイン/アウト時のコネクション管理を <code>max-lifetime</code> による自動リフレッシュで対応する旨を記載。コールドスタート時のDB接続確立遅延への言及があるとより良い</th><th>改善提案</th><th>未対応（軽微）</th></tr></thead>
+<thead><tr><th>16</th><th>外部キー制約のバックアップテーブル除外</th><th>data-model/04-batch-tables.md</th><th>バックアップテーブルは外部キー制約なしの方針を明記。データモデル定義書のバックアップ設計方針と整合している</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>17</th><th>日替処理のトランザクション設計</th><th>functional-requirements/06-batch-processing.md</th><th>ステップごとに独立トランザクションで実行する設計。機能要件の「途中失敗時は完了済みステップをスキップして再開」のルールと整合する</th><th>適合</th><th>問題なし</th></tr></thead>
+<thead><tr><th>18</th><th>open-in-view: false 設定</th><th>—</th><th>JPA の <code>open-in-view: false</code> を設定し、LazyInitializationException を明示的に検出する方針。N+1問題の早期発見に有効</th><th>適合</th><th>問題なし</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>評価項目</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>ブループリントとの整合性</td><td>合格</td></tr>
+<tr><td>SSOTルール準拠</td><td>合格</td></tr>
+<tr><td>データモデル定義書との整合性</td><td>合格</td></tr>
+<tr><td>機能要件との整合性</td><td>合格</td></tr>
+<tr><td>Azure 固有設計の具体性</td><td>合格</td></tr>
+<tr><td>実装可能性</td><td>合格</td></tr>
+<p></tbody><br></table></p>
+<p><strong>総合判定: 合格（承認）</strong></p>
+<p>改善提案1件（No.15: コールドスタート時のDB接続遅延への言及追加）は軽微であり、設計書の品質を損なうものではない。必要に応じて次回改訂時に追記を検討する。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-06-infrastructure-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — インフラストラクチャアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/06-infrastructure-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: クラウドインフラストラクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/02-system-architecture.md</code>（システム構成）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/11-monitoring-operations.md</code>（監視・運用）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/12-development-deploy.md</code>（開発・デプロイ）</li><li style="margin-left:0px"><code>docs/functional-requirements/</code>（機能要件定義書一式）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクト指示書）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>本設計書はブループリント（06-infrastructure-architecture.md）で定めた方針を忠実に詳細化し、Terraform HCLコードレベルまで落とし込んだ設計書である。全10セクション + 付録4件で構成され、Azure Container Apps / PostgreSQL / Blob Storage / VNet / Front Door の各リソースについて具体的なパラメータ値とTerraformコードを記載した。</p>
+<p><strong>総合評価: 合格（軽微な改善提案あり）</strong></p>
+<p>全体として、ブループリントとの整合性が取れており、SSOTルールに従って方針の複製を避け参照リンクで示す方式を採用している。Terraform HCLは実装可能なレベルで記述されている。</p>
+<hr>
+<h2>レビューチェック結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td>06-infrastructure-architecture.md</td><td>全パラメータ（スケーリング設定、SKU、VNet CIDR、フェイルオーバー方式）がブループリントと一致</td><td>確認OK</td><td>-</td></tr>
+<tr><td>2</td><td>SSOTルール遵守</td><td>CLAUDE.md</td><td>方針はブループリントへの参照リンクで示し、本書は実装詳細のみを記述。SSOTルール準拠</td><td>確認OK</td><td>-</td></tr>
+<tr><td>3</td><td>命名規則の一貫性</td><td>-</td><td>全リソースの命名規則を1.3節に定義。命名パターンが全セクションで一貫している</td><td>確認OK</td><td>-</td></tr>
+<tr><td>4</td><td>Terraformコードの妥当性</td><td>12-development-deploy.md</td><td>HCLコードはazurerm provider v4.x準拠で記述。required_version >= 1.5.0 を指定</td><td>確認OK</td><td>-</td></tr>
+<tr><td>5</td><td>ネットワーク分離</td><td>10-security-architecture.md</td><td>VNet統合 + サブネット委任 + NSG + Private DNS Zone でDBをプライベートに保護。セキュリティ方針と整合</td><td>確認OK</td><td>-</td></tr>
+<tr><td>6</td><td>コスト見積もりの妥当性</td><td>02-system-architecture.md</td><td>dev ~$6.30/月、prd ~$60.50/月。ブループリントの概算（dev ~$9, prd ~$80）と差異あり。ブループリントの値はFront Door Standardの価格変動等により概算値として許容範囲</td><td>注意</td><td>許容</td></tr>
+<tr><td>7</td><td>Container Apps スケーリング</td><td>06-infrastructure-architecture.md</td><td>concurrent_requests=10 のHTTPスケールルールを設定。WMSの同時リクエスト規模を考慮すると妥当な初期値</td><td>確認OK</td><td>-</td></tr>
+<tr><td>8</td><td>コールドスタート対策</td><td>-</td><td>dev環境(min:0)向けにStartupプローブ閾値10、JVMオプション、lazy-initializationの3段階対策を記載</td><td>確認OK</td><td>-</td></tr>
+<tr><td>9</td><td>DR設計</td><td>06-infrastructure-architecture.md</td><td>Active-Passive方式、RPO/RTO、手動DB復旧手順をブループリントと整合して詳細化。フローチャートも追加</td><td>確認OK</td><td>-</td></tr>
+<tr><td>10</td><td>VNet Peering設計</td><td>06-infrastructure-architecture.md</td><td>prd環境のEast↔West Peering設定を記載。Japan WestからJapan East DBへのクロスリージョン接続を実現</td><td>確認OK</td><td>-</td></tr>
+<tr><td>11</td><td>Secret管理</td><td>12-development-deploy.md</td><td>DB接続パスワード、JWT秘密鍵等はContainer Apps Secret + GitHub Actions Secretsで管理。環境変数一覧に明記</td><td>確認OK</td><td>-</td></tr>
+<tr><td>12</td><td>ACR Geo-replication</td><td>06-infrastructure-architecture.md</td><td>ブループリントでは prd: Basic SKU + Geo-replication と記載あるがGeo-repにはPremium必須。設計書ではコスト優先でBasicとした。ブループリント側の修正検討が必要</td><td>軽微</td><td>要確認</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q1方針決定により ACR Basic SKU を維持し Geo-replication を削除。06-infrastructure-architecture.md および blueprint/06-infrastructure-architecture.md を修正</blockquote>
+<table>
+<thead><tr><th>13</th><th>PostgreSQL max_connections</th><th>-</th><th>B1msデフォルトのmax_connectionsは256だが、設計書では50に制限。Container Apps max replicas=5でコネクションプール含めても十分だが、prd環境のEast+West同時接続時を考慮すると100程度への引き上げを検討</th><th>改善提案</th><th>次フェーズ</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q3方針決定により max_connections=50 を維持。06-infrastructure-architecture.md に East+West 同時接続時の注意事項を注記として追加</blockquote>
+<table>
+<thead><tr><th>14</th><th>監視設計</th><th>11-monitoring-operations.md</th><th>Log Analytics + アラートルール5件を定義。ブループリントのアラート4件に加え、Container App再起動検知を追加</th><th>確認OK</th><th>-</th></tr></thead>
+<thead><tr><th>15</th><th>Terraform state管理</th><th>06-infrastructure-architecture.md</th><th>Blob Storageのversioning_enabledを有効化し、state破損時のロールバックに対応。ブループリントの方針通り</th><th>確認OK</th><th>-</th></tr></thead>
+<thead><tr><th>16</th><th>Front Door WAF</th><th>06-infrastructure-architecture.md</th><th>Standard SKU + Microsoft Default Rule Setを適用。WMSの業務要件として十分</th><th>確認OK</th><th>-</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>改善提案サマリー</h2>
+<table>
+<thead><tr><th>優先度</th><th>内容</th><th>対応時期</th></tr></thead>
+<tbody>
+<tr><td><del>低</del></td><td><del>ブループリントのACR Geo-replication記載とPremium SKU要件の矛盾を解消</del></td><td>✅ 対応済み（2026-03-19）: Q1方針決定によりBasic SKU維持・Geo-rep削除</td></tr>
+<tr><td><del>低</del></td><td><del>prd環境のmax_connectionsを100に引き上げ検討</del></td><td>✅ 対応済み（2026-03-19）: Q3方針決定により50維持・注記追加</td></tr>
+<tr><td>低</td><td>コスト概算値のブループリントとの差異を、ブループリント側に反映</td><td>次回ブループリント改訂時</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-07-auth-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — 認証アーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/07-auth-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: 認証・認可セキュリティアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（機能要件定義書 — 認証）</li><li style="margin-left:0px"><code>docs/functional-design/API-01-auth.md</code>（認証API設計）</li><li style="margin-left:0px"><code>docs/functional-design/SCR-01-auth.md</code>（認証画面設計）</li><li style="margin-left:0px"><code>docs/data-model/02-master-tables.md</code>（マスタ系テーブル定義）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクトコンテキスト）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>認証アーキテクチャ設計書は、ブループリント・機能要件定義書・API設計書・データモデル定義書との整合性が高く、Spring Security 6.x の最新APIを使用した実装設計として十分な品質にある。SSOTルールに従い、ポリシー値の複製を避け参照リンクで示している点も適切である。</p>
+<p>以下のレビュー結果では、軽微な改善提案と確認事項を記録する。重大な不整合（Critical）は検出されなかった。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td><code>07-auth-architecture.md</code>（BP）</td><td>トークン有効期限（AT: 1時間、RT: スライディング1時間）、ロール定義（4種）、RBAC権限マトリクスが一致していることを確認。整合性問題なし</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>2</td><td>セキュリティアーキテクチャとの整合性</td><td><code>10-security-architecture.md</code></td><td>パスワードポリシー（8〜128文字、英大文字・英小文字・数字各1）、BCrypt strength=12、ログイン失敗ロック（5回）、CORS設定、セキュリティヘッダーが一致。SSOTルールに従い値の複製を避け参照リンクで示している</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>3</td><td>API設計書との整合性</td><td><code>API-01-auth.md</code></td><td>全6エンドポイント（login, logout, refresh, change-password, password-reset/request, password-reset/confirm）の仕様が一致。Cookie属性（HttpOnly, SameSite=Lax, Path制限）も一致</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>4</td><td>データモデルとの整合性</td><td><code>02-master-tables.md</code></td><td><code>users</code>テーブル（user_code, password_hash, role, failed_login_count, locked, locked_at, password_change_required）、<code>refresh_tokens</code>テーブル、<code>password_reset_tokens</code>テーブルの構造と設計書の参照が一致</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>5</td><td>フロントエンドアーキテクチャとの整合性</td><td><code>03-frontend-architecture.md</code></td><td>Axiosインターセプターの401リフレッシュフロー、キュー制御（同時401リクエストの待機）、authStore/systemStoreの設計が一致</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>6</td><td>画面設計書との整合性</td><td><code>SCR-01-auth.md</code></td><td>AUTH-001〜004の画面フロー（初回パスワード変更の強制リダイレクト、パスワードリセットフロー）が認証フローシーケンス図と一致</td><td>確認済</td><td>対応不要</td></tr>
+<tr><td>7</td><td>SecurityConfig の AccessDeniedHandler</td><td>設計書 セクション8.4</td><td><code>CustomAccessDeniedHandler</code> を定義しているが、<code>SecurityConfig</code> のコード例に <code>.exceptionHandling(exception -&gt; exception.accessDeniedHandler(...))</code> が含まれていない。注意書きはあるが、コード例にも反映すべき</td><td>Minor</td><td>未対応（実装時に対応）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 07-auth-architecture.md の SecurityConfig コード例に AccessDeniedHandler 設定（<code>.exceptionHandling(exception -&gt; exception.accessDeniedHandler(...))</code>）を追加</blockquote>
+<table>
+<thead><tr><th>8</th><th>refresh_token の Path と logout</th><th><code>API-01-auth.md</code> API-AUTH-002</th><th><code>refresh_token</code> の Cookie Path が <code>/api/v1/auth/refresh</code> に限定されているため、<code>POST /api/v1/auth/logout</code> 時にはブラウザから <code>refresh_token</code> Cookie が送信されない。ログアウト処理は <code>access_token</code> の JWT から userId を取得して DB のリフレッシュトークンを削除する設計であり、問題はない。ただしこの設計判断を明示的に記載するとよい</th><th>Minor</th><th>未対応（実装時に対応）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 07-auth-architecture.md にログアウト時 refresh_token Cookie が Path 制限により非送信となる設計判断を明記</blockquote>
+<table>
+<thead><tr><th>9</th><th>パスワードリセットトークンのハッシュ方式</th><th><code>02-master-tables.md</code></th><th>データモデル定義では <code>token_hash</code> を「SHA-256等」と記載しているが、API設計書（API-AUTH-005/006）では「BCryptでハッシュ化」と記載されている。設計書ではBCrypt方式を採用している。データモデル定義書の「SHA-256等」の記述を更新することを推奨</th><th>対応済み</th><th>✅ <strong>対応済み（2026-03-18）</strong>: SHA-256に全設計書で統一。API-01-auth.mdも修正済み</th></tr></thead>
+<thead><tr><th>10</th><th>パスワードリセットトークンの有効期限</th><th><code>00-authentication.md</code>, <code>API-01-auth.md</code></th><th>機能要件定義書では「30分」、ブループリントでは「30分（システムパラメータで変更可能）」、API設計書（API-AUTH-005）では「1時間」と記載されている。設計書では明示していない（system_parametersのPASSWORD_RESET_EXPIRY_MINUTES=30を参照）。API設計書の「1時間」はブループリント・機能要件定義書と矛盾しているため、API設計書側の修正を推奨</th><th>対応済み</th><th>✅ <strong>対応済み（2026-03-18）</strong>: 有効期限30分に統一。API-01-auth.mdの「1時間」を「30分」に修正済み</th></tr></thead>
+<thead><tr><th>11</th><th>Swagger UI のプロファイル制御</th><th>設計書 セクション2.2</th><th>コメントで「本番ではプロファイルで無効化」と記載しているが、具体的なプロファイル設定方法が未記載。<code>@Profile(&quot;dev&quot;)</code> での Springdoc 設定や、<code>springdoc.api-docs.enabled=false</code> の本番設定を実装時に対応すべき</th><th>Info</th><th>実装時に対応</th></tr></thead>
+<thead><tr><th>12</th><th>JWT秘密鍵の最小長チェック</th><th>設計書 セクション3.2</th><th>環境変数 <code>JWT_SECRET</code> が256bit未満の場合に起動時エラーとする仕組みが未記載。jjwt ライブラリが自動で検証するが、明示的なバリデーションを追加することを推奨</th><th>Info</th><th>実装時に対応</th></tr></thead>
+<thead><tr><th>13</th><th>ログアウト時の期限切れJWT処理</th><th><code>API-01-auth.md</code> API-AUTH-002</th><th><code>parseClaimsAllowExpired</code> メソッドで期限切れJWTからもuserIdを取得する設計は、API設計書の「期限切れトークンからユーザーIDを抽出してリフレッシュトークンを削除する」仕様と一致。問題なし</th><th>確認済</th><th>対応不要</th></tr></thead>
+<thead><tr><th>14</th><th>リフレッシュトークンのBCrypt照合方式</th><th><code>API-01-auth.md</code> API-AUTH-003</th><th>BCryptは一方向ハッシュのため「ハッシュ化して検索」が不可能であり、userId で絞り込んだ後に BCrypt.matches で照合する設計は API 設計書の記述と一致。<code>refresh_tokens</code> テーブルの UNIQUE(token_hash) 制約は BCrypt の場合、同一入力でも異なるハッシュが生成されるため実質的に一意となり問題ない</th><th>確認済</th><th>対応不要</th></tr></thead>
+<thead><tr><th>15</th><th>SSOTルール遵守</th><th><code>CLAUDE.md</code></th><th>パスワードポリシー値、ロック条件値、セッションタイムアウト値を直接記載せず、参照リンクで示している。SSOTルールに準拠</th><th>確認済</th><th>対応不要</th></tr></thead>
+<thead><tr><th>16</th><th>Spring Security 6.x API使用</th><th>設計書全体</th><th><code>SecurityFilterChain</code> Bean（<code>WebSecurityConfigurerAdapter</code> 非使用）、<code>authorizeHttpRequests</code>（<code>authorizeRequests</code> 非使用）、Lambda DSL を使用しており、Spring Security 6.x の最新APIに準拠</th><th>確認済</th><th>対応不要</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総評</h2>
+<h3>良好な点</h3>
+<ol><li><strong>SSOTルールの遵守</strong>: ポリシー値（パスワードポリシー、ロック閾値、セッションタイムアウト等）の複製を避け、ブループリント・セキュリティアーキテクチャへの参照リンクで示している</li><li><strong>Spring Security 6.x 最新API</strong>: 非推奨APIを使用せず、Lambda DSL、<code>SecurityFilterChain</code> Bean 方式で記述している</li><li><strong>セキュリティ対策の網羅性</strong>: OWASP Top 10 への対応、タイミング攻撃対策、ユーザー列挙対策、トークンローテーションによるリプレイ攻撃対策が設計レベルで記述されている</li><li><strong>フロントエンド連携</strong>: Axiosインターセプターのキュー制御、セッションタイムアウト警告ダイアログの設計まで網羅している</li><li><strong>Mermaid図の充実</strong>: 認証フロー（ログイン・ログアウト・リフレッシュ）のシーケンス図、アカウントロックの状態遷移図が分かりやすい</li></ol>
+<h3>改善推奨事項</h3>
+<ol><li><del><strong>No.9</strong>: <code>password_reset_tokens.token_hash</code> のハッシュ方式について、データモデル定義書との記述統一が必要</del> ✅ 対応済み（2026-03-18）</li><li><del><strong>No.10</strong>: パスワードリセットトークンの有効期限について、API設計書（1時間）とブループリント/機能要件定義書（30分）の矛盾解消が必要</del> ✅ 対応済み（2026-03-18）</li><li><del><strong>No.7</strong>: SecurityConfig コード例に AccessDeniedHandler の設定を追加すること</del> ✅ 対応済み（2026-03-19）</li><li><del><strong>No.8</strong>: ログアウト時に refresh_token Cookie が送信されない設計判断の明記</del> ✅ 対応済み（2026-03-19）</li></ol>
+<hr>
+<h2>次のアクション</h2>
+<table>
+<thead><tr><th>#</th><th>アクション</th><th>優先度</th><th>担当</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><del>API設計書（API-AUTH-005）のパスワードリセットトークン有効期限を「30分」に修正</del></td><td>中</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>2</td><td><del>データモデル定義書の <code>password_reset_tokens.token_hash</code> 説明をSHA-256に統一</del></td><td>中</td><td>✅ 対応済み（2026-03-18）</td></tr>
+<tr><td>3</td><td><del>SecurityConfig コード例に AccessDeniedHandler 設定を追加</del></td><td>低</td><td>✅ 対応済み（2026-03-19）</td></tr>
+<tr><td>4</td><td><del>ログアウトフロー補足（refresh_token Cookie の Path 制限による非送信の明記）</del></td><td>低</td><td>✅ 対応済み（2026-03-19）</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-08-common-infrastructure">
+<h1>アーキテクチャ設計レビュー記録票 — 共通基盤</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/08-common-infrastructure.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: 共通基盤・横断関心事設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証・ログイン機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/01a-system-parameters.md</code>（システムパラメータ管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/03-inventory-management.md</code>（在庫管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/04a-allocation.md</code>（在庫引当機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/05-reports.md</code>（レポート機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理機能要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携I/F機能要件）</li><li style="margin-left:0px"><code>docs/functional-design/_standard-api.md</code>（API設計テンプレート）</li><li style="margin-left:0px"><code>docs/functional-design/_standard-screen.md</code>（画面設計テンプレート）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要）</li><li style="margin-left:0px"><code>docs/data-model/02-master-tables.md</code>（マスタ系テーブル定義）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>共通基盤設計書は、ブループリント（08-common-infrastructure.md）で定義された方針を忠実に実装レベルに展開し、バックエンド（Java/Spring Boot）とフロントエンド（Vue 3/TypeScript）の双方にわたる9つの横断関心事を網羅した。SSOTルールを遵守し、ブループリントや他の定義場所への参照リンクを適切に記載している。コード例も実装時にそのまま参照できる粒度で記述されている。</p>
+<p>全体として設計品質は良好であり、致命的な矛盾はない。以下に改善検討事項を記録する。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SSOT遵守 — エラーレスポンス形式</td><td>blueprint/08</td><td>設計書のErrorResponseでは<code>code</code>フィールドを使用しているが、_standard-api.mdでは<code>errorCode</code>フィールドを使用。命名を統一する必要がある</td><td>対応済み</td><td>✅ <strong>対応済み（2026-03-18）</strong>: 08-common-infrastructureの5フィールド構成（code/message/timestamp/traceId/details）に全設計書で統一</td></tr>
+<tr><td>2</td><td>SSOT遵守 — パスワードポリシー値</td><td>blueprint/10-security</td><td>パスワードポリシーの具体値（8〜128文字等）をカスタムバリデーション内にハードコードしている。SSOTルールでは「ポリシー値の複製禁止」とされている</td><td>軽微</td><td>実装時にはsystem_parametersまたはapplication.ymlから読み込む方式に変更する。設計書レベルではコード例の明示性を優先した</td></tr>
+<tr><td>3</td><td>ブループリントとの整合性 — モジュール略称</td><td>blueprint/08</td><td>ブループリントではモジュール略称「CMN」=shared（共通）と定義。設計書のEnumやパッケージ構成はこの略称を正しく反映している</td><td>問題なし</td><td>—</td></tr>
+<tr><td>4</td><td>ブループリントとの整合性 — ログフォーマット</td><td>blueprint/08</td><td>ブループリントのログ項目（timestamp, level, logger, traceId, userId, message, module）を全てLogback設定・MDC設定でカバーしている</td><td>問題なし</td><td>—</td></tr>
+<tr><td>5</td><td>ブループリントとの整合性 — 例外クラス階層</td><td>blueprint/08</td><td>5つのカスタム例外クラスとGlobalExceptionHandlerのマッピングがブループリントの定義と完全一致</td><td>問題なし</td><td>—</td></tr>
+<tr><td>6</td><td>機能要件との整合性 — ステータスEnum</td><td>functional-requirements/02, 04, 04a</td><td>InboundStatusにCANCELLEDを追加。OutboundStatusにCANCELLEDを追加。機能要件のキャンセル機能と整合している</td><td>問題なし</td><td>—</td></tr>
+<tr><td>7</td><td>機能要件との整合性 — 棚卸ステータス</td><td>functional-requirements/03</td><td>棚卸ステータスのEnumが設計書に未定義。StocktakeStatus（OPEN/COUNTING/CONFIRMED等）を追加すべき</td><td>軽微</td><td>棚卸管理の詳細設計時に追加する</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 08-common-infrastructure.md に StocktakeStatus Enum（OPEN/COUNTING/CONFIRMED 等）を追加</blockquote>
+<table>
+<thead><tr><th>8</th><th>機能要件との整合性 — ばらし指示ステータス</th><th>functional-requirements/04a</th><th>ばらし指示のステータス（INSTRUCTED/COMPLETED）のEnumが未定義</th><th>軽微</th><th>在庫引当モジュールの詳細設計時に追加する</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): 08-common-infrastructure.md に UnpackInstructionStatus Enum（INSTRUCTED/COMPLETED）を追加</blockquote>
+<table>
+<thead><tr><th>9</th><th>データモデルとの整合性 — BaseEntity</th><th>data-model/01</th><th>BaseEntityの共通カラム（created_at, created_by, updated_at, updated_by）がデータモデル定義と一致</th><th>問題なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>データモデルとの整合性 — 楽観的ロック</th><th>data-model/02</th><th>BaseMasterEntityにversionカラムを追加しているが、data-model/02-master-tables.mdにはversionカラムの定義がない</th><th>対応済み</th><th>✅ <strong>対応済み（2026-03-18）</strong>: data-model/01-overviewの共通パターンと02-master-tablesの8テーブルにversionカラムを追加</th></tr></thead>
+<thead><tr><th>11</th><th>画面設計との整合性 — Element Plusコンポーネント</th><th>_standard-screen.md</th><th>バリデーションメッセージの表示方式（el-form-itemの:errorバインド）が画面設計テンプレートの記法と整合</th><th>問題なし</th><th>—</th></tr></thead>
+<thead><tr><th>12</th><th>API設計との整合性 — ページネーション</th><th>_standard-api.md, blueprint/04</th><th>PageResponseのフィールド（content, page, size, totalElements, totalPages）がAPI設計テンプレートと完全一致</th><th>問題なし</th><th>—</th></tr></thead>
+<thead><tr><th>13</th><th>網羅性 — システムパラメータ取得</th><th>functional-requirements/01a</th><th>設計書にはシステムパラメータの取得・キャッシュ方針が明記されていない。ブループリントでは「キャッシュなし」と定義されている</th><th>軽微</th><th>営業日と同様にキャッシュなしで都度DB取得する方針を明記するか、または各モジュールの詳細設計で定義する</th></tr></thead>
+<thead><tr><th>14</th><th>網羅性 — バッチ処理時の監査カラム</th><th>functional-requirements/06</th><th>SecurityAuditorAwareでは認証なし時にSYSTEM_USER_ID=0を使用する設計。バッチ実行時は実行者のユーザーIDが利用可能なため、バッチのService呼び出し前にSecurityContextに実行者を設定する必要がある</th><th>要確認</th><th>バッチ処理設計書で、バッチ実行時のSecurityContext設定方針を定義する</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q5方針決定により、バッチ実行時の SecurityContext に実行者IDを設定する方針を 08-common-infrastructure.md セクション8.6に追加</blockquote>
+<table>
+<thead><tr><th>15</th><th>コード品質 — record型の活用</th><th>—</th><th>DTO（Request/Response/SearchCriteria）にJava recordを採用しており、イミュータブル設計として適切</th><th>問題なし</th><th>—</th></tr></thead>
+<thead><tr><th>16</th><th>フロントエンド — i18nメッセージ網羅性</th><th>_standard-screen.md</th><th>ja.jsonのメッセージ定義はサンプルレベル。全画面のメッセージを実装時に順次追加する前提</th><th>情報</th><th>各画面実装時にメッセージキーを追加していく運用とする</th></tr></thead>
+<thead><tr><th>17</th><th>セキュリティ — トレースIDのレスポンスヘッダー出力</th><th>blueprint/10-security</th><th>X-Trace-Idヘッダーをレスポンスに付与する設計。本番環境での情報漏洩リスクを検討すべき</th><th>軽微</th><th>トレースIDは内部識別子であり機密情報ではない。エラー発生時のサポート問い合わせで有用なため、本番でも出力する方針とする</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>評価項目</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td>ブループリントとの整合性</td><td>良好。方針の複製を避け参照リンクで示している</td></tr>
+<tr><td>機能要件との整合性</td><td>良好。一部Enum追加が必要（棚卸・ばらし指示ステータス）</td></tr>
+<tr><td>データモデルとの整合性</td><td>概ね良好。versionカラムのデータモデル追加が必要</td></tr>
+<tr><td>SSOTルール遵守</td><td>良好。情報の定義場所への参照を適切に記載</td></tr>
+<tr><td>コード例の品質</td><td>良好。実装時にそのまま参照可能な粒度</td></tr>
+<tr><td>網羅性</td><td>9つの横断関心事を漏れなくカバー</td></tr>
+<p></tbody><br></table></p>
+<h3>要対応事項サマリー</h3>
+<ol><li><del><strong>ErrorResponseのフィールド名統一</strong>（<code>code</code> vs <code>errorCode</code>）</del> ✅ 対応済み（2026-03-18）: 5フィールド構成に統一</li><li><del><strong>データモデルへのversionカラム追加</strong></del> ✅ 対応済み（2026-03-18）: 01-overviewと02-master-tablesに追加</li><li><del><strong>バッチ処理時のSecurityContext設定方針</strong> — バッチ処理設計書で定義</del> ✅ 対応済み（2026-03-19）: Q5方針決定によりセクション8.6に追加</li></ol>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-09-interface-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — インターフェースアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/09-interface-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: システム間連携・インターフェースアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/09-interface-architecture.md</code>（ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/functional-requirements/02-inbound-management.md</code>（入荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/04-outbound-management.md</code>（出荷管理）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携I/F）</li><li style="margin-left:0px"><code>docs/functional-requirements/01-master-management.md</code>（マスタ管理）</li><li style="margin-left:0px"><code>docs/data-model/01-overview.md</code>（データモデル概要）</li><li style="margin-left:0px"><code>docs/data-model/02-master-tables.md</code>（マスタテーブル定義）</li><li style="margin-left:0px"><code>docs/data-model/03-transaction-tables.md</code>（トランザクションテーブル定義）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>インターフェースアーキテクチャ設計書は、ブループリント（09-interface-architecture.md）で定義された方針を忠実に詳細化し、実装に必要な具体的な仕様を網羅している。CSVフォーマット定義・バリデーション設計・エラーハンドリング・トランザクション制御の各観点で十分な設計がなされている。SSOTルールに従い、ビジネスルールやテーブル定義の詳細は参照元ドキュメントへのリンクで示しており、情報の重複は最小限に抑えられている。</p>
+<p><strong>総合評価: A（軽微な指摘のみ、設計品質は良好）</strong></p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td>09-interface-architecture.md</td><td>ブループリントで定義されたI/F一覧（IFX-001/IFX-002）、ステートレス2ステップ設計、取り込みモード（SUCCESS_ONLY/DISCARD）、Blobフォルダ構成、APIエンドポイントの全てが設計書に反映されている。整合性に問題なし</td><td>確認OK</td><td>—</td></tr>
+<tr><td>2</td><td>SSOTルール準拠</td><td>CLAUDE.md</td><td>テーブル定義（data-model）、ビジネスルール（functional-requirements）、技術方針（architecture-blueprint）への参照リンクで示しており、情報の複製は行っていない。ただし、if_executionsテーブルの詳細定義はブループリントの概要から拡張したものであり、data-modelのSSOTに追加が必要</td><td>軽微</td><td>未対応（data-model側への反映は別タスク）</td></tr>
+<tr><td>3</td><td>入荷管理との整合性</td><td>02-inbound-management.md, API-06-inbound.md</td><td>入荷予定登録の業務ルール（同一伝票内の同一商品コード重複禁止、入荷予定日の営業日制約、ロット/期限管理の条件付き必須）がバリデーション設計に正しく反映されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>4</td><td>出荷管理との整合性</td><td>04-outbound-management.md, API-08-outbound.md</td><td>受注登録の業務ルール（出荷禁止フラグチェック）がバリデーション設計に反映されている。受注CSVにはlot_number/expiry_dateが不要（出荷時点では不要、引当時に在庫から決定）であり、フォーマット設計は正しい</td><td>確認OK</td><td>—</td></tr>
+<tr><td>5</td><td>マスタ管理との整合性</td><td>01-master-management.md</td><td>取引先種別（SUPPLIER/CUSTOMER/BOTH）による入荷元/出荷先の選択制約がバリデーション（L3マスタ参照チェック）に反映されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>6</td><td>データモデルとの整合性</td><td>data-model/03-transaction-tables.md</td><td>CSVカラムからエンティティへの変換仕様が、inbound_slips/inbound_slip_lines/outbound_slips/outbound_slip_linesのテーブル定義と整合している。マスタ情報のコピー保持（partner_code/partner_name等）も正しく設計されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>7</td><td>エラーコード体系</td><td>08-common-infrastructure.md</td><td>エラーコードが <code>WMS-E-IFX-{連番}</code> 形式で、共通基盤のエラーコード体系（WMS-{種別}-{モジュール}-{連番}）に準拠している</td><td>確認OK</td><td>—</td></tr>
+<tr><td>8</td><td>営業日基準</td><td>06-batch-processing.md, 01-overall-architecture.md</td><td>取り込み時の営業日基準ルールが明記されている。入荷予定日の営業日以降制約のバリデーション（L4: WMS-E-IFX-401）も正しい</td><td>確認OK</td><td>—</td></tr>
+<tr><td>9</td><td>トランザクション制御</td><td>04-backend-architecture.md</td><td>DB→Blob順のトランザクション設計が文書化されている。Blob移動失敗時の対応（ERRORログ＋blob_move_failedフラグ）も定義されている。ただし、blob_move_failedがtrueの履歴に対するリカバリ運用手順は記載があるが、管理画面からの再移動機能は未定義</td><td>情報</td><td>将来的なエンハンスとして検討</td></tr>
+<tr><td>10</td><td>クラス構成</td><td>04-backend-architecture.md</td><td>interfacingモジュールのクラス構成が標準3層アーキテクチャ（Controller/Service/Repository）に準拠している。BlobStorageClientをblob/パッケージに分離した設計は適切</td><td>確認OK</td><td>—</td></tr>
+<tr><td>11</td><td>パフォーマンス最適化</td><td>—</td><td>マスタ検索のバッチ化（IN句一括検索→ローカルMap）の最適化設計が含まれている。10,000行で30秒以内のバリデーション目標は現実的</td><td>確認OK</td><td>—</td></tr>
+<tr><td>12</td><td>セキュリティ</td><td>10-security-architecture.md</td><td>JWT認証・ロール認可・Blob Storage認証方式・CSVインジェクション対策・ファイルサイズ制限が定義されている</td><td>確認OK</td><td>—</td></tr>
+<tr><td>13</td><td>バリデーション結果レスポンス</td><td>—</td><td>レスポンスにエラー行のみを含む設計（成功行はカウントのみ）はレスポンスサイズ抑制として合理的。ただし、フロントエンド側で「成功行の内容プレビュー」機能が必要になった場合は設計変更が必要</td><td>情報</td><td>現時点ではブループリントの方針通り</td></tr>
+<tr><td>14</td><td>processedディレクトリの日付整理</td><td>—</td><td>processedフォルダ内を年/月/日のサブディレクトリで整理する設計は、ブループリントの概要設計（フラットなprocessed/）から詳細化したもの。追跡性向上の観点で妥当な拡張</td><td>確認OK</td><td>—</td></tr>
+<tr><td>15</td><td>期限管理商品の期限日チェック</td><td>02-inbound-management.md</td><td>入荷予定CSVで期限管理対象商品のexpiry_dateが現在営業日以前の場合にエラー（WMS-E-IFX-404）とする設計を追加している。機能要件定義書には明示的な記載はないが、期限切れ商品の入荷を防止する合理的なビジネスルール。機能要件定義書への追記を推奨する</td><td>要確認</td><td>機能要件定義書とのすり合わせが必要</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>未対応事項・今後の課題</h2>
+<table>
+<thead><tr><th>No</th><th>課題</th><th>優先度</th><th>対応方針</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>if_executionsテーブルの正式なデータモデル定義書（data-model/）への追加</td><td>中</td><td>別タスクでdata-model/03-transaction-tables.mdまたは新規ファイルに追加</td></tr>
+<tr><td>2</td><td>機能要件定義書への期限日バリデーション（入荷予定で期限切れを防止）の追記</td><td>低</td><td>02-inbound-management.mdのビジネスルールに追記</td></tr>
+<tr><td>3</td><td>Blob移動失敗時の管理画面からのリカバリ機能</td><td>低</td><td>運用開始後の状況を見て検討</td></tr>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-10-security-architecture">
+<h1>アーキテクチャ設計レビュー記録票 — セキュリティアーキテクチャ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/10-security-architecture.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: セキュリティアーキテクチャ設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティ方針 SSOT）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/07-auth-architecture.md</code>（認証・認可アーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証機能要件）</li><li style="margin-left:0px"><code>docs/data-model/02-master-tables.md</code>（マスタテーブル定義）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクトルール）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>セキュリティアーキテクチャ設計書は、OWASP Top 10（2021）の全カテゴリに対する対策を網羅し、Spring Security ベースの具体的な実装設計を提供している。パスワードポリシー・アカウントロックポリシーの具体値は SSOT（architecture-blueprint/10-security-architecture.md）への参照リンクで示し、SSOT ルールに準拠している。</p>
+<p>全体的な品質は良好であるが、以下の改善点を識別した。</p>
+<ul><li style="margin-left:0px"><strong>指摘なし（重大）</strong>: 重大なセキュリティ上の欠陥は検出されなかった</li><li style="margin-left:0px"><strong>軽微な指摘</strong>: 3件（将来の改善推奨）</li><li style="margin-left:0px"><strong>確認事項</strong>: 2件（実装フェーズでの確認が必要）</li></ul>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>SSOT準拠: パスワードポリシー値の複製有無</td><td>CLAUDE.md, 10-security-architecture.md (BP)</td><td>パスワードポリシーの具体値（8〜128文字等）がバリデーター実装例のコード定数に含まれている。ただし実装コード例として具体値が必要であり、コード例としての記載は許容範囲と判断。設計書本文での値の記述は参照リンクで適切に示されている</td><td>確認</td><td>対応不要</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SSOT違反対応として、Javadoc コメントからパスワードポリシー具体値の散文記載を除去し、「ポリシー定義値は architecture-blueprint/10-security-architecture.md を参照」に変更（cross-review-ssot 違反#1 対応）</blockquote>
+<table>
+<thead><tr><th>2</th><th>SSOT準拠: アカウントロック回数の複製有無</th><th>CLAUDE.md, 10-security-architecture.md (BP)</th><th><code>MAX_FAILED_ATTEMPTS = 5</code> がコード例に含まれている。No.1と同様、実装コード例としては許容範囲。本来はシステムパラメータ（<code>LOGIN_FAILURE_LOCK_COUNT</code>）からの動的取得が望ましい</th><th>軽微</th><th>実装時対応推奨</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SSOT違反対応として、Mermaid フローチャート内の <code>failed_login_count &gt;= 5?</code> を汎用表現（ロック閾値）に変更（cross-review-ssot 違反#2 対応）</blockquote>
+<table>
+<thead><tr><th>3</th><th>ブループリントとの整合性: トークン設計</th><th>07-auth-architecture.md, 10-security-architecture.md (BP)</th><th>アクセストークン有効期限1時間、リフレッシュトークンのスライディング方式（1時間）の仕様がブループリントと一致していることを確認</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>4</th><th>ブループリントとの整合性: CORS設定</th><th>10-security-architecture.md (BP)</th><th>許可メソッド・許可ヘッダー・allowCredentials がブループリントと一致していることを確認</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>5</th><th>ブループリントとの整合性: セキュリティヘッダー</th><th>10-security-architecture.md (BP)</th><th>X-Content-Type-Options, X-Frame-Options, Referrer-Policy がブループリントと一致。HSTS はブループリントに「Spring Security で付与」と記載されており、設計書に具体的な max-age 値（31536000秒=1年）を追加定義している</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>6</th><th>データモデルとの整合性: usersテーブル</th><th>data-model/02-master-tables.md</th><th><code>failed_login_count</code>, <code>locked</code>, <code>locked_at</code>, <code>password_change_required</code> の各カラムがロック処理・初回変更強制の実装で正しく参照されていることを確認</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>7</th><th>データモデルとの整合性: refresh_tokens</th><th>data-model/02-master-tables.md</th><th>リフレッシュトークンのBCryptハッシュ保存、トークンローテーション（旧トークン削除・新トークン発行）がデータモデルと一致</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>8</th><th>データモデルとの整合性: password_reset_tokens</th><th>data-model/02-master-tables.md</th><th>SHA-256ハッシュ保存、used フラグ管理、同一ユーザーの未使用トークン無効化がデータモデルと一致</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>9</th><th>機能要件との整合性: ログインフロー</th><th>functional-requirements/00-authentication.md</th><th>ログイン成功/失敗/ロックの各分岐、エラーメッセージ（ユーザー列挙防止）、ロック通知が機能要件と一致</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>10</th><th>機能要件との整合性: パスワードリセット</th><th>functional-requirements/00-authentication.md</th><th>リセット完了時のロック解除・失敗カウンタリセットが機能要件と一致</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>11</th><th>機能要件との整合性: 初回パスワード変更</th><th>functional-requirements/00-authentication.md</th><th>変更完了まで他操作ブロック（バックエンド: 403, フロントエンド: Router Guard）が機能要件と一致</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>12</th><th>OWASP Top 10 網羅性</th><th>—</th><th>A01〜A10 の全カテゴリに対策が定義されていることを確認。特に A01（アクセス制御）と A07（認証）は詳細な実装設計あり</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>13</th><th>入力バリデーション: 多層防御</th><th>04-backend-architecture.md</th><th>フロントエンド（Zod）→ Controller層（Jakarta Bean Validation）→ Service層（ビジネスルール）→ Repository層（パラメータバインディング）の4層バリデーションが適切に設計されている</th><th>—</th><th>問題なし</th></tr></thead>
+<thead><tr><th>14</th><th>CSP ヘッダーの未設定</th><th>—</th><th>Content-Security-Policy がバックエンドAPI（JSON のみ）では不要、フロントエンド（Blob Storage）では将来対応と明記されている。初期リリースでは許容するが、フロントエンドの CSP 設定は早期に対応すべき</th><th>軽微</th><th>実装時対応推奨</th></tr></thead>
+<thead><tr><th>15</th><th>JWT 署名鍵のローテーション</th><th>—</th><th>JWT 署名鍵（<code>JWT_SECRET</code>）のローテーション手順が未定義。現時点ではスコープ外とし、運用開始後に鍵ローテーション手順を策定することを推奨</th><th>軽微</th><th>将来対応</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q9方針決定により、JWT 鍵ローテーションは運用手順書で定義する方針を 10-security-architecture.md に注記追加</blockquote>
+<table>
+<thead><tr><th>16</th><th>システムパラメータの動的取得</th><th>data-model/02-master-tables.md</th><th><code>LOGIN_FAILURE_LOCK_COUNT</code>, <code>SESSION_TIMEOUT_MINUTES</code>, <code>PASSWORD_RESET_EXPIRY_MINUTES</code> がシステムパラメータとして定義されているが、設計書のコード例ではハードコード定数を使用している。実装時にはシステムパラメータテーブルからの動的取得を推奨</th><th>確認</th><th>実装時対応推奨</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>評価項目</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td>ブループリントとの整合性</td><td>良好。SSOT ルールに準拠し、方針値は参照リンクで示している</td></tr>
+<tr><td>データモデルとの整合性</td><td>良好。全関連テーブルの利用方法がデータモデルと一致</td></tr>
+<tr><td>機能要件との整合性</td><td>良好。認証・ロック・リセットの全フローが要件と一致</td></tr>
+<tr><td>OWASP Top 10 網羅性</td><td>良好。全カテゴリに対策を定義</td></tr>
+<tr><td>実装可能性</td><td>良好。Spring Security / jjwt の具体的なコード例を提供</td></tr>
+<tr><td>SSOTルール遵守</td><td>良好。パスワードポリシー・ロック条件の値は SSOT 参照</td></tr>
+<p></tbody><br></table></p>
+<p><strong>判定: 承認（軽微な指摘は実装フェーズで対応）</strong></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-11-monitoring-operations">
+<h1>アーキテクチャ設計レビュー記録票 — 監視・運用</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/11-monitoring-operations.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: SRE・監視運用設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/11-monitoring-operations.md</code>（監視・運用ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（共通基盤）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/13-non-functional-requirements.md</code>（非機能要件定義）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>（認証要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/06-batch-processing.md</code>（バッチ処理要件）</li><li style="margin-left:0px"><code>docs/functional-requirements/07-interface.md</code>（外部連携要件）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクト指針）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>本設計書は、WMS ShowCase プロジェクトの Azure ベースの監視・運用設計を包括的に定義している。ブループリント（11-monitoring-operations.md）で定義されたアラート4種を13種に拡充し、SLI/SLO定義、インシデント対応フロー、容量管理を新たに追加した。非機能要件定義との整合性を確認し、SLO値は非機能要件の要件値と一致させている。</p>
+<p>全体として、小規模WMSプロジェクト（同時接続50名、Terraform Deploy/Destroy運用）に対して適切な監視深度と運用設計が行われている。過剰な複雑性を避けつつ、必要な可観測性を確保する方針はプロジェクトの規模に合致している。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td>11-monitoring-operations.md（BP）</td><td>ブループリントのアラート4種（ERROR検知、API遅延、DB接続失敗、ログイン失敗）を全て包含し、13種に拡充。ヘルスチェック、バックアップ、DB運用、ログレベル運用、インシデント対応フローも全て引き継ぎ済み。整合性に問題なし</td><td>確認</td><td>OK</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): traceID 仕様を 32文字Hex に統一。11-monitoring-operations.md の「UUID v4」記述を「UUID v4ベースの32文字HexID」に修正</blockquote>
+<table>
+<thead><tr><th>2</th><th>非機能要件との整合性（性能）</th><th>13-non-functional-requirements.md</th><th>API応答時間（通常2秒/集計5秒）、バッチ30分以内、同時接続50名の要件値をSLO-002/003/005に反映済み。アラート閾値（API遅延 > 3秒）は非機能要件の3秒アラート基準と一致</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>3</th><th>非機能要件との整合性（可用性）</th><th>13-non-functional-requirements.md</th><th>目標稼働率99.5%をSLO-001に反映。RTO/RPO値（フロント/API: 数分、DB: 数時間、RPO: 最大1時間）はインシデント対応設計に反映</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>4</th><th>セキュリティ要件との整合性</th><th>10-security-architecture.md</th><th>ログイン失敗多発アラート（A-004）、アカウントロック検知（A-013）を設計。認証ログ（成功/失敗/ロック）の監視をWorkbookに反映。PIIマスキングは共通基盤への参照で対応</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>5</th><th>バッチ処理の監視</th><th>06-batch-processing.md（FR）</th><th>バッチ処理失敗アラート（A-010）を設計。日替処理の5ステップの実行状況をログ監視する設計。インシデントシナリオ4でバッチ失敗時の対応手順も定義済み</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>6</th><th>Terraform Deploy/Destroy運用との整合性</th><th>06-infrastructure-architecture.md</th><th>Destroyしない常設リソースにLog Analytics WorkspaceとApplication Insightsを明示していない点は要検討。Destroy時にログが失われる可能性がある</th><th>改善提案</th><th>未対応（注記1）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q2方針決定により、Log Analytics Workspace / Application Insights を環境と同居させ Terraform Destroy 時に一緒に削除する方針を確定。06-infrastructure-architecture.md および 11-monitoring-operations.md に反映</blockquote>
+<table>
+<thead><tr><th>7</th><th>SSOTルールの遵守</th><th>CLAUDE.md</th><th>技術方針はブループリントへの参照リンクで示し、閾値・設定値の複製を最小限にしている。ログフォーマットやPIIマスキングは08-common-infrastructure.mdへの参照で対応</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>8</th><th>Application Insights SDK</th><th>04-backend-architecture.md</th><th><code>azure-spring-boot-starter-monitor</code> を指定しているが、2025年以降は <code>azure-monitor-spring-boot-starter</code>（Azure Monitor OpenTelemetry distro）が推奨。実装時に最新のSDK名を確認すること</th><th>情報</th><th>注記のみ</th></tr></thead>
+<thead><tr><th>9</th><th>フロントエンドの監視</th><th>03-frontend-architecture.md</th><th>フロントエンド（Blob Storage上の静的サイト）の監視はApplication Insightsのブラウザテレメトリで対応可能だが、本設計書では明示的に記載していない。MVP段階ではバックエンド監視を優先し、フロントエンド監視は将来課題とする方針は妥当</th><th>情報</th><th>将来課題</th></tr></thead>
+<thead><tr><th>10</th><th>コスト影響</th><th>06-infrastructure-architecture.md</th><th>Log Analytics無料枠5GB/月に対し、見積もり2〜4GB/月で収まる想定。DEBUGレベル変更時の注意事項も記載済み。Azure Monitor アラートの無料枠（1000ルール/月）に対して13ルールで十分余裕あり</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>11</th><th>外部連携I/Fの監視</th><th>07-interface.md</th><th>CSV取り込み処理のエラー監視について、アプリケーションERRORログ検知（A-001）でカバーされる。取り込み失敗の専用アラートは設定していないが、業務画面（取り込み履歴）で確認可能であり、MVP段階では十分</th><th>情報</th><th>将来課題</th></tr></thead>
+<thead><tr><th>12</th><th>DB接続プール監視</th><th>08-common-infrastructure.md</th><th>HikariCP接続プール使用数をメトリクスとして定義しているが、アラート一覧には含まれていない。接続プール枯渇はDB接続エラー（A-003）として検知される設計。明示的なプール監視アラートは現時点では不要</th><th>確認</th><th>OK</th></tr></thead>
+<thead><tr><th>13</th><th>prd Multi-Region監視</th><th>06-infrastructure-architecture.md</th><th>prd環境のJapan East / Japan West 両リージョンの監視設計が含まれている（Front Doorエラー率アラートA-012、Geo-redundant backup）。フェイルオーバー検知はFront Doorヘルスプローブで自動化</th><th>確認</th><th>OK</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>注記</h2>
+<h3>注記1: Terraform Destroy時の監視リソース — ✅ 方針確定（2026-03-19）</h3>
+<p>Destroyしない常設リソースとして、ブループリント（06-infrastructure-architecture.md）ではACRとTerraform state用Blobのみが定義されている。Log Analytics WorkspaceやApplication InsightsをDestroy対象にした場合、過去のログデータが失われる。</p>
+<p><strong>推奨</strong>: 監視リソース（Log Analytics Workspace, Application Insights）のDestroy/常設の方針を、インフラアーキテクチャ設計時に明確化すること。無料枠内であれば常設にするコスト影響はほぼゼロである。</p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q2方針決定により、Log Analytics / App Insights は環境と同居させ Destroy 時に一緒に削除する方針に確定。開発環境のログは一時的なもので永続保持不要と判断。</blockquote>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>評価項目</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td>ブループリントとの整合性</td><td>良好</td></tr>
+<tr><td>非機能要件のカバー率</td><td>良好</td></tr>
+<tr><td>運用実行可能性</td><td>良好</td></tr>
+<tr><td>設計の具体性（閾値・設定値）</td><td>良好</td></tr>
+<tr><td>SSOTルール遵守</td><td>良好</td></tr>
+<tr><td>将来拡張性</td><td>良好</td></tr>
+<p></tbody><br></table></p>
+<p><strong>判定: 承認（軽微な改善提案あり）</strong></p>
+<p>改善提案（注記1）はインフラ設計フェーズで検討する事項であり、本設計書の承認をブロックするものではない。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-12-development-deploy">
+<h1>アーキテクチャ設計レビュー記録票 — 開発・デプロイ</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/12-development-deploy.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: DevOps・CI/CDパイプライン設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/12-development-deploy.md</code>（開発・デプロイアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/04-backend-architecture.md</code>（バックエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/03-frontend-architecture.md</code>（フロントエンドアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/11-monitoring-operations.md</code>（監視・運用アーキテクチャ）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクト規約・ブランチ戦略）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>開発・デプロイ設計書は、ブループリントで定義された方針を具体的な設計・実装レベルに落とし込んでいる。GitHub Actionsワークフローの具体的なYAML定義、Dockerfileのマルチステージビルド設計、環境プロモーション戦略が整備されている。ブループリントとの整合性は概ね良好であり、SSOT原則に基づき方針の複製を避けて参照リンクを活用している。以下に軽微な指摘事項と改善提案を記録する。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td><code>architecture-blueprint/12-development-deploy.md</code></td><td>ブループリントのブランチ戦略・CI/CDフロー・Dockerfile設計・イメージタグ戦略と設計書の内容が一致している。問題なし</td><td>確認OK</td><td>-</td></tr>
+<tr><td>2</td><td>ブランチ保護ルール</td><td><code>architecture-blueprint/12-development-deploy.md</code></td><td>ブループリントに「CI構築後：CI通過必須。CI構築前：制限なし」とあり、設計書でも段階的適用を明記している。問題なし</td><td>確認OK</td><td>-</td></tr>
+<tr><td>3</td><td>SSOT原則</td><td><code>CLAUDE.md</code></td><td>テスト戦略の詳細を品質管理計画書への参照にとどめている。カバレッジ目標値はブループリント側をSSOTとして参照している。SSOT原則に適合</td><td>確認OK</td><td>-</td></tr>
+<tr><td>4</td><td>インフラ構成との整合</td><td><code>architecture-blueprint/06-infrastructure-architecture.md</code></td><td>dev/prd環境のContainer Apps設定、Blob Storage設定、ACR設定がインフラ設計と一致している。prdのEast/West両方へのデプロイが反映されている</td><td>確認OK</td><td>-</td></tr>
+<tr><td>5</td><td>フロントエンドデプロイ</td><td><code>architecture-blueprint/03-frontend-architecture.md</code></td><td>フロントエンドはBlob Storageの静的ウェブサイトホスティングにデプロイする方針が正しく反映されている。Dockerイメージ不要の判断は妥当</td><td>確認OK</td><td>-</td></tr>
+<tr><td>6</td><td>ヘルスチェック</td><td><code>architecture-blueprint/11-monitoring-operations.md</code></td><td>Dockerfileの <code>HEALTHCHECK</code> が <code>/actuator/health</code> を使用しており、監視設計のヘルスプローブ設定と整合している</td><td>確認OK</td><td>-</td></tr>
+<tr><td>7</td><td>Terraform ワークフロー</td><td><code>architecture-blueprint/06-infrastructure-architecture.md</code></td><td>Terraform state管理（wms-terraform サブスク）の方針と一致。環境ごとの <code>terraform.tfvars</code> を使った構成管理が反映されている</td><td>確認OK</td><td>-</td></tr>
+<tr><td>8</td><td>cd-dev.yml のフロントエンドAPI URL</td><td><code>architecture-blueprint/06-infrastructure-architecture.md</code></td><td><code>VITE_API_BASE_URL</code> をGitHub Actions Variablesから注入する設計だが、ブループリントに「Terraform outputから動的に注入する」とある。Terraform apply後にVariablesを手動更新する運用手順を追記すると望ましい</td><td>改善提案</td><td>未対応（軽微）</td></tr>
+<tr><td>9</td><td>GitHub Actions の Azure Login</td><td>-</td><td><code>azure/login@v2</code> にサービスプリンシパル（JSON）を使用しているが、OpenID Connect（OIDC）フェデレーションへの移行を将来検討すると良い。シークレットのローテーション不要になる</td><td>改善提案</td><td>未対応（将来検討）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q7方針決定により OIDC 移行は見送り。12-development-deploy.md に「OIDC は将来検討。現時点ではサービスプリンシパル方式を維持」の注記を追加</blockquote>
+<table>
+<thead><tr><th>10</th><th>cd-prd.yml の environment 設定</th><th>-</th><th><code>environment: production</code> を設定しているのは良い。GitHub の Environment Protection Rules（手動承認）を有効化すると、誤った本番デプロイを防止できる</th><th>改善提案</th><th>未対応（将来検討）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q8方針決定により prd 環境の GitHub Environment Protection Rules（手動承認）を有効化する方針を確定。12-development-deploy.md セクション7.4に追加</blockquote>
+<table>
+<thead><tr><th>11</th><th>Dockerfile のセキュリティ</th><th><code>architecture-blueprint/12-development-deploy.md</code></th><th>ブループリントのDockerfileには非rootユーザーの設定がなかったが、設計書では <code>appuser</code> を追加している。セキュリティベストプラクティスとして妥当な追加</th><th>確認OK（改善）</th><th>-</th></tr></thead>
+<thead><tr><th>12</th><th>コミットメッセージ規約</th><th><code>CLAUDE.md</code></th><th>CLAUDE.mdに「コミットメッセージ：日英併記」とあり、設計書のConventional Commits + 日英併記の形式はこれに適合している</th><th>確認OK</th><th>-</th></tr></thead>
+<thead><tr><th>13</th><th>CI の paths-ignore</th><th>-</th><th><code>docs/**</code> と <code>infra/**</code> をCI対象外としている。ドキュメントのみの変更でCIが走らないのは効率的だが、infra変更時にもアプリケーションテストが必要になるケースは限定的であるため妥当</th><th>確認OK</th><th>-</th></tr></thead>
+<thead><tr><th>14</th><th>concurrency 設定</th><th>-</th><th>ci.yml に <code>cancel-in-progress: true</code> を設定しており、同一PRへの連続pushで古いCI実行がキャンセルされる。GitHub Actions の無料枠節約として適切</th><th>確認OK</th><th>-</th></tr></thead>
+<thead><tr><th>15</th><th>DBマイグレーション戦略</th><th><code>architecture-blueprint/04-backend-architecture.md</code></th><th>Flyway によるマイグレーションが全環境で起動時自動実行される設計。prd環境でのマイグレーション失敗時のロールバック手順は、運用手順書で別途整備が望ましい</th><th>改善提案</th><th>未対応（運用手順書で対応）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>総合評価</h2>
+<table>
+<thead><tr><th>評価項目</th><th>結果</th></tr></thead>
+<tbody>
+<tr><td>ブループリントとの整合性</td><td>適合</td></tr>
+<tr><td>SSOT原則の遵守</td><td>適合</td></tr>
+<tr><td>実装可能性</td><td>高い（GitHub Actionsワークフローが具体的に定義されている）</td></tr>
+<tr><td>セキュリティ考慮</td><td>良好（非rootユーザー、Secrets管理、environment保護）</td></tr>
+<tr><td>運用性</td><td>良好（ロールバック手順、トラブルシューティング付き）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>結論:</strong> 設計書は承認可能な品質に達している。改善提案3件はいずれも軽微であり、実装フェーズで段階的に対応することを推奨する。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-13-non-functional-requirements">
+<h1>アーキテクチャ設計レビュー記録票 — 非機能要件</h1>
+<blockquote>対象成果物: <code>docs/architecture-design/13-non-functional-requirements.md</code>
+<p>レビュー日: 2026-03-18<br>レビュー担当: 非機能要件・品質属性設計スペシャリスト（AI）<br>参照ドキュメント:</p>
+<ul><li style="margin-left:0px"><code>docs/architecture-blueprint/13-non-functional-requirements.md</code>（非機能要件ブループリント）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/01-overall-architecture.md</code>（全体アーキテクチャ方針）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/06-infrastructure-architecture.md</code>（インフラアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/08-common-infrastructure.md</code>（アプリケーション共通基盤）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/10-security-architecture.md</code>（セキュリティアーキテクチャ）</li><li style="margin-left:0px"><code>docs/architecture-blueprint/11-monitoring-operations.md</code>（監視・運用アーキテクチャ）</li><li style="margin-left:0px"><code>docs/functional-requirements/00-authentication.md</code>〜<code>07-interface.md</code>（機能要件定義書全10ファイル）</li><li style="margin-left:0px"><code>CLAUDE.md</code>（プロジェクトコンテキスト）</blockquote></li></ul>
+<hr>
+<h2>エグゼクティブサマリー</h2>
+<p>非機能要件設計書は、ブループリント（13-non-functional-requirements.md）で定義された要件を10セクションの詳細設計に展開した。パフォーマンス、可用性、スケーラビリティ、信頼性、保守性、セキュリティ、互換性、テスト、容量、運用の各観点について、具体的な数値目標と実現手段を記載している。</p>
+<p>全体的にブループリントとの整合性は良好であり、SSOTルールに従ってセキュリティ・監視の詳細は参照リンクとしている。指摘事項は軽微なものが中心で、重大な矛盾や欠落は検出されなかった。</p>
+<hr>
+<h2>レビュー結果</h2>
+<table>
+<thead><tr><th>No</th><th>チェック観点</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応状況</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ブループリントとの整合性</td><td>13-non-functional-requirements.md</td><td>API応答時間目標について、ブループリントでは「API応答時間（通常操作）2秒以内」と定義しているのに対し、設計書では「通常CRUD: 500ms以内」「一覧検索: 1秒以内」とより厳しい目標を設定している。ブループリントの2秒はユーザー体感の上限であり、設計書の目標はバックエンド処理時間としての目標なので矛盾はないが、測定ポイントの違いを明記すべき</td><td>改善提案</td><td>設計書に測定ポイントの説明を記載済み</td></tr>
+<tr><td>2</td><td>SSOTルール遵守</td><td>CLAUDE.md</td><td>セキュリティ要件（セクション6）で、認証方式・認可方式・WAF等の方針を参照リンクのみで記載しており、SSOTルールに準拠している</td><td>適合</td><td>-</td></tr>
+<tr><td>3</td><td>SSOTルール遵守</td><td>CLAUDE.md</td><td>運用要件（セクション10）で、監視・アラート設定の詳細を参照リンクで記載しつつ、非機能要件としての基準値はサマリーとして記載しており、SSOTルールに準拠している</td><td>適合</td><td>-</td></tr>
+<tr><td>4</td><td>パフォーマンス実現手段の具体性</td><td>08-common-infrastructure.md</td><td>N+1クエリ防止策として <code>@EntityGraph</code> と <code>JOIN FETCH</code> を挙げているが、具体的にどのエンティティ関連で適用するかは実装フェーズで詳細化が必要</td><td>情報</td><td>実装時に対応</td></tr>
+<tr><td>5</td><td>DBコネクションプール設計</td><td>06-infrastructure-architecture.md</td><td>prd環境でmax 20接続/レプリカ × max 5レプリカ = 100接続と記載。PostgreSQL B1ms の <code>max_connections</code> デフォルトは50程度であり、スケールアウト時に接続数が不足する可能性がある。B1msのmax_connections設定値を事前に確認し、必要に応じてコネクションプール上限を調整すべき</td><td>対応済み</td><td>✅ <strong>対応済み（2026-03-18）</strong>: dev=5/prd=10に全設計書で統一。5レプリカ x 10 = 50接続でDB上限内に収まる構成に修正</td></tr>
+<tr><td>6</td><td>スケーラビリティ設計</td><td>06-infrastructure-architecture.md</td><td>Container Apps のスケールトリガーとして「HTTPリクエスト数」を挙げているが、スケールアウト条件（同時リクエスト20以上/レプリカ）の根拠が不明。負荷テストで適切な閾値を検証する必要がある</td><td>要確認</td><td>負荷テスト実施時に検証・調整</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): Q6方針決定により、スケールアウト閾値を暫定値として明記し、負荷テスト後に調整する方針を 13-non-functional-requirements.md に追記</blockquote>
+<table>
+<thead><tr><th>7</th><th>テスト要件の現実性</th><th>-</th><th>バックエンド行カバレッジ80%以上の目標は妥当だが、Controllerの認証・認可テストやエラーハンドリングテストを含めると達成困難になる可能性がある。カバレッジ除外対象（自動生成コード、設定クラス等）を明確にすべき</th><th>改善提案</th><th>実装時にJaCoCo除外設定を定義</th></tr></thead>
+<thead><tr><th>8</th><th>容量設計の妥当性</th><th>-</th><th>月間トランザクションデータ増加量の見積もりが範囲指定（例: 入荷伝票200〜500件/月）となっており、設計の前提としては適切。ただし、上限値で1年間運用した場合のデータ量がB1msのストレージ上限（32GB〜）に収まることを確認済み</th><th>適合</th><th>-</th></tr></thead>
+<thead><tr><th>9</th><th>可用性設計</th><th>06-infrastructure-architecture.md</th><th>DB障害時のRTOが「数時間」と曖昧。ポイントインタイムリストアの具体的な手順と所要時間の目安（リストア先サーバー作成: 約30分、DNS切替: 約10分、アプリケーション再接続: 約5分）を運用手順書に記載すべき</th><th>改善提案</th><th>運用手順書作成時に詳細化</th></tr></thead>
+<thead><tr><th>10</th><th>互換性設計</th><th>-</th><th>API後方互換性について「3リリースまたは6か月の並行稼働」を定義しているが、現時点では外部APIクライアントは想定されていないため、将来的な指針として適切。CSV I/Fフォーマットの互換性方針も記載されている</th><th>適合</th><th>-</th></tr></thead>
+<thead><tr><th>11</th><th>グレースフルシャットダウン</th><th>-</th><th>シャットダウン猶予時間30秒の設定は一般的に妥当。ただし、バッチ処理（日替処理）の実行中にシャットダウンが発生した場合の振る舞いについて、ステップ単位の再開可能性を記載済み</th><th>適合</th><th>-</th></tr></thead>
+<thead><tr><th>12</th><th>ヘルスチェック設計</th><th>11-monitoring-operations.md</th><th>ブループリントでは <code>/actuator/health</code> のみ記載されていたが、設計書ではレディネスプローブ（<code>/actuator/health/readiness</code>）も追加定義しており、Container Apps のプローブ設計として適切な拡張</th><th>適合</th><th>-</th></tr></thead>
+<thead><tr><th>13</th><th>定期運用タスク</th><th>-</th><th>インデックス再構築（月次）とACRイメージ削除（月次）を定義しているが、自動化（スケジュール実行）の検討が望ましい。現時点では手動運用として記載されている</th><th>改善提案</th><th>運用安定後に自動化を検討</th></tr></thead>
+<thead><tr><th>14</th><th>パスワードポリシー値の複製</th><th>10-security-architecture.md</th><th>セクション6.1のセキュリティ要件サマリーでパスワードポリシーの具体値を記載せず、参照リンクのみとしており、SSOTルール（「パスワードポリシーは10-security-architecture.mdが正」）に準拠</th><th>適合</th><th>-</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<hr>
+<h2>指摘サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>適合（問題なし）</td><td>8件</td></tr>
+<tr><td>改善提案</td><td>4件</td></tr>
+<tr><td>要確認</td><td>2件</td></tr>
+<tr><td>重大な問題</td><td>0件</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>結論</h2>
+<p>非機能要件設計書は、ブループリントで定義された要件を適切に詳細化しており、SSOTルールにも準拠している。重大な問題は検出されなかった。</p>
+<p>「要確認」2件（DBコネクションプール上限、スケールアウト閾値）は実装フェーズでの負荷テストにより検証・調整する。「改善提案」4件は実装フェーズまたは運用手順書作成時に対応する。</p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>
