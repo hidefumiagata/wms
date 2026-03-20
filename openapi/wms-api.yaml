@@ -36,6 +36,8 @@ tags:
     description: 出荷管理
   - name: batch
     description: バッチ管理
+  - name: report
+    description: レポート出力
 
 paths:
   # ============================================================
@@ -3838,6 +3840,830 @@ paths:
                     errorCode: BATCH_EXECUTION_NOT_FOUND
                     message: 指定されたバッチ実行履歴が見つかりません
 
+  # ============================================================
+  # REPORT - レポート出力
+  # ============================================================
+  /api/v1/reports/inbound-inspection:
+    get:
+      tags: [report]
+      summary: 入荷検品レポート
+      operationId: getInboundInspectionReport
+      description: 入荷伝票IDを指定して検品レポートを取得する。format指定でCSV/PDFダウンロードも可能。
+      parameters:
+        - name: slipId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 入荷伝票ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 入荷検品レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InboundInspectionReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 入荷伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/inbound-plan:
+    get:
+      tags: [report]
+      summary: 入荷予定レポート
+      operationId: getInboundPlanReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: plannedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入荷予定日From
+        - name: plannedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入荷予定日To
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: ステータス絞り込み
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 仕入先ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 入荷予定レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InboundPlanReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/inbound-result:
+    get:
+      tags: [report]
+      summary: 入庫実績レポート
+      operationId: getInboundResultReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: storedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入庫日From
+        - name: storedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入庫日To
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 仕入先ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 入庫実績レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InboundResultReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/unreceived-realtime:
+    get:
+      tags: [report]
+      summary: 未入荷リスト（リアルタイム）
+      operationId: getUnreceivedRealtimeReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 基準日（デフォルト：現在営業日）
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 未入荷リスト
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnreceivedRealtimeReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/unreceived-confirmed:
+    get:
+      tags: [report]
+      summary: 未入荷リスト（確定）
+      operationId: getUnreceivedConfirmedReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: batchBusinessDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: バッチ処理営業日
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 未入荷リスト（確定）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnreceivedConfirmedReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/inventory:
+    get:
+      tags: [report]
+      summary: 在庫一覧レポート
+      operationId: getInventoryReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: locationCodePrefix
+          in: query
+          schema:
+            type: string
+          description: ロケーションコード前方一致
+        - name: productId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: unitType
+          in: query
+          schema:
+            $ref: '#/components/schemas/UnitType'
+          description: 荷姿種別
+        - name: storageCondition
+          in: query
+          schema:
+            $ref: '#/components/schemas/StorageCondition'
+          description: 保管条件
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 在庫一覧レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/inventory-transition:
+    get:
+      tags: [report]
+      summary: 在庫推移レポート
+      operationId: getInventoryTransitionReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 対象期間From（デフォルト：当月1日）
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 対象期間To（デフォルト：本日）
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 在庫推移レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryTransitionReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 商品が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/inventory-correction:
+    get:
+      tags: [report]
+      summary: 在庫訂正一覧
+      operationId: getInventoryCorrectionReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: correctionDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 訂正日From（デフォルト：当月1日）
+        - name: correctionDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 訂正日To（デフォルト：本日）
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 在庫訂正一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryCorrectionReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/stocktake-list:
+    get:
+      tags: [report]
+      summary: 棚卸リスト
+      operationId: getStocktakeListReport
+      parameters:
+        - name: stocktakeId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 棚卸ID（棚卸開始後）
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 棟ID（プレビュー用）
+        - name: areaId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: エリアID（プレビュー用）
+        - name: hideBookQty
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: PDF出力時に帳簿数量を非表示
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 棚卸リスト
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StocktakeListReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 棚卸または棟が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/stocktake-result:
+    get:
+      tags: [report]
+      summary: 棚卸結果レポート
+      operationId: getStocktakeResultReport
+      parameters:
+        - name: stocktakeId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 棚卸ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 棚卸結果レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StocktakeResultReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 棚卸が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/picking-instruction:
+    get:
+      tags: [report]
+      summary: ピッキング指示書
+      operationId: getPickingInstructionReport
+      parameters:
+        - name: pickingInstructionId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ピッキング指示ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: ピッキング指示書
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PickingInstructionReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: ピッキング指示が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/shipping-inspection:
+    get:
+      tags: [report]
+      summary: 出荷検品レポート
+      operationId: getShippingInspectionReport
+      parameters:
+        - name: slipId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 出荷伝票ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 出荷検品レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShippingInspectionReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 出荷伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/shipping-list:
+    get:
+      tags: [report]
+      summary: 出荷明細リスト
+      operationId: getShippingListReport
+      parameters:
+        - name: slipId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 出荷伝票ID
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 出荷明細リスト
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShippingListReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 出荷伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/reports/unshipped-realtime:
+    get:
+      tags: [report]
+      summary: 未出荷リスト（リアルタイム）
+      operationId: getUnshippedRealtimeReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: asOfDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 基準日（デフォルト：現在営業日）
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 未出荷リスト
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnshippedRealtimeReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/unshipped-confirmed:
+    get:
+      tags: [report]
+      summary: 未出荷リスト（確定）
+      operationId: getUnshippedConfirmedReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: batchBusinessDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: バッチ処理営業日
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 未出荷リスト（確定）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnshippedConfirmedReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/daily-summary:
+    get:
+      tags: [report]
+      summary: 日次集計レポート
+      operationId: getDailySummaryReport
+      parameters:
+        - name: targetBusinessDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: 対象営業日
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 日次集計レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DailySummaryReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/reports/returns:
+    get:
+      tags: [report]
+      summary: 返品レポート
+      operationId: getReturnsReport
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: returnType
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReturnType'
+          description: 返品種別
+        - name: returnDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 返品日From
+        - name: returnDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 返品日To
+        - name: productId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 取引先ID
+        - name: returnReason
+          in: query
+          schema:
+            $ref: '#/components/schemas/ReturnReason'
+          description: 返品理由コード
+        - $ref: '#/components/parameters/ReportFormat'
+      responses:
+        '200':
+          description: 返品レポート
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReturnsReportItem'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   # ============================================================
   # Security Schemes
@@ -6991,6 +7817,469 @@ components:
         totalPages:
           type: integer
 
+    # ----------------------------------------------------------
+    # レポート出力 (Report) schemas
+    # ----------------------------------------------------------
+    ReportFormat:
+      type: string
+      enum:
+        - json
+        - csv
+        - pdf
+      default: json
+      description: 出力フォーマット
+
+    ReturnType:
+      type: string
+      enum:
+        - INBOUND
+        - INVENTORY
+        - OUTBOUND
+      description: 返品種別
+
+    ReturnReason:
+      type: string
+      enum:
+        - QUALITY_DEFECT
+        - EXCESS_QUANTITY
+        - WRONG_DELIVERY
+        - EXPIRED
+        - DAMAGED
+        - OTHER
+      description: 返品理由コード
+
+    InboundInspectionReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        supplierName:
+          type: string
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        caseQuantity:
+          type: integer
+          description: ケース入数
+        plannedQuantityCas:
+          type: integer
+        inspectedQuantityCas:
+          type: integer
+        diffQuantityCas:
+          type: integer
+        plannedQuantityPcs:
+          type: integer
+        inspectedQuantityPcs:
+          type: integer
+        diffQuantityPcs:
+          type: integer
+        lotNumber:
+          type: ['string', 'null']
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+
+    InboundPlanReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        supplierName:
+          type: string
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        plannedQuantityCas:
+          type: integer
+        plannedQuantityPcs:
+          type: integer
+        status:
+          type: string
+        statusLabel:
+          type: string
+
+    InboundResultReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        storedDate:
+          type: string
+          format: date
+        supplierName:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        plannedQuantityCas:
+          type: integer
+        inspectedQuantityCas:
+          type: integer
+        diffQuantityCas:
+          type: integer
+        storedLocationCode:
+          type: string
+        returnQuantity:
+          type: ['integer', 'null']
+
+    UnreceivedRealtimeReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        supplierName:
+          type: string
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        plannedQuantityCas:
+          type: integer
+        status:
+          type: string
+        statusLabel:
+          type: string
+        delayDays:
+          type: integer
+
+    UnreceivedConfirmedReportItem:
+      type: object
+      properties:
+        batchBusinessDate:
+          type: string
+          format: date
+        slipNumber:
+          type: string
+        supplierName:
+          type: string
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        plannedQuantityCas:
+          type: integer
+        statusAtBatch:
+          type: string
+
+    InventoryReportItem:
+      type: object
+      properties:
+        locationCode:
+          type: string
+        buildingName:
+          type: string
+        areaName:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        quantity:
+          type: integer
+        allocatedQty:
+          type: integer
+        availableQty:
+          type: integer
+        lotNumber:
+          type: ['string', 'null']
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+
+    InventoryTransitionReportItem:
+      type: object
+      properties:
+        movementDate:
+          type: string
+          format: date
+        movementType:
+          type: string
+          description: 変動種別コード
+        movementTypeLabel:
+          type: string
+          description: 変動種別表示名
+        locationCode:
+          type: string
+        unitType:
+          type: string
+        quantityBefore:
+          type: integer
+        quantityChange:
+          type: integer
+        quantityAfter:
+          type: integer
+        referenceNumber:
+          type: ['string', 'null']
+        lotNumber:
+          type: ['string', 'null']
+
+    InventoryCorrectionReportItem:
+      type: object
+      properties:
+        correctionDate:
+          type: string
+          format: date
+        locationCode:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        quantityBefore:
+          type: integer
+        quantityAfter:
+          type: integer
+        quantityChange:
+          type: integer
+        reason:
+          type: string
+        operatorName:
+          type: string
+
+    StocktakeListReportItem:
+      type: object
+      properties:
+        locationCode:
+          type: string
+        areaName:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        systemQuantity:
+          type: integer
+        actualQuantity:
+          type: ['integer', 'null']
+          description: 実数（null=未入力）
+        lotNumber:
+          type: ['string', 'null']
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+
+    StocktakeResultReportItem:
+      type: object
+      properties:
+        locationCode:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        systemQuantity:
+          type: integer
+        actualQuantity:
+          type: integer
+        diffQuantity:
+          type: integer
+        diffRate:
+          type: ['number', 'null']
+          format: double
+          description: 差異率（%）
+        lotNumber:
+          type: ['string', 'null']
+
+    PickingInstructionReportItem:
+      type: object
+      properties:
+        locationCode:
+          type: string
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        instructedQuantity:
+          type: integer
+        outboundSlipNumber:
+          type: string
+        customerName:
+          type: ['string', 'null']
+        plannedShipDate:
+          type: string
+          format: date
+        lotNumber:
+          type: ['string', 'null']
+
+    ShippingInspectionReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        customerName:
+          type: ['string', 'null']
+        plannedShipDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        pickedQuantity:
+          type: integer
+        inspectedQuantity:
+          type: integer
+        diffQuantity:
+          type: integer
+
+    ShippingListReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        customerName:
+          type: ['string', 'null']
+        plannedShipDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        unitType:
+          type: string
+        orderedQty:
+          type: integer
+        shippedQty:
+          type: integer
+
+    UnshippedRealtimeReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        customerName:
+          type: ['string', 'null']
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        orderedQty:
+          type: integer
+        status:
+          type: string
+        statusLabel:
+          type: string
+        delayDays:
+          type: integer
+
+    UnshippedConfirmedReportItem:
+      type: object
+      properties:
+        batchBusinessDate:
+          type: string
+          format: date
+        slipNumber:
+          type: string
+        customerName:
+          type: ['string', 'null']
+        plannedDate:
+          type: string
+          format: date
+        productCode:
+          type: string
+        productName:
+          type: string
+        orderedQty:
+          type: integer
+        statusAtBatch:
+          type: string
+
+    DailySummaryReportItem:
+      type: object
+      properties:
+        businessDate:
+          type: string
+          format: date
+        warehouseId:
+          type: integer
+          format: int64
+        warehouseName:
+          type: string
+        inboundCount:
+          type: integer
+        inboundLineCount:
+          type: integer
+        inboundQuantityTotal:
+          type: integer
+        outboundCount:
+          type: integer
+        outboundLineCount:
+          type: integer
+        outboundQuantityTotal:
+          type: integer
+        returnCount:
+          type: integer
+        returnQuantityTotal:
+          type: integer
+        inventoryQuantityTotal:
+          type: integer
+        unreceivedCount:
+          type: integer
+        unshippedCount:
+          type: integer
+
+    ReturnsReportItem:
+      type: object
+      properties:
+        slipNumber:
+          type: string
+        returnType:
+          $ref: '#/components/schemas/ReturnType'
+        productCode:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitType:
+          type: string
+        locationCode:
+          type: ['string', 'null']
+        partnerCode:
+          type: ['string', 'null']
+        partnerName:
+          type: ['string', 'null']
+        returnReason:
+          $ref: '#/components/schemas/ReturnReason'
+        returnReasonNote:
+          type: ['string', 'null']
+        returnDate:
+          type: string
+          format: date
+        createdByName:
+          type: string
+
   # ============================================================
   # Parameters
   # ============================================================
@@ -7022,6 +8311,13 @@ components:
         maximum: 100
         default: 20
       description: ページサイズ
+
+    ReportFormat:
+      name: format
+      in: query
+      schema:
+        $ref: '#/components/schemas/ReportFormat'
+      description: 出力フォーマット（json/csv/pdf）
 
   # ============================================================
   # Reusable Responses
