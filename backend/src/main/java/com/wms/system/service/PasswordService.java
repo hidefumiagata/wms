@@ -40,16 +40,13 @@ public class PasswordService {
         int lockThreshold = systemParameterService.getIntValue("LOGIN_FAILURE_LOCK_COUNT");
 
         if (user.getLocked()) {
-            throw new BadCredentialsException("アカウントがロックされています");
+            throw new BadCredentialsException("ユーザーコードまたはパスワードが正しくありません");
         }
 
         // 現在のパスワード検証
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
             user.incrementFailedLogin(lockThreshold);
             userRepository.save(user);
-            if (user.getLocked()) {
-                throw new BadCredentialsException("アカウントがロックされています");
-            }
             throw new BadCredentialsException("ユーザーコードまたはパスワードが正しくありません");
         }
 

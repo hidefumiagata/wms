@@ -56,22 +56,21 @@ public class AuthService {
 
         User user = userOpt.get();
 
-        // アカウント状態チェック
-        if (!user.getIsActive()) {
-            throw new BadCredentialsException("アカウントが無効化されています");
-        }
-        if (user.getLocked()) {
-            throw new BadCredentialsException("アカウントがロックされています");
+        // アカウント状態チェック（ユーザー列挙防止: 理由を問わず同一メッセージ）
+        if (!user.getIsActive() || user.getLocked()) {
+            // タイミング攻撃対策: パスワード照合と同等の処理時間を確保
+            passwordEncoder.matches(password, user.getPasswordHash());
+            log.warn("Login rejected: userCode={}, isActive={}, locked={}",
+                    userCode, user.getIsActive(), user.getLocked());
+            throw new BadCredentialsException("ユーザーコードまたはパスワードが正しくありません");
         }
 
         // パスワード検証
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             user.incrementFailedLogin(lockThreshold);
             userRepository.save(user);
-            if (user.getLocked()) {
-                log.warn("Account locked: userCode={}", userCode);
-                throw new BadCredentialsException("アカウントがロックされています");
-            }
+            log.warn("Login failed: userCode={}, failedCount={}, locked={}",
+                    userCode, user.getFailedLoginCount(), user.getLocked());
             throw new BadCredentialsException("ユーザーコードまたはパスワードが正しくありません");
         }
 
