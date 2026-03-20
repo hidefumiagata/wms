@@ -1548,6 +1548,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
     post:
       operationId: createProduct
       summary: 商品登録
@@ -3883,6 +3885,8 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 入荷伝票が存在しない
           content:
@@ -3948,6 +3952,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 倉庫が存在しない
           content:
@@ -4008,6 +4014,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/unreceived-realtime:
     get:
@@ -4050,6 +4058,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/unreceived-confirmed:
     get:
@@ -4093,6 +4103,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/inventory:
     get:
@@ -4150,6 +4162,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/inventory-transition:
     get:
@@ -4205,6 +4219,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 商品が存在しない
           content:
@@ -4259,6 +4275,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/stocktake-list:
     get:
@@ -4312,6 +4330,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 棚卸または棟が存在しない
           content:
@@ -4352,6 +4372,8 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 棚卸が存在しない
           content:
@@ -4392,6 +4414,8 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: ピッキング指示が存在しない
           content:
@@ -4432,6 +4456,8 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: 出荷伝票が存在しない
           content:
@@ -4439,29 +4465,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/reports/shipping-list:
+  /api/v1/reports/delivery-list:
     get:
       tags: [report]
-      summary: 出荷明細リスト
-      operationId: getShippingListReport
+      summary: 配送リスト
+      operationId: getDeliveryListReport
       parameters:
-        - name: slipId
+        - name: warehouseId
           in: query
           required: true
           schema:
             type: integer
             format: int64
-          description: 出荷伝票ID
+          description: 倉庫ID
+        - name: plannedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日（From）
+        - name: plannedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 出荷予定日（To）
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: ステータス絞り込み
+        - name: carrier
+          in: query
+          schema:
+            type: string
+          description: 配送業者名で絞り込み（部分一致）
         - $ref: '#/components/parameters/ReportFormat'
       responses:
         '200':
-          description: 出荷明細リスト
+          description: 配送リスト
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ShippingListReportItem'
+                  $ref: '#/components/schemas/DeliveryListReportItem'
             text/csv:
               schema:
                 type: string
@@ -4472,8 +4520,10 @@ paths:
                 format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
-          description: 出荷伝票が存在しない
+          description: 倉庫が存在しない
           content:
             application/json:
               schema:
@@ -4520,6 +4570,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/unshipped-confirmed:
     get:
@@ -4563,6 +4615,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/daily-summary:
     get:
@@ -4599,6 +4653,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /api/v1/reports/returns:
     get:
@@ -4669,6 +4725,8 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   # ============================================================
   # SYSTEM PARAMETER - システムパラメータ
@@ -4821,7 +4879,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllocationExecutionResult'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          description: バリデーションエラーまたはステータス不正
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  value:
+                    errorCode: VALIDATION_ERROR
+                    message: リクエストパラメータが不正です
+                invalidStatus:
+                  value:
+                    errorCode: INVALID_STATUS
+                    message: 対象受注のステータスが引当可能ではありません
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -5158,10 +5229,12 @@ components:
       properties:
         currentPassword:
           type: string
+          minLength: 1
           maxLength: 255
           description: 現在のパスワード（平文）
         newPassword:
           type: string
+          minLength: 1
           maxLength: 255
           description: 新しいパスワード（平文）。パスワードポリシーを満たすこと
 
@@ -5171,6 +5244,7 @@ components:
       properties:
         identifier:
           type: string
+          minLength: 1
           maxLength: 255
           description: ユーザーコードまたはメールアドレス
           example: admin001
@@ -5181,10 +5255,12 @@ components:
       properties:
         token:
           type: string
+          minLength: 1
           description: パスワードリセットトークン（メールで受信したURL内のトークン）
           example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
         newPassword:
           type: string
+          minLength: 1
           maxLength: 255
           description: 新しいパスワード（平文）。パスワードポリシーを満たすこと
 
@@ -5925,7 +6001,7 @@ components:
 
     LocationToggleResponse:
       type: object
-      required: [id, locationCode, isActive, version, updatedAt]
+      required: [id, locationCode, locationName, isActive, version, updatedAt]
       properties:
         id:
           type: integer
@@ -7777,6 +7853,9 @@ components:
           type: integer
           format: int64
           description: 作成者ID
+        createdByName:
+          type: string
+          description: 作成者名
         completedAt:
           type: ['string', 'null']
           format: date-time
@@ -8561,26 +8640,61 @@ components:
         diffQuantity:
           type: integer
 
-    ShippingListReportItem:
+    DeliveryListReportItem:
       type: object
       properties:
         slipNumber:
           type: string
+          description: 出荷伝票番号
         customerName:
+          type: string
+          description: 出荷先名
+        deliveryAddress:
           type: ['string', 'null']
+          description: 配送先住所
         plannedShipDate:
           type: string
           format: date
+          description: 出荷予定日
+        status:
+          type: string
+          description: ステータスコード
+        statusLabel:
+          type: string
+          description: ステータス表示名
+        carrier:
+          type: ['string', 'null']
+          description: 配送業者名
+        trackingNumber:
+          type: ['string', 'null']
+          description: 送り状番号
+        totalQuantityCas:
+          type: integer
+          description: 合計数量（ケース）
+        totalQuantityPcs:
+          type: integer
+          description: 合計数量（バラ）
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveryListLineItem'
+          description: 商品明細行
+
+    DeliveryListLineItem:
+      type: object
+      properties:
         productCode:
           type: string
+          description: 商品コード
         productName:
           type: string
+          description: 商品名
         unitType:
           type: string
-        orderedQty:
+          description: 荷姿
+        quantity:
           type: integer
-        shippedQty:
-          type: integer
+          description: 数量
 
     UnshippedRealtimeReportItem:
       type: object
@@ -9159,6 +9273,7 @@ components:
 
     ReturnSlipDetail:
       type: object
+      required: [id, slipNumber, returnType, warehouseId, warehouseCode, warehouseName, productId, productCode, productName, quantity, unitType, returnReason, returnDate, status, createdAt, createdBy, createdByName]
       properties:
         id:
           type: integer
@@ -9247,6 +9362,7 @@ components:
 
     ReturnSlipSummary:
       type: object
+      required: [id, slipNumber, returnType, warehouseCode, productCode, productName, quantity, unitType, returnReason, returnDate, status, createdAt, createdByName]
       properties:
         id:
           type: integer
