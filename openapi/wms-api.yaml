@@ -34,6 +34,8 @@ tags:
     description: 在庫管理
   - name: outbound
     description: 出荷管理
+  - name: batch
+    description: バッチ管理
 
 paths:
   # ============================================================
@@ -3713,6 +3715,129 @@ paths:
                     errorCode: OUTBOUND_INVALID_STATUS
                     message: 既に完了済みのピッキング指示です
 
+  # ============================================================
+  # BATCH - バッチ管理
+  # ============================================================
+  /api/v1/batch/daily-close:
+    post:
+      tags: [batch]
+      summary: 日替処理実行
+      operationId: executeDailyClose
+      description: 日替処理を同期実行する。未入荷リスト・未出荷リスト確定、営業日更新等を行う。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DailyCloseRequest'
+      responses:
+        '200':
+          description: 日替処理完了
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyCloseResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 同一営業日で既に実行済み
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                alreadyRunning:
+                  value:
+                    errorCode: BATCH_ALREADY_RUNNING
+                    message: 同一営業日のバッチ処理が既に実行済みまたは実行中です
+
+  /api/v1/batch/executions:
+    get:
+      tags: [batch]
+      summary: バッチ実行履歴一覧取得
+      operationId: listBatchExecutions
+      description: バッチ実行履歴をページング形式で取得する。
+      parameters:
+        - name: executedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 実行日From（yyyy-MM-dd）
+        - name: executedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 実行日To（yyyy-MM-dd）
+        - name: targetBusinessDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 処理対象営業日（yyyy-MM-dd）
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BatchExecutionStatus'
+          description: ステータス
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: startedAt,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: バッチ実行履歴一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchExecutionPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/batch/executions/{id}:
+    get:
+      tags: [batch]
+      summary: バッチ実行履歴詳細取得
+      operationId: getBatchExecution
+      description: バッチ実行履歴の詳細を1件取得する。
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: バッチ実行履歴詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchExecutionDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: バッチ実行履歴が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: BATCH_EXECUTION_NOT_FOUND
+                    message: 指定されたバッチ実行履歴が見つかりません
+
 components:
   # ============================================================
   # Security Schemes
@@ -6715,6 +6840,147 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PickingInstructionSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    # ----------------------------------------------------------
+    # バッチ管理 (Batch) schemas
+    # ----------------------------------------------------------
+    BatchExecutionStatus:
+      type: string
+      enum:
+        - SUCCESS
+        - FAILED
+        - RUNNING
+      description: |
+        バッチ実行ステータス
+        - SUCCESS: 正常完了
+        - FAILED: 異常終了
+        - RUNNING: 実行中
+
+    BatchStepStatus:
+      type: string
+      enum:
+        - SUCCESS
+        - FAILED
+        - SKIPPED
+      description: |
+        バッチステップステータス
+        - SUCCESS: 正常完了
+        - FAILED: 異常終了
+        - SKIPPED: スキップ
+
+    DailyCloseRequest:
+      type: object
+      required:
+        - targetBusinessDate
+      properties:
+        targetBusinessDate:
+          type: string
+          format: date
+          description: 処理対象営業日（yyyy-MM-dd）
+
+    DailyCloseStepResult:
+      type: object
+      properties:
+        step:
+          type: integer
+          description: ステップ番号（1〜6）
+        name:
+          type: string
+          description: ステップ名
+        status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        errorMessage:
+          type: ['string', 'null']
+          description: エラーメッセージ（FAILED時のみ）
+
+    DailyCloseResponse:
+      type: object
+      properties:
+        executionId:
+          type: integer
+          format: int64
+          description: バッチ実行ログID
+        status:
+          $ref: '#/components/schemas/BatchExecutionStatus'
+        targetBusinessDate:
+          type: string
+          format: date
+          description: 処理対象営業日
+        startedAt:
+          type: string
+          format: date-time
+          description: 処理開始日時
+        completedAt:
+          type: string
+          format: date-time
+          description: 処理完了日時
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyCloseStepResult'
+        unreceivedCount:
+          type: ['integer', 'null']
+          description: 未入荷件数（SUCCESS時のみ）
+        unshippedCount:
+          type: ['integer', 'null']
+          description: 未出荷件数（SUCCESS時のみ）
+
+    BatchExecutionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: バッチ実行ログID
+        targetBusinessDate:
+          type: string
+          format: date
+          description: 処理対象営業日
+        status:
+          $ref: '#/components/schemas/BatchExecutionStatus'
+        step1Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        step2Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        step3Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        step4Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        step5Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        step6Status:
+          $ref: '#/components/schemas/BatchStepStatus'
+        errorMessage:
+          type: ['string', 'null']
+          description: エラーメッセージ（FAILED時のみ）
+        startedAt:
+          type: string
+          format: date-time
+          description: 処理開始日時
+        completedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 処理完了日時（RUNNING中はnull）
+        executedByName:
+          type: string
+          description: 実行者氏名
+
+    BatchExecutionPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/BatchExecutionDetail'
         page:
           type: integer
         size:
