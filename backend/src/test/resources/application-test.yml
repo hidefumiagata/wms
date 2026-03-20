@@ -16,5 +16,8 @@ jwt:
   access-token-expiration: 900000
   refresh-token-expiration: 604800000
 
+cookie:
+  secure: false
+
 cors:
   allowed-origins: http://localhost:5173
