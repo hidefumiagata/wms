@@ -106,6 +106,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
+    // --- レートリミット ---
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: traceId={}", TraceContext.getCurrentTraceId());
+        ErrorResponse body = ErrorResponse.of(
+                "RATE_LIMIT_EXCEEDED", ex.getMessage(),
+                TraceContext.getCurrentTraceId());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(body);
+    }
+
     // --- その他すべての例外 ---
 
     @ExceptionHandler(Exception.class)
