@@ -28,6 +28,8 @@ tags:
     description: 商品マスタ
   - name: master-user
     description: ユーザーマスタ
+  - name: inbound
+    description: 入荷管理
 
 paths:
   # ============================================================
@@ -2029,6 +2031,542 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
 
+  # ============================================================
+  # INBOUND - 入荷管理
+  # ============================================================
+
+  /api/v1/inbound/slips:
+    get:
+      operationId: listInboundSlips
+      summary: 入荷予定一覧取得
+      description: 指定倉庫の入荷予定伝票をページング形式で取得する。ステータス・入荷予定日・仕入先等の条件で絞り込みが可能。
+      tags: [inbound]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: slipNumber
+          in: query
+          schema:
+            type: string
+          description: 伝票番号（前方一致）
+        - name: status
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/InboundSlipStatus'
+          description: ステータス（複数指定可）
+        - name: plannedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入荷予定日From（yyyy-MM-dd）
+        - name: plannedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入荷予定日To（yyyy-MM-dd）
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 仕入先ID
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: plannedDate,asc
+          description: ソート指定
+      responses:
+        '200':
+          description: 入荷予定一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipSummaryPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  summary: 倉庫未存在
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
+    post:
+      operationId: createInboundSlip
+      summary: 入荷予定登録
+      description: |
+        新しい入荷予定伝票をヘッダー情報と明細とともに登録する。
+        登録時のステータスはPLANNEDで固定。伝票番号はシステムが自動採番する。
+      tags: [inbound]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInboundSlipRequest'
+      responses:
+        '201':
+          description: 登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: マスタ未存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+                partnerNotFound:
+                  value:
+                    errorCode: PARTNER_NOT_FOUND
+                    message: 指定された仕入先が見つかりません
+                productNotFound:
+                  value:
+                    errorCode: PRODUCT_NOT_FOUND
+                    message: 指定された商品が見つかりません
+        '409':
+          description: 重複エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateProduct:
+                  value:
+                    errorCode: DUPLICATE_PRODUCT_IN_LINES
+                    message: 同一伝票内に同じ商品が重複しています
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                partnerNotSupplier:
+                  value:
+                    errorCode: INBOUND_PARTNER_NOT_SUPPLIER
+                    message: 取引先種別が仕入先ではありません
+                plannedDateTooEarly:
+                  value:
+                    errorCode: PLANNED_DATE_TOO_EARLY
+                    message: 入荷予定日が現在営業日より前です
+                lotNumberRequired:
+                  value:
+                    errorCode: LOT_NUMBER_REQUIRED
+                    message: ロット管理対象商品にはロット番号が必須です
+                expiryDateRequired:
+                  value:
+                    errorCode: EXPIRY_DATE_REQUIRED
+                    message: 期限管理対象商品には賞味期限日が必須です
+
+  /api/v1/inbound/slips/{id}:
+    get:
+      operationId: getInboundSlip
+      summary: 入荷予定詳細取得
+      description: 指定IDの入荷予定伝票のヘッダー情報と全明細（差異数含む）を取得する。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 入荷伝票詳細
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+
+    delete:
+      operationId: deleteInboundSlip
+      summary: 入荷予定削除
+      description: ステータスがPLANNEDの入荷予定伝票を物理削除する。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '204':
+          description: 削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: INBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/inbound/slips/{id}/confirm:
+    post:
+      operationId: confirmInboundSlip
+      summary: 入荷確認
+      description: PLANNED状態の入荷予定伝票をCONFIRMED（入荷確認済）に遷移させる。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: 確認成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: INBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/inbound/slips/{id}/cancel:
+    post:
+      operationId: cancelInboundSlip
+      summary: 入荷キャンセル
+      description: |
+        STORED・CANCELLED以外の入荷予定伝票をCANCELLEDに遷移させる。
+        PARTIAL_STOREDの場合は入庫確定済み在庫を戻す処理を行う。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: キャンセル成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: INBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+
+  /api/v1/inbound/slips/{id}/inspect:
+    post:
+      operationId: inspectInboundSlip
+      summary: 検品登録
+      description: |
+        到着した入荷品を明細単位で検品し、実際の入荷数を記録する。
+        初回呼び出し時にステータスがINSPECTINGに遷移する。検品数は再保存（上書き）可能。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectInboundRequest'
+      responses:
+        '200':
+          description: 検品登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 伝票または明細が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                slipNotFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+                lineNotFound:
+                  value:
+                    errorCode: INBOUND_LINE_NOT_FOUND
+                    message: 指定された入荷明細が見つかりません
+        '409':
+          description: ステータスエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: INBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                expiryDateExpired:
+                  value:
+                    errorCode: EXPIRY_DATE_EXPIRED
+                    message: 賞味期限が営業日以前です
+
+  /api/v1/inbound/slips/{id}/store:
+    post:
+      operationId: storeInboundSlip
+      summary: 入庫確定
+      description: |
+        検品済み明細を指定ロケーションへ入庫確定する。
+        確定と同時にinventoriesテーブルの在庫を加算し、inventory_movementsにINBOUNDレコードを追記する。
+        全明細入庫完了でSTOREDに、一部の場合はPARTIAL_STOREDに遷移する。
+      tags: [inbound]
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreInboundRequest'
+      responses:
+        '200':
+          description: 入庫確定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundSlipDetail'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: リソースが存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                slipNotFound:
+                  value:
+                    errorCode: INBOUND_SLIP_NOT_FOUND
+                    message: 指定された入荷伝票が見つかりません
+                lineNotFound:
+                  value:
+                    errorCode: INBOUND_LINE_NOT_FOUND
+                    message: 指定された入荷明細が見つかりません
+                locationNotFound:
+                  value:
+                    errorCode: LOCATION_NOT_FOUND
+                    message: 指定されたロケーションが見つかりません
+        '409':
+          description: ステータスまたは在庫エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidStatus:
+                  value:
+                    errorCode: INBOUND_INVALID_STATUS
+                    message: 現在のステータスではこの操作は実行できません
+                lineNotInspected:
+                  value:
+                    errorCode: INBOUND_LINE_NOT_INSPECTED
+                    message: 対象明細が検品済みではありません
+                stocktakeInProgress:
+                  value:
+                    errorCode: INVENTORY_STOCKTAKE_IN_PROGRESS
+                    message: 指定ロケーションは棚卸中のためロックされています
+        '422':
+          description: 業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                productMismatch:
+                  value:
+                    errorCode: LOCATION_PRODUCT_MISMATCH
+                    message: 入庫先ロケーションに既に別商品の在庫が存在します
+                areaMismatch:
+                  value:
+                    errorCode: INBOUND_LOCATION_AREA_MISMATCH
+                    message: 指定ロケーションが入荷エリアに属していません
+
+  /api/v1/inbound/results:
+    get:
+      operationId: listInboundResults
+      summary: 入荷実績照会
+      description: 入庫完了した入荷伝票の実績を明細レベルで照会する。
+      tags: [inbound]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: storedDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入庫日From（yyyy-MM-dd）。デフォルト：当月1日
+        - name: storedDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 入庫日To（yyyy-MM-dd）。デフォルト：現在日
+        - name: partnerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 仕入先ID
+        - name: slipNumber
+          in: query
+          schema:
+            type: string
+          description: 伝票番号（前方一致）
+        - name: productCode
+          in: query
+          schema:
+            type: string
+          description: 商品コード（前方一致）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: storedAt,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: 入荷実績一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboundResultPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: 倉庫が存在しない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                warehouseNotFound:
+                  value:
+                    errorCode: WAREHOUSE_NOT_FOUND
+                    message: 指定された倉庫が見つかりません
+
 components:
   # ============================================================
   # Security Schemes
@@ -3324,6 +3862,404 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UserDetail'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    # ----------------------------------------------------------
+    # Inbound schemas
+    # ----------------------------------------------------------
+
+    InboundSlipStatus:
+      type: string
+      enum: [PLANNED, CONFIRMED, INSPECTING, PARTIAL_STORED, STORED, CANCELLED]
+      description: 入荷伝票ステータス
+
+    InboundLineStatus:
+      type: string
+      enum: [PENDING, INSPECTED, STORED]
+      description: 入荷明細ステータス
+
+    InboundSlipType:
+      type: string
+      enum: [NORMAL, WAREHOUSE_TRANSFER]
+      description: 入荷種別
+
+    UnitType:
+      type: string
+      enum: [CASE, BALL, PIECE]
+      description: 荷姿
+
+    CreateInboundSlipRequest:
+      type: object
+      required: [warehouseId, plannedDate, slipType, lines]
+      properties:
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        partnerId:
+          type: integer
+          format: int64
+          description: 仕入先ID（NORMAL入荷の場合必須）
+        plannedDate:
+          type: string
+          format: date
+          description: 入荷予定日（yyyy-MM-dd）
+        slipType:
+          $ref: '#/components/schemas/InboundSlipType'
+        note:
+          type: string
+          maxLength: 500
+          description: 備考
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreateInboundLineRequest'
+
+    CreateInboundLineRequest:
+      type: object
+      required: [productId, unitType, plannedQty]
+      properties:
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        plannedQty:
+          type: integer
+          minimum: 1
+          maximum: 999999
+          description: 入荷予定数量
+        lotNumber:
+          type: ['string', 'null']
+          maxLength: 100
+          description: ロット番号（ロット管理対象商品の場合必須）
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限日（期限管理対象商品の場合必須）
+
+    InspectInboundRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InspectLineRequest'
+
+    InspectLineRequest:
+      type: object
+      required: [lineId, inspectedQty]
+      properties:
+        lineId:
+          type: integer
+          format: int64
+          description: 明細ID
+        inspectedQty:
+          type: integer
+          minimum: 0
+          maximum: 999999
+          description: 検品数（0は全量不着を意味する）
+
+    StoreInboundRequest:
+      type: object
+      required: [lines]
+      properties:
+        lines:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/StoreLineRequest'
+
+    StoreLineRequest:
+      type: object
+      required: [lineId, locationId]
+      properties:
+        lineId:
+          type: integer
+          format: int64
+          description: 明細ID
+        locationId:
+          type: integer
+          format: int64
+          description: 入庫先ロケーションID
+
+    InboundSlipSummary:
+      type: object
+      required: [id, slipNumber, slipType, warehouseCode, plannedDate, status, lineCount, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 入荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        slipType:
+          $ref: '#/components/schemas/InboundSlipType'
+        warehouseCode:
+          type: string
+          description: 倉庫コード
+        partnerCode:
+          type: ['string', 'null']
+          description: 仕入先コード（倉庫振替の場合はnull）
+        partnerName:
+          type: ['string', 'null']
+          description: 仕入先名（倉庫振替の場合はnull）
+        plannedDate:
+          type: string
+          format: date
+          description: 入荷予定日
+        status:
+          $ref: '#/components/schemas/InboundSlipStatus'
+        lineCount:
+          type: integer
+          description: 明細件数
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時
+
+    InboundSlipDetail:
+      type: object
+      required: [id, slipNumber, slipType, warehouseId, warehouseCode, warehouseName, plannedDate, status, createdAt, createdBy, updatedAt, updatedBy, lines]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 入荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        slipType:
+          $ref: '#/components/schemas/InboundSlipType'
+        transferSlipNumber:
+          type: ['string', 'null']
+          description: 振替伝票番号（倉庫振替の場合のみ）
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        warehouseCode:
+          type: string
+          description: 倉庫コード
+        warehouseName:
+          type: string
+          description: 倉庫名
+        partnerId:
+          type: ['integer', 'null']
+          format: int64
+          description: 仕入先ID
+        partnerCode:
+          type: ['string', 'null']
+          description: 仕入先コード
+        partnerName:
+          type: ['string', 'null']
+          description: 仕入先名
+        plannedDate:
+          type: string
+          format: date
+          description: 入荷予定日
+        status:
+          $ref: '#/components/schemas/InboundSlipStatus'
+        note:
+          type: ['string', 'null']
+          description: 備考
+        cancelledAt:
+          type: ['string', 'null']
+          format: date-time
+          description: キャンセル日時
+        cancelledBy:
+          type: ['integer', 'null']
+          format: int64
+          description: キャンセル者ID
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時
+        createdBy:
+          type: integer
+          format: int64
+          description: 登録者ID
+        createdByName:
+          type: string
+          description: 登録者名
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+        updatedBy:
+          type: integer
+          format: int64
+          description: 更新者ID
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboundSlipLineDetail'
+
+    InboundSlipLineDetail:
+      type: object
+      required: [id, lineNo, productId, productCode, productName, unitType, plannedQty, lineStatus]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 明細行番号
+        productId:
+          type: integer
+          format: int64
+          description: 商品ID
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        plannedQty:
+          type: integer
+          description: 入荷予定数量
+        inspectedQty:
+          type: ['integer', 'null']
+          description: 検品数（検品前はnull）
+        diffQty:
+          type: ['integer', 'null']
+          description: 差異数（inspectedQty - plannedQty。検品前はnull）
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限日
+        putawayLocationId:
+          type: ['integer', 'null']
+          format: int64
+          description: 入庫先ロケーションID（入庫確定後）
+        putawayLocationCode:
+          type: ['string', 'null']
+          description: 入庫先ロケーションコード（入庫確定後）
+        lineStatus:
+          $ref: '#/components/schemas/InboundLineStatus'
+        inspectedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 検品日時
+        inspectedBy:
+          type: ['integer', 'null']
+          format: int64
+          description: 検品者ID
+        storedAt:
+          type: ['string', 'null']
+          format: date-time
+          description: 入庫確定日時
+        storedBy:
+          type: ['integer', 'null']
+          format: int64
+          description: 入庫確定者ID
+
+    InboundResultItem:
+      type: object
+      required: [slipId, slipNumber, slipType, lineId, lineNo, productCode, productName, unitType, plannedQty, inspectedQty, diffQty, locationCode, storedAt, storedByName]
+      properties:
+        slipId:
+          type: integer
+          format: int64
+          description: 入荷伝票ID
+        slipNumber:
+          type: string
+          description: 伝票番号
+        slipType:
+          $ref: '#/components/schemas/InboundSlipType'
+        partnerCode:
+          type: ['string', 'null']
+          description: 仕入先コード
+        partnerName:
+          type: ['string', 'null']
+          description: 仕入先名
+        lineId:
+          type: integer
+          format: int64
+          description: 明細ID
+        lineNo:
+          type: integer
+          description: 明細行番号
+        productCode:
+          type: string
+          description: 商品コード
+        productName:
+          type: string
+          description: 商品名
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        lotNumber:
+          type: ['string', 'null']
+          description: ロット番号
+        expiryDate:
+          type: ['string', 'null']
+          format: date
+          description: 賞味/使用期限日
+        plannedQty:
+          type: integer
+          description: 入荷予定数量
+        inspectedQty:
+          type: integer
+          description: 検品数
+        diffQty:
+          type: integer
+          description: 差異数
+        locationCode:
+          type: string
+          description: 入庫先ロケーションコード
+        storedAt:
+          type: string
+          format: date-time
+          description: 入庫確定日時
+        storedByName:
+          type: string
+          description: 入庫確定者名
+
+    InboundSlipSummaryPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboundSlipSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+
+    InboundResultPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/InboundResultItem'
         page:
           type: integer
         size:
