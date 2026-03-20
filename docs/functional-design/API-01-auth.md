@@ -80,9 +80,7 @@ Set-Cookie: refresh_token=a1b2c3d4e5f6...; HttpOnly; SameSite=Lax; Path=/api/v1/
 | HTTPステータス | エラーコード | 発生条件 |
 |-------------|-----------|---------|
 | `400 Bad Request` | `VALIDATION_ERROR` | リクエストボディの必須項目が欠落、または形式不正 |
-| `401 Unauthorized` | `INVALID_CREDENTIALS` | ユーザーコード不存在またはパスワード不一致（どちらか判別不可にする） |
-| `401 Unauthorized` | `ACCOUNT_LOCKED` | アカウントがロックされている（`locked=true`） |
-| `401 Unauthorized` | `ACCOUNT_INACTIVE` | アカウントが無効化されている（`is_active=false`） |
+| `401 Unauthorized` | `INVALID_CREDENTIALS` | 認証失敗（理由を問わず共通） |
 
 ---
 
@@ -101,9 +99,11 @@ flowchart TD
     CHECK_LOCK1 -->|No| ERR_CRED
 
     FIND_USER -->|存在する| CHECK_INACTIVE{is_active\n= false?}
-    CHECK_INACTIVE -->|Yes| ERR_INACTIVE[401 ACCOUNT_INACTIVE]
+    CHECK_INACTIVE -->|Yes| DUMMY_PW1["タイミング攻撃対策:\nBCrypt.matches実行"]
+    DUMMY_PW1 --> ERR_CRED
     CHECK_INACTIVE -->|No| CHECK_LOCKED{locked\n= true?}
-    CHECK_LOCKED -->|Yes| ERR_LOCKED[401 ACCOUNT_LOCKED]
+    CHECK_LOCKED -->|Yes| DUMMY_PW2["タイミング攻撃対策:\nBCrypt.matches実行"]
+    DUMMY_PW2 --> ERR_CRED
     CHECK_LOCKED -->|No| CHECK_PW[パスワード照合\nBCrypt.matches]
 
     CHECK_PW -->|不一致| INCREMENT2["failed_login_countを\nインクリメント"]
@@ -126,12 +126,14 @@ flowchart TD
 |---|--------|------------|
 | 1 | ユーザーコードが存在しない場合、パスワードが一致しない場合のどちらも `INVALID_CREDENTIALS` を返す（セキュリティのため区別しない） | `INVALID_CREDENTIALS` |
 | 2 | 認証失敗（ユーザー不存在・パスワード不一致）のたびに `failed_login_count` をインクリメントする | — |
-| 3 | `failed_login_count` が5以上になった場合、`locked=true` に更新してアカウントをロックする | `ACCOUNT_LOCKED` |
-| 4 | `is_active=false` のユーザーは `ACCOUNT_INACTIVE` を返す（ロック確認より前に実施） | `ACCOUNT_INACTIVE` |
-| 5 | `locked=true` のユーザーは `ACCOUNT_LOCKED` を返す | `ACCOUNT_LOCKED` |
+| 3 | `failed_login_count` が5以上になった場合、`locked=true` に更新してアカウントをロックする | `INVALID_CREDENTIALS` |
+| 4 | `is_active=false` のユーザーは認証失敗とする（ロック確認より前に実施）。タイミング攻撃対策としてBCrypt照合を実行してから `INVALID_CREDENTIALS` を返す | `INVALID_CREDENTIALS` |
+| 5 | `locked=true` のユーザーは認証失敗とする。タイミング攻撃対策としてBCrypt照合を実行してから `INVALID_CREDENTIALS` を返す | `INVALID_CREDENTIALS` |
 | 6 | 認証成功時に `failed_login_count=0` にリセットする | — |
 | 7 | リフレッシュトークンはUUIDを生成し、BCryptでハッシュ化して `refresh_tokens` テーブルに保存する。同一ユーザーの既存レコードは削除して再登録する | — |
 | 8 | `passwordChangeRequired=true` の場合、レスポンスボディにそのまま含めて返す。フロントエンドがこのフラグを見てパスワード変更画面に遷移する | — |
+
+> **セキュリティ注記**: 認証失敗時のエラーレスポンスは理由を問わず `401 INVALID_CREDENTIALS` に統一する。これはOWASP認証チートシートに基づくユーザー列挙防止策である。サーバー側ではアカウント状態（ロック・無効化）のチェックは引き続き実施し、監査ログにはロック・無効化の理由を記録する。
 
 ---
 
@@ -386,8 +388,7 @@ flowchart TD
 |-------------|-----------|---------|
 | `400 Bad Request` | `VALIDATION_ERROR` | `newPassword` がパスワードポリシー違反、または必須項目が欠落 |
 | `401 Unauthorized` | `UNAUTHORIZED` | `access_token` Cookieが存在しない、または無効なJWT |
-| `401 Unauthorized` | `INVALID_CREDENTIALS` | `currentPassword` が現在のパスワードと一致しない |
-| `401 Unauthorized` | `ACCOUNT_LOCKED` | `currentPassword` の連続失敗によりアカウントがロックされた |
+| `401 Unauthorized` | `INVALID_CREDENTIALS` | `currentPassword` が現在のパスワードと一致しない、またはアカウントがロックされている |
 | `409 Conflict` | `SAME_PASSWORD` | `newPassword` が現在のパスワードと同一 |
 
 ---
@@ -405,8 +406,8 @@ flowchart TD
     CHECK_CURRENT -->|不一致| INCREMENT["failed_login_countを\nインクリメント"]
     INCREMENT --> CHECK_LOCK{failed_login_count\n>= 5?}
     CHECK_LOCK -->|Yes| SET_LOCK["locked=true\nlocked_at=現在日時\nに更新"]
-    SET_LOCK --> ERR_LOCKED[401 ACCOUNT_LOCKED]
-    CHECK_LOCK -->|No| ERR_CRED[401 INVALID_CREDENTIALS]
+    SET_LOCK --> ERR_CRED[401 INVALID_CREDENTIALS]
+    CHECK_LOCK -->|No| ERR_CRED
     CHECK_CURRENT -->|一致| CHECK_SAME[新旧パスワード同一チェック\nBCrypt.matches\nnewPassword vs password_hash]
     CHECK_SAME -->|同一| ERR_SAME[409 SAME_PASSWORD]
     CHECK_SAME -->|異なる| HASH_NEW["newPasswordを\nBCryptでハッシュ化"]
@@ -420,7 +421,7 @@ flowchart TD
 | # | ルール | エラーコード |
 |---|--------|------------|
 | 1 | `currentPassword` が `password_hash` と一致しない場合は `failed_login_count` をインクリメントし `INVALID_CREDENTIALS` を返す | `INVALID_CREDENTIALS` |
-| 2 | `failed_login_count` が5以上になった場合、`locked=true`・`locked_at=現在日時` に更新して `ACCOUNT_LOCKED` を返す（`10-security-architecture.md` に定義された連続失敗ロックポリシーをパスワード変更APIにも適用） | `ACCOUNT_LOCKED` |
+| 2 | `failed_login_count` が5以上になった場合、`locked=true`・`locked_at=現在日時` に更新して `INVALID_CREDENTIALS` を返す（`10-security-architecture.md` に定義された連続失敗ロックポリシーをパスワード変更APIにも適用） | `INVALID_CREDENTIALS` |
 | 3 | `newPassword` が現在の `password_hash` と一致する場合（同じパスワードへの変更）は `SAME_PASSWORD` を返す | `SAME_PASSWORD` |
 | 4 | `newPassword` はパスワードポリシーを満たすこと（サーバー側でも検証） | `VALIDATION_ERROR` |
 | 5 | パスワード変更成功時に `password_change_required=false` および `failed_login_count=0` をリセットする | — |
