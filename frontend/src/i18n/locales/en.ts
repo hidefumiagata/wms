@@ -40,6 +40,9 @@ export default {
     backToLogin: 'Back to Login',
     logoutLink: 'Logout from this account',
     logoutConfirm: 'Are you sure you want to logout?',
+    sessionWarningTitle: 'Session Timeout Warning',
+    sessionWarning: 'You have been inactive for 55 minutes. You will be automatically logged out in 5 minutes. Would you like to extend your session?',
+    continueSession: 'Extend Session',
     versionInfo: 'WMS v1.0 — Please contact your system administrator if you have trouble logging in',
     passwordChangeNotice: 'This is your first login. Please change your password. You cannot access other features until you do.',
     passwordPolicyInfo: '8–128 characters, including at least one uppercase letter, one lowercase letter, and one digit',
@@ -109,12 +112,6 @@ export default {
     pattern: 'Invalid format for {field}',
     emailInvalid: 'Please enter a valid email address',
     passwordMismatch: 'Passwords do not match. Please re-enter.',
-  },
-  session: {
-    warningTitle: 'Session Timeout Warning',
-    warningMessage: 'You have been inactive for 55 minutes. You will be automatically logged out in 5 minutes. Would you like to extend your session?',
-    extend: 'Extend Session',
-    logout: 'Logout',
   },
   error: {
     network: 'Network error occurred',

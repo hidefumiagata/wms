@@ -40,6 +40,9 @@ export default {
     backToLogin: 'ログイン画面に戻る',
     logoutLink: 'このアカウントでのログインをやめる場合はこちら',
     logoutConfirm: 'ログアウトしますか？',
+    sessionWarningTitle: 'セッションタイムアウト警告',
+    sessionWarning: '操作がない状態が55分続いています。5分後に自動的にログアウトします。セッションを延長しますか？',
+    continueSession: 'セッションを延長する',
     versionInfo: 'WMS v1.0 — ログインでお困りの場合はシステム管理者にお問い合わせください',
     passwordChangeNotice: '初回ログインです。パスワードを変更してください。変更が完了するまで他の操作は行えません。',
     passwordPolicyInfo: '8〜128文字、英大文字・英小文字・数字を各1文字以上含めてください',
@@ -109,12 +112,6 @@ export default {
     pattern: '{field}の形式が正しくありません',
     emailInvalid: '有効なメールアドレスを入力してください',
     passwordMismatch: 'パスワードが一致しません。再度入力してください',
-  },
-  session: {
-    warningTitle: 'セッションタイムアウト警告',
-    warningMessage: '操作がない状態が55分続いています。5分後に自動的にログアウトします。セッションを延長しますか？',
-    extend: 'セッションを延長する',
-    logout: 'ログアウト',
   },
   error: {
     network: '通信エラーが発生しました',
