@@ -218,40 +218,74 @@ class RequestLoggingFilterTest {
         assertThat(msg).contains("path=/api/v1/itemsevil");
     }
 
-    // --- sanitizeUri 単体テスト ---
+    @Test
+    @DisplayName("CRLFサニタイズ: HTTPメソッドにCRLFが含まれてもサニタイズされる")
+    void doFilterInternal_crlfInMethod_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("GET\r\nX-Injected: evil");
+        request.setRequestURI("/api/v1/items");
+        response.setStatus(200);
 
-    @ParameterizedTest(name = "sanitizeUri(\"{0}\") => \"{1}\"")
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\r");
+        assertThat(msg).doesNotContain("\n");
+        assertThat(msg).contains("method=GETX-Injected: evil");
+    }
+
+    @Test
+    @DisplayName("CRLFサニタイズ: 例外メッセージにCRLFが含まれてもサニタイズされる")
+    void doFilterInternal_crlfInExceptionMessage_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("POST");
+        request.setRequestURI("/api/v1/items");
+        doThrow(new ServletException("error\r\nfake-log-line"))
+            .when(filterChain).doFilter(request, response);
+
+        assertThatThrownBy(() -> filter.doFilterInternal(request, response, filterChain))
+            .isInstanceOf(ServletException.class);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\r");
+        assertThat(msg).doesNotContain("\n");
+        assertThat(msg).contains("error=errorfake-log-line");
+    }
+
+    // --- sanitizeForLog 単体テスト ---
+
+    @ParameterizedTest(name = "sanitizeForLog(\"{0}\") => \"{1}\"")
     @CsvSource({
         "/api/v1/items, /api/v1/items",
         "' ', ' '",
     })
-    @DisplayName("sanitizeUri: CRLF無しの入力はそのまま返る")
-    void sanitizeUri_noCrlf_returnsUnchanged(String input, String expected) {
-        assertThat(RequestLoggingFilter.sanitizeUri(input)).isEqualTo(expected);
+    @DisplayName("sanitizeForLog: CRLF無しの入力はそのまま返る")
+    void sanitizeForLog_noCrlf_returnsUnchanged(String input, String expected) {
+        assertThat(RequestLoggingFilter.sanitizeForLog(input)).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("sanitizeUri: nullは空文字を返す")
-    void sanitizeUri_null_returnsEmpty() {
-        assertThat(RequestLoggingFilter.sanitizeUri(null)).isEmpty();
+    @DisplayName("sanitizeForLog: nullは空文字を返す")
+    void sanitizeForLog_null_returnsEmpty() {
+        assertThat(RequestLoggingFilter.sanitizeForLog(null)).isEmpty();
     }
 
     @Test
-    @DisplayName("sanitizeUri: CRLFが除去される")
-    void sanitizeUri_crlfRemoved() {
-        assertThat(RequestLoggingFilter.sanitizeUri("/path\r\nevil")).isEqualTo("/pathevil");
+    @DisplayName("sanitizeForLog: CRLFが除去される")
+    void sanitizeForLog_crlfRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeForLog("/path\r\nevil")).isEqualTo("/pathevil");
     }
 
     @Test
-    @DisplayName("sanitizeUri: LFのみが除去される")
-    void sanitizeUri_lfRemoved() {
-        assertThat(RequestLoggingFilter.sanitizeUri("/path\nevil")).isEqualTo("/pathevil");
+    @DisplayName("sanitizeForLog: LFのみが除去される")
+    void sanitizeForLog_lfRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeForLog("/path\nevil")).isEqualTo("/pathevil");
     }
 
     @Test
-    @DisplayName("sanitizeUri: CRのみが除去される")
-    void sanitizeUri_crRemoved() {
-        assertThat(RequestLoggingFilter.sanitizeUri("/path\revil")).isEqualTo("/pathevil");
+    @DisplayName("sanitizeForLog: CRのみが除去される")
+    void sanitizeForLog_crRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeForLog("/path\revil")).isEqualTo("/pathevil");
     }
 
     // --- SENSITIVE_PATHS ---

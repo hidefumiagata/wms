@@ -46,16 +46,17 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             throw ex;
         } finally {
             long durationMs = (System.nanoTime() - startTime) / 1_000_000;
-            String sanitizedPath = sanitizeUri(request.getRequestURI());
+            String sanitizedMethod = sanitizeForLog(request.getMethod());
+            String sanitizedPath = sanitizeForLog(request.getRequestURI());
             if (thrown != null) {
                 log.warn("API request failed: method={}, path={}, duration={}ms, error={}",
-                        request.getMethod(),
+                        sanitizedMethod,
                         sanitizedPath,
                         durationMs,
-                        thrown.getMessage());
+                        sanitizeForLog(thrown.getMessage()));
             } else {
                 log.info("API request completed: method={}, path={}, status={}, duration={}ms",
-                        request.getMethod(),
+                        sanitizedMethod,
                         sanitizedPath,
                         response.getStatus(),
                         durationMs);
@@ -64,12 +65,12 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 
     /**
-     * URIからCRLF文字を除去し、ログインジェクションを防止する。
+     * ログ出力値からCRLF文字を除去し、ログインジェクションを防止する。
      */
-    static String sanitizeUri(String uri) {
-        if (uri == null) {
+    static String sanitizeForLog(String value) {
+        if (value == null) {
             return "";
         }
-        return uri.replace("\r", "").replace("\n", "");
+        return value.replace("\r", "").replace("\n", "");
     }
 }
