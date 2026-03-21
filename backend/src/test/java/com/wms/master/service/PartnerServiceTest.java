@@ -67,6 +67,7 @@ class PartnerServiceTest {
             Page<Partner> result = partnerService.search(null, null, "SUPPLIER", null, pageable);
 
             assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getPartnerType()).isEqualTo("SUPPLIER");
         }
     }
 
@@ -82,6 +83,7 @@ class PartnerServiceTest {
             List<Partner> result = partnerService.findAllSimple(true);
 
             assertThat(result).hasSize(1);
+            assertThat(result.get(0).getPartnerCode()).isEqualTo("SUP-001");
         }
     }
 

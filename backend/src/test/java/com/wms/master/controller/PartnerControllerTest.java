@@ -336,6 +336,17 @@ class PartnerControllerTest {
         }
 
         @Test
+        @DisplayName("必須項目未設定で400を返す")
+        void update_missingRequired_returns400() throws Exception {
+            UpdatePartnerRequest request = new UpdatePartnerRequest();
+
+            mockMvc.perform(put(BASE_URL + "/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
         @DisplayName("存在しないIDで404を返す")
         void update_notFound_returns404() throws Exception {
             when(partnerService.update(eq(999L), any(), any(), any(), any(), any(), any(), any(), any()))
@@ -409,6 +420,17 @@ class PartnerControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("必須項目未設定で400を返す")
+        void toggle_missingRequired_returns400() throws Exception {
+            ToggleActiveRequest request = new ToggleActiveRequest();
+
+            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
         }
     }
 

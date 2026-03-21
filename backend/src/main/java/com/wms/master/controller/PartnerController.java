@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -34,6 +35,12 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * 取引先マスタ CRUD コントローラー。
+ * OpenAPI生成の MasterPartnerApi は取引先専用インターフェースだが、
+ * メソッドシグネチャの完全整合確認後に implements へのリファクタリングを行う設計とし、
+ * 現フェーズでは個別コントローラーとして定義する。
+ */
 @RestController
 @RequestMapping("/api/v1/master/partners")
 @RequiredArgsConstructor
@@ -84,6 +91,7 @@ public class PartnerController {
         return ResponseEntity.ok(toPageResponse(resultPage));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PostMapping
     public ResponseEntity<PartnerDetail> createPartner(
             @Valid @RequestBody CreatePartnerRequest request) {
@@ -108,6 +116,7 @@ public class PartnerController {
         return ResponseEntity.ok(toDetail(partner));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PutMapping("/{id}")
     public ResponseEntity<PartnerDetail> updatePartner(
             @PathVariable Long id,
@@ -125,6 +134,7 @@ public class PartnerController {
         return ResponseEntity.ok(toDetail(updated));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<PartnerDetail> togglePartnerActive(
             @PathVariable Long id,
