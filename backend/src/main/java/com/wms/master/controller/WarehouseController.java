@@ -12,7 +12,9 @@ import com.wms.generated.model.WarehouseToggleResponse;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -43,6 +45,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/v1/master/warehouses")
 @RequiredArgsConstructor
+@Validated
 public class WarehouseController {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
@@ -61,8 +64,8 @@ public class WarehouseController {
             @RequestParam(required = false) String warehouseName,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) Boolean all,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") @Min(0) Integer page,
+            @RequestParam(defaultValue = "20") @Min(1) Integer size,
             @RequestParam(defaultValue = "warehouseCode,asc") String sort) {
 
         if (Boolean.TRUE.equals(all)) {

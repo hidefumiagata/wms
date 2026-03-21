@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
@@ -78,7 +79,34 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    // --- @Validated メソッドパラメータ (Spring Boot 3.2+) ---
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleMethodValidation(HandlerMethodValidationException ex) {
+        List<ErrorResponse.FieldError> details = ex.getAllValidationResults().stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(err -> new ErrorResponse.FieldError(
+                                result.getMethodParameter().getParameterName(),
+                                err.getDefaultMessage())))
+                .toList();
+
+        ErrorResponse body = ErrorResponse.validation(
+                "入力内容にエラーがあります",
+                TraceContext.getCurrentTraceId(),
+                details);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     // --- 不正リクエスト ---
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParam(
+            org.springframework.web.bind.MissingServletRequestParameterException ex) {
+        ErrorResponse body = ErrorResponse.of(
+                "MISSING_PARAMETER", ex.getMessage(),
+                TraceContext.getCurrentTraceId());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMessageNotReadable(HttpMessageNotReadableException ex) {

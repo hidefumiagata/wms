@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
@@ -121,6 +122,18 @@ class WarehouseServiceTest {
             assertThatThrownBy(() -> warehouseService.create(w))
                     .isInstanceOf(DuplicateResourceException.class)
                     .hasMessageContaining("WARA");
+        }
+
+        @Test
+        @DisplayName("TOCTOU競合時にDataIntegrityViolationExceptionをDuplicateResourceExceptionに変換")
+        void create_tocTouRace_throwsDuplicateResourceException() {
+            Warehouse w = createWarehouse(null, "WARB", "大阪DC");
+            when(warehouseRepository.existsByWarehouseCode("WARB")).thenReturn(false);
+            when(warehouseRepository.save(w)).thenThrow(new DataIntegrityViolationException("unique constraint"));
+
+            assertThatThrownBy(() -> warehouseService.create(w))
+                    .isInstanceOf(DuplicateResourceException.class)
+                    .hasMessageContaining("WARB");
         }
     }
 

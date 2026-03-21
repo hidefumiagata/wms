@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,12 @@ public class WarehouseService {
             throw new DuplicateResourceException("DUPLICATE_CODE",
                     "倉庫コードが既に存在します: " + warehouse.getWarehouseCode());
         }
-        return warehouseRepository.save(warehouse);
+        try {
+            return warehouseRepository.save(warehouse);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException("DUPLICATE_CODE",
+                    "倉庫コードが既に存在します: " + warehouse.getWarehouseCode());
+        }
     }
 
     @Transactional

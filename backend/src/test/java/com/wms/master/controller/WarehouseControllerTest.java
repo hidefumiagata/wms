@@ -307,6 +307,23 @@ class WarehouseControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.isActive").value(false));
         }
+
+        @Test
+        @DisplayName("有効化で200を返す")
+        void toggle_activate_returns200() throws Exception {
+            Warehouse w = createWarehouse(1L, "WARA", "東京DC");
+            when(warehouseService.toggleActive(eq(1L), eq(true), eq(0))).thenReturn(w);
+
+            ToggleActiveRequest request = new ToggleActiveRequest()
+                    .isActive(true)
+                    .version(0);
+
+            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.isActive").value(true));
+        }
     }
 
     // ========== checkWarehouseCodeExists ==========
@@ -333,6 +350,13 @@ class WarehouseControllerTest {
             mockMvc.perform(get(BASE_URL + "/exists").param("warehouseCode", "XXXX"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.exists").value(false));
+        }
+
+        @Test
+        @DisplayName("warehouseCode未指定で400を返す")
+        void exists_missingParam_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL + "/exists"))
+                    .andExpect(status().isBadRequest());
         }
     }
 
