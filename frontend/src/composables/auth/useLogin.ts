@@ -3,6 +3,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { toApiError } from '@/utils/apiError'
+import { sanitizeRedirect } from '@/utils/redirect'
 
 export function useLogin(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()
@@ -27,6 +29,7 @@ export function useLogin(formRef: ReturnType<typeof ref<FormInstance>>) {
   onMounted(() => {
     if (route.query.reason === 'session_expired') {
       sessionExpiredMessage.value = t('auth.messages.sessionExpired')
+      // URL から reason パラメータを除去（redirect は保持）
       router.replace({ name: 'login', query: { redirect: route.query.redirect } })
     }
   })
@@ -43,18 +46,17 @@ export function useLogin(formRef: ReturnType<typeof ref<FormInstance>>) {
       if (user.passwordChangeRequired) {
         router.push({ name: 'change-password' })
       } else {
-        const redirectParam = route.query.redirect as string | undefined
-        const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/'
-        router.push(redirect)
+        router.push(sanitizeRedirect(route.query.redirect as string | undefined))
       }
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number; data?: { errorCode?: string } } }
+      const error = toApiError(err)
       const code = error.response?.data?.errorCode
       if (code === 'ACCOUNT_LOCKED') {
         errorMessage.value = t('auth.messages.accountLocked')
       } else if (!error.response) {
         errorMessage.value = t('auth.messages.loginFailed500')
       } else {
+        // INVALID_CREDENTIALS / ACCOUNT_INACTIVE は同一メッセージ（ユーザー列挙攻撃防止）
         errorMessage.value = t('auth.messages.invalidCredentials')
       }
     } finally {

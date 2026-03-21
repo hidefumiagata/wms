@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/api/client'
-import { calcPasswordStrength, type PasswordStrength } from './useChangePassword'
+import { toApiError } from '@/utils/apiError'
+import { calcPasswordStrength, PASSWORD_POLICY_REGEX, type PasswordStrength } from './useChangePassword'
 
 export function useResetConfirm(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()
@@ -27,7 +28,7 @@ export function useResetConfirm(formRef: ReturnType<typeof ref<FormInstance>>) {
     newPassword: [
       { required: true, message: t('auth.validation.newPasswordRequired'), trigger: 'blur' },
       {
-        pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,128}$/,
+        pattern: PASSWORD_POLICY_REGEX,
         message: t('auth.validation.passwordPolicy'),
         trigger: 'blur',
       },
@@ -70,7 +71,7 @@ export function useResetConfirm(formRef: ReturnType<typeof ref<FormInstance>>) {
       ElMessage.success(t('auth.messages.passwordResetSuccess'))
       router.push({ name: 'login' })
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number } }
+      const error = toApiError(err)
       if (error.response?.status === 401) {
         errorMessage.value = t('auth.messages.resetTokenInvalid')
       } else if (error.response?.status === 400) {

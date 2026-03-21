@@ -4,7 +4,9 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 認証レイアウト（未認証ページ・パスワード変更）
+    // 認証専用レイアウト（アプリシェルなし）
+    // requiresAuth: false = 未認証ユーザー向け（login, reset-request, reset-password）
+    // requiresAuth: true  = 認証済みかつ passwordChangeRequired=true のユーザー専用（change-password）
     {
       path: '/',
       component: () => import('@/layouts/AuthLayout.vue'),

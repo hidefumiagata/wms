@@ -63,6 +63,7 @@ export default {
       resetConfirmFailed: 'Failed to reset password. Please try again later.',
       passwordResetSuccess: 'Password reset successfully. Please log in with your new password.',
       tokenMissing: 'Invalid reset link. Please start over from the password reset request.',
+      rateLimitExceeded: 'Too many requests. Please wait a moment and try again.',
     },
     validation: {
       userCodeRequired: 'User code is required',

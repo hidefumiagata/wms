@@ -5,15 +5,15 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import { toApiError } from '@/utils/apiError'
 
 export type PasswordStrength = 'weak' | 'medium' | 'strong'
 
+// パスワードポリシー: 8〜128文字、英大文字・英小文字・数字を各1文字以上
+export const PASSWORD_POLICY_REGEX = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9]).{8,128}$/
+
 export function calcPasswordStrength(password: string): PasswordStrength {
-  if (password.length < 8) return 'weak'
-  const hasUpper = /[A-Z]/.test(password)
-  const hasLower = /[a-z]/.test(password)
-  const hasDigit = /[0-9]/.test(password)
-  if (!hasUpper || !hasLower || !hasDigit) return 'weak'
+  if (!PASSWORD_POLICY_REGEX.test(password)) return 'weak'
   if (password.length >= 12) return 'strong'
   return 'medium'
 }
@@ -40,7 +40,11 @@ export function useChangePassword(formRef: ReturnType<typeof ref<FormInstance>>)
     ],
     newPassword: [
       { required: true, message: t('auth.validation.newPasswordRequired'), trigger: 'blur' },
-      { min: 8, message: t('auth.validation.passwordMinLength'), trigger: 'blur' },
+      {
+        pattern: PASSWORD_POLICY_REGEX,
+        message: t('auth.validation.passwordPolicy'),
+        trigger: 'blur',
+      },
       {
         validator: (_rule, value, callback) => {
           if (value === form.currentPassword) {
@@ -79,12 +83,18 @@ export function useChangePassword(formRef: ReturnType<typeof ref<FormInstance>>)
         newPassword: form.newPassword,
       })
       auth.clearPasswordChangeRequired()
-      ElMessage.success(t('auth.messages.passwordChanged'))
-      router.push('/')
+      ElMessage({ message: t('auth.messages.passwordChanged'), type: 'success', duration: 2000 })
+      setTimeout(() => router.push('/'), 500)
     } catch (err: unknown) {
-      const error = err as { response?: { status?: number } }
-      if (error.response?.status === 400) {
+      const error = toApiError(err)
+      const code = error.response?.data?.errorCode
+      const status = error.response?.status
+      if (status === 401 && code === 'INVALID_CREDENTIALS') {
         errorMessage.value = t('auth.messages.currentPasswordWrong')
+      } else if (status === 409 && code === 'SAME_PASSWORD') {
+        errorMessage.value = t('auth.validation.passwordSameAsCurrent')
+      } else if (status === 400) {
+        errorMessage.value = t('auth.validation.passwordPolicy')
       } else {
         errorMessage.value = t('auth.messages.passwordChangeFailed500')
       }

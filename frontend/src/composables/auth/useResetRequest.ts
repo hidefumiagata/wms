@@ -2,6 +2,7 @@ import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/api/client'
+import { toApiError } from '@/utils/apiError'
 
 export function useResetRequest(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()
@@ -27,8 +28,13 @@ export function useResetRequest(formRef: ReturnType<typeof ref<FormInstance>>) {
     try {
       await apiClient.post('/auth/password-reset/request', { identifier: form.identifier })
       sent.value = true
-    } catch {
-      errorMessage.value = t('auth.messages.resetRequestFailed')
+    } catch (err: unknown) {
+      const error = toApiError(err)
+      if (error.response?.status === 429) {
+        errorMessage.value = t('auth.messages.rateLimitExceeded')
+      } else {
+        errorMessage.value = t('auth.messages.resetRequestFailed')
+      }
     } finally {
       loading.value = false
     }

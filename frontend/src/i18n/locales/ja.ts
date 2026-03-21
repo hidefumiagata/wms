@@ -63,6 +63,7 @@ export default {
       resetConfirmFailed: 'パスワードの再設定に失敗しました。時間をおいて再度お試しください',
       passwordResetSuccess: 'パスワードを再設定しました。新しいパスワードでログインしてください',
       tokenMissing: 'リセットリンクが無効です。パスワードリセット申請からやり直してください',
+      rateLimitExceeded: '短時間に多くのリクエストが行われました。しばらく時間をおいてから再度お試しください',
     },
     validation: {
       userCodeRequired: 'ユーザーコードは必須です',
