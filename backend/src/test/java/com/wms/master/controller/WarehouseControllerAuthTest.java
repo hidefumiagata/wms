@@ -34,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -128,6 +129,16 @@ class WarehouseControllerAuthTest {
     // ===== 権限不足（403） =====
 
     @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがPOSTすると403を返す")
+    void create_viewer_returns403() throws Exception {
+        mockMvc.perform(post(BASE_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_CREATE_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがPOSTすると403を返す")
     void create_warehouseStaff_returns403() throws Exception {
@@ -157,6 +168,16 @@ class WarehouseControllerAuthTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがPATCHすると403を返す")
+    void toggle_viewer_returns403() throws Exception {
+        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_TOGGLE_JSON))
+                .andExpect(status().isForbidden());
+    }
+
     // ===== 認可通過 =====
 
     @Test
@@ -170,7 +191,8 @@ class WarehouseControllerAuthTest {
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_CREATE_JSON))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.warehouseCode").value("TKYO"));
     }
 
     @Test
@@ -185,7 +207,8 @@ class WarehouseControllerAuthTest {
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_UPDATE_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.warehouseCode").value("TKYO"));
     }
 
     // --- Test Config ---
@@ -237,12 +260,12 @@ class WarehouseControllerAuthTest {
                 var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");
                 field.setAccessible(true);
                 field.set(w, id);
-                var createdAt = com.wms.shared.entity.BaseEntity.class.getDeclaredField("createdAt");
-                createdAt.setAccessible(true);
-                createdAt.set(w, OffsetDateTime.now());
-                var updatedAt = com.wms.shared.entity.BaseEntity.class.getDeclaredField("updatedAt");
-                updatedAt.setAccessible(true);
-                updatedAt.set(w, OffsetDateTime.now());
+                var createdAtField = com.wms.shared.entity.BaseEntity.class.getDeclaredField("createdAt");
+                createdAtField.setAccessible(true);
+                createdAtField.set(w, OffsetDateTime.now());
+                var updatedAtField = com.wms.shared.entity.BaseEntity.class.getDeclaredField("updatedAt");
+                updatedAtField.setAccessible(true);
+                updatedAtField.set(w, OffsetDateTime.now());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

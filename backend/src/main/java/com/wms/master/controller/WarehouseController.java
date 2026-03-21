@@ -14,6 +14,7 @@ import com.wms.master.service.WarehouseService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,7 @@ import java.util.Set;
 @RequestMapping("/api/v1/master/warehouses")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class WarehouseController {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
@@ -96,6 +98,7 @@ public class WarehouseController {
         warehouse.setAddress(request.getAddress());
 
         Warehouse created = warehouseService.create(warehouse);
+        log.info("Warehouse created: code={}", created.getWarehouseCode());
         URI location = URI.create("/api/v1/master/warehouses/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created));
     }
@@ -118,6 +121,7 @@ public class WarehouseController {
                 request.getWarehouseNameKana(),
                 request.getAddress(),
                 request.getVersion());
+        log.info("Warehouse updated: id={}, name={}", id, request.getWarehouseName());
         return ResponseEntity.ok(toDetail(updated));
     }
 
@@ -128,9 +132,11 @@ public class WarehouseController {
             @Valid @RequestBody ToggleActiveRequest request) {
         Warehouse updated = warehouseService.toggleActive(
                 id, request.getIsActive(), request.getVersion());
+        log.info("Warehouse toggled: id={}, isActive={}", id, request.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
+    // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
