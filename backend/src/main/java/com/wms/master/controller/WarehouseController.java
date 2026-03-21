@@ -14,6 +14,7 @@ import com.wms.master.service.WarehouseService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -58,6 +59,7 @@ public class WarehouseController {
      * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト、
      * それ以外はページング形式で返却する。
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<?> listWarehouses(
             @RequestParam(required = false) String warehouseCode,
@@ -83,6 +85,7 @@ public class WarehouseController {
         return ResponseEntity.ok(toPageResponse(resultPage));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PostMapping
     public ResponseEntity<WarehouseDetail> createWarehouse(
             @Valid @RequestBody CreateWarehouseRequest request) {
@@ -97,12 +100,14 @@ public class WarehouseController {
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<WarehouseDetail> getWarehouse(@PathVariable Long id) {
         Warehouse warehouse = warehouseService.findById(id);
         return ResponseEntity.ok(toDetail(warehouse));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PutMapping("/{id}")
     public ResponseEntity<WarehouseDetail> updateWarehouse(
             @PathVariable Long id,
@@ -116,6 +121,7 @@ public class WarehouseController {
         return ResponseEntity.ok(toDetail(updated));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<WarehouseToggleResponse> toggleWarehouseActive(
             @PathVariable Long id,
@@ -125,6 +131,7 @@ public class WarehouseController {
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
             @RequestParam String warehouseCode) {
