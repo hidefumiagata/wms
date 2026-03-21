@@ -95,8 +95,7 @@ com.wms.shared/
 │   ├── SecurityConfig.java         # Spring Security 設定
 │   ├── CorsConfig.java             # CORS 設定
 │   ├── OpenApiConfig.java          # Springdoc OpenAPI 設定
-│   ├── JpaAuditingConfig.java      # JPA Auditing 設定
-│   └── JacksonConfig.java          # Jackson シリアライズ設定
+│   └── JpaAuditingConfig.java      # JPA Auditing 設定
 ├── exception/           # 例外クラス・ハンドラー
 │   ├── WmsException.java           # 基底例外クラス
 │   ├── ResourceNotFoundException.java
@@ -745,20 +744,18 @@ public record PageResponse<T>(
 
 ### 3.4 Jackson シリアライズ設定
 
-```java
-@Configuration
-public class JacksonConfig {
+`application.yml` で設定する（Java Configクラスは不要）。
 
-    @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
-        return builder -> builder
-                .serializationInclusion(JsonInclude.Include.NON_NULL)  // nullフィールドを除外
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .timeZone(TimeZone.getTimeZone("Asia/Tokyo"))
-                .simpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
-    }
-}
+```yaml
+spring:
+  jackson:
+    default-property-inclusion: non_null    # nullフィールドを除外
+    serialization:
+      write-dates-as-timestamps: false      # ISO 8601 形式
+    time-zone: Asia/Tokyo
 ```
+
+> **`date-format`（`simpleDateFormat`）について**: 本プロジェクトではAPI応答の日時に `java.time.LocalDateTime` を使用し、`java.util.Date` はAPI応答に使用しない。`write-dates-as-timestamps: false` により `LocalDateTime` は自動的にISO 8601形式でシリアライズされるため、`date-format` の明示的設定は不要。
 
 | 設定 | 内容 |
 |------|------|
