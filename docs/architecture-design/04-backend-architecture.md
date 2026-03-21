@@ -1520,6 +1520,7 @@ public List<WarehouseResponse> getAllWarehouses() {
 | 項目 | 設定 |
 |------|------|
 | **ライブラリ** | SLF4J + Logback |
+| **ロガー宣言** | Lombok `@Slf4j` アノテーションに統一（`LoggerFactory.getLogger()` の手書き禁止） |
 | **形式** | JSON（logstash-logback-encoder） |
 | **出力先** | 標準出力（Container Apps が自動収集） |
 | **ログレベル** | 本番: INFO / ローカル: DEBUG |
