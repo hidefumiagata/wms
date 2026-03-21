@@ -23,9 +23,14 @@
                 <provider class="com.wms.shared.logging.PiiMaskingMessageJsonProvider">
                     <fieldName>message</fieldName>
                 </provider>
+                <!-- デフォルトのStackTraceJsonProviderをPIIマスキング版で置換 -->
+                <provider class="com.wms.shared.logging.PiiMaskingStackTraceJsonProvider">
+                    <fieldName>stack_trace</fieldName>
+                </provider>
                 <fieldNames>
                     <timestamp>timestamp</timestamp>
                     <message>[ignore]</message>
+                    <stackTrace>[ignore]</stackTrace>
                     <logger>logger</logger>
                     <level>level</level>
                 </fieldNames>
