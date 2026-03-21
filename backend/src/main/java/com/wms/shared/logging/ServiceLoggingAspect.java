@@ -24,26 +24,32 @@ public class ServiceLoggingAspect {
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        // モジュール名を MDC に設定
+        // モジュール名を MDC に設定（ネスト対応: 前の値を退避・復元）
         String module = extractModule(
             joinPoint.getTarget().getClass().getPackageName());
+        String previousModule = MDC.get("module");
         MDC.put("module", module);
 
         log.info("START {}.{}", className, methodName);
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         try {
             Object result = joinPoint.proceed();
-            long elapsed = System.currentTimeMillis() - start;
-            log.info("END {}.{} [{}ms]", className, methodName, elapsed);
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+            log.info("END {}.{} [{}ms]", className, methodName, elapsedMs);
             return result;
-        } catch (Exception ex) {
-            long elapsed = System.currentTimeMillis() - start;
+        } catch (Throwable ex) {
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn("FAIL {}.{} [{}ms] - {}",
-                className, methodName, elapsed, ex.getMessage());
+                className, methodName, elapsedMs,
+                PiiMasker.mask(ex.getMessage()));
             throw ex;
         } finally {
-            MDC.remove("module");
+            if (previousModule != null) {
+                MDC.put("module", previousModule);
+            } else {
+                MDC.remove("module");
+            }
         }
     }
 

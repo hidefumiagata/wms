@@ -12,11 +12,11 @@ public final class PiiMasker {
 
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile(
-            "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+            "[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9\\-]+(?:\\.[a-zA-Z0-9\\-]+)*\\.[a-zA-Z]{2,}");
 
     private static final Pattern PHONE_PATTERN =
         Pattern.compile(
-            "0\\d{1,4}[-\\s]?\\d{1,4}[-\\s]?\\d{2,5}");
+            "0[0-9]{1,4}-[0-9]{1,4}-[0-9]{3,4}");
 
     public static String mask(String message) {
         if (message == null) return null;

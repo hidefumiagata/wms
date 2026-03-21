@@ -22,15 +22,29 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                                      HttpServletResponse response,
                                      FilterChain filterChain)
             throws ServletException, IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
+        Throwable thrown = null;
 
-        filterChain.doFilter(request, response);
-
-        long duration = System.currentTimeMillis() - startTime;
-        log.info("API request completed: method={}, path={}, status={}, duration={}ms",
-                request.getMethod(),
-                request.getRequestURI(),
-                response.getStatus(),
-                duration);
+        try {
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            thrown = ex;
+            throw ex;
+        } finally {
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            if (thrown != null) {
+                log.warn("API request failed: method={}, path={}, duration={}ms, error={}",
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        durationMs,
+                        thrown.getMessage());
+            } else {
+                log.info("API request completed: method={}, path={}, status={}, duration={}ms",
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        response.getStatus(),
+                        durationMs);
+            }
+        }
     }
 }
