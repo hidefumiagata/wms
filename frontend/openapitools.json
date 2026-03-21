@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.10.0",
+    "generators": {
+      "wms-api": {
+        "generatorName": "typescript-axios",
+        "inputSpec": "../openapi/wms-api.yaml",
+        "output": "src/api/generated",
+        "additionalProperties": {
+          "supportsES6": true,
+          "withSeparateModelsAndApi": true,
+          "modelPackage": "models",
+          "apiPackage": "api",
+          "npmName": "wms-api-client",
+          "useSingleRequestParameter": true
+        }
+      }
+    }
+  }
+}
