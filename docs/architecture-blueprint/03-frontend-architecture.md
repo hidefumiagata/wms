@@ -278,7 +278,7 @@ async function submitForm() {
 ```typescript
 // stores/auth.ts
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<{ id: number; username: string; role: string } | null>(null)
+  const user = ref<{ userId: number; userCode: string; fullName: string; role: string; passwordChangeRequired: boolean } | null>(null)
   const isLoggedIn = computed(() => user.value !== null)
   const isAdmin = computed(() => user.value?.role === 'SYSTEM_ADMIN')
 
