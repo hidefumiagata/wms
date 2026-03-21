@@ -209,6 +209,61 @@ class LocationControllerAuthTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがPATCH(deactivate)すると200を返す")
+    void toggle_warehouseManager_returns200() throws Exception {
+        Location updated = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+        when(locationService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
+
+        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(TOGGLE_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す（isAuthenticated）")
+    void list_warehouseStaff_returns200() throws Exception {
+        when(locationService.search(any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+        when(areaService.findByIds(any())).thenReturn(Map.of());
+        when(warehouseService.findByIds(any())).thenReturn(Map.of());
+
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET詳細すると200を返す（isAuthenticated）")
+    void get_warehouseStaff_returns200() throws Exception {
+        Location l = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+        Area area = createArea(10L, "AREA-01", "STOCK");
+        Warehouse warehouse = createWarehouse(100L, "WH-001");
+        when(locationService.findById(1L)).thenReturn(l);
+        when(areaService.findById(10L)).thenReturn(area);
+        when(warehouseService.findById(100L)).thenReturn(warehouse);
+
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET /count すると200を返す（isAuthenticated）")
+    void count_warehouseStaff_returns200() throws Exception {
+        when(locationService.count(any(), any(), any())).thenReturn(0L);
+
+        mockMvc.perform(get(BASE_URL + "/count")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
     // --- Test Config ---
 
     /**

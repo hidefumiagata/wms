@@ -16,5 +16,4 @@ CREATE TABLE locations (
 
 CREATE INDEX idx_locations_warehouse_id ON locations(warehouse_id);
 CREATE INDEX idx_locations_area_id ON locations(area_id);
-CREATE INDEX idx_locations_warehouse_location_code ON locations(warehouse_id, location_code);
 CREATE INDEX idx_locations_is_active ON locations(is_active);

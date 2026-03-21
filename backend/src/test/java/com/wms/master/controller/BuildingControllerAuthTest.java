@@ -196,6 +196,47 @@ class BuildingControllerAuthTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがPATCH(deactivate)すると200を返す")
+    void toggle_warehouseManager_returns200() throws Exception {
+        Building updated = createBuilding(1L, 10L, "BLDG01", "棟A");
+        when(buildingService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
+
+        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_TOGGLE_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す（isAuthenticated）")
+    void list_warehouseStaff_returns200() throws Exception {
+        when(buildingService.search(any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+        when(warehouseService.findByIds(any())).thenReturn(Map.of());
+
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET詳細すると200を返す（isAuthenticated）")
+    void get_warehouseStaff_returns200() throws Exception {
+        Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
+        Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
+        when(buildingService.findById(1L)).thenReturn(b);
+        when(warehouseService.findById(10L)).thenReturn(w);
+
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
     // --- Test Config ---
 
     /**

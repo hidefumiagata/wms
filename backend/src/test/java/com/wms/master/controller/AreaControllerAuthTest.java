@@ -203,6 +203,50 @@ class AreaControllerAuthTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがPATCH(deactivate)すると200を返す")
+    void toggle_warehouseManager_returns200() throws Exception {
+        Area updated = createArea(1L, 1L, 1L, "A01", "テストエリア", "STOCK", "AMBIENT");
+        when(areaService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
+
+        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_TOGGLE_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す（isAuthenticated）")
+    void list_warehouseStaff_returns200() throws Exception {
+        when(areaService.search(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+        when(buildingService.findByIds(any())).thenReturn(Map.of());
+        when(warehouseService.findByIds(any())).thenReturn(Map.of());
+
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET詳細すると200を返す（isAuthenticated）")
+    void get_warehouseStaff_returns200() throws Exception {
+        Area a = createArea(1L, 1L, 1L, "A01", "テストエリア", "STOCK", "AMBIENT");
+        Building building = createBuilding(1L, 1L, "B01");
+        Warehouse warehouse = createWarehouse(1L, "WH-001");
+        when(areaService.findById(1L)).thenReturn(a);
+        when(buildingService.findById(1L)).thenReturn(building);
+        when(warehouseService.findById(1L)).thenReturn(warehouse);
+
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
     // --- Test Config ---
 
     /**

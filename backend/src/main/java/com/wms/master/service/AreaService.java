@@ -95,9 +95,9 @@ public class AreaService {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
-        if (!isActive && locationRepository.countByAreaId(id) > 0) {
+        if (!isActive && locationRepository.countByAreaIdAndIsActiveTrue(id) > 0) {
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
-                    "配下にロケーションが存在するため無効化できません (id=" + id + ")");
+                    "配下に有効なロケーションが存在するため無効化できません (id=" + id + ")");
         }
         if (area.getIsActive().equals(isActive)) {
             log.info("Area toggleActive no-op: id={}, isActive={}", id, isActive);

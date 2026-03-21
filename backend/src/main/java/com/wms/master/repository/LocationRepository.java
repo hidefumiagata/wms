@@ -13,6 +13,8 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
 
     long countByAreaId(Long areaId);
 
+    long countByAreaIdAndIsActiveTrue(Long areaId);
+
     // TODO: #72 パターン — LIKE 検索のワイルドカード（%/_）エスケープ対応を検討
     @Query("SELECT l FROM Location l WHERE "
             + "(:warehouseId IS NULL OR l.warehouseId = :warehouseId) "

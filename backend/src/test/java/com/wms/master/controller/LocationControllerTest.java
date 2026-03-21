@@ -274,13 +274,23 @@ class LocationControllerTest {
     class CountLocations {
 
         @Test
-        @DisplayName("件数を返す")
-        void countLocations_returns200() throws Exception {
-            when(locationService.count(isNull(), isNull(), isNull())).thenReturn(42L);
+        @DisplayName("isActive省略時はデフォルトtrueで件数を返す")
+        void countLocations_defaultIsActiveTrue_returns200() throws Exception {
+            when(locationService.count(isNull(), isNull(), eq(true))).thenReturn(42L);
 
             mockMvc.perform(get(BASE_URL + "/count"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.count").value(42));
+        }
+
+        @Test
+        @DisplayName("isActive=falseを明示的に指定して件数を返す")
+        void countLocations_isActiveFalse_returns200() throws Exception {
+            when(locationService.count(isNull(), isNull(), eq(false))).thenReturn(5L);
+
+            mockMvc.perform(get(BASE_URL + "/count").param("isActive", "false"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.count").value(5));
         }
     }
 

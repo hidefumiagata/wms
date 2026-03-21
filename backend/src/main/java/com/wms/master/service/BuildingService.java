@@ -87,9 +87,9 @@ public class BuildingService {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
-        if (!isActive && areaRepository.countByBuildingIdAndIsActiveTrue(id) > 0) {
+        if (!isActive && areaRepository.countByBuildingId(id) > 0) {
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
-                    "配下に有効なエリアが存在するため無効化できません (id=" + id + ")");
+                    "配下にエリアが存在するため無効化できません (id=" + id + ")");
         }
         if (building.getIsActive().equals(isActive)) {
             log.info("Building toggleActive no-op: id={}, isActive={}", id, isActive);

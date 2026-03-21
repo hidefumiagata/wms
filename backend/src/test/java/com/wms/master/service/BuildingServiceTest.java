@@ -226,7 +226,7 @@ class BuildingServiceTest {
         void toggleActive_deactivate_success() {
             Building existing = createBuilding(1L, 10L, "BLDG01", "棟A");
             when(buildingRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(areaRepository.countByBuildingIdAndIsActiveTrue(1L)).thenReturn(0L);
+            when(areaRepository.countByBuildingId(1L)).thenReturn(0L);
             when(buildingRepository.save(any(Building.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Building result = buildingService.toggleActive(1L, false, 0);
@@ -265,7 +265,7 @@ class BuildingServiceTest {
         void toggleActive_hasActiveAreas_throwsBusinessRuleViolationException() {
             Building existing = createBuilding(1L, 10L, "BLDG01", "棟A");
             when(buildingRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(areaRepository.countByBuildingIdAndIsActiveTrue(1L)).thenReturn(3L);
+            when(areaRepository.countByBuildingId(1L)).thenReturn(3L);
 
             assertThatThrownBy(() -> buildingService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -288,7 +288,7 @@ class BuildingServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Building existing = createBuilding(1L, 10L, "BLDG01", "棟A");
             when(buildingRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(areaRepository.countByBuildingIdAndIsActiveTrue(1L)).thenReturn(0L);
+            when(areaRepository.countByBuildingId(1L)).thenReturn(0L);
             when(buildingRepository.save(any(Building.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Building.class.getName(), 1L));
 

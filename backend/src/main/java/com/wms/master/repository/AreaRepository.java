@@ -15,7 +15,6 @@ public interface AreaRepository extends JpaRepository<Area, Long> {
 
     long countByBuildingId(Long buildingId);
 
-    long countByAreaIdAndIsActiveTrue(Long areaId);
 
     // TODO: #72 パターン — LIKE 検索のワイルドカード（%/_）エスケープ対応を検討
     @Query("SELECT a FROM Area a WHERE "

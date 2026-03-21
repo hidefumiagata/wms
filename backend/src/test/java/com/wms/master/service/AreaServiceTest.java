@@ -266,7 +266,7 @@ class AreaServiceTest {
         void toggleActive_deactivate_success() {
             Area existing = createArea(1L, 1L, 1L, "A01", "エリア", "STOCK", "AMBIENT");
             when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(locationRepository.countByAreaId(1L)).thenReturn(0L);
+            when(locationRepository.countByAreaIdAndIsActiveTrue(1L)).thenReturn(0L);
             when(areaRepository.save(any(Area.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Area result = areaService.toggleActive(1L, false, 0);
@@ -305,7 +305,7 @@ class AreaServiceTest {
         void toggleActive_hasLocations_throwsException() {
             Area existing = createArea(1L, 1L, 1L, "A01", "エリア", "STOCK", "AMBIENT");
             when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(locationRepository.countByAreaId(1L)).thenReturn(3L);
+            when(locationRepository.countByAreaIdAndIsActiveTrue(1L)).thenReturn(3L);
 
             assertThatThrownBy(() -> areaService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -330,7 +330,7 @@ class AreaServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Area existing = createArea(1L, 1L, 1L, "A01", "エリア", "STOCK", "AMBIENT");
             when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(locationRepository.countByAreaId(1L)).thenReturn(0L);
+            when(locationRepository.countByAreaIdAndIsActiveTrue(1L)).thenReturn(0L);
             when(areaRepository.save(any(Area.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Area.class.getName(), 1L));
 

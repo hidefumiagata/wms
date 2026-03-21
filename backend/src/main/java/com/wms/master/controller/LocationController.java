@@ -107,7 +107,8 @@ public class LocationController {
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) Long areaId,
             @RequestParam(required = false) Boolean isActive) {
-        long total = locationService.count(warehouseId, areaId, isActive);
+        Boolean effectiveIsActive = isActive != null ? isActive : Boolean.TRUE;
+        long total = locationService.count(warehouseId, areaId, effectiveIsActive);
         return ResponseEntity.ok(new CountResponse().count((int) total));
     }
 
