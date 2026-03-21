@@ -685,9 +685,9 @@ protected void doFilterInternal(HttpServletRequest request,
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  if (authStore.user?.passwordChangeRequired && to.name !== 'ChangePassword') {
+  if (authStore.user?.passwordChangeRequired && to.name !== 'change-password') {
     // パスワード変更画面以外への遷移をブロック
-    next({ name: 'ChangePassword' })
+    next({ name: 'change-password' })
   } else {
     next()
   }

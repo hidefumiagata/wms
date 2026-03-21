@@ -280,7 +280,7 @@ export function useWarehouseForm() {
         await apiClient.post('/api/v1/master/warehouses', formValues)
         ElMessage.success(t('master.warehouse.createSuccess'))
       }
-      router.push({ name: 'WarehouseList' })
+      router.push({ name: 'warehouse-list' })
     } catch (e: unknown) {
       handleApiError(e)
     } finally {
@@ -334,7 +334,7 @@ const { loading, values, onSubmit } = useWarehouseForm()
         <!-- フォーム項目 -->
       </WmsFormSection>
       <div class="form-actions">
-        <el-button @click="$router.push({ name: 'WarehouseList' })">
+        <el-button @click="$router.push({ name: 'warehouse-list' })">
           {{ $t('common.cancel') }}
         </el-button>
         <el-button type="primary" native-type="submit" :loading="loading">
@@ -947,13 +947,13 @@ export function setupGuards(router: Router) {
       // まずサーバーにセッション確認を試行
       await authStore.fetchCurrentUser()
       if (!authStore.isLoggedIn) {
-        return next({ name: 'Login', query: { redirect: to.fullPath } })
+        return next({ name: 'login', query: { redirect: to.fullPath } })
       }
     }
 
     // --- 2. パスワード変更強制 ---
-    if (authStore.requiresPasswordChange && to.name !== 'ChangePassword' && to.name !== 'Login') {
-      return next({ name: 'ChangePassword' })
+    if (authStore.requiresPasswordChange && to.name !== 'change-password' && to.name !== 'login') {
+      return next({ name: 'change-password' })
     }
 
     // --- 3. ロールチェック ---
@@ -1079,7 +1079,7 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as AxiosError)
         const authStore = useAuthStore()
         authStore.clearUser()
-        router.push({ name: 'Login' })
+        router.push({ name: 'login', query: { reason: 'session_expired' } })
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
@@ -1161,7 +1161,7 @@ async function forceLogout() {
   clearTimers()
   const authStore = useAuthStore()
   await authStore.logout()
-  router.push({ name: 'Login' })
+  router.push({ name: 'login', query: { reason: 'session_expired' } })
 }
 
 // Axiosリクエスト成功時にタイマーリセット

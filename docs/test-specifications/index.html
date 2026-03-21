@@ -491,6 +491,7 @@ void storeInbound_updatesInventory() {
 <tr><td>SC-002</td><td>正常系: 部分引当（在庫不足時に引当可能分のみ引当）</td><td>高</td><td>同上</td><td>○</td><td>○</td></tr>
 <tr><td>SC-003</td><td>正常系: FEFO引当（賞味期限管理品は期限短い順）</td><td>高</td><td>期限管理フラグONの商品在庫が複数ロケーションに存在</td><td>○</td><td>○</td></tr>
 <tr><td>SC-004</td><td>正常系: ばらし指示自動生成（ボール→バラ）</td><td>高</td><td>バラ在庫不足・ボール在庫ありの状態</td><td>○</td><td>○</td></tr>
+<tr><td>SC-004a</td><td>正常系: ばらし指示自動生成（ケース→バラ）</td><td>高</td><td>バラ・ボール在庫不足・ケース在庫ありの状態</td><td>○</td><td>○</td></tr>
 <tr><td>SC-005</td><td>正常系: ばらし完了（在庫変動確認）</td><td>高</td><td>SC-004実行後、ばらし指示がINSTRUCTED状態</td><td>○</td><td>○</td></tr>
 <tr><td>SC-006</td><td>正常系: 引当済み一覧表示</td><td>中</td><td>引当済み受注が存在する状態</td><td>○</td><td>○</td></tr>
 <tr><td>SC-007</td><td>正常系: 引当解放（受注単位）</td><td>高</td><td>引当済み受注が存在する状態</td><td>○</td><td>○</td></tr>
@@ -612,6 +613,34 @@ void storeInbound_updatesInventory() {
 <tr><td>2</td><td>inventories（バラ）</td><td><code>allocated_qty</code> += 5</td></tr>
 <tr><td>3</td><td>inventories（ボール）</td><td><code>allocated_qty</code> += 1（仮確保）</td></tr>
 <tr><td>4</td><td>allocation_details</td><td>バラ在庫からの引当5 + ばらし予定分の引当5 = 合計10が記録</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>SC-004a: 正常系: ばらし指示自動生成（ケース→バラ）</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>シナリオID</td><td>SC-004a</td></tr>
+<tr><td>シナリオ名</td><td>バラ・ボール在庫不足時にケース→バラのばらし指示が自動生成される</td></tr>
+<tr><td>前提条件</td><td>WAREHOUSE_MANAGERでログイン済み。受注OUT-TEST-004a（バラ50個, 商品PRD-004a, ケース入数=6, ボール入数=5）がORDERED状態。PRD-004aのバラ有効在庫が10、ボール有効在庫が0、ケース有効在庫が3</td></tr>
+<tr><td>テストデータ</td><td><code>R__004a_allocation_unpack_case.sql</code></td></tr>
+<p></tbody><br></table></p>
+<p><strong>テストステップ:</strong></p>
+<table>
+<thead><tr><th>#</th><th>操作</th><th>期待結果</th><th>確認方法</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>ALL-001画面を開く</td><td>受注一覧にOUT-TEST-004aが表示される</td><td>—</td></tr>
+<tr><td>2</td><td>OUT-TEST-004aを選択し [選択した受注を引当実行] をクリック</td><td>引当成功1件が表示される</td><td>MSG-S-ALL001-001</td></tr>
+<tr><td>3</td><td>引当結果のばらし指示一覧を確認</td><td>ばらし指示1件: PRD-004a, 元荷姿CASE, 先荷姿PIECE, 数量2ケース（2×6×5=60バラ）, ステータスINSTRUCTED</td><td>ばらし指示テーブルに1行表示</td></tr>
+<tr><td>4</td><td>引当結果のallocatedSlipsを確認</td><td>バラ10は直接引当済み。残り40はばらし待ち（仮引当）</td><td>status = ALLOCATED（全量引当計画済み）</td></tr>
+<p></tbody><br></table></p>
+<p><strong>DB検証（結合テストのみ）:</strong></p>
+<table>
+<thead><tr><th>#</th><th>検証対象テーブル</th><th>検証内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>unpack_instructions</td><td>1件作成。product_id=PRD-004aに対応するID, from_unit_type=CASE, to_unit_type=PIECE, from_qty=2, to_qty=60, status=INSTRUCTED</td></tr>
+<tr><td>2</td><td>inventories（バラ）</td><td><code>allocated_qty</code> += 10</td></tr>
+<tr><td>3</td><td>inventories（ケース）</td><td><code>allocated_qty</code> += 2（仮確保）</td></tr>
+<tr><td>4</td><td>allocation_details</td><td>バラ在庫からの引当10 + ばらし予定分の引当40 = 合計50が記録</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>SC-005: 正常系: ばらし完了（在庫変動確認）</h3>
@@ -864,6 +893,25 @@ void storeInbound_updatesInventory() {
   const unpackRow = page.locator('[data-testid=&quot;unpack-instructions&quot;] tr', { hasText: 'PRD-004' });
   await expect(unpackRow).toBeVisible();
   await expect(unpackRow.locator('td:nth-child(2)')).toContainText('BALL');  // 元荷姿
+  await expect(unpackRow.locator('td:nth-child(3)')).toContainText('PIECE'); // 先荷姿
+  await expect(unpackRow.locator('td:nth-child(5)')).toContainText('INSTRUCTED');
+});</code></pre>
+<h3>SC-004a: ばらし指示自動生成（ケース→バラ）</h3>
+<pre><code class="lang-typescript">test('SC-004a: ばらし指示自動生成（ケース→バラ）', async ({ page }) =&gt; {
+  await loginAs(page, 'WAREHOUSE_MANAGER');
+
+  await page.goto('/allocation');
+
+  // 受注を選択して引当実行
+  const row = page.locator('tr', { hasText: 'OUT-TEST-004a' });
+  await row.locator('input[type=&quot;checkbox&quot;]').check();
+  await page.click('button:has-text(&quot;選択した受注を引当実行&quot;)');
+  await expect(page.locator('.el-message--success')).toBeVisible();
+
+  // ばらし指示一覧を確認
+  const unpackRow = page.locator('[data-testid=&quot;unpack-instructions&quot;] tr', { hasText: 'PRD-004a' });
+  await expect(unpackRow).toBeVisible();
+  await expect(unpackRow.locator('td:nth-child(2)')).toContainText('CASE');  // 元荷姿
   await expect(unpackRow.locator('td:nth-child(3)')).toContainText('PIECE'); // 先荷姿
   await expect(unpackRow.locator('td:nth-child(5)')).toContainText('INSTRUCTED');
 });</code></pre>
