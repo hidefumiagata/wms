@@ -87,4 +87,121 @@ class PiiMaskerTest {
         String result = PiiMasker.mask(input);
         assertThat(result).isEqualTo(input);
     }
+
+    // --- JWTトークンマスキング ---
+
+    @Test
+    @DisplayName("JWTトークンがマスキングされる")
+    void mask_jwt_isMasked() {
+        String jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMSJ9.abc123def456";
+        String input = "Authorization: Bearer " + jwt;
+        String result = PiiMasker.mask(input);
+        assertThat(result).doesNotContain("eyJ");
+        assertThat(result).contains("[JWT-REDACTED]");
+    }
+
+    @Test
+    @DisplayName("JWT風だが不完全なトークンはマスキングされない")
+    void mask_incompleteJwt_notMasked() {
+        String input = "eyJhbGciOi incomplete token";
+        String result = PiiMasker.mask(input);
+        assertThat(result).isEqualTo(input);
+    }
+
+    // --- パスワードKVマスキング ---
+
+    @ParameterizedTest
+    @DisplayName("各種パスワードキーバリューがマスキングされる")
+    @CsvSource({
+        "'password=secret123', 'password=*****'",
+        "'Password=MyPass!', 'Password=*****'",
+        "'pwd=abc', 'pwd=*****'",
+        "'secret=token123', 'secret=*****'",
+        "'passwd:hidden', 'passwd=*****'"
+    })
+    void mask_passwordKeyValue_isMasked(String input, String expected) {
+        String result = PiiMasker.mask(input);
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("パスワードキーワードが値なしの場合はマスキングされない")
+    void mask_passwordKeywordAlone_notMasked() {
+        String input = "Changed password policy";
+        String result = PiiMasker.mask(input);
+        assertThat(result).isEqualTo(input);
+    }
+
+    // --- fast-path最適化テスト ---
+
+    @Test
+    @DisplayName("fast-path: PII未含有メッセージは正規表現を実行せずにそのまま返す")
+    void mayContainSensitiveData_plainMessage_returnsFalse() {
+        assertThat(PiiMasker.mayContainSensitiveData("Normal log message")).isFalse();
+    }
+
+    @Test
+    @DisplayName("fast-path: @を含むメッセージはチェック対象")
+    void mayContainSensitiveData_withAt_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("user@example.com")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: 数字-ハイフンを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withDigitHyphen_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("Phone: 03-1234-5678")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: eyJを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withEyJ_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("Token: eyJhbGci...")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: passwordキーワードを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withPassword_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("password=secret")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: passwdキーワードを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withPasswd_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("passwd:hidden")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: pwdキーワードを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withPwd_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("pwd=abc")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: secretキーワードを含むメッセージはチェック対象")
+    void mayContainSensitiveData_withSecret_returnsTrue() {
+        assertThat(PiiMasker.mayContainSensitiveData("secret=token")).isTrue();
+    }
+
+    @Test
+    @DisplayName("fast-path: 空文字列はチェック不要")
+    void mayContainSensitiveData_emptyString_returnsFalse() {
+        assertThat(PiiMasker.mayContainSensitiveData("")).isFalse();
+    }
+
+    // --- 複合パターンテスト ---
+
+    @Test
+    @DisplayName("全PIIパターンが混在するメッセージで全てマスキングされる")
+    void mask_allPatterns_allMasked() {
+        String input = "User user@test.com called 03-1234-5678 with token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMSJ9.abc123 and password=secret";
+        String result = PiiMasker.mask(input);
+        assertThat(result).doesNotContain("user@test.com");
+        assertThat(result).doesNotContain("03-1234-5678");
+        assertThat(result).doesNotContain("eyJ");
+        assertThat(result).doesNotContain("password=secret");
+        assertThat(result).contains("***@***.***");
+        assertThat(result).contains("***-****-****");
+        assertThat(result).contains("[JWT-REDACTED]");
+        assertThat(result).contains("password=*****");
+    }
 }
