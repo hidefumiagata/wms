@@ -20,7 +20,8 @@ public class PiiMaskingStackTraceJsonProvider extends StackTraceJsonProvider {
 
     @Override
     public void writeTo(JsonGenerator generator, ILoggingEvent event) throws IOException {
-        if (event != null && event.getThrowableProxy() != null && getFieldName() != null) {
+        if (event != null && event.getThrowableProxy() != null
+                && getFieldName() != null && getThrowableConverter() != null) {
             String stackTrace = getThrowableConverter().convert(event);
             if (stackTrace != null && !stackTrace.isEmpty()) {
                 String masked = PiiMasker.mask(stackTrace);

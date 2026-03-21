@@ -82,6 +82,22 @@ class PiiMaskingStackTraceJsonProviderTest {
     }
 
     @Test
+    @DisplayName("例外メッセージ内の電話番号がマスキングされる")
+    void writeTo_phoneInException_isMasked() throws IOException {
+        ILoggingEvent event = createEventWithThrowable(
+                new RuntimeException("Contact info: 03-1234-5678"));
+        String stackTrace = "java.lang.RuntimeException: Contact info: 03-1234-5678\n"
+                + "\tat com.wms.service.UserService.getContact(UserService.java:50)";
+        when(mockConverter.convert(event)).thenReturn(stackTrace);
+
+        provider.writeTo(generator, event);
+
+        String expected = "java.lang.RuntimeException: Contact info: ***-****-****\n"
+                + "\tat com.wms.service.UserService.getContact(UserService.java:50)";
+        verify(generator).writeStringField("stack_trace", expected);
+    }
+
+    @Test
     @DisplayName("PII未含有のスタックトレースはそのまま出力される")
     void writeTo_noSensitiveData_passesThrough() throws IOException {
         ILoggingEvent event = createEventWithThrowable(
@@ -142,6 +158,18 @@ class PiiMaskingStackTraceJsonProviderTest {
         ILoggingEvent event = createEventWithThrowable(
                 new RuntimeException("Error: user@example.com"));
         when(mockConverter.convert(event)).thenReturn("stack trace");
+
+        provider.writeTo(generator, event);
+
+        verifyNoInteractions(generator);
+    }
+
+    @Test
+    @DisplayName("throwableConverterがnullの場合は何も出力しない")
+    void writeTo_nullConverter_noOutput() throws IOException {
+        provider.setThrowableConverter(null);
+        ILoggingEvent event = createEventWithThrowable(
+                new RuntimeException("Error: user@example.com"));
 
         provider.writeTo(generator, event);
 
