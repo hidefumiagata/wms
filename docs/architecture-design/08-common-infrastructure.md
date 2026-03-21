@@ -873,6 +873,16 @@ export function useWarehouseForm(mode: 'create' | 'edit') {
 
 > ログ収集フロー・標準フォーマット・PII マスキングは [architecture-blueprint/08-common-infrastructure.md](../architecture-blueprint/08-common-infrastructure.md) を参照。
 
+#### サーブレットフィルター実行順序
+
+| 順序 | フィルター | @Order | 役割 |
+|------|-----------|--------|------|
+| 1 | `TraceIdFilter` | `Ordered.HIGHEST_PRECEDENCE` | traceId 生成・MDC 設定 |
+| 2 | `RequestLoggingFilter` | `Ordered.HIGHEST_PRECEDENCE + 1` | リクエスト計時・アクセスログ |
+| 3 | Spring Security FilterChain | デフォルト | 認証・認可（JWT検証、userId MDC設定） |
+
+> **設計意図**: TraceIdFilter を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。RequestLoggingFilter はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。
+
 ### 4.1 バックエンド — 相関ID（TraceId）管理
 
 リクエストごとにUUID v4 を生成し、MDC（Mapped Diagnostic Context）に設定する。全ログに自動付与される。
