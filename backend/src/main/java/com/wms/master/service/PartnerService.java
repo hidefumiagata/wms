@@ -55,6 +55,7 @@ public class PartnerService {
         }
     }
 
+    // TODO: #71 引数が9個と多い。UpdatePartnerCommand 等の record DTO への移行を検討
     @Transactional
     public Partner update(Long id, String partnerName, String partnerNameKana,
                           String partnerType, String address, String phone,

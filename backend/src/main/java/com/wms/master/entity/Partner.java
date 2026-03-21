@@ -26,6 +26,8 @@ public class Partner extends MasterBaseEntity {
     @Column(name = "partner_name_kana", length = 200)
     private String partnerNameKana;
 
+    // TODO: #70 @Enumerated(EnumType.STRING) + Java Enum への移行を検討
+    //       現フェーズは JPQL の IN 句との相性を考慮して String のまま維持
     @Column(name = "partner_type", nullable = false, length = 20)
     private String partnerType;
 

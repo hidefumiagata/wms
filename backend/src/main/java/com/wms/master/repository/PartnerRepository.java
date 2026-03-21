@@ -20,6 +20,7 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
      * - BOTH 指定時: BOTH のみを対象
      * - null の場合: 全種別対象
      */
+    // TODO: #72 partnerCode / partnerName の LIKE 検索で % / _ がエスケープされていない
     @Query("SELECT p FROM Partner p WHERE "
             + "(:partnerCode IS NULL OR p.partnerCode LIKE CONCAT(:partnerCode, '%')) "
             + "AND (:partnerName IS NULL OR p.partnerName LIKE CONCAT('%', :partnerName, '%') "
@@ -36,6 +37,7 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
             @Param("isActive") Boolean isActive,
             Pageable pageable);
 
+    // TODO: #73 件数増大時の上限設定を検討（例: 1000件超で警告ログ）
     @Query("SELECT p FROM Partner p WHERE (:isActive IS NULL OR p.isActive = :isActive) ORDER BY p.partnerCode ASC")
     List<Partner> findAllSimple(@Param("isActive") Boolean isActive);
 }

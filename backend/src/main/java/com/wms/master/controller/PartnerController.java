@@ -71,6 +71,7 @@ public class PartnerController {
         String partnerTypeValue = partnerType != null ? partnerType.getValue() : null;
 
         if (Boolean.TRUE.equals(all)) {
+            // TODO: #75 プルダウン用途では PartnerSimple（code/name/type/isActive のみ）への切り替えを検討（PII削減）
             List<PartnerDetail> detailList = partnerService.findAllSimple(isActive).stream()
                     .map(this::toDetail)
                     .toList();
@@ -144,6 +145,7 @@ public class PartnerController {
         return ResponseEntity.ok(toDetail(updated));
     }
 
+    // TODO: #74 列挙攻撃対策として RateLimiterService の適用を検討
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkPartnerCodeExists(
             @RequestParam String partnerCode) {
