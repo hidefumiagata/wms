@@ -46,7 +46,9 @@ public class WarehouseService {
                     "倉庫コードが既に存在します: " + warehouse.getWarehouseCode());
         }
         try {
-            return warehouseRepository.save(warehouse);
+            Warehouse created = warehouseRepository.save(warehouse);
+            log.info("Warehouse created: code={}", created.getWarehouseCode());
+            return created;
         } catch (DataIntegrityViolationException e) {
             throw new DuplicateResourceException("DUPLICATE_CODE",
                     "倉庫コードが既に存在します: " + warehouse.getWarehouseCode());
@@ -62,7 +64,9 @@ public class WarehouseService {
         warehouse.setAddress(address);
         warehouse.setVersion(version);
         try {
-            return warehouseRepository.save(warehouse);
+            Warehouse saved = warehouseRepository.save(warehouse);
+            log.info("Warehouse updated: id={}, name={}", id, warehouseName);
+            return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",
@@ -81,7 +85,9 @@ public class WarehouseService {
         }
         warehouse.setVersion(version);
         try {
-            return warehouseRepository.save(warehouse);
+            Warehouse saved = warehouseRepository.save(warehouse);
+            log.info("Warehouse toggled: id={}, isActive={}", id, isActive);
+            return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",

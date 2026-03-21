@@ -202,6 +202,30 @@ class WarehouseControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict());
         }
+
+        @Test
+        @DisplayName("必須項目未設定で400を返す")
+        void create_missingRequired_returns400() throws Exception {
+            CreateWarehouseRequest request = new CreateWarehouseRequest();
+
+            mockMvc.perform(post(BASE_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("倉庫コード形式不正で400を返す")
+        void create_invalidCodePattern_returns400() throws Exception {
+            CreateWarehouseRequest request = new CreateWarehouseRequest()
+                    .warehouseCode("invalid")
+                    .warehouseName("テスト倉庫");
+
+            mockMvc.perform(post(BASE_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     // ========== getWarehouse ==========
