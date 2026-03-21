@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
@@ -148,5 +150,133 @@ class RequestLoggingFilterTest {
         Order order = RequestLoggingFilter.class.getAnnotation(Order.class);
         assertThat(order).isNotNull();
         assertThat(order.value()).isEqualTo(Ordered.HIGHEST_PRECEDENCE + 1);
+    }
+
+    // --- CRLFサニタイズ ---
+
+    @Test
+    @DisplayName("CRLFサニタイズ: CRLFを含むURIがサニタイズされてログ出力される")
+    void doFilterInternal_crlfInUri_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("GET");
+        request.setRequestURI("/api/v1/items\r\nInjected-Header: evil");
+        response.setStatus(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\r");
+        assertThat(msg).doesNotContain("\n");
+        assertThat(msg).contains("path=/api/v1/itemsInjected-Header: evil");
+    }
+
+    @Test
+    @DisplayName("CRLFサニタイズ: LFのみ含むURIもサニタイズされる")
+    void doFilterInternal_lfInUri_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("GET");
+        request.setRequestURI("/api/v1/items\nfake-log-line");
+        response.setStatus(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\n");
+        assertThat(msg).contains("path=/api/v1/itemsfake-log-line");
+    }
+
+    @Test
+    @DisplayName("CRLFサニタイズ: CRのみ含むURIもサニタイズされる")
+    void doFilterInternal_crInUri_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("GET");
+        request.setRequestURI("/api/v1/items\rfake");
+        response.setStatus(200);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\r");
+        assertThat(msg).contains("path=/api/v1/itemsfake");
+    }
+
+    @Test
+    @DisplayName("CRLFサニタイズ: 例外時もURIがサニタイズされてログ出力される")
+    void doFilterInternal_exceptionWithCrlfUri_sanitizedInLog() throws ServletException, IOException {
+        request.setMethod("POST");
+        request.setRequestURI("/api/v1/items\r\nevil");
+        doThrow(new ServletException("error"))
+            .when(filterChain).doFilter(request, response);
+
+        assertThatThrownBy(() -> filter.doFilterInternal(request, response, filterChain))
+            .isInstanceOf(ServletException.class);
+
+        assertThat(listAppender.list).hasSize(1);
+        String msg = listAppender.list.get(0).getFormattedMessage();
+        assertThat(msg).doesNotContain("\r");
+        assertThat(msg).doesNotContain("\n");
+        assertThat(msg).contains("path=/api/v1/itemsevil");
+    }
+
+    // --- sanitizeUri 単体テスト ---
+
+    @ParameterizedTest(name = "sanitizeUri(\"{0}\") => \"{1}\"")
+    @CsvSource({
+        "/api/v1/items, /api/v1/items",
+        "' ', ' '",
+    })
+    @DisplayName("sanitizeUri: CRLF無しの入力はそのまま返る")
+    void sanitizeUri_noCrlf_returnsUnchanged(String input, String expected) {
+        assertThat(RequestLoggingFilter.sanitizeUri(input)).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("sanitizeUri: nullは空文字を返す")
+    void sanitizeUri_null_returnsEmpty() {
+        assertThat(RequestLoggingFilter.sanitizeUri(null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("sanitizeUri: CRLFが除去される")
+    void sanitizeUri_crlfRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeUri("/path\r\nevil")).isEqualTo("/pathevil");
+    }
+
+    @Test
+    @DisplayName("sanitizeUri: LFのみが除去される")
+    void sanitizeUri_lfRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeUri("/path\nevil")).isEqualTo("/pathevil");
+    }
+
+    @Test
+    @DisplayName("sanitizeUri: CRのみが除去される")
+    void sanitizeUri_crRemoved() {
+        assertThat(RequestLoggingFilter.sanitizeUri("/path\revil")).isEqualTo("/pathevil");
+    }
+
+    // --- SENSITIVE_PATHS ---
+
+    @Test
+    @DisplayName("SENSITIVE_PATHS: ログインパスが含まれる")
+    void sensitivePaths_containsLogin() {
+        assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/login");
+    }
+
+    @Test
+    @DisplayName("SENSITIVE_PATHS: パスワード変更パスが含まれる")
+    void sensitivePaths_containsChangePassword() {
+        assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/change-password");
+    }
+
+    @Test
+    @DisplayName("SENSITIVE_PATHS: パスワードリセット確認パスが含まれる")
+    void sensitivePaths_containsPasswordResetConfirm() {
+        assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/password-reset/confirm");
+    }
+
+    @Test
+    @DisplayName("SENSITIVE_PATHS: 08-common-infrastructure.md §4.5と一致する3件")
+    void sensitivePaths_hasExactlyThreeEntries() {
+        assertThat(RequestLoggingFilter.SENSITIVE_PATHS).hasSize(3);
     }
 }

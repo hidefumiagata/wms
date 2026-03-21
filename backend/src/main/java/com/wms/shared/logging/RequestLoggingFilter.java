@@ -11,11 +11,25 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class RequestLoggingFilter extends OncePerRequestFilter {
+
+    /**
+     * センシティブエンドポイント一覧。
+     * これらのパスではリクエストボディのログ出力を行ってはならない。
+     * 将来ボディログ機能を追加する際は、このセットでガードすること。
+     *
+     * @see docs/architecture-design/08-common-infrastructure.md §4.5 センシティブエンドポイント一覧
+     */
+    static final Set<String> SENSITIVE_PATHS = Set.of(
+            "/api/v1/auth/login",
+            "/api/v1/auth/change-password",
+            "/api/v1/auth/password-reset/confirm"
+    );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -32,19 +46,30 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             throw ex;
         } finally {
             long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            String sanitizedPath = sanitizeUri(request.getRequestURI());
             if (thrown != null) {
                 log.warn("API request failed: method={}, path={}, duration={}ms, error={}",
                         request.getMethod(),
-                        request.getRequestURI(),
+                        sanitizedPath,
                         durationMs,
                         thrown.getMessage());
             } else {
                 log.info("API request completed: method={}, path={}, status={}, duration={}ms",
                         request.getMethod(),
-                        request.getRequestURI(),
+                        sanitizedPath,
                         response.getStatus(),
                         durationMs);
             }
         }
+    }
+
+    /**
+     * URIからCRLF文字を除去し、ログインジェクションを防止する。
+     */
+    static String sanitizeUri(String uri) {
+        if (uri == null) {
+            return "";
+        }
+        return uri.replace("\r", "").replace("\n", "");
     }
 }
