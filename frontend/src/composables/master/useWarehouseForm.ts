@@ -8,6 +8,7 @@ import { toApiError } from '@/utils/apiError'
 
 // 全角カタカナ（長音・スペース含む）
 const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
+const WAREHOUSE_CODE_REGEX = /^[A-Z]{4}$/
 
 export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()
@@ -16,7 +17,9 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
 
   const warehouseId = computed(() => {
     const id = route.params.id
-    return id ? Number(id) : null
+    if (!id) return null
+    const num = Number(id)
+    return Number.isInteger(num) && num > 0 ? num : null
   })
   const isEdit = computed(() => warehouseId.value !== null)
 
@@ -36,9 +39,9 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
   // --- バリデーションルール ---
   const rules: FormRules = {
     warehouseCode: [
-      { required: true, message: t('master.warehouse.validation.codeRequired'), trigger: 'blur' },
+      { required: true, whitespace: true, message: t('master.warehouse.validation.codeRequired'), trigger: 'blur' },
       {
-        pattern: /^[A-Z]{4}$/,
+        pattern: WAREHOUSE_CODE_REGEX,
         message: t('master.warehouse.validation.codeFormat'),
         trigger: 'blur',
       },
@@ -54,11 +57,11 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
       },
     ],
     warehouseName: [
-      { required: true, message: t('master.warehouse.validation.nameRequired'), trigger: 'blur' },
+      { required: true, whitespace: true, message: t('master.warehouse.validation.nameRequired'), trigger: 'blur' },
       { max: 200, message: t('master.warehouse.validation.nameMaxLength'), trigger: 'blur' },
     ],
     warehouseNameKana: [
-      { required: true, message: t('master.warehouse.validation.kanaRequired'), trigger: 'blur' },
+      { required: true, whitespace: true, message: t('master.warehouse.validation.kanaRequired'), trigger: 'blur' },
       { max: 200, message: t('master.warehouse.validation.kanaMaxLength'), trigger: 'blur' },
       {
         pattern: KATAKANA_REGEX,
@@ -73,8 +76,9 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
 
   // --- API呼び出し ---
   async function checkCodeExists() {
+    if (isEdit.value) return // 編集モードではコードチェック不要（変更不可）
     codeAlreadyExists.value = false
-    if (!form.warehouseCode || !/^[A-Z]{4}$/.test(form.warehouseCode)) return
+    if (!form.warehouseCode || !WAREHOUSE_CODE_REGEX.test(form.warehouseCode)) return
 
     try {
       const res = await apiClient.get<{ exists: boolean }>('/master/warehouses/exists', {
@@ -85,12 +89,16 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
         formRef.value?.validateField('warehouseCode')
       }
     } catch {
-      // 確認失敗時はそのまま（サーバー側バリデーションに委ねる）
+      // 確認失敗時はサーバー側バリデーションに委ねる
     }
   }
 
   async function fetchWarehouse() {
-    if (!warehouseId.value) return
+    if (!warehouseId.value) {
+      // 不正な ID の場合は一覧に戻す
+      router.push({ name: 'warehouse-list' })
+      return
+    }
     initialLoading.value = true
     try {
       const res = await apiClient.get<{
@@ -110,9 +118,10 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
       if (error.response?.status === 404) {
         ElMessage.error(t('master.warehouse.notFound'))
         router.push({ name: 'warehouse-list' })
-      } else {
-        ElMessage.error(t('error.server'))
+      } else if (!error.response) {
+        ElMessage.error(t('error.network'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       initialLoading.value = false
     }
@@ -144,8 +153,10 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
       router.push({ name: 'warehouse-list' })
     } catch (err: unknown) {
       const error = toApiError(err)
-      if (error.response?.status === 409) {
-        if (error.response?.data?.errorCode === 'DUPLICATE_CODE') {
+      if (!error.response) {
+        ElMessage.error(t('error.network'))
+      } else if (error.response.status === 409) {
+        if (error.response.data?.errorCode === 'DUPLICATE_CODE') {
           // 倉庫コード重複（サーバー側で検出）
           codeAlreadyExists.value = true
           formRef.value?.validateField('warehouseCode')
@@ -153,11 +164,8 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
           // 楽観的ロック競合
           ElMessage.error(t('error.optimisticLock'))
         }
-      } else if (error.response?.status === 400) {
-        ElMessage.error(t('error.server'))
-      } else {
-        ElMessage.error(t('error.server'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }

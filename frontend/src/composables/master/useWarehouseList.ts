@@ -54,8 +54,16 @@ export function useWarehouseList() {
       const res = await apiClient.get<WarehouseListResponse>('/master/warehouses', { params })
       items.value = res.data.content
       total.value = res.data.totalElements
-    } catch {
-      ElMessage.error(t('master.warehouse.fetchError'))
+    } catch (err: unknown) {
+      // エラー時はページネーション状態と一致させるため空にリセット
+      items.value = []
+      total.value = 0
+      const error = toApiError(err)
+      if (!error.response) {
+        ElMessage.error(t('error.network'))
+      } else {
+        ElMessage.error(t('master.warehouse.fetchError'))
+      }
     } finally {
       loading.value = false
     }
@@ -113,16 +121,17 @@ export function useWarehouseList() {
           ? t('master.warehouse.deactivateSuccess')
           : t('master.warehouse.activateSuccess')
       )
-      fetchList()
+      await fetchList()
     } catch (err: unknown) {
       const error = toApiError(err)
-      if (error.response?.status === 422) {
+      if (!error.response) {
+        ElMessage.error(t('error.network'))
+      } else if (error.response.status === 422) {
         ElMessage.error(t('master.warehouse.cannotDeactivateHasInventory'))
-      } else if (error.response?.status === 409) {
+      } else if (error.response.status === 409) {
         ElMessage.error(t('error.optimisticLock'))
-      } else {
-        ElMessage.error(t('error.server'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }

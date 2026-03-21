@@ -143,8 +143,8 @@ export default {
     passwordMismatch: 'Passwords do not match. Please re-enter.',
   },
   error: {
-    network: 'Network error occurred',
-    server: 'Server error occurred',
+    network: 'Network error. Please check your connection.',
+    server: 'Server error. Please try again later.',
     notFound: 'Data not found',
     conflict: 'Data already exists',
     optimisticLock: 'Data was updated by another user. Please reload.',

@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 export interface ApiError {
   response?: {
     status?: number
@@ -9,5 +11,13 @@ export interface ApiError {
 }
 
 export function toApiError(err: unknown): ApiError {
-  return err as ApiError
+  if (axios.isAxiosError(err)) {
+    return {
+      response: {
+        status: err.response?.status,
+        data: err.response?.data as ApiError['response']['data'],
+      },
+    }
+  }
+  return {}
 }
