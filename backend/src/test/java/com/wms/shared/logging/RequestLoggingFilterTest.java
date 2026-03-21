@@ -146,7 +146,7 @@ class RequestLoggingFilterTest {
 
     @Test
     @DisplayName("@OrderがTraceIdFilterの後に設定されている")
-    void orderAnnotation_isAfterTraceIdFilter() {
+    void classAnnotation_order_isAfterTraceIdFilter() {
         Order order = RequestLoggingFilter.class.getAnnotation(Order.class);
         assertThat(order).isNotNull();
         assertThat(order.value()).isEqualTo(Ordered.HIGHEST_PRECEDENCE + 1);
@@ -292,25 +292,25 @@ class RequestLoggingFilterTest {
 
     @Test
     @DisplayName("SENSITIVE_PATHS: ログインパスが含まれる")
-    void sensitivePaths_containsLogin() {
+    void SENSITIVE_PATHS_default_containsLogin() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/login");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: パスワード変更パスが含まれる")
-    void sensitivePaths_containsChangePassword() {
+    void SENSITIVE_PATHS_default_containsChangePassword() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/change-password");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: パスワードリセット確認パスが含まれる")
-    void sensitivePaths_containsPasswordResetConfirm() {
+    void SENSITIVE_PATHS_default_containsPasswordResetConfirm() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/password-reset/confirm");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: 08-common-infrastructure.md §4.5と一致する3件")
-    void sensitivePaths_hasExactlyThreeEntries() {
+    void SENSITIVE_PATHS_default_hasExactlyThreeEntries() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).hasSize(3);
     }
 }

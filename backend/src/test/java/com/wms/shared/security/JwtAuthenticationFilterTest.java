@@ -51,7 +51,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("有効なトークン → SecurityContextにAuthentication設定、MDCにuserId設定")
-    void validToken_setsSecurityContextAndMdcUserId() throws Exception {
+    void doFilterInternal_validToken_setsSecurityContextAndMdcUserId() throws Exception {
         // Arrange
         String token = "valid.jwt.token";
         request.setCookies(new Cookie("access_token", token));
@@ -101,7 +101,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("Cookieなし → SecurityContext未設定のまま通過")
-    void noCookie_noSecurityContextSet() throws Exception {
+    void doFilterInternal_noCookie_doesNotSetSecurityContext() throws Exception {
         // Arrange - no cookies set
 
         // Act
@@ -115,7 +115,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("無効なトークン → SecurityContext未設定のまま通過")
-    void invalidToken_noSecurityContextSet() throws Exception {
+    void doFilterInternal_invalidToken_doesNotSetSecurityContext() throws Exception {
         // Arrange
         String token = "invalid.jwt.token";
         request.setCookies(new Cookie("access_token", token));
@@ -133,7 +133,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("access_token以外のCookieのみ → SecurityContext未設定のまま通過")
-    void otherCookieOnly_noSecurityContextSet() throws Exception {
+    void doFilterInternal_otherCookieOnly_doesNotSetSecurityContext() throws Exception {
         request.setCookies(new Cookie("other_cookie", "somevalue"));
 
         filter.doFilterInternal(request, response, filterChain);
@@ -145,7 +145,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("フィルタチェーン実行後にMDC userIdがクリーンアップされる")
-    void mdcUserId_cleanedUpAfterFilterChain() throws Exception {
+    void doFilterInternal_validToken_cleansMdcUserIdAfterChain() throws Exception {
         // Arrange
         String token = "valid.jwt.token";
         request.setCookies(new Cookie("access_token", token));
@@ -167,7 +167,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     @DisplayName("フィルタチェーンが例外を投げてもMDC userIdとSecurityContextがクリーンアップされる")
-    void mdcAndSecurityContext_cleanedUpEvenWhenFilterChainThrows() throws Exception {
+    void doFilterInternal_filterChainThrows_cleansMdcAndSecurityContext() throws Exception {
         // Arrange
         String token = "valid.jwt.token";
         request.setCookies(new Cookie("access_token", token));

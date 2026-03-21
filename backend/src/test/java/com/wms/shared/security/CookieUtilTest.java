@@ -26,7 +26,7 @@ class CookieUtilTest {
 
     @Test
     @DisplayName("addAccessTokenCookie: 正しいCookie属性が設定される")
-    void addAccessTokenCookie_setsCorrectAttributes() {
+    void addAccessTokenCookie_default_setsCorrectAttributes() {
         // Act
         cookieUtil.addAccessTokenCookie(response, "test-access-token");
 
@@ -43,7 +43,7 @@ class CookieUtilTest {
 
     @Test
     @DisplayName("addRefreshTokenCookie: 正しいパスが設定される")
-    void addRefreshTokenCookie_setsCorrectPath() {
+    void addRefreshTokenCookie_default_setsCorrectPath() {
         // Act
         cookieUtil.addRefreshTokenCookie(response, "test-refresh-token");
 
@@ -60,7 +60,7 @@ class CookieUtilTest {
 
     @Test
     @DisplayName("clearAuthCookies: Max-Age=0でCookieが削除される")
-    void clearAuthCookies_setsMaxAgeToZero() {
+    void clearAuthCookies_default_setsMaxAgeToZero() {
         // Act
         cookieUtil.clearAuthCookies(response);
 
@@ -88,7 +88,7 @@ class CookieUtilTest {
 
     @Test
     @DisplayName("secure=falseの場合、Secure属性が含まれない")
-    void whenSecureIsFalse_noSecureAttribute() {
+    void addAccessTokenCookie_secureIsFalse_doesNotSetSecureAttribute() {
         // Arrange
         CookieUtil insecureCookieUtil = new CookieUtil(ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION, false);
         MockHttpServletResponse insecureResponse = new MockHttpServletResponse();

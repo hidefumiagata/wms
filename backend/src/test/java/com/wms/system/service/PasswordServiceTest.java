@@ -63,7 +63,7 @@ class PasswordServiceTest {
     }
 
     @Test
-    void changePassword_success() {
+    void changePassword_validInput_updatesPasswordAndFlags() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(systemParameterService.getIntValue("LOGIN_FAILURE_LOCK_COUNT")).thenReturn(5);
         when(passwordEncoder.matches("current", user.getPasswordHash())).thenReturn(true);
@@ -152,7 +152,7 @@ class PasswordServiceTest {
     // --- confirmPasswordReset ---
 
     @Test
-    void confirmPasswordReset_success() {
+    void confirmPasswordReset_validToken_updatesPasswordAndUnlocks() {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .userId(1L)
                 .tokenHash(sha256("valid-token"))

@@ -32,7 +32,7 @@ class CustomAccessDeniedHandlerTest {
 
     @Test
     @DisplayName("アクセス拒否時に403とJSON ErrorResponseを返す")
-    void handle_returns403WithJsonErrorResponse() throws Exception {
+    void handle_accessDenied_returns403WithJsonErrorResponse() throws Exception {
         // Act
         handler.handle(request, response, new AccessDeniedException("Access denied"));
 

@@ -47,7 +47,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("フィルタチェーン実行中にMDCにtraceIdが設定される")
-    void doFilterInternal_setsTraceIdInMdc() throws ServletException, IOException {
+    void doFilterInternal_normalRequest_setsTraceIdInMdc() throws ServletException, IOException {
         AtomicReference<String> capturedTraceId = new AtomicReference<>();
 
         doAnswer(invocation -> {
@@ -62,7 +62,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("traceIdはハイフンなしの32文字UUIDである")
-    void doFilterInternal_traceIdIsHexString() throws ServletException, IOException {
+    void doFilterInternal_normalRequest_traceIdIsHex32Chars() throws ServletException, IOException {
         AtomicReference<String> capturedTraceId = new AtomicReference<>();
 
         doAnswer(invocation -> {
@@ -79,7 +79,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("レスポンスヘッダーにX-Trace-Idが設定される")
-    void doFilterInternal_setsTraceIdResponseHeader() throws ServletException, IOException {
+    void doFilterInternal_normalRequest_setsTraceIdResponseHeader() throws ServletException, IOException {
         filter.doFilterInternal(request, response, filterChain);
 
         String headerValue = response.getHeader(TraceIdFilter.TRACE_ID_HEADER);
@@ -89,7 +89,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("MDCのtraceIdとレスポンスヘッダーのtraceIdが一致する")
-    void doFilterInternal_mdcAndHeaderMatch() throws ServletException, IOException {
+    void doFilterInternal_normalRequest_mdcAndHeaderTraceIdMatch() throws ServletException, IOException {
         AtomicReference<String> capturedTraceId = new AtomicReference<>();
 
         doAnswer(invocation -> {
@@ -105,7 +105,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("フィルタチェーン完了後にMDCからtraceIdが削除される")
-    void doFilterInternal_removesTraceIdFromMdcAfterChain() throws ServletException, IOException {
+    void doFilterInternal_afterChainCompletes_removesTraceIdFromMdc() throws ServletException, IOException {
         filter.doFilterInternal(request, response, filterChain);
 
         assertThat(MDC.get(TraceIdFilter.TRACE_ID_KEY)).isNull();
@@ -113,7 +113,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("フィルタチェーンが例外をスローしてもMDCからtraceIdが削除される")
-    void doFilterInternal_removesTraceIdFromMdcOnException() throws ServletException, IOException {
+    void doFilterInternal_chainThrowsException_removesTraceIdFromMdc() throws ServletException, IOException {
         doAnswer(invocation -> {
             throw new ServletException("test error");
         }).when(filterChain).doFilter(any(), any());
@@ -129,7 +129,7 @@ class TraceIdFilterTest {
 
     @Test
     @DisplayName("フィルタチェーンが呼ばれる")
-    void doFilterInternal_delegatesToFilterChain() throws ServletException, IOException {
+    void doFilterInternal_normalRequest_delegatesToFilterChain() throws ServletException, IOException {
         filter.doFilterInternal(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);

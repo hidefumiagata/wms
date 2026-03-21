@@ -40,7 +40,7 @@ class CsrfCustomHeaderFilterTest {
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
     @DisplayName("状態変更メソッド + X-Requested-Withヘッダあり → 通過")
-    void stateChangingMethod_withHeader_passes(String method) throws Exception {
+    void doFilterInternal_stateChangingMethodWithHeader_passes(String method) throws Exception {
         request.setMethod(method);
         request.addHeader("X-Requested-With", "XMLHttpRequest");
 
@@ -53,7 +53,7 @@ class CsrfCustomHeaderFilterTest {
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
     @DisplayName("状態変更メソッド + X-Requested-Withヘッダなし → 403")
-    void stateChangingMethod_withoutHeader_returns403(String method) throws Exception {
+    void doFilterInternal_stateChangingMethodWithoutHeader_returns403(String method) throws Exception {
         request.setMethod(method);
 
         filter.doFilterInternal(request, response, filterChain);
@@ -67,7 +67,7 @@ class CsrfCustomHeaderFilterTest {
     @ParameterizedTest
     @ValueSource(strings = {"POST", "PUT", "PATCH", "DELETE"})
     @DisplayName("状態変更メソッド + X-Requested-Withが空白 → 403")
-    void stateChangingMethod_withBlankHeader_returns403(String method) throws Exception {
+    void doFilterInternal_stateChangingMethodWithBlankHeader_returns403(String method) throws Exception {
         request.setMethod(method);
         request.addHeader("X-Requested-With", "   ");
 
@@ -79,7 +79,7 @@ class CsrfCustomHeaderFilterTest {
 
     @Test
     @DisplayName("GETリクエスト → ヘッダなしでも通過")
-    void getMethod_withoutHeader_passes() throws Exception {
+    void doFilterInternal_getWithoutHeader_passes() throws Exception {
         request.setMethod("GET");
 
         filter.doFilterInternal(request, response, filterChain);
@@ -90,7 +90,7 @@ class CsrfCustomHeaderFilterTest {
 
     @Test
     @DisplayName("OPTIONSリクエスト → ヘッダなしでも通過")
-    void optionsMethod_withoutHeader_passes() throws Exception {
+    void doFilterInternal_optionsWithoutHeader_passes() throws Exception {
         request.setMethod("OPTIONS");
 
         filter.doFilterInternal(request, response, filterChain);
@@ -101,7 +101,7 @@ class CsrfCustomHeaderFilterTest {
 
     @Test
     @DisplayName("HEADリクエスト → ヘッダなしでも通過")
-    void headMethod_withoutHeader_passes() throws Exception {
+    void doFilterInternal_headWithoutHeader_passes() throws Exception {
         request.setMethod("HEAD");
 
         filter.doFilterInternal(request, response, filterChain);

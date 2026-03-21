@@ -19,7 +19,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    void generateAndParseAccessToken() {
+    void generateAccessToken_validInput_returnsTokenWithCorrectClaims() {
         String token = jwtTokenProvider.generateAccessToken(1L, "admin001", "SYSTEM_ADMIN", false);
 
         assertThat(token).isNotBlank();
@@ -72,7 +72,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    void getUserIdFromClaims() {
+    void getUserIdFromClaims_validClaims_returnsUserId() {
         String token = jwtTokenProvider.generateAccessToken(42L, "user42", "VIEWER", true);
         Claims claims = jwtTokenProvider.parseToken(token);
 
