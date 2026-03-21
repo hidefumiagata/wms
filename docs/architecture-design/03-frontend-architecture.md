@@ -380,9 +380,9 @@ import { ref, computed } from 'vue'
 import { apiClient } from '@/utils/api'
 
 interface UserInfo {
-  id: number
+  userId: number        // OpenAPI LoginResponse: userId（SSOT: openapi/wms-api.yaml）
   userCode: string
-  displayName: string
+  fullName: string      // OpenAPI LoginResponse: fullName（SSOT: openapi/wms-api.yaml）
   role: 'SYSTEM_ADMIN' | 'WAREHOUSE_MANAGER' | 'WAREHOUSE_STAFF' | 'VIEWER'
   passwordChangeRequired: boolean
 }
