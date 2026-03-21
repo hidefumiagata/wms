@@ -1,7 +1,25 @@
 <template>
   <div class="change-password-page">
     <h2 class="change-password-page__title">{{ t('auth.changePassword') }}</h2>
-    <p style="color: #606266; margin-bottom: 24px">{{ t('auth.passwordChangeRequired') }}</p>
+
+    <!-- 初回ログイン注意バナー -->
+    <el-alert
+      :title="t('auth.passwordChangeNotice')"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="change-password-page__notice"
+    />
+
+    <!-- APIエラーバナー -->
+    <el-alert
+      v-if="errorMessage"
+      :title="errorMessage"
+      type="error"
+      show-icon
+      :closable="false"
+      class="change-password-page__banner"
+    />
 
     <el-form
       ref="formRef"
@@ -10,6 +28,16 @@
       label-position="top"
       @submit.prevent="handleSubmit"
     >
+      <el-form-item :label="t('auth.currentPassword')" prop="currentPassword">
+        <el-input
+          v-model="form.currentPassword"
+          type="password"
+          size="large"
+          show-password
+          autocomplete="current-password"
+        />
+      </el-form-item>
+
       <el-form-item :label="t('auth.newPassword')" prop="newPassword">
         <el-input
           v-model="form.newPassword"
@@ -18,6 +46,19 @@
           show-password
           autocomplete="new-password"
         />
+        <!-- パスワード強度インジケーター -->
+        <div v-if="form.newPassword" class="change-password-page__strength">
+          <div
+            class="change-password-page__strength-bar"
+            :class="`change-password-page__strength-bar--${passwordStrength}`"
+          />
+          <span
+            class="change-password-page__strength-label"
+            :class="`change-password-page__strength-label--${passwordStrength}`"
+          >
+            {{ t(`auth.strength.${passwordStrength}`) }}
+          </span>
+        </div>
       </el-form-item>
 
       <el-form-item :label="t('auth.confirmPassword')" prop="confirmPassword">
@@ -37,68 +78,26 @@
         native-type="submit"
         style="width: 100%; margin-top: 8px"
       >
-        {{ t('auth.changePassword') }}
+        {{ t('auth.changePasswordButton') }}
       </el-button>
     </el-form>
+
+    <div class="change-password-page__footer">
+      <el-link type="info" @click="handleLogout">{{ t('auth.logoutLink') }}</el-link>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
-import apiClient from '@/api/client'
-import { useAuthStore } from '@/stores/auth'
+import type { FormInstance } from 'element-plus'
+import { useChangePassword } from '@/composables/auth/useChangePassword'
 
 const { t } = useI18n()
-const router = useRouter()
-const auth = useAuthStore()
-
 const formRef = ref<FormInstance>()
-const loading = ref(false)
-
-const form = reactive({
-  newPassword: '',
-  confirmPassword: '',
-})
-
-const rules: FormRules = {
-  newPassword: [{ required: true, message: t('validation.newPasswordRequired'), trigger: 'blur' }],
-  confirmPassword: [
-    { required: true, message: t('validation.confirmPasswordRequired'), trigger: 'blur' },
-    {
-      validator: (_rule, value, callback) => {
-        if (value !== form.newPassword) {
-          callback(new Error(t('validation.passwordMismatch')))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur',
-    },
-  ],
-}
-
-async function handleSubmit() {
-  const valid = await formRef.value?.validate().catch(() => false)
-  if (!valid) return
-
-  loading.value = true
-  try {
-    await apiClient.post('/auth/change-password', {
-      newPassword: form.newPassword,
-    })
-    auth.clearPasswordChangeRequired()
-    ElMessage.success(t('auth.passwordChanged'))
-    router.push('/')
-  } catch {
-    ElMessage.error(t('auth.passwordChangeFailed'))
-  } finally {
-    loading.value = false
-  }
-}
+const { form, rules, loading, errorMessage, passwordStrength, handleSubmit, handleLogout } =
+  useChangePassword(formRef)
 </script>
 
 <style scoped lang="scss">
@@ -108,6 +107,43 @@ async function handleSubmit() {
     font-weight: 600;
     color: #303133;
     margin-bottom: 16px;
+  }
+
+  &__notice,
+  &__banner {
+    margin-bottom: 20px;
+  }
+
+  &__strength {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  &__strength-bar {
+    height: 4px;
+    border-radius: 2px;
+    flex: 1;
+    transition: background-color 0.2s;
+
+    &--weak { background: #f56c6c; }
+    &--medium { background: #e6a23c; }
+    &--strong { background: #67c23a; }
+  }
+
+  &__strength-label {
+    font-size: 12px;
+    min-width: 24px;
+    &--weak { color: #f56c6c; }
+    &--medium { color: #e6a23c; }
+    &--strong { color: #67c23a; }
+  }
+
+  &__footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 13px;
   }
 }
 </style>

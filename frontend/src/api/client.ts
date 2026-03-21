@@ -16,7 +16,7 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       const currentPath = router.currentRoute.value.fullPath
       if (router.currentRoute.value.name !== 'login') {
-        router.push({ name: 'login', query: { redirect: currentPath } })
+        router.push({ name: 'login', query: { redirect: currentPath, reason: 'session_expired' } })
       }
     }
     return Promise.reject(error)
