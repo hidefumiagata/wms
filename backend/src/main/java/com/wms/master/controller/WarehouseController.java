@@ -14,6 +14,8 @@ import com.wms.master.service.WarehouseService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +48,7 @@ import java.util.Set;
 @RequestMapping("/api/v1/master/warehouses")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class WarehouseController {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
@@ -58,6 +61,7 @@ public class WarehouseController {
      * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト、
      * それ以外はページング形式で返却する。
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<?> listWarehouses(
             @RequestParam(required = false) String warehouseCode,
@@ -83,6 +87,7 @@ public class WarehouseController {
         return ResponseEntity.ok(toPageResponse(resultPage));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PostMapping
     public ResponseEntity<WarehouseDetail> createWarehouse(
             @Valid @RequestBody CreateWarehouseRequest request) {
@@ -93,16 +98,19 @@ public class WarehouseController {
         warehouse.setAddress(request.getAddress());
 
         Warehouse created = warehouseService.create(warehouse);
+        log.info("Warehouse created: code={}", created.getWarehouseCode());
         URI location = URI.create("/api/v1/master/warehouses/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<WarehouseDetail> getWarehouse(@PathVariable Long id) {
         Warehouse warehouse = warehouseService.findById(id);
         return ResponseEntity.ok(toDetail(warehouse));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PutMapping("/{id}")
     public ResponseEntity<WarehouseDetail> updateWarehouse(
             @PathVariable Long id,
@@ -113,18 +121,23 @@ public class WarehouseController {
                 request.getWarehouseNameKana(),
                 request.getAddress(),
                 request.getVersion());
+        log.info("Warehouse updated: id={}, name={}", id, request.getWarehouseName());
         return ResponseEntity.ok(toDetail(updated));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<WarehouseToggleResponse> toggleWarehouseActive(
             @PathVariable Long id,
             @Valid @RequestBody ToggleActiveRequest request) {
         Warehouse updated = warehouseService.toggleActive(
                 id, request.getIsActive(), request.getVersion());
+        log.info("Warehouse toggled: id={}, isActive={}", id, request.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
+    // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
             @RequestParam String warehouseCode) {
