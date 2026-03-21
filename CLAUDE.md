@@ -110,3 +110,15 @@
 - `feature/[Issue#]_短い説明`（例: `feature/12_inventory-management`）
 - mainへの直接コミット不可
 
+# File Search
+ファイル検索には Glob ツールを使うこと。Bash の `find` は deny されており使用できない。
+
+# Content Search
+ファイル内容の検索には Grep ツールを使うこと。単純な検索で Bash の `grep` を使わない。
+パイプチェーン（`grep | sed | sort` 等）が必要な複雑な処理のみ Bash を許容する。
+
+# File Editing
+ファイルの編集・作成には Bash (sed, awk, echo 等) ではなく、Edit / Write ツールを使うこと。
+
+# JSON Inspection
+JSON ファイルの内容確認には `jq` を使うこと。Python やサブエージェントではなく、Bash + `jq` で完結させる。
