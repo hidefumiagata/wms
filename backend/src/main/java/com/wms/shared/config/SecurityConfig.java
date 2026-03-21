@@ -66,6 +66,7 @@ public class SecurityConfig {
                         // それ以外は認証必須
                         .anyRequest().authenticated();
                 })
+                // フィルタ実行順序: CsrfCustomHeaderFilter → JwtAuthenticationFilter → UsernamePasswordAuthenticationFilter
                 .addFilterBefore(csrfCustomHeaderFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
