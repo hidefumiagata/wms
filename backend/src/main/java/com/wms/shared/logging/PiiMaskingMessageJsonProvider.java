@@ -9,21 +9,17 @@ import java.io.IOException;
 /**
  * LogstashEncoder用カスタムMessageJsonProvider。
  * ログメッセージをJSON出力する前にPiiMaskerでマスキングを適用する。
+ *
+ * <p>注意: MessageJsonProvider(logstash-logback-encoder 8.0)のwriteToを完全にオーバーライドしている。
+ * ライブラリ更新時はsuper実装の変更を確認すること。</p>
  */
 public class PiiMaskingMessageJsonProvider extends MessageJsonProvider {
 
     @Override
     public void writeTo(JsonGenerator generator, ILoggingEvent event) throws IOException {
-        if (event != null && event.getFormattedMessage() != null) {
+        if (event != null && event.getFormattedMessage() != null && getFieldName() != null) {
             String masked = PiiMasker.mask(event.getFormattedMessage());
-            writeStringField(generator, getFieldName(), masked);
-        }
-    }
-
-    private void writeStringField(JsonGenerator generator, String fieldName, String value)
-            throws IOException {
-        if (fieldName != null) {
-            generator.writeStringField(fieldName, value);
+            generator.writeStringField(getFieldName(), masked);
         }
     }
 }
