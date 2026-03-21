@@ -23,9 +23,19 @@
                 <provider class="com.wms.shared.logging.PiiMaskingMessageJsonProvider">
                     <fieldName>message</fieldName>
                 </provider>
+                <!-- デフォルトのStackTraceJsonProviderをPIIマスキング版で置換 -->
+                <provider class="com.wms.shared.logging.PiiMaskingStackTraceJsonProvider">
+                    <fieldName>stack_trace</fieldName>
+                </provider>
+                <!--
+                    デフォルトの message/stackTrace を [ignore] で無効化（fieldName=null化）し、
+                    上記のPIIマスキング版カスタムproviderで同名フィールドを出力する。
+                    デフォルトproviderのwriteTo自体は呼ばれるが、fieldNameがnullのため書き込まれない。
+                -->
                 <fieldNames>
                     <timestamp>timestamp</timestamp>
                     <message>[ignore]</message>
+                    <stackTrace>[ignore]</stackTrace>
                     <logger>logger</logger>
                     <level>level</level>
                 </fieldNames>

@@ -122,3 +122,7 @@
 
 # JSON Inspection
 JSON ファイルの内容確認には `jq` を使うこと。Python やサブエージェントではなく、Bash + `jq` で完結させる。
+
+# Git Commands
+- `cd` から始めない。作業ディレクトリはプロジェクトルートを前提とする。
+- `git add` と `git commit` は別々の Bash 呼び出しで実行する（`&&` で繋げない）。
