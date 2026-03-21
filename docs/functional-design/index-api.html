@@ -146,9 +146,7 @@ Set-Cookie: refresh_token=a1b2c3d4e5f6...; HttpOnly; SameSite=Lax; Path=/api/v1/
 <thead><tr><th>HTTPステータス</th><th>エラーコード</th><th>発生条件</th></tr></thead>
 <tbody>
 <tr><td><code>400 Bad Request</code></td><td><code>VALIDATION_ERROR</code></td><td>リクエストボディの必須項目が欠落、または形式不正</td></tr>
-<tr><td><code>401 Unauthorized</code></td><td><code>INVALID_CREDENTIALS</code></td><td>ユーザーコード不存在またはパスワード不一致（どちらか判別不可にする）</td></tr>
-<tr><td><code>401 Unauthorized</code></td><td><code>ACCOUNT_LOCKED</code></td><td>アカウントがロックされている（<code>locked=true</code>）</td></tr>
-<tr><td><code>401 Unauthorized</code></td><td><code>ACCOUNT_INACTIVE</code></td><td>アカウントが無効化されている（<code>is_active=false</code>）</td></tr>
+<tr><td><code>401 Unauthorized</code></td><td><code>INVALID_CREDENTIALS</code></td><td>認証失敗（理由を問わず共通）</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>4. 業務ロジック</h3>
@@ -164,9 +162,11 @@ Set-Cookie: refresh_token=a1b2c3d4e5f6...; HttpOnly; SameSite=Lax; Path=/api/v1/
     CHECK_LOCK1 -->|No| ERR_CRED
 
     FIND_USER -->|存在する| CHECK_INACTIVE{is_active\n= false?}
-    CHECK_INACTIVE -->|Yes| ERR_INACTIVE[401 ACCOUNT_INACTIVE]
+    CHECK_INACTIVE -->|Yes| DUMMY_PW1["タイミング攻撃対策:\nBCrypt.matches実行"]
+    DUMMY_PW1 --> ERR_CRED
     CHECK_INACTIVE -->|No| CHECK_LOCKED{locked\n= true?}
-    CHECK_LOCKED -->|Yes| ERR_LOCKED[401 ACCOUNT_LOCKED]
+    CHECK_LOCKED -->|Yes| DUMMY_PW2["タイミング攻撃対策:\nBCrypt.matches実行"]
+    DUMMY_PW2 --> ERR_CRED
     CHECK_LOCKED -->|No| CHECK_PW[パスワード照合\nBCrypt.matches]
 
     CHECK_PW -->|不一致| INCREMENT2["failed_login_countを\nインクリメント"]
@@ -187,13 +187,14 @@ Set-Cookie: refresh_token=a1b2c3d4e5f6...; HttpOnly; SameSite=Lax; Path=/api/v1/
 <tbody>
 <tr><td>1</td><td>ユーザーコードが存在しない場合、パスワードが一致しない場合のどちらも <code>INVALID_CREDENTIALS</code> を返す（セキュリティのため区別しない）</td><td><code>INVALID_CREDENTIALS</code></td></tr>
 <tr><td>2</td><td>認証失敗（ユーザー不存在・パスワード不一致）のたびに <code>failed_login_count</code> をインクリメントする</td><td>—</td></tr>
-<tr><td>3</td><td><code>failed_login_count</code> が5以上になった場合、<code>locked=true</code> に更新してアカウントをロックする</td><td><code>ACCOUNT_LOCKED</code></td></tr>
-<tr><td>4</td><td><code>is_active=false</code> のユーザーは <code>ACCOUNT_INACTIVE</code> を返す（ロック確認より前に実施）</td><td><code>ACCOUNT_INACTIVE</code></td></tr>
-<tr><td>5</td><td><code>locked=true</code> のユーザーは <code>ACCOUNT_LOCKED</code> を返す</td><td><code>ACCOUNT_LOCKED</code></td></tr>
+<tr><td>3</td><td><code>failed_login_count</code> が5以上になった場合、<code>locked=true</code> に更新してアカウントをロックする</td><td><code>INVALID_CREDENTIALS</code></td></tr>
+<tr><td>4</td><td><code>is_active=false</code> のユーザーは認証失敗とする（ロック確認より前に実施）。タイミング攻撃対策としてBCrypt照合を実行してから <code>INVALID_CREDENTIALS</code> を返す</td><td><code>INVALID_CREDENTIALS</code></td></tr>
+<tr><td>5</td><td><code>locked=true</code> のユーザーは認証失敗とする。タイミング攻撃対策としてBCrypt照合を実行してから <code>INVALID_CREDENTIALS</code> を返す</td><td><code>INVALID_CREDENTIALS</code></td></tr>
 <tr><td>6</td><td>認証成功時に <code>failed_login_count=0</code> にリセットする</td><td>—</td></tr>
 <tr><td>7</td><td>リフレッシュトークンはUUIDを生成し、BCryptでハッシュ化して <code>refresh_tokens</code> テーブルに保存する。同一ユーザーの既存レコードは削除して再登録する</td><td>—</td></tr>
 <tr><td>8</td><td><code>passwordChangeRequired=true</code> の場合、レスポンスボディにそのまま含めて返す。フロントエンドがこのフラグを見てパスワード変更画面に遷移する</td><td>—</td></tr>
 <p></tbody><br></table></p>
+<blockquote><strong>セキュリティ注記</strong>: 認証失敗時のエラーレスポンスは理由を問わず <code>401 INVALID_CREDENTIALS</code> に統一する。これはOWASP認証チートシートに基づくユーザー列挙防止策である。サーバー側ではアカウント状態（ロック・無効化）のチェックは引き続き実施し、監査ログにはロック・無効化の理由を記録する。</blockquote>
 <hr>
 <h3>5. 補足事項</h3>
 <ul><li style="margin-left:0px"><strong>トランザクション境界</strong>: ユーザー情報の更新（<code>failed_login_count</code> リセット・リフレッシュトークン保存）は単一トランザクションで実施する。</li><li style="margin-left:0px"><strong>セキュリティ考慮</strong>: ログイン失敗時のレスポンスタイムを一定にするため、ユーザーが存在しない場合でもBCryptのダミー照合を実施してタイミング攻撃を防ぐ。</li><li style="margin-left:0px"><strong>アクセストークン（JWT）ペイロード</strong>: <code>userId</code>、<code>userCode</code>、<code>role</code>、<code>iat</code>（発行日時）、<code>exp</code>（有効期限）を含む。署名アルゴリズムはHS256を使用。</li></ul>
@@ -377,8 +378,7 @@ Set-Cookie: refresh_token=f7g8h9i0j1k2...(新しいUUID); HttpOnly; SameSite=Lax
 <tbody>
 <tr><td><code>400 Bad Request</code></td><td><code>VALIDATION_ERROR</code></td><td><code>newPassword</code> がパスワードポリシー違反、または必須項目が欠落</td></tr>
 <tr><td><code>401 Unauthorized</code></td><td><code>UNAUTHORIZED</code></td><td><code>access_token</code> Cookieが存在しない、または無効なJWT</td></tr>
-<tr><td><code>401 Unauthorized</code></td><td><code>INVALID_CREDENTIALS</code></td><td><code>currentPassword</code> が現在のパスワードと一致しない</td></tr>
-<tr><td><code>401 Unauthorized</code></td><td><code>ACCOUNT_LOCKED</code></td><td><code>currentPassword</code> の連続失敗によりアカウントがロックされた</td></tr>
+<tr><td><code>401 Unauthorized</code></td><td><code>INVALID_CREDENTIALS</code></td><td><code>currentPassword</code> が現在のパスワードと一致しない、またはアカウントがロックされている</td></tr>
 <tr><td><code>409 Conflict</code></td><td><code>SAME_PASSWORD</code></td><td><code>newPassword</code> が現在のパスワードと同一</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -393,8 +393,8 @@ Set-Cookie: refresh_token=f7g8h9i0j1k2...(新しいUUID); HttpOnly; SameSite=Lax
     CHECK_CURRENT -->|不一致| INCREMENT["failed_login_countを\nインクリメント"]
     INCREMENT --> CHECK_LOCK{failed_login_count\n>= 5?}
     CHECK_LOCK -->|Yes| SET_LOCK["locked=true\nlocked_at=現在日時\nに更新"]
-    SET_LOCK --> ERR_LOCKED[401 ACCOUNT_LOCKED]
-    CHECK_LOCK -->|No| ERR_CRED[401 INVALID_CREDENTIALS]
+    SET_LOCK --> ERR_CRED[401 INVALID_CREDENTIALS]
+    CHECK_LOCK -->|No| ERR_CRED
     CHECK_CURRENT -->|一致| CHECK_SAME[新旧パスワード同一チェック\nBCrypt.matches\nnewPassword vs password_hash]
     CHECK_SAME -->|同一| ERR_SAME[409 SAME_PASSWORD]
     CHECK_SAME -->|異なる| HASH_NEW["newPasswordを\nBCryptでハッシュ化"]
@@ -406,7 +406,7 @@ Set-Cookie: refresh_token=f7g8h9i0j1k2...(新しいUUID); HttpOnly; SameSite=Lax
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
 <tr><td>1</td><td><code>currentPassword</code> が <code>password_hash</code> と一致しない場合は <code>failed_login_count</code> をインクリメントし <code>INVALID_CREDENTIALS</code> を返す</td><td><code>INVALID_CREDENTIALS</code></td></tr>
-<tr><td>2</td><td><code>failed_login_count</code> が5以上になった場合、<code>locked=true</code>・<code>locked_at=現在日時</code> に更新して <code>ACCOUNT_LOCKED</code> を返す（<code>10-security-architecture.md</code> に定義された連続失敗ロックポリシーをパスワード変更APIにも適用）</td><td><code>ACCOUNT_LOCKED</code></td></tr>
+<tr><td>2</td><td><code>failed_login_count</code> が5以上になった場合、<code>locked=true</code>・<code>locked_at=現在日時</code> に更新して <code>INVALID_CREDENTIALS</code> を返す（<code>10-security-architecture.md</code> に定義された連続失敗ロックポリシーをパスワード変更APIにも適用）</td><td><code>INVALID_CREDENTIALS</code></td></tr>
 <tr><td>3</td><td><code>newPassword</code> が現在の <code>password_hash</code> と一致する場合（同じパスワードへの変更）は <code>SAME_PASSWORD</code> を返す</td><td><code>SAME_PASSWORD</code></td></tr>
 <tr><td>4</td><td><code>newPassword</code> はパスワードポリシーを満たすこと（サーバー側でも検証）</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>5</td><td>パスワード変更成功時に <code>password_change_required=false</code> および <code>failed_login_count=0</code> をリセットする</td><td>—</td></tr>
@@ -5885,7 +5885,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
 <tr><td>1</td><td><code>newQty</code> は 0 以上の整数であること</td><td><code>VALIDATION_ERROR</code></td></tr>
-<tr><td>2</td><td><code>reason</code> は 1 文字以上 500 文字以下であること</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>2</td><td><code>reason</code> は 1 文字以上 200 文字以下であること</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>3</td><td>実行者のロールが <code>SYSTEM_ADMIN</code> または <code>WAREHOUSE_MANAGER</code> であること</td><td><code>FORBIDDEN</code></td></tr>
 <tr><td>4</td><td>対象ロケーションが棚卸ロック中でないこと</td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td></tr>
 <tr><td>5</td><td>対象在庫レコード（5軸一致）が存在すること</td><td><code>INVENTORY_NOT_FOUND</code></td></tr>

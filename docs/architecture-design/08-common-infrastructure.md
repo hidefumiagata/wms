@@ -372,7 +372,7 @@ apiClient.interceptors.response.use(
       } catch {
         rejectPendingRequests(error)
         router.push({
-          name: 'Login',
+          name: 'login',
           query: { reason: 'session_expired' },
         })
         return Promise.reject(error)

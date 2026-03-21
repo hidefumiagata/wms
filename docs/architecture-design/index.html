@@ -1942,7 +1942,7 @@ export function useWarehouseForm() {
         await apiClient.post('/api/v1/master/warehouses', formValues)
         ElMessage.success(t('master.warehouse.createSuccess'))
       }
-      router.push({ name: 'WarehouseList' })
+      router.push({ name: 'warehouse-list' })
     } catch (e: unknown) {
       handleApiError(e)
     } finally {
@@ -1991,7 +1991,7 @@ const { loading, values, onSubmit } = useWarehouseForm()
         &lt;!-- フォーム項目 --&gt;
       &lt;/WmsFormSection&gt;
       &lt;div class=&quot;form-actions&quot;&gt;
-        &lt;el-button @click=&quot;$router.push({ name: 'WarehouseList' })&quot;&gt;
+        &lt;el-button @click=&quot;$router.push({ name: 'warehouse-list' })&quot;&gt;
           {{ $t('common.cancel') }}
         &lt;/el-button&gt;
         &lt;el-button type=&quot;primary&quot; native-type=&quot;submit&quot; :loading=&quot;loading&quot;&gt;
@@ -2029,9 +2029,9 @@ import { ref, computed } from 'vue'
 import { apiClient } from '@/utils/api'
 
 interface UserInfo {
-  id: number
+  userId: number        // OpenAPI LoginResponse: userId（SSOT: openapi/wms-api.yaml）
   userCode: string
-  displayName: string
+  fullName: string      // OpenAPI LoginResponse: fullName（SSOT: openapi/wms-api.yaml）
   role: 'SYSTEM_ADMIN' | 'WAREHOUSE_MANAGER' | 'WAREHOUSE_STAFF' | 'VIEWER'
   passwordChangeRequired: boolean
 }
@@ -2530,13 +2530,13 @@ export function setupGuards(router: Router) {
       // まずサーバーにセッション確認を試行
       await authStore.fetchCurrentUser()
       if (!authStore.isLoggedIn) {
-        return next({ name: 'Login', query: { redirect: to.fullPath } })
+        return next({ name: 'login', query: { redirect: to.fullPath } })
       }
     }
 
     // --- 2. パスワード変更強制 ---
-    if (authStore.requiresPasswordChange &amp;&amp; to.name !== 'ChangePassword' &amp;&amp; to.name !== 'Login') {
-      return next({ name: 'ChangePassword' })
+    if (authStore.requiresPasswordChange &amp;&amp; to.name !== 'change-password' &amp;&amp; to.name !== 'login') {
+      return next({ name: 'change-password' })
     }
 
     // --- 3. ロールチェック ---
@@ -2646,7 +2646,7 @@ apiClient.interceptors.response.use(
         processQueue(refreshError as AxiosError)
         const authStore = useAuthStore()
         authStore.clearUser()
-        router.push({ name: 'Login' })
+        router.push({ name: 'login', query: { reason: 'session_expired' } })
         return Promise.reject(refreshError)
       } finally {
         isRefreshing = false
@@ -2723,7 +2723,7 @@ async function forceLogout() {
   clearTimers()
   const authStore = useAuthStore()
   await authStore.logout()
-  router.push({ name: 'Login' })
+  router.push({ name: 'login', query: { reason: 'session_expired' } })
 }
 
 // Axiosリクエスト成功時にタイマーリセット
@@ -3280,8 +3280,7 @@ export function useUnsavedChangesGuard(isDirty: () =&gt; boolean) {
 │   ├── SecurityConfig.java         # Spring Security 設定
 │   ├── CorsConfig.java             # CORS 設定
 │   ├── OpenApiConfig.java          # Springdoc OpenAPI 設定
-│   ├── JpaAuditingConfig.java      # JPA Auditing 設定
-│   └── JacksonConfig.java          # Jackson シリアライズ設定
+│   └── JpaAuditingConfig.java      # JPA Auditing 設定
 ├── exception/           # 例外クラス・ハンドラー
 │   ├── WmsException.java           # 基底例外クラス
 │   ├── ResourceNotFoundException.java
@@ -3828,18 +3827,14 @@ public class AuditorAwareImpl implements AuditorAware&lt;Long&gt; {
 <p></tbody><br></table></p>
 <blockquote><strong>MapStruct を採用しない理由</strong>: ブループリントに記載の通り、フィールド数が限定的で手動マッピングのコストが低く、変換ロジックの可読性・デバッグ容易性を優先する。</blockquote>
 <h3>3.4 Jackson シリアライズ設定</h3>
-<pre><code class="lang-java">@Configuration
-public class JacksonConfig {
-
-    @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
-        return builder -&gt; builder
-                .serializationInclusion(JsonInclude.Include.NON_NULL)  // nullフィールドを除外
-                .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .timeZone(TimeZone.getTimeZone(&quot;Asia/Tokyo&quot;))
-                .simpleDateFormat(&quot;yyyy-MM-dd'T'HH:mm:ssXXX&quot;);
-    }
-}</code></pre>
+<code>application.yml</code> で設定する（Java Configクラスは不要）。
+<pre><code class="lang-yaml">spring:
+  jackson:
+    default-property-inclusion: non_null    # nullフィールドを除外
+    serialization:
+      write-dates-as-timestamps: false      # ISO 8601 形式
+    time-zone: Asia/Tokyo</code></pre>
+<blockquote><strong><code>date-format</code>（<code>simpleDateFormat</code>）について</strong>: 本プロジェクトではAPI応答の日時に <code>java.time.LocalDateTime</code> を使用し、<code>java.util.Date</code> はAPI応答に使用しない。<code>write-dates-as-timestamps: false</code> により <code>LocalDateTime</code> は自動的にISO 8601形式でシリアライズされるため、<code>date-format</code> の明示的設定は不要。</blockquote>
 <table>
 <thead><tr><th>設定</th><th>内容</th></tr></thead>
 <tbody>
@@ -4105,7 +4100,7 @@ public class GlobalExceptionHandler {
 <tr><td><code>@NotNull</code></td><td>必須（null不可）</td><td>ID、バージョン、フラグ</td></tr>
 <tr><td><code>@Size</code></td><td>文字列長</td><td><code>@Size(max = 100)</code></td></tr>
 <tr><td><code>@Min</code> / <code>@Max</code></td><td>数値範囲</td><td><code>@Min(1)</code> 数量</td></tr>
-<tr><td><code>@Pattern</code></td><td>正規表現</td><td><code>@Pattern(regexp = &quot;^[A-Z]{4} IC66 quot;)</code> 倉庫コード</td></tr>
+<tr><td><code>@Pattern</code></td><td>正規表現</td><td><code>@Pattern(regexp = &quot;^[A-Z]{4} IC74 quot;)</code> 倉庫コード</td></tr>
 <tr><td><code>@Email</code></td><td>メールアドレス形式</td><td>メールアドレス</td></tr>
 <tr><td><code>@Positive</code></td><td>正の数</td><td>数量</td></tr>
 <tr><td><code>@PositiveOrZero</code></td><td>0以上</td><td>在庫数</td></tr>
@@ -4466,6 +4461,7 @@ public List&lt;WarehouseResponse&gt; getAllWarehouses() {
 <thead><tr><th>項目</th><th>設定</th></tr></thead>
 <tbody>
 <tr><td><strong>ライブラリ</strong></td><td>SLF4J + Logback</td></tr>
+<tr><td><strong>ロガー宣言</strong></td><td>Lombok <code>@Slf4j</code> アノテーションに統一（<code>LoggerFactory.getLogger()</code> の手書き禁止）</td></tr>
 <tr><td><strong>形式</strong></td><td>JSON（logstash-logback-encoder）</td></tr>
 <tr><td><strong>出力先</strong></td><td>標準出力（Container Apps が自動収集）</td></tr>
 <tr><td><strong>ログレベル</strong></td><td>本番: INFO / ローカル: DEBUG</td></tr>
@@ -4493,8 +4489,10 @@ public class TraceIdFilter extends OncePerRequestFilter {
     }
 }</code></pre>
 <h3>9.3 リクエストロギング</h3>
+<blockquote>フィルター実行順序の詳細は <a href="08-common-infrastructure.md" target="_blank">08-common-infrastructure.md §4</a> のサーブレットフィルター実行順序を参照。</blockquote>
 <pre><code class="lang-java">@Component
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)  // TraceIdFilter(HIGHEST_PRECEDENCE) の直後
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     @Override
@@ -4502,16 +4500,30 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                                      HttpServletResponse response,
                                      FilterChain filterChain)
             throws ServletException, IOException {
-        long startTime = System.currentTimeMillis();
+        long startTime = System.nanoTime();
+        Throwable thrown = null;
 
-        filterChain.doFilter(request, response);
-
-        long duration = System.currentTimeMillis() - startTime;
-        log.info(&quot;API request completed: method={}, path={}, status={}, duration={}ms&quot;,
-                request.getMethod(),
-                request.getRequestURI(),
-                response.getStatus(),
-                duration);
+        try {
+            filterChain.doFilter(request, response);
+        } catch (Exception ex) {
+            thrown = ex;
+            throw ex;
+        } finally {
+            long durationMs = (System.nanoTime() - startTime) / 1_000_000;
+            if (thrown != null) {
+                log.warn(&quot;API request failed: method={}, path={}, duration={}ms, error={}&quot;,
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        durationMs,
+                        thrown.getMessage());
+            } else {
+                log.info(&quot;API request completed: method={}, path={}, status={}, duration={}ms&quot;,
+                        request.getMethod(),
+                        request.getRequestURI(),
+                        response.getStatus(),
+                        durationMs);
+            }
+        }
     }
 }</code></pre>
 <h3>9.4 logback-spring.xml</h3>
@@ -9523,7 +9535,7 @@ apiClient.interceptors.response.use(
       } catch {
         rejectPendingRequests(error)
         router.push({
-          name: 'Login',
+          name: 'login',
           query: { reason: 'session_expired' },
         })
         return Promise.reject(error)
@@ -9961,6 +9973,15 @@ export function useWarehouseForm(mode: 'create' | 'edit') {
 <hr>
 <h2>4. 共通ログ設計</h2>
 <blockquote>ログ収集フロー・標準フォーマット・PII マスキングは <a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照。</blockquote>
+<h4>サーブレットフィルター実行順序</h4>
+<table>
+<thead><tr><th>順序</th><th>フィルター</th><th>@Order</th><th>役割</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>TraceIdFilter</code></td><td><code>Ordered.HIGHEST_PRECEDENCE</code></td><td>traceId 生成・MDC 設定</td></tr>
+<tr><td>2</td><td><code>RequestLoggingFilter</code></td><td><code>Ordered.HIGHEST_PRECEDENCE + 1</code></td><td>リクエスト計時・アクセスログ</td></tr>
+<tr><td>3</td><td>Spring Security FilterChain</td><td>デフォルト</td><td>認証・認可（JWT検証、userId MDC設定）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>設計意図</strong>: TraceIdFilter を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。RequestLoggingFilter はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。</blockquote>
 <h3>4.1 バックエンド — 相関ID（TraceId）管理</h3>
 <p>リクエストごとにUUID v4 を生成し、MDC（Mapped Diagnostic Context）に設定する。全ログに自動付与される。</p>
 <pre><code class="lang-java">package com.wms.shared.logging;
@@ -12492,9 +12513,9 @@ protected void doFilterInternal(HttpServletRequest request,
 router.beforeEach(async (to, from, next) =&gt; {
   const authStore = useAuthStore()
 
-  if (authStore.user?.passwordChangeRequired &amp;&amp; to.name !== 'ChangePassword') {
+  if (authStore.user?.passwordChangeRequired &amp;&amp; to.name !== 'change-password') {
     // パスワード変更画面以外への遷移をブロック
-    next({ name: 'ChangePassword' })
+    next({ name: 'change-password' })
   } else {
     next()
   }

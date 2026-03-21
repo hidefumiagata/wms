@@ -230,7 +230,7 @@ async function submitForm() {
       version: version.value,  // 楽観的ロック: 取得時のversionを送り返す
     })
     ElMessage.success('倉庫を更新しました')
-    router.push({ name: 'WarehouseList' })
+    router.push({ name: 'warehouse-list' })
   } catch (e: any) {
     if (e.response?.status === 400 && e.response.data.details) {
       // バリデーションエラー → フォームフィールドにエラー表示
