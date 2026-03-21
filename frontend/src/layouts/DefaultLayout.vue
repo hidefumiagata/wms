@@ -30,8 +30,11 @@
 import { ref } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
+import { useSessionTimeout } from '@/composables/useSessionTimeout'
 
 const sidebarCollapsed = ref(false)
+
+useSessionTimeout()
 </script>
 
 <style scoped lang="scss">

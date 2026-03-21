@@ -110,6 +110,12 @@ export default {
     emailInvalid: '有効なメールアドレスを入力してください',
     passwordMismatch: 'パスワードが一致しません。再度入力してください',
   },
+  session: {
+    warningTitle: 'セッションタイムアウト警告',
+    warningMessage: '操作がない状態が55分続いています。5分後に自動的にログアウトします。セッションを延長しますか？',
+    extend: 'セッションを延長する',
+    logout: 'ログアウト',
+  },
   error: {
     network: '通信エラーが発生しました',
     server: 'サーバーエラーが発生しました',

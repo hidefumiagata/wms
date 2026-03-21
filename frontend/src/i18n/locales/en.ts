@@ -110,6 +110,12 @@ export default {
     emailInvalid: 'Please enter a valid email address',
     passwordMismatch: 'Passwords do not match. Please re-enter.',
   },
+  session: {
+    warningTitle: 'Session Timeout Warning',
+    warningMessage: 'You have been inactive for 55 minutes. You will be automatically logged out in 5 minutes. Would you like to extend your session?',
+    extend: 'Extend Session',
+    logout: 'Logout',
+  },
   error: {
     network: 'Network error occurred',
     server: 'Server error occurred',
