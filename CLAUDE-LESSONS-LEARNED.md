@@ -129,3 +129,36 @@
   - レスポンススキーマのrequired配列の未定義
   - バリデーション制約（minLength等）の未定義
   - 設計書内部の矛盾（同一ドキュメント内で異なる値を記載）
+
+### PRレビューの運用
+- **3種レビュー（専門家・セキュリティ・設計準拠）を並列実行**するのが最も効率的。サブエージェントでバックグラウンド実行する
+- 設計準拠レビューが最も時間がかかる（docs/配下の全ファイル読み込み）。専門家・セキュリティは先に完了する
+- **指摘は可能な限りPR内で修正完了する**。Issueにするのは設計書修正・設計判断が必要な場合のみ
+- docsラベルのPRには「ドキュメント整合レビュー」を実施し、docs/配下全体のクロスチェックを行う
+- レビュー結果→対応結果→未対応分のIssue化、の順でPRコメントに追記するとユーザーが追いやすい
+
+### コード修正時に設計書との乖離に注意
+- コードを修正すると設計書のコード例が古くなる（例: `JacksonConfig.java` 削除後も設計書に残存）
+- パッケージ構造図、設定例、コードスニペットは設計書の複数箇所に散在していることが多い
+- 修正時は `grep` で設計書内の参照箇所を全て洗い出してから対応する
+
+### テスト品質の指摘パターン
+- `@DisplayName` の有無の不統一は必ず指摘される。全テストに付けること
+- テストメソッド命名は `{method}_{condition}_{expectedResult}` の3部構成を守る
+- `verify(mock).doFilter()` だけのテスト（副作用の未検証）は弱いアサーションとして指摘される。`ListAppender` でログ出力内容まで検証する
+- `System.currentTimeMillis()` は経過時間計測に非推奨。`System.nanoTime()` を使う
+
+### 正規表現の設計
+- **PII マスキング用の電話番号正規表現は厳密に**。WMS業務データ（注文番号、ロケーションコード等）に偽陽性を起こさないよう、ハイフン区切り形式のみに限定する
+- **メール正規表現のpossessive quantifier** (`++`) はドメイン部に `.` を含む文字クラスと併用すると動作しない。ドメイン部は構造化したパターンにする
+- **ReDoS対策**: ログメッセージに適用する正規表現は外部入力に触れる可能性があるため、possessive quantifierやatomic groupの利用を検討する
+
+### AOP・フィルター設計
+- `catch(Exception)` と `throws Throwable` の不一致に注意。Spring AOPの `ProceedingJoinPoint.proceed()` は `Throwable` を投げるため、`catch(Throwable)` にすべき
+- MDCのキーをAOPで設定する場合、ネストした呼び出し（ServiceA→ServiceB）で上書きされる。`finally` で前の値をsave/restoreするパターンが必須
+- サーブレットフィルターの `doFilter` 例外時にもログ出力するには `try/catch/finally` が必要。正常時INFOのみでは5xx系リクエストが記録されない
+
+### Jackson設定の一本化
+- Spring Bootの `application.yml` Jackson設定と `JacksonConfig.java` Bean の重複は排除する
+- `java.time.LocalDateTime` を使う場合、`write-dates-as-timestamps: false` で十分。`date-format`（simpleDateFormat）は `java.util.Date` 向けの設定であり不要
+- 設定を一本化する際は、設計書のコード例も必ず同時更新する
