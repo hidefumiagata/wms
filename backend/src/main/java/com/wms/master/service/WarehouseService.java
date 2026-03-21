@@ -14,7 +14,10 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,11 @@ public class WarehouseService {
         return warehouseRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "WAREHOUSE_NOT_FOUND", "倉庫", id));
+    }
+
+    public Map<Long, Warehouse> findByIds(Collection<Long> ids) {
+        return warehouseRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(Warehouse::getId, w -> w));
     }
 
     @Transactional
