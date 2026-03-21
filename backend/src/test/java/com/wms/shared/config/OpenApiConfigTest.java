@@ -39,9 +39,8 @@ class OpenApiConfigTest {
     }
 
     @Test
-    @DisplayName("グローバルセキュリティ要件にbearerAuthが含まれる")
-    void wmsOpenAPI_default_hasSecurityRequirement() {
-        assertThat(openAPI.getSecurity()).isNotEmpty();
-        assertThat(openAPI.getSecurity().get(0).get("bearerAuth")).isNotNull();
+    @DisplayName("グローバルセキュリティ要件は設定されない（エンドポイント個別で制御）")
+    void wmsOpenAPI_default_hasNoGlobalSecurityRequirement() {
+        assertThat(openAPI.getSecurity()).isNull();
     }
 }
