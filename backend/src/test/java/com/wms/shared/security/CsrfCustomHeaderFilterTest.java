@@ -1,5 +1,7 @@
 package com.wms.shared.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +30,9 @@ class CsrfCustomHeaderFilterTest {
 
     @BeforeEach
     void setUp() {
-        filter = new CsrfCustomHeaderFilter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        filter = new CsrfCustomHeaderFilter(objectMapper);
         request = new MockHttpServletRequest();
         response = new MockHttpServletResponse();
     }
@@ -56,6 +60,7 @@ class CsrfCustomHeaderFilterTest {
 
         verify(filterChain, never()).doFilter(request, response);
         assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getContentAsString()).contains("CSRF_HEADER_MISSING");
         assertThat(response.getContentAsString()).contains("X-Requested-With");
     }
 

@@ -1,10 +1,15 @@
 package com.wms.shared.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wms.shared.dto.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,10 +26,13 @@ import java.util.Set;
  * カスタムヘッダ付きリクエストは自動的にブロックされる。</p>
  */
 @Component
+@RequiredArgsConstructor
 public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
 
     private static final String CUSTOM_HEADER = "X-Requested-With";
     private static final Set<String> STATE_CHANGING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
+
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,9 +44,14 @@ public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
             String headerValue = request.getHeader(CUSTOM_HEADER);
             if (headerValue == null || headerValue.isBlank()) {
                 response.setStatus(HttpStatus.FORBIDDEN.value());
-                response.setContentType("application/json;charset=UTF-8");
-                response.getWriter().write(
-                        "{\"error\":\"Forbidden\",\"message\":\"Missing required header: X-Requested-With\"}");
+                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                response.setCharacterEncoding("UTF-8");
+                String traceId = MDC.get("traceId");
+                ErrorResponse body = ErrorResponse.of(
+                        "CSRF_HEADER_MISSING",
+                        "Missing required header: X-Requested-With",
+                        traceId);
+                response.getWriter().write(objectMapper.writeValueAsString(body));
                 return;
             }
         }
