@@ -52,6 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(request, response);
         } finally {
+            SecurityContextHolder.clearContext();
             MDC.remove("userId");
         }
     }

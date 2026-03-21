@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.servlet.http.Cookie;
@@ -63,19 +64,23 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.parseToken(token)).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(42L);
 
-        // Capture MDC value during filter chain execution
+        // Capture SecurityContext and MDC value during filter chain execution
         final String[] capturedMdcUserId = {null};
+        final var capturedAuth = new Object[1];
         doAnswer(invocation -> {
             capturedMdcUserId[0] = MDC.get("userId");
+            capturedAuth[0] = SecurityContextHolder.getContext().getAuthentication();
             return null;
         }).when(filterChain).doFilter(request, response);
 
         // Act
         filter.doFilterInternal(request, response, filterChain);
 
-        // Assert
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertThat(authentication).isNotNull();
+        // Assert - SecurityContext was set DURING filter chain execution
+        assertThat(capturedAuth[0]).isNotNull();
+        assertThat(capturedAuth[0]).isInstanceOf(UsernamePasswordAuthenticationToken.class);
+
+        var authentication = (UsernamePasswordAuthenticationToken) capturedAuth[0];
         assertThat(authentication.getPrincipal()).isInstanceOf(WmsUserDetails.class);
 
         WmsUserDetails userDetails = (WmsUserDetails) authentication.getPrincipal();
@@ -84,6 +89,9 @@ class JwtAuthenticationFilterTest {
         assertThat(userDetails.getAuthorities())
                 .extracting("authority")
                 .containsExactly("ROLE_ADMIN");
+
+        // SecurityContext is cleared AFTER filter chain completes
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
 
         // MDC userId was set during filter chain
         assertThat(capturedMdcUserId[0]).isEqualTo("42");
@@ -158,8 +166,8 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("フィルタチェーンが例外を投げてもMDC userIdがクリーンアップされる")
-    void mdcUserId_cleanedUpEvenWhenFilterChainThrows() throws Exception {
+    @DisplayName("フィルタチェーンが例外を投げてもMDC userIdとSecurityContextがクリーンアップされる")
+    void mdcAndSecurityContext_cleanedUpEvenWhenFilterChainThrows() throws Exception {
         // Arrange
         String token = "valid.jwt.token";
         request.setCookies(new Cookie("access_token", token));
@@ -181,5 +189,6 @@ class JwtAuthenticationFilterTest {
         }
 
         assertThat(MDC.get("userId")).isNull();
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
     }
 }
