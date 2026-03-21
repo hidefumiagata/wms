@@ -15,7 +15,7 @@ public class CookieUtil {
     public CookieUtil(
             @Value("${jwt.access-token-expiration}") long accessTokenExpiration,
             @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration,
-            @Value("${cookie.secure:false}") boolean secure) {
+            @Value("${cookie.secure:true}") boolean secure) {
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
         this.secure = secure;

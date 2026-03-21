@@ -1,9 +1,11 @@
 package com.wms.shared.config;
 
+import com.wms.shared.security.CsrfCustomHeaderFilter;
 import com.wms.shared.security.CustomAccessDeniedHandler;
 import com.wms.shared.security.JwtAuthenticationEntryPoint;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,6 +29,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CsrfCustomHeaderFilter csrfCustomHeaderFilter;
+
+    @Value("${springdoc.swagger-ui.enabled:true}")
+    private boolean swaggerEnabled;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,19 +51,23 @@ public class SecurityConfig {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
                         // 認証不要エンドポイント（HTTPメソッド制約付き）
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        auth.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/**").permitAll()
-                        // Swagger UI / OpenAPI
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/password-reset/**").permitAll();
+                        // Swagger UI / OpenAPI（本番では無効化）
+                        if (swaggerEnabled) {
+                            auth.requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll();
+                        }
                         // Actuator health
-                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                        auth.requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         // それ以外は認証必須
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated();
+                })
+                .addFilterBefore(csrfCustomHeaderFilter,
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
 

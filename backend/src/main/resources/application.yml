@@ -38,11 +38,13 @@ management:
     health:
       show-details: when-authorized
 
-# Springdoc OpenAPI
+# Springdoc OpenAPI（デフォルト: 有効。本番はプロファイルで無効化）
 springdoc:
   api-docs:
+    enabled: true
     path: /api-docs
   swagger-ui:
+    enabled: true
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
