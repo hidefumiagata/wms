@@ -4,21 +4,35 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 認証レイアウト（未認証ページ）
+    // 認証専用レイアウト（アプリシェルなし）
+    // requiresAuth: false = 未認証ユーザー向け（login, reset-request, reset-password）
+    // requiresAuth: true  = 認証済みかつ passwordChangeRequired=true のユーザー専用（change-password）
     {
-      path: '/login',
+      path: '/',
       component: () => import('@/layouts/AuthLayout.vue'),
       children: [
         {
-          path: '',
+          path: 'login',
           name: 'login',
           component: () => import('@/pages/auth/LoginPage.vue'),
           meta: { requiresAuth: false },
         },
         {
-          path: '/password-reset',
-          name: 'password-reset',
-          component: () => import('@/pages/auth/PasswordResetPage.vue'),
+          path: 'change-password',
+          name: 'change-password',
+          component: () => import('@/pages/auth/ChangePasswordPage.vue'),
+          meta: { requiresAuth: true },
+        },
+        {
+          path: 'auth/reset-request',
+          name: 'reset-request',
+          component: () => import('@/pages/auth/PasswordResetRequestPage.vue'),
+          meta: { requiresAuth: false },
+        },
+        {
+          path: 'auth/reset-password',
+          name: 'reset-password',
+          component: () => import('@/pages/auth/PasswordResetConfirmPage.vue'),
           meta: { requiresAuth: false },
         },
       ],
@@ -32,12 +46,6 @@ const router = createRouter({
         {
           path: '',
           redirect: '/master/warehouses',
-        },
-        // パスワード変更（認証済みユーザーが使用）
-        {
-          path: 'change-password',
-          name: 'change-password',
-          component: () => import('@/pages/auth/ChangePasswordPage.vue'),
         },
         // 倉庫マスタ
         {
@@ -60,7 +68,7 @@ const router = createRouter({
     // 404
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/',
+      redirect: '/login',
     },
   ],
 })
@@ -81,11 +89,11 @@ router.beforeEach(async (to) => {
   if (!auth.isAuthenticated) {
     const ok = await auth.refresh()
     if (!ok) {
-      return { path: '/login', query: { redirect: to.fullPath } }
+      return { name: 'login', query: { redirect: to.fullPath, reason: 'session_expired' } }
     }
   }
 
-  // パスワード変更要求フラグ
+  // パスワード変更要求フラグ：change-password 以外へのアクセスはブロック
   if (auth.user?.passwordChangeRequired && to.name !== 'change-password') {
     return { name: 'change-password' }
   }
