@@ -23,4 +23,12 @@ public abstract class MasterBaseEntity extends BaseEntity {
     public void activate() {
         this.isActive = true;
     }
+
+    /**
+     * 楽観的ロック用にversionをセットする。
+     * フロントエンドから受け取ったversionを設定し、JPA @Versionによる競合検出を行う。
+     */
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 }
