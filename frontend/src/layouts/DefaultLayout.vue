@@ -27,11 +27,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
+import { startSessionTimer, stopSessionTimer } from '@/utils/session-timer'
 
 const sidebarCollapsed = ref(false)
+
+onMounted(() => startSessionTimer())
+onUnmounted(() => stopSessionTimer())
 </script>
 
 <style scoped lang="scss">
