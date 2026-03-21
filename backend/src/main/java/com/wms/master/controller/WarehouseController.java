@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 倉庫マスタ CRUD コントローラー。
@@ -43,6 +44,10 @@ import java.util.List;
 @RequestMapping("/api/v1/master/warehouses")
 @RequiredArgsConstructor
 public class WarehouseController {
+
+    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
+            "warehouseCode", "warehouseName", "createdAt", "updatedAt");
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final WarehouseService warehouseService;
 
@@ -67,10 +72,11 @@ public class WarehouseController {
             return ResponseEntity.ok(simpleList);
         }
 
+        int cappedSize = Math.min(size, MAX_PAGE_SIZE);
         Sort sortObj = parseSort(sort);
         Page<Warehouse> resultPage = warehouseService.search(
                 warehouseCode, warehouseName, isActive,
-                PageRequest.of(page, size, sortObj));
+                PageRequest.of(page, cappedSize, sortObj));
         return ResponseEntity.ok(toPageResponse(resultPage));
     }
 
@@ -186,7 +192,8 @@ public class WarehouseController {
 
     private Sort parseSort(String sort) {
         String[] parts = sort.split(",");
-        String property = parts[0];
+        String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
+                ? parts[0] : "warehouseCode";
         Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         return Sort.by(direction, property);

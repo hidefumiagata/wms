@@ -17,8 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,8 +29,10 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -114,6 +118,35 @@ class WarehouseControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].warehouseCode").value("WARA"));
+        }
+
+        @Test
+        @DisplayName("許可されていないソートプロパティはデフォルトにフォールバック")
+        void list_paged_invalidSortProperty_fallbackToDefault() throws Exception {
+            Warehouse w = createWarehouse(1L, "WARA", "東京DC");
+            var page = new PageImpl<>(List.of(w), PageRequest.of(0, 20), 1);
+            when(warehouseService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("sort", "malicious_column,asc"))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(warehouseService).search(any(), any(), any(), pageableCaptor.capture());
+            assertThat(pageableCaptor.getValue().getSort().getOrderFor("warehouseCode")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("ページサイズが上限100に制限される")
+        void list_paged_sizeIsCappedAt100() throws Exception {
+            var page = new PageImpl<Warehouse>(List.of(), PageRequest.of(0, 100), 0);
+            when(warehouseService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("size", "9999"))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(warehouseService).search(any(), any(), any(), pageableCaptor.capture());
+            assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
         }
 
         @Test
