@@ -26,7 +26,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("deactivate(): isActiveがfalseになる")
-    void deactivate_setsIsActiveFalse() {
+    void deactivate_activeEntity_setsIsActiveFalse() {
         TestMasterEntity entity = new TestMasterEntity();
 
         entity.deactivate();
@@ -36,7 +36,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("activate(): isActiveがtrueに戻る")
-    void activate_setsIsActiveTrue() {
+    void activate_inactiveEntity_setsIsActiveTrue() {
         TestMasterEntity entity = new TestMasterEntity();
         entity.deactivate();
 

@@ -272,19 +272,19 @@ class RequestLoggingFilterTest {
 
     @Test
     @DisplayName("sanitizeForLog: CRLFが除去される")
-    void sanitizeForLog_crlfRemoved() {
+    void sanitizeForLog_crlfInput_removesControlChars() {
         assertThat(RequestLoggingFilter.sanitizeForLog("/path\r\nevil")).isEqualTo("/pathevil");
     }
 
     @Test
     @DisplayName("sanitizeForLog: LFのみが除去される")
-    void sanitizeForLog_lfRemoved() {
+    void sanitizeForLog_lfInput_removesControlChars() {
         assertThat(RequestLoggingFilter.sanitizeForLog("/path\nevil")).isEqualTo("/pathevil");
     }
 
     @Test
     @DisplayName("sanitizeForLog: CRのみが除去される")
-    void sanitizeForLog_crRemoved() {
+    void sanitizeForLog_crInput_removesControlChars() {
         assertThat(RequestLoggingFilter.sanitizeForLog("/path\revil")).isEqualTo("/pathevil");
     }
 
@@ -292,25 +292,25 @@ class RequestLoggingFilterTest {
 
     @Test
     @DisplayName("SENSITIVE_PATHS: ログインパスが含まれる")
-    void SENSITIVE_PATHS_default_containsLogin() {
+    void sensitivePaths_default_containsLogin() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/login");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: パスワード変更パスが含まれる")
-    void SENSITIVE_PATHS_default_containsChangePassword() {
+    void sensitivePaths_default_containsChangePassword() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/change-password");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: パスワードリセット確認パスが含まれる")
-    void SENSITIVE_PATHS_default_containsPasswordResetConfirm() {
+    void sensitivePaths_default_containsPasswordResetConfirm() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).contains("/api/v1/auth/password-reset/confirm");
     }
 
     @Test
     @DisplayName("SENSITIVE_PATHS: 08-common-infrastructure.md §4.5と一致する3件")
-    void SENSITIVE_PATHS_default_hasExactlyThreeEntries() {
+    void sensitivePaths_default_hasExactlyThreeEntries() {
         assertThat(RequestLoggingFilter.SENSITIVE_PATHS).hasSize(3);
     }
 }
