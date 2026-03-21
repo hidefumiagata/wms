@@ -10,6 +10,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -127,37 +129,41 @@ class ServiceLoggingAspectTest {
     }
 
     @Test
-    @DisplayName("extractModule: 標準パッケージからモジュール名を抽出する")
-    void extractModule_standardPackage_returnsModuleName() {
-        assertThat(aspect.extractModule("com.wms.inbound.service"))
-            .isEqualTo("inbound");
+    @DisplayName("logServiceMethod: パッケージ名からモジュール名がMDCに正しく設定される")
+    void logServiceMethod_standardPackage_setsCorrectModuleInMdc() throws Throwable {
+        // FakeService is in com.wms.shared.logging → extractModule returns "shared"
+        FakeService target = new FakeService();
+        when(joinPoint.getTarget()).thenReturn(target);
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("doSomething");
+
+        AtomicReference<String> capturedModule = new AtomicReference<>();
+        when(joinPoint.proceed()).thenAnswer(invocation -> {
+            capturedModule.set(MDC.get("module"));
+            return "ok";
+        });
+
+        aspect.logServiceMethod(joinPoint);
+
+        assertThat(capturedModule.get()).isEqualTo("shared");
     }
 
     @Test
-    @DisplayName("extractModule: sharedパッケージ")
-    void extractModule_sharedPackage_returnsShared() {
-        assertThat(aspect.extractModule("com.wms.shared.service"))
-            .isEqualTo("shared");
-    }
+    @DisplayName("logServiceMethod: 短いパッケージのターゲットはmodule=unknownが設定される")
+    void logServiceMethod_shortPackageTarget_setsUnknownModuleInMdc() throws Throwable {
+        // String is in java.lang (2 segments) → extractModule returns "unknown"
+        when(joinPoint.getTarget()).thenReturn("stringTarget");
+        when(joinPoint.getSignature()).thenReturn(signature);
+        when(signature.getName()).thenReturn("doSomething");
 
-    @Test
-    @DisplayName("extractModule: 短いパッケージ（2セグメント）はunknown")
-    void extractModule_shortPackage_returnsUnknown() {
-        assertThat(aspect.extractModule("com.wms"))
-            .isEqualTo("unknown");
-    }
+        AtomicReference<String> capturedModule = new AtomicReference<>();
+        when(joinPoint.proceed()).thenAnswer(invocation -> {
+            capturedModule.set(MDC.get("module"));
+            return "ok";
+        });
 
-    @Test
-    @DisplayName("extractModule: 1セグメントのパッケージはunknown")
-    void extractModule_singleSegment_returnsUnknown() {
-        assertThat(aspect.extractModule("com"))
-            .isEqualTo("unknown");
-    }
+        aspect.logServiceMethod(joinPoint);
 
-    @Test
-    @DisplayName("extractModule: 深いパッケージでも3番目を返す")
-    void extractModule_deepPackage_returnsThirdSegment() {
-        assertThat(aspect.extractModule("com.wms.system.service.auth"))
-            .isEqualTo("system");
+        assertThat(capturedModule.get()).isEqualTo("unknown");
     }
 }

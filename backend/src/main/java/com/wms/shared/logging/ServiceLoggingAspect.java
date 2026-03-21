@@ -53,7 +53,7 @@ public class ServiceLoggingAspect {
         }
     }
 
-    String extractModule(String packageName) {
+    private String extractModule(String packageName) {
         // com.wms.inbound.service -> inbound
         String[] parts = packageName.split("\\.");
         return parts.length >= 3 ? parts[2] : "unknown";
