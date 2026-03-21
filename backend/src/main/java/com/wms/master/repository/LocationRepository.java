@@ -1,5 +1,6 @@
 package com.wms.master.repository;
 
+import com.wms.master.entity.Area;
 import com.wms.master.entity.Location;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,12 +29,14 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
             @Param("isActive") Boolean isActive,
             Pageable pageable);
 
-    @Query("SELECT COUNT(l) FROM Location l WHERE "
+    @Query("SELECT COUNT(l) FROM Location l JOIN Area a ON l.areaId = a.id WHERE "
             + "(:warehouseId IS NULL OR l.warehouseId = :warehouseId) "
+            + "AND (:buildingId IS NULL OR a.buildingId = :buildingId) "
             + "AND (:areaId IS NULL OR l.areaId = :areaId) "
             + "AND (:isActive IS NULL OR l.isActive = :isActive)")
     long countFiltered(
             @Param("warehouseId") Long warehouseId,
+            @Param("buildingId") Long buildingId,
             @Param("areaId") Long areaId,
             @Param("isActive") Boolean isActive);
 }

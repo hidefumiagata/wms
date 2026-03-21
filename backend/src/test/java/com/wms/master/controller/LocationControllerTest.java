@@ -276,7 +276,7 @@ class LocationControllerTest {
         @Test
         @DisplayName("isActive省略時はデフォルトtrueで件数を返す")
         void countLocations_defaultIsActiveTrue_returns200() throws Exception {
-            when(locationService.count(isNull(), isNull(), eq(true))).thenReturn(42L);
+            when(locationService.count(isNull(), isNull(), isNull(), eq(true))).thenReturn(42L);
 
             mockMvc.perform(get(BASE_URL + "/count"))
                     .andExpect(status().isOk())
@@ -286,11 +286,21 @@ class LocationControllerTest {
         @Test
         @DisplayName("isActive=falseを明示的に指定して件数を返す")
         void countLocations_isActiveFalse_returns200() throws Exception {
-            when(locationService.count(isNull(), isNull(), eq(false))).thenReturn(5L);
+            when(locationService.count(isNull(), isNull(), isNull(), eq(false))).thenReturn(5L);
 
             mockMvc.perform(get(BASE_URL + "/count").param("isActive", "false"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.count").value(5));
+        }
+
+        @Test
+        @DisplayName("buildingIdフィルタで件数を返す")
+        void countLocations_withBuildingId_returns200() throws Exception {
+            when(locationService.count(isNull(), eq(1L), isNull(), eq(true))).thenReturn(10L);
+
+            mockMvc.perform(get(BASE_URL + "/count").param("buildingId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.count").value(10));
         }
     }
 

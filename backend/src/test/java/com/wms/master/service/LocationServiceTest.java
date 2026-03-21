@@ -84,11 +84,21 @@ class LocationServiceTest {
         @Test
         @DisplayName("フィルタ条件で件数を返す")
         void count_returnsFilteredCount() {
-            when(locationRepository.countFiltered(100L, 10L, true)).thenReturn(5L);
+            when(locationRepository.countFiltered(100L, null, 10L, true)).thenReturn(5L);
 
-            long result = locationService.count(100L, 10L, true);
+            long result = locationService.count(100L, null, 10L, true);
 
             assertThat(result).isEqualTo(5L);
+        }
+
+        @Test
+        @DisplayName("buildingIdフィルタで件数を返す")
+        void count_withBuildingId_returnsFilteredCount() {
+            when(locationRepository.countFiltered(null, 1L, null, true)).thenReturn(3L);
+
+            long result = locationService.count(null, 1L, null, true);
+
+            assertThat(result).isEqualTo(3L);
         }
     }
 

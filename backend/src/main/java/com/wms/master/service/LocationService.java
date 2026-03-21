@@ -37,8 +37,8 @@ public class LocationService {
         return locationRepository.search(warehouseId, areaId, codePrefix, isActive, pageable);
     }
 
-    public long count(Long warehouseId, Long areaId, Boolean isActive) {
-        return locationRepository.countFiltered(warehouseId, areaId, isActive);
+    public long count(Long warehouseId, Long buildingId, Long areaId, Boolean isActive) {
+        return locationRepository.countFiltered(warehouseId, buildingId, areaId, isActive);
     }
 
     public Location findById(Long id) {

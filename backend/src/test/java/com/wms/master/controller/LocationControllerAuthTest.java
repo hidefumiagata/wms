@@ -257,7 +257,7 @@ class LocationControllerAuthTest {
     @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがGET /count すると200を返す（isAuthenticated）")
     void count_warehouseStaff_returns200() throws Exception {
-        when(locationService.count(any(), any(), any())).thenReturn(0L);
+        when(locationService.count(any(), any(), any(), any())).thenReturn(0L);
 
         mockMvc.perform(get(BASE_URL + "/count")
                         .header("X-Requested-With", "XMLHttpRequest"))

@@ -105,10 +105,11 @@ public class LocationController {
     @GetMapping("/count")
     public ResponseEntity<CountResponse> countLocations(
             @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) Long buildingId,
             @RequestParam(required = false) Long areaId,
             @RequestParam(required = false) Boolean isActive) {
         Boolean effectiveIsActive = isActive != null ? isActive : Boolean.TRUE;
-        long total = locationService.count(warehouseId, areaId, effectiveIsActive);
+        long total = locationService.count(warehouseId, buildingId, areaId, effectiveIsActive);
         return ResponseEntity.ok(new CountResponse().count((int) total));
     }
 
