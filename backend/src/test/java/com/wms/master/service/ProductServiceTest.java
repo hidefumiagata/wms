@@ -234,6 +234,19 @@ class ProductServiceTest {
         }
 
         @Test
+        @DisplayName("バージョン不一致で事前チェックによるOptimisticLockConflictExceptionをスロー")
+        void update_versionMismatch_throwsException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            // existing.version == 0, request version == 99
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> productService.update(1L, "商品A", null,
+                    6, 10, null, "AMBIENT",
+                    false, false, false, false, true, 99))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        @Test
         @DisplayName("楽観的ロック競合でOptimisticLockConflictExceptionをスロー")
         void update_optimisticLockConflict_throwsException() {
             Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
@@ -286,6 +299,17 @@ class ProductServiceTest {
 
             assertThat(result.getIsActive()).isTrue();
             verify(productRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("バージョン不一致で事前チェックによるOptimisticLockConflictExceptionをスロー")
+        void toggleActive_versionMismatch_throwsException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            // existing.version == 0, request version == 99
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> productService.toggleActive(1L, false, 99))
+                    .isInstanceOf(OptimisticLockConflictException.class);
         }
 
         @Test

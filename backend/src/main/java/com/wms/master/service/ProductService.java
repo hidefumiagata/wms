@@ -67,6 +67,12 @@ public class ProductService {
                           Boolean shipmentStopFlag, Boolean isActive, Integer version) {
         Product product = findById(id);
 
+        if (!product.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        }
+
         // TODO: 在庫テーブル実装後に lotManageFlag / expiryManageFlag 変更時の在庫存在チェックを追加
         //       在庫あり && フラグ変更 → CANNOT_CHANGE_LOT_MANAGE_FLAG / CANNOT_CHANGE_EXPIRY_MANAGE_FLAG (422)
 
@@ -100,6 +106,13 @@ public class ProductService {
     @Transactional
     public Product toggleActive(Long id, boolean isActive, Integer version) {
         Product product = findById(id);
+
+        if (!product.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        }
+
         if (!isActive) {
             // TODO: 在庫テーブル実装後に在庫存在チェックを追加
             //       在庫あり → CANNOT_DEACTIVATE_HAS_INVENTORY (422)

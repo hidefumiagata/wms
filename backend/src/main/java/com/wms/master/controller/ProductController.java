@@ -58,6 +58,7 @@ public class ProductController {
      * 商品一覧取得。all=true の場合はプルダウン用の全件リスト、
      * それ以外はページング形式で返却する。
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ListProducts200Response> listProducts(
             @RequestParam(required = false) String productCode,
@@ -119,6 +120,7 @@ public class ProductController {
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetail> getProduct(@PathVariable Long id) {
         Product product = productService.findById(id);
@@ -158,6 +160,7 @@ public class ProductController {
     }
 
     // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkProductCodeExists(
             @RequestParam String productCode) {

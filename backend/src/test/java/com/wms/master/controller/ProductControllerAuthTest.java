@@ -32,6 +32,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -78,6 +79,30 @@ class ProductControllerAuthTest {
             """;
 
     // ===== 未認証（401） =====
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("未認証ユーザーがGET一覧すると401を返す")
+    void list_anonymous_returns401() throws Exception {
+        mockMvc.perform(get(BASE_URL))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("未認証ユーザーがGET詳細すると401を返す")
+    void get_anonymous_returns401() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("未認証ユーザーがGET存在確認すると401を返す")
+    void exists_anonymous_returns401() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/exists").param("productCode", "P-001"))
+                .andExpect(status().isUnauthorized());
+    }
 
     @Test
     @WithAnonymousUser
