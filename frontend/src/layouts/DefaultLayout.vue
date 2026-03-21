@@ -16,9 +16,9 @@
 
       <!-- メインコンテンツ -->
       <el-main class="default-layout__main">
-        <RouterView v-slot="{ Component }">
+        <RouterView v-slot="{ Component, route }">
           <Transition name="fade" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" :key="route.fullPath" />
           </Transition>
         </RouterView>
       </el-main>

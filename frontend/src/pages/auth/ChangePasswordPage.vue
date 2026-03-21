@@ -65,13 +65,13 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  newPassword: [{ required: true, message: '新しいパスワードは必須です', trigger: 'blur' }],
+  newPassword: [{ required: true, message: t('validation.newPasswordRequired'), trigger: 'blur' }],
   confirmPassword: [
-    { required: true, message: 'パスワード確認は必須です', trigger: 'blur' },
+    { required: true, message: t('validation.confirmPasswordRequired'), trigger: 'blur' },
     {
       validator: (_rule, value, callback) => {
         if (value !== form.newPassword) {
-          callback(new Error('パスワードが一致しません'))
+          callback(new Error(t('validation.passwordMismatch')))
         } else {
           callback()
         }
@@ -90,13 +90,11 @@ async function handleSubmit() {
     await apiClient.post('/auth/change-password', {
       newPassword: form.newPassword,
     })
-    if (auth.user) {
-      auth.user.passwordChangeRequired = false
-    }
-    ElMessage.success('パスワードを変更しました')
+    auth.clearPasswordChangeRequired()
+    ElMessage.success(t('auth.passwordChanged'))
     router.push('/')
   } catch {
-    ElMessage.error('パスワード変更に失敗しました')
+    ElMessage.error(t('auth.passwordChangeFailed'))
   } finally {
     loading.value = false
   }

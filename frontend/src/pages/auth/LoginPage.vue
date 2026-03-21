@@ -41,12 +41,12 @@
       </el-button>
     </el-form>
 
-    <div v-if="errorMessage" style="margin-top: 16px">
+    <div v-if="errorMessage" class="login-page__error">
       <el-alert :title="errorMessage" type="error" show-icon :closable="false" />
     </div>
 
-    <div style="margin-top: 16px; text-align: center">
-      <RouterLink to="/password-reset">パスワードをお忘れの方</RouterLink>
+    <div class="login-page__footer">
+      <RouterLink to="/password-reset">{{ t('auth.forgotPassword') }}</RouterLink>
     </div>
   </div>
 </template>
@@ -73,8 +73,8 @@ const form = reactive({
 })
 
 const rules: FormRules = {
-  userCode: [{ required: true, message: 'ユーザーコードは必須です', trigger: 'blur' }],
-  password: [{ required: true, message: 'パスワードは必須です', trigger: 'blur' }],
+  userCode: [{ required: true, message: t('validation.required', { field: t('auth.userCode') }), trigger: 'blur' }],
+  password: [{ required: true, message: t('validation.passwordRequired'), trigger: 'blur' }],
 }
 
 async function handleLogin() {
@@ -87,9 +87,12 @@ async function handleLogin() {
   try {
     const user = await auth.login(form.userCode, form.password)
     if (user.passwordChangeRequired) {
-      router.push('/change-password')
+      router.push({ name: 'change-password' })
     } else {
-      const redirect = (route.query.redirect as string) || '/'
+      // オープンリダイレクト対策: 相対パス（/始まり）のみ許可
+      const redirectParam = route.query.redirect as string | undefined
+      const redirect =
+        redirectParam && redirectParam.startsWith('/') ? redirectParam : '/'
       router.push(redirect)
     }
   } catch (err: unknown) {
@@ -115,6 +118,15 @@ async function handleLogin() {
     font-weight: 600;
     color: #303133;
     margin-bottom: 32px;
+  }
+
+  &__error {
+    margin-top: 16px;
+  }
+
+  &__footer {
+    margin-top: 16px;
+    text-align: center;
   }
 }
 </style>

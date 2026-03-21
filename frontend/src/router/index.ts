@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // 認証レイアウト
+    // 認証レイアウト（未認証ページ）
     {
       path: '/login',
       component: () => import('@/layouts/AuthLayout.vue'),
@@ -16,12 +16,6 @@ const router = createRouter({
           meta: { requiresAuth: false },
         },
         {
-          path: '/change-password',
-          name: 'change-password',
-          component: () => import('@/pages/auth/ChangePasswordPage.vue'),
-          meta: { requiresAuth: true },
-        },
-        {
           path: '/password-reset',
           name: 'password-reset',
           component: () => import('@/pages/auth/PasswordResetPage.vue'),
@@ -29,7 +23,7 @@ const router = createRouter({
         },
       ],
     },
-    // メインレイアウト
+    // メインレイアウト（認証済みページ）
     {
       path: '/',
       component: () => import('@/layouts/DefaultLayout.vue'),
@@ -38,6 +32,12 @@ const router = createRouter({
         {
           path: '',
           redirect: '/master/warehouses',
+        },
+        // パスワード変更（認証済みユーザーが使用）
+        {
+          path: 'change-password',
+          name: 'change-password',
+          component: () => import('@/pages/auth/ChangePasswordPage.vue'),
         },
         // 倉庫マスタ
         {

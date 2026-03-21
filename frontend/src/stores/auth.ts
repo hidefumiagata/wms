@@ -44,5 +44,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isAuthenticated, login, logout, refresh }
+  function clearPasswordChangeRequired() {
+    if (user.value) {
+      user.value.passwordChangeRequired = false
+    }
+  }
+
+  return { user, isAuthenticated, login, logout, refresh, clearPasswordChangeRequired }
 })

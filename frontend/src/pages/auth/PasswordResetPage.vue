@@ -4,7 +4,7 @@
 
     <el-alert
       v-if="sent"
-      title="パスワードリセットメールを送信しました。メールに記載のURLからパスワードを再設定してください。"
+      :title="t('auth.passwordResetSent')"
       type="success"
       show-icon
       :closable="false"
@@ -19,7 +19,7 @@
         label-position="top"
         @submit.prevent="handleSubmit"
       >
-        <el-form-item label="メールアドレス" prop="email">
+        <el-form-item :label="t('auth.email')" prop="email">
           <el-input v-model="form.email" type="email" size="large" autocomplete="email" />
         </el-form-item>
 
@@ -30,13 +30,17 @@
           native-type="submit"
           style="width: 100%; margin-top: 8px"
         >
-          リセットメール送信
+          {{ t('auth.sendResetEmail') }}
         </el-button>
       </el-form>
     </template>
 
+    <div v-if="errorMessage" style="margin-top: 16px">
+      <el-alert :title="errorMessage" type="error" show-icon :closable="false" />
+    </div>
+
     <div style="margin-top: 16px; text-align: center">
-      <RouterLink to="/login">ログイン画面に戻る</RouterLink>
+      <RouterLink to="/login">{{ t('auth.backToLogin') }}</RouterLink>
     </div>
   </div>
 </template>
@@ -52,10 +56,11 @@ const { t } = useI18n()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const sent = ref(false)
+const errorMessage = ref('')
 
 const form = reactive({ email: '' })
 const rules: FormRules = {
-  email: [{ required: true, type: 'email', message: '有効なメールアドレスを入力してください', trigger: 'blur' }],
+  email: [{ required: true, type: 'email', message: t('validation.emailInvalid'), trigger: 'blur' }],
 }
 
 async function handleSubmit() {
@@ -63,9 +68,12 @@ async function handleSubmit() {
   if (!valid) return
 
   loading.value = true
+  errorMessage.value = ''
   try {
     await apiClient.post('/auth/password-reset/request', { email: form.email })
     sent.value = true
+  } catch {
+    errorMessage.value = t('error.server')
   } finally {
     loading.value = false
   }
