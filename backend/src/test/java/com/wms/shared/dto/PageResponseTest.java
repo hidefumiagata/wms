@@ -18,7 +18,7 @@ class PageResponseTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("from(): Spring Data Pageからコンテンツとページング情報が正しく変換される")
-    void from_convertsPageCorrectly() {
+    void from_withNonEmptyPage_convertsCorrectly() {
         Page<Integer> springPage = mock(Page.class);
         when(springPage.getContent()).thenReturn(List.of(1, 2, 3));
         when(springPage.getNumber()).thenReturn(0);
@@ -56,7 +56,7 @@ class PageResponseTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("from(): converter関数が各要素に適用される")
-    void from_appliesConverterToEachElement() {
+    void from_withConverter_appliesConverterToEachElement() {
         Page<String> springPage = mock(Page.class);
         when(springPage.getContent()).thenReturn(List.of("hello", "world"));
         when(springPage.getNumber()).thenReturn(1);

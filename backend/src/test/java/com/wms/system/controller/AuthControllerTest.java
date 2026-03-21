@@ -88,7 +88,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: ログイン成功時に200とLoginResponseを返す")
-        void login_success() throws Exception {
+        void login_validCredentials_returns200WithLoginResponse() throws Exception {
             User user = createTestUser();
             when(rateLimiterService.tryConsumeLogin(anyString())).thenReturn(true);
             when(authService.login(eq("USR001"), eq("password123"), any())).thenReturn(user);
@@ -113,7 +113,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("異常系: レートリミット超過時に429を返す")
-        void login_rateLimitExceeded() throws Exception {
+        void login_rateLimitExceeded_returns429() throws Exception {
             when(rateLimiterService.tryConsumeLogin(anyString())).thenReturn(false);
 
             LoginRequest request = new LoginRequest()
@@ -200,7 +200,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: ログアウト成功時に204を返す")
-        void logout_success() throws Exception {
+        void logout_validRequest_returns204() throws Exception {
             doNothing().when(authService).logout(any(), any());
 
             mockMvc.perform(post("/api/v1/auth/logout"))
@@ -218,7 +218,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: トークンリフレッシュ成功時に200とRefreshResponseを返す")
-        void refreshToken_success() throws Exception {
+        void refreshToken_validToken_returns200WithRefreshResponse() throws Exception {
             User user = createTestUser();
             when(authService.refresh(anyString(), any(), any())).thenReturn(user);
 
@@ -242,7 +242,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: パスワード変更成功時に204を返す")
-        void changePassword_success() throws Exception {
+        void changePassword_validRequest_returns204() throws Exception {
             // Set up authenticated user in SecurityContext
             WmsUserDetails userDetails = new WmsUserDetails(
                     1L, "USR001", "password", null,
@@ -330,7 +330,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: パスワードリセット申請成功時に200と固定メッセージを返す")
-        void requestPasswordReset_success() throws Exception {
+        void requestPasswordReset_validIdentifier_returns200WithMessage() throws Exception {
             when(rateLimiterService.tryConsumePasswordResetByIp(anyString())).thenReturn(true);
             when(rateLimiterService.tryConsumePasswordResetByIdentifier(anyString())).thenReturn(true);
             when(passwordService.requestPasswordReset("test@example.com")).thenReturn(null);
@@ -388,7 +388,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("正常系: パスワード再設定成功時に200と成功メッセージを返す")
-        void confirmPasswordReset_success() throws Exception {
+        void confirmPasswordReset_validToken_returns200() throws Exception {
             doNothing().when(passwordService).confirmPasswordReset("valid-token", "newPass123!");
 
             PasswordResetConfirmRequest request = new PasswordResetConfirmRequest()

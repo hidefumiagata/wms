@@ -32,7 +32,7 @@ class JwtAuthenticationEntryPointTest {
 
     @Test
     @DisplayName("認証エラー時に401とJSON ErrorResponseを返す")
-    void commence_returns401WithJsonErrorResponse() throws Exception {
+    void commence_authenticationError_returns401WithJsonErrorResponse() throws Exception {
         // Act
         entryPoint.commence(request, response, new BadCredentialsException("Bad credentials"));
 

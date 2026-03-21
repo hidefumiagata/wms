@@ -14,7 +14,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("errorCodeとmessageが保持される")
-        void constructor_setsErrorCodeAndMessage() {
+        void constructor_withCodeAndMessage_setsFields() {
             ResourceNotFoundException ex = new ResourceNotFoundException("NOT_FOUND", "not found");
 
             assertThat(ex.getErrorCode()).isEqualTo("NOT_FOUND");
@@ -23,7 +23,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("causeコンストラクタでcauseが保持される")
-        void causeConstructor_setsCause() {
+        void constructor_withCause_setsCauseAndFields() {
             IllegalArgumentException cause = new IllegalArgumentException("root cause");
             // OptimisticLockConflictException uses the two-arg constructor, but to test cause
             // we use InvalidStateTransitionException via its constructor which delegates to WmsException(code, msg)
@@ -43,7 +43,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("コンストラクタ: errorCodeとmessageが設定される")
-        void constructor_setsFields() {
+        void constructor_withCodeAndMessage_setsFields() {
             ResourceNotFoundException ex = new ResourceNotFoundException("ITEM_NOT_FOUND", "商品が見つかりません");
 
             assertThat(ex.getErrorCode()).isEqualTo("ITEM_NOT_FOUND");
@@ -52,7 +52,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("of(): リソース名とIDでメッセージが生成される")
-        void of_createsFormattedMessage() {
+        void of_withResourceNameAndLongId_createsFormattedMessage() {
             ResourceNotFoundException ex = ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", 42L);
 
             assertThat(ex.getErrorCode()).isEqualTo("WAREHOUSE_NOT_FOUND");
@@ -61,7 +61,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("of(): 文字列IDでも正しくフォーマットされる")
-        void of_worksWithStringId() {
+        void of_withStringId_createsFormattedMessage() {
             ResourceNotFoundException ex = ResourceNotFoundException.of("USER_NOT_FOUND", "ユーザー", "admin");
 
             assertThat(ex.getMessage()).isEqualTo("ユーザー が見つかりません (id=admin)");
@@ -74,7 +74,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("コンストラクタ: errorCodeとmessageが設定される")
-        void constructor_setsFields() {
+        void constructor_withCodeAndMessage_setsFields() {
             InvalidStateTransitionException ex =
                     new InvalidStateTransitionException("INVALID_TRANSITION", "遷移エラー");
 
@@ -84,7 +84,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("of(): ステータス遷移メッセージが生成される")
-        void of_createsFormattedMessage() {
+        void of_withFromAndToStatus_createsFormattedMessage() {
             InvalidStateTransitionException ex =
                     InvalidStateTransitionException.of("ORDER_STATUS_ERROR", "DRAFT", "SHIPPED");
 
@@ -101,7 +101,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("デフォルトコンストラクタ: デフォルトのcodeとmessageが設定される")
-        void defaultConstructor_setsDefaults() {
+        void constructor_default_setsDefaultCodeAndMessage() {
             OptimisticLockConflictException ex = new OptimisticLockConflictException();
 
             assertThat(ex.getErrorCode()).isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
@@ -110,7 +110,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("パラメータ付きコンストラクタ: カスタムのcodeとmessageが設定される")
-        void parameterizedConstructor_setsCustomValues() {
+        void constructor_withCustomValues_setsFields() {
             OptimisticLockConflictException ex =
                     new OptimisticLockConflictException("CUSTOM_LOCK", "カスタムメッセージ");
 
@@ -125,7 +125,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("コンストラクタ: errorCodeとmessageが設定される")
-        void constructor_setsFields() {
+        void constructor_withCodeAndMessage_setsFields() {
             DuplicateResourceException ex =
                     new DuplicateResourceException("DUPLICATE_CODE", "コードが重複しています");
 
@@ -140,7 +140,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("コンストラクタ: errorCodeとmessageが設定される")
-        void constructor_setsFields() {
+        void constructor_withCodeAndMessage_setsFields() {
             BusinessRuleViolationException ex =
                     new BusinessRuleViolationException("INSUFFICIENT_STOCK", "在庫が不足しています");
 
@@ -155,7 +155,7 @@ class ExceptionClassesTest {
 
         @Test
         @DisplayName("デフォルトコンストラクタ: デフォルトメッセージが設定される")
-        void defaultConstructor_setsDefaultMessage() {
+        void constructor_default_setsDefaultMessage() {
             RateLimitExceededException ex = new RateLimitExceededException();
 
             assertThat(ex.getMessage()).contains("リクエスト回数の上限を超えました");

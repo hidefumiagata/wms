@@ -11,7 +11,7 @@ class ErrorResponseTest {
 
     @Test
     @DisplayName("of() ファクトリ: code, message, traceIdが設定され、detailsはnull")
-    void of_createsErrorResponseWithoutDetails() {
+    void of_withCodeMessageTraceId_createsResponseWithoutDetails() {
         ErrorResponse response = ErrorResponse.of("NOT_FOUND", "リソースが見つかりません", "trace-001");
 
         assertThat(response.code()).isEqualTo("NOT_FOUND");
@@ -23,7 +23,7 @@ class ErrorResponseTest {
 
     @Test
     @DisplayName("validation() ファクトリ: codeがVALIDATION_ERRORでdetailsが設定される")
-    void validation_createsValidationErrorResponse() {
+    void validation_withMessageAndDetails_createsValidationErrorResponse() {
         List<ErrorResponse.FieldError> details = List.of(
                 new ErrorResponse.FieldError("name", "名前は必須です"),
                 new ErrorResponse.FieldError("code", "コードは必須です")
@@ -40,7 +40,7 @@ class ErrorResponseTest {
 
     @Test
     @DisplayName("FieldError レコード: field と message が正しく保持される")
-    void fieldError_holdsFieldAndMessage() {
+    void fieldError_withFieldAndMessage_holdsValues() {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("email", "メールアドレスが不正です");
 
         assertThat(fieldError.field()).isEqualTo("email");
@@ -49,7 +49,7 @@ class ErrorResponseTest {
 
     @Test
     @DisplayName("of() で生成したtimestampが現在時刻に近い")
-    void of_timestampIsRecentlyCreated() {
+    void of_default_timestampIsRecentlyCreated() {
         ErrorResponse response = ErrorResponse.of("TEST", "test", "trace-003");
 
         assertThat(response.timestamp()).isNotNull();

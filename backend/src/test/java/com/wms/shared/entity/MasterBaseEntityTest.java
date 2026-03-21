@@ -17,7 +17,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("初期状態: isActive=true, version=0")
-    void initialState_isActiveTrue_versionZero() {
+    void constructor_default_isActiveTrueAndVersionZero() {
         TestMasterEntity entity = new TestMasterEntity();
 
         assertThat(entity.getIsActive()).isTrue();
@@ -26,7 +26,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("deactivate(): isActiveがfalseになる")
-    void deactivate_setsIsActiveFalse() {
+    void deactivate_activeEntity_setsIsActiveFalse() {
         TestMasterEntity entity = new TestMasterEntity();
 
         entity.deactivate();
@@ -36,7 +36,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("activate(): isActiveがtrueに戻る")
-    void activate_setsIsActiveTrue() {
+    void activate_inactiveEntity_setsIsActiveTrue() {
         TestMasterEntity entity = new TestMasterEntity();
         entity.deactivate();
 
@@ -47,7 +47,7 @@ class MasterBaseEntityTest {
 
     @Test
     @DisplayName("deactivate -> activate の往復で元に戻る")
-    void deactivateAndActivate_roundTrip() {
+    void deactivate_thenActivate_restoresActiveState() {
         TestMasterEntity entity = new TestMasterEntity();
 
         entity.deactivate();

@@ -24,14 +24,14 @@ class SecurityConfigTest {
 
     @Test
     @DisplayName("swagger-ui.enabled=falseの場合、Swagger UIへのアクセスが認証必須になる")
-    void swaggerDisabled_requiresAuthentication() throws Exception {
+    void securityFilterChain_swaggerDisabled_requiresAuthentication() throws Exception {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("swagger-ui.enabled=falseの場合、api-docsへのアクセスが認証必須になる")
-    void apiDocsDisabled_requiresAuthentication() throws Exception {
+    void securityFilterChain_apiDocsDisabled_requiresAuthentication() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isUnauthorized());
     }

@@ -22,7 +22,7 @@ class TraceContextTest {
 
     @Test
     @DisplayName("MDCにtraceIdが設定されている場合、その値を返す")
-    void getCurrentTraceId_returnsTraceIdWhenSet() {
+    void getCurrentTraceId_traceIdInMdc_returnsTraceId() {
         String expectedTraceId = "abc123def456";
         MDC.put(TraceIdFilter.TRACE_ID_KEY, expectedTraceId);
 
@@ -33,7 +33,7 @@ class TraceContextTest {
 
     @Test
     @DisplayName("MDCが空の場合、unknownを返す")
-    void getCurrentTraceId_returnsUnknownWhenMdcIsEmpty() {
+    void getCurrentTraceId_mdcIsEmpty_returnsUnknown() {
         String result = TraceContext.getCurrentTraceId();
 
         assertThat(result).isEqualTo("unknown");
@@ -41,7 +41,7 @@ class TraceContextTest {
 
     @Test
     @DisplayName("MDCのtraceIdがnullの場合、unknownを返す")
-    void getCurrentTraceId_returnsUnknownWhenTraceIdIsNull() {
+    void getCurrentTraceId_traceIdIsNull_returnsUnknown() {
         MDC.put("otherKey", "someValue");
 
         String result = TraceContext.getCurrentTraceId();

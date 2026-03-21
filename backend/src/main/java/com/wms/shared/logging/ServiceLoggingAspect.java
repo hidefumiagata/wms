@@ -1,19 +1,16 @@
 package com.wms.shared.logging;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@Slf4j
 public class ServiceLoggingAspect {
-
-    private static final Logger log =
-        LoggerFactory.getLogger(ServiceLoggingAspect.class);
 
     /**
      * Service 層の public メソッドの実行時間をログ出力する。
@@ -53,7 +50,7 @@ public class ServiceLoggingAspect {
         }
     }
 
-    String extractModule(String packageName) {
+    private String extractModule(String packageName) {
         // com.wms.inbound.service -> inbound
         String[] parts = packageName.split("\\.");
         return parts.length >= 3 ? parts[2] : "unknown";

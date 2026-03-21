@@ -65,7 +65,7 @@ class AuthServiceTest {
     // --- login ---
 
     @Test
-    void login_success() {
+    void login_validCredentials_returnsUser() {
         when(systemParameterService.getIntValue("LOGIN_FAILURE_LOCK_COUNT")).thenReturn(5);
         when(userRepository.findByUserCode("admin001")).thenReturn(Optional.of(activeUser));
         when(passwordEncoder.matches("correct-password", activeUser.getPasswordHash())).thenReturn(true);
@@ -146,7 +146,7 @@ class AuthServiceTest {
     // --- logout ---
 
     @Test
-    void logout_clearsTokensAndCookies() {
+    void logout_validToken_clearsTokensAndCookies() {
         when(jwtTokenProvider.parseTokenAllowExpired("jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 
@@ -185,7 +185,7 @@ class AuthServiceTest {
     // --- refresh ---
 
     @Test
-    void refresh_success() {
+    void refresh_validTokens_returnsUser() {
         when(jwtTokenProvider.parseTokenAllowExpired("expired-jwt")).thenReturn(claims);
         when(jwtTokenProvider.getUserIdFromClaims(claims)).thenReturn(1L);
 

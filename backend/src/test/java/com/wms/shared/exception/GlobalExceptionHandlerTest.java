@@ -50,7 +50,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("ResourceNotFoundException -> 404 NOT_FOUND")
-    void handleNotFound_returns404() {
+    void handleNotFound_resourceNotFoundException_returns404() {
         var ex = new ResourceNotFoundException("ITEM_NOT_FOUND", "商品が見つかりません");
 
         ResponseEntity<ErrorResponse> response = handler.handleNotFound(ex);
@@ -64,7 +64,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("DuplicateResourceException -> 409 CONFLICT")
-    void handleDuplicate_returns409() {
+    void handleDuplicate_duplicateResourceException_returns409() {
         var ex = new DuplicateResourceException("DUPLICATE_CODE", "コードが重複しています");
 
         ResponseEntity<ErrorResponse> response = handler.handleDuplicate(ex);
@@ -78,7 +78,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("BusinessRuleViolationException -> 422 UNPROCESSABLE_ENTITY")
-    void handleBusinessRule_returns422() {
+    void handleBusinessRule_businessRuleViolation_returns422() {
         var ex = new BusinessRuleViolationException("INSUFFICIENT_STOCK", "在庫が不足しています");
 
         ResponseEntity<ErrorResponse> response = handler.handleBusinessRule(ex);
@@ -91,7 +91,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("OptimisticLockConflictException -> 409 CONFLICT")
-    void handleOptimisticLock_returns409() {
+    void handleOptimisticLock_optimisticLockConflict_returns409() {
         var ex = new OptimisticLockConflictException();
 
         ResponseEntity<ErrorResponse> response = handler.handleOptimisticLock(ex);
@@ -103,7 +103,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("InvalidStateTransitionException -> 409 CONFLICT")
-    void handleInvalidState_returns409() {
+    void handleInvalidState_invalidStateTransition_returns409() {
         var ex = InvalidStateTransitionException.of("INVALID_TRANSITION", "DRAFT", "SHIPPED");
 
         ResponseEntity<ErrorResponse> response = handler.handleInvalidState(ex);
@@ -116,7 +116,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("MethodArgumentNotValidException -> 400 BAD_REQUEST with field errors")
-    void handleValidation_returns400WithDetails() {
+    void handleValidation_fieldErrors_returns400WithDetails() {
         BindingResult bindingResult = mock(BindingResult.class);
         FieldError fieldError1 = new FieldError("obj", "name", "名前は必須です");
         FieldError fieldError2 = new FieldError("obj", "code", "コードは必須です");
@@ -140,7 +140,7 @@ class GlobalExceptionHandlerTest {
     @SuppressWarnings("unchecked")
     @Test
     @DisplayName("ConstraintViolationException -> 400 BAD_REQUEST with field errors")
-    void handleConstraintViolation_returns400WithDetails() {
+    void handleConstraintViolation_violation_returns400WithDetails() {
         ConstraintViolation<Object> violation = mock(ConstraintViolation.class);
         Path path = mock(Path.class);
         when(path.toString()).thenReturn("warehouseId");
@@ -161,7 +161,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("HttpMessageNotReadableException -> 400 BAD_REQUEST")
-    void handleMessageNotReadable_returns400() {
+    void handleMessageNotReadable_invalidJson_returns400() {
         HttpMessageNotReadableException ex = new HttpMessageNotReadableException("parse error", (org.springframework.http.HttpInputMessage) null);
 
         ResponseEntity<ErrorResponse> response = handler.handleMessageNotReadable(ex);
@@ -174,7 +174,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("AccessDeniedException -> 403 FORBIDDEN")
-    void handleAccessDenied_returns403() {
+    void handleAccessDenied_accessDeniedException_returns403() {
         AccessDeniedException ex = new AccessDeniedException("access denied");
 
         ResponseEntity<ErrorResponse> response = handler.handleAccessDenied(ex);
@@ -187,7 +187,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("AuthenticationException -> 401 UNAUTHORIZED")
-    void handleAuthentication_returns401() {
+    void handleAuthentication_badCredentials_returns401() {
         BadCredentialsException ex = new BadCredentialsException("bad credentials");
 
         ResponseEntity<ErrorResponse> response = handler.handleAuthentication(ex);
@@ -200,7 +200,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("RateLimitExceededException -> 429 TOO_MANY_REQUESTS")
-    void handleRateLimit_returns429() {
+    void handleRateLimit_rateLimitExceeded_returns429() {
         RateLimitExceededException ex = new RateLimitExceededException();
 
         ResponseEntity<ErrorResponse> response = handler.handleRateLimit(ex);
@@ -213,7 +213,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("General Exception -> 500 INTERNAL_SERVER_ERROR")
-    void handleGeneral_returns500() {
+    void handleGeneral_runtimeException_returns500() {
         RuntimeException ex = new RuntimeException("unexpected error");
 
         ResponseEntity<ErrorResponse> response = handler.handleGeneral(ex);
@@ -227,7 +227,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     @DisplayName("traceIdが未設定の場合 'unknown' が返される")
-    void handleException_withoutTraceId_returnsUnknown() {
+    void handleGeneral_withoutTraceId_returnsUnknownTraceId() {
         MDC.remove(TraceIdFilter.TRACE_ID_KEY);
         RuntimeException ex = new RuntimeException("no trace");
 

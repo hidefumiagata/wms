@@ -14,7 +14,7 @@ class BusinessDateProviderTest {
 
     @Test
     @DisplayName("today(): JST基準の現在日付が返される")
-    void today_returnsCurrentDateInJst() {
+    void today_default_returnsCurrentDateInJst() {
         LocalDate result = provider.today();
 
         LocalDate expectedJst = LocalDate.now(ZoneId.of("Asia/Tokyo"));
@@ -23,7 +23,7 @@ class BusinessDateProviderTest {
 
     @Test
     @DisplayName("today(): nullではない")
-    void today_returnsNonNull() {
+    void today_default_returnsNonNull() {
         assertThat(provider.today()).isNotNull();
     }
 }
