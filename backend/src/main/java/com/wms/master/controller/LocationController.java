@@ -30,8 +30,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,8 +157,8 @@ public class LocationController implements MasterLocationApi {
                 .areaType(AreaType.fromValue(a.getAreaType()))
                 .isActive(l.getIsActive())
                 .version(l.getVersion())
-                .createdAt(toLocalDateTime(l.getCreatedAt()))
-                .updatedAt(toLocalDateTime(l.getUpdatedAt()));
+                .createdAt(l.getCreatedAt())
+                .updatedAt(l.getUpdatedAt());
     }
 
     private LocationFullDetail toFullDetail(Location l, Area a, Building b, Warehouse w) {
@@ -181,8 +179,8 @@ public class LocationController implements MasterLocationApi {
                 .buildingName(b.getBuildingName())
                 .isActive(l.getIsActive())
                 .version(l.getVersion())
-                .createdAt(toLocalDateTime(l.getCreatedAt()))
-                .updatedAt(toLocalDateTime(l.getUpdatedAt()));
+                .createdAt(l.getCreatedAt())
+                .updatedAt(l.getUpdatedAt());
     }
 
     private LocationListItem toListItem(Location l, Area a, Warehouse w) {
@@ -196,8 +194,8 @@ public class LocationController implements MasterLocationApi {
                 .areaCode(a != null ? a.getAreaCode() : null)
                 .areaType(a != null ? AreaType.fromValue(a.getAreaType()) : null)
                 .isActive(l.getIsActive())
-                .createdAt(toLocalDateTime(l.getCreatedAt()))
-                .updatedAt(toLocalDateTime(l.getUpdatedAt()));
+                .createdAt(l.getCreatedAt())
+                .updatedAt(l.getUpdatedAt());
     }
 
     private LocationUpdateResponse toUpdateResponse(Location l) {
@@ -207,7 +205,7 @@ public class LocationController implements MasterLocationApi {
                 .locationName(l.getLocationName())
                 .isActive(l.getIsActive())
                 .version(l.getVersion())
-                .updatedAt(toLocalDateTime(l.getUpdatedAt()));
+                .updatedAt(l.getUpdatedAt());
     }
 
     private LocationToggleResponse toToggleResponse(Location l) {
@@ -217,12 +215,9 @@ public class LocationController implements MasterLocationApi {
                 .locationName(l.getLocationName())
                 .isActive(l.getIsActive())
                 .version(l.getVersion())
-                .updatedAt(toLocalDateTime(l.getUpdatedAt()));
+                .updatedAt(l.getUpdatedAt());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 
     private Sort parseSort(String sort) {
         String[] parts = sort.split(",");

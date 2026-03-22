@@ -23,8 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -147,8 +145,8 @@ public class WarehouseController implements MasterWarehouseApi {
                 .address(w.getAddress())
                 .isActive(w.getIsActive())
                 .version(w.getVersion())
-                .createdAt(toLocalDateTime(w.getCreatedAt()))
-                .updatedAt(toLocalDateTime(w.getUpdatedAt()));
+                .createdAt(w.getCreatedAt())
+                .updatedAt(w.getUpdatedAt());
     }
 
     private WarehouseToggleResponse toToggleResponse(Warehouse w) {
@@ -158,7 +156,7 @@ public class WarehouseController implements MasterWarehouseApi {
                 .warehouseName(w.getWarehouseName())
                 .isActive(w.getIsActive())
                 .version(w.getVersion())
-                .updatedAt(toLocalDateTime(w.getUpdatedAt()));
+                .updatedAt(w.getUpdatedAt());
     }
 
     private WarehousePageResponse toPageResponse(Page<Warehouse> page) {
@@ -181,13 +179,10 @@ public class WarehouseController implements MasterWarehouseApi {
                 .warehouseNameKana(w.getWarehouseNameKana())
                 .address(w.getAddress())
                 .isActive(w.getIsActive())
-                .createdAt(toLocalDateTime(w.getCreatedAt()))
-                .updatedAt(toLocalDateTime(w.getUpdatedAt()));
+                .createdAt(w.getCreatedAt())
+                .updatedAt(w.getUpdatedAt());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 
     private Sort parseSort(String sort) {
         String[] parts = sort.split(",");

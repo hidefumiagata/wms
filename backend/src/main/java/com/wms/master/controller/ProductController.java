@@ -32,8 +32,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -193,8 +191,8 @@ public class ProductController {
                 .shipmentStopFlag(p.getShipmentStopFlag())
                 .isActive(p.getIsActive())
                 .version(p.getVersion())
-                .createdAt(toLocalDateTime(p.getCreatedAt()))
-                .updatedAt(toLocalDateTime(p.getUpdatedAt()));
+                .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt());
     }
 
     private ProductPageResponse toPageResponse(Page<Product> page) {
@@ -209,9 +207,6 @@ public class ProductController {
                 .totalPages(page.getTotalPages());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 
     private Sort parseSort(String sort) {
         String[] parts = sort.split(",");

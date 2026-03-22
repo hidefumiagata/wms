@@ -21,8 +21,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,8 +126,8 @@ public class BuildingController implements MasterBuildingApi {
                 .warehouseName(w.getWarehouseName())
                 .isActive(b.getIsActive())
                 .version(b.getVersion())
-                .createdAt(toLocalDateTime(b.getCreatedAt()))
-                .updatedAt(toLocalDateTime(b.getUpdatedAt()));
+                .createdAt(b.getCreatedAt())
+                .updatedAt(b.getUpdatedAt());
     }
 
     private BuildingListItem toListItem(Building b, Warehouse w) {
@@ -140,8 +138,8 @@ public class BuildingController implements MasterBuildingApi {
                 .warehouseId(b.getWarehouseId())
                 .warehouseCode(w != null ? w.getWarehouseCode() : null)
                 .isActive(b.getIsActive())
-                .createdAt(toLocalDateTime(b.getCreatedAt()))
-                .updatedAt(toLocalDateTime(b.getUpdatedAt()));
+                .createdAt(b.getCreatedAt())
+                .updatedAt(b.getUpdatedAt());
     }
 
     private BuildingToggleResponse toToggleResponse(Building b) {
@@ -151,10 +149,7 @@ public class BuildingController implements MasterBuildingApi {
                 .buildingName(b.getBuildingName())
                 .isActive(b.getIsActive())
                 .version(b.getVersion())
-                .updatedAt(toLocalDateTime(b.getUpdatedAt()));
+                .updatedAt(b.getUpdatedAt());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 }

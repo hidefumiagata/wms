@@ -26,8 +26,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -148,8 +146,8 @@ public class AreaController implements MasterAreaApi {
                 .areaType(AreaType.fromValue(a.getAreaType()))
                 .isActive(a.getIsActive())
                 .version(a.getVersion())
-                .createdAt(toLocalDateTime(a.getCreatedAt()))
-                .updatedAt(toLocalDateTime(a.getUpdatedAt()));
+                .createdAt(a.getCreatedAt())
+                .updatedAt(a.getUpdatedAt());
     }
 
     private AreaListItem toListItem(Area a, Building b, Warehouse w) {
@@ -164,8 +162,8 @@ public class AreaController implements MasterAreaApi {
                 .storageCondition(StorageCondition.fromValue(a.getStorageCondition()))
                 .areaType(AreaType.fromValue(a.getAreaType()))
                 .isActive(a.getIsActive())
-                .createdAt(toLocalDateTime(a.getCreatedAt()))
-                .updatedAt(toLocalDateTime(a.getUpdatedAt()));
+                .createdAt(a.getCreatedAt())
+                .updatedAt(a.getUpdatedAt());
     }
 
     private AreaUpdateResponse toUpdateResponse(Area a) {
@@ -177,7 +175,7 @@ public class AreaController implements MasterAreaApi {
                 .areaType(AreaType.fromValue(a.getAreaType()))
                 .isActive(a.getIsActive())
                 .version(a.getVersion())
-                .updatedAt(toLocalDateTime(a.getUpdatedAt()));
+                .updatedAt(a.getUpdatedAt());
     }
 
     private AreaToggleResponse toToggleResponse(Area a) {
@@ -187,10 +185,7 @@ public class AreaController implements MasterAreaApi {
                 .areaName(a.getAreaName())
                 .isActive(a.getIsActive())
                 .version(a.getVersion())
-                .updatedAt(toLocalDateTime(a.getUpdatedAt()));
+                .updatedAt(a.getUpdatedAt());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 }

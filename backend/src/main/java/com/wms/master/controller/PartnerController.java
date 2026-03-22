@@ -32,8 +32,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -188,8 +186,8 @@ public class PartnerController {
                 .email(p.getEmail())
                 .isActive(p.getIsActive())
                 .version(p.getVersion())
-                .createdAt(toLocalDateTime(p.getCreatedAt()))
-                .updatedAt(toLocalDateTime(p.getUpdatedAt()));
+                .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt());
     }
 
     private PartnerPageResponse toPageResponse(Page<Partner> page) {
@@ -204,9 +202,6 @@ public class PartnerController {
                 .totalPages(page.getTotalPages());
     }
 
-    private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
-        return odt != null ? odt.toLocalDateTime() : null;
-    }
 
     private Sort parseSort(String sort) {
         String[] parts = sort.split(",");
