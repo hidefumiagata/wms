@@ -1,17 +1,32 @@
 package com.wms.inbound.service;
 
+import com.wms.generated.model.CreateInboundLineRequest;
+import com.wms.generated.model.CreateInboundSlipRequest;
+import com.wms.generated.model.InboundSlipType;
+import com.wms.generated.model.UnitType;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
+import com.wms.master.entity.Partner;
+import com.wms.master.entity.PartnerType;
+import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
+import com.wms.master.service.PartnerService;
+import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
+import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.DuplicateResourceException;
+import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import com.wms.shared.util.BusinessDateProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +59,15 @@ class InboundSlipServiceTest {
 
     @Mock
     private WarehouseService warehouseService;
+
+    @Mock
+    private PartnerService partnerService;
+
+    @Mock
+    private ProductService productService;
+
+    @Mock
+    private BusinessDateProvider businessDateProvider;
 
     @Mock
     private UserRepository userRepository;
@@ -247,6 +272,524 @@ class InboundSlipServiceTest {
         @DisplayName("nullのユーザーIDでnullを返す")
         void resolveUserName_null() {
             assertThat(inboundSlipService.resolveUserName(null)).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("create")
+    class CreateTests {
+
+        private static final LocalDate TODAY = LocalDate.of(2026, 3, 22);
+
+        private Warehouse createWarehouse() {
+            Warehouse w = new Warehouse();
+            w.setWarehouseCode("WH-001");
+            w.setWarehouseName("東京DC");
+            setField(w, "id", 1L);
+            return w;
+        }
+
+        private Partner createPartner(PartnerType type) {
+            Partner p = new Partner();
+            p.setPartnerCode("SUP-0001");
+            p.setPartnerName("ABC商事");
+            p.setPartnerType(type);
+            setField(p, "id", 5L);
+            return p;
+        }
+
+        private Product createProduct(Long id, String code, boolean active,
+                                       boolean lotManage, boolean expiryManage) {
+            Product p = new Product();
+            p.setProductCode(code);
+            p.setProductName("商品" + code);
+            p.setLotManageFlag(lotManage);
+            p.setExpiryManageFlag(expiryManage);
+            setField(p, "id", id);
+            setField(p, "isActive", active);
+            return p;
+        }
+
+        private CreateInboundSlipRequest buildRequest() {
+            return new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(5L)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.NORMAL)
+                    .note("テスト備考")
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                    ));
+        }
+
+        @Test
+        @DisplayName("正常系: 入荷伝票を作成できる")
+        void create_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            InboundSlip result = inboundSlipService.create(buildRequest());
+
+            assertThat(result.getSlipNumber()).isEqualTo("INB-20260322-0001");
+            assertThat(result.getStatus()).isEqualTo("PLANNED");
+            assertThat(result.getWarehouseCode()).isEqualTo("WH-001");
+            assertThat(result.getPartnerCode()).isEqualTo("SUP-0001");
+            assertThat(result.getLines()).hasSize(1);
+            assertThat(result.getLines().get(0).getLineStatus()).isEqualTo("PENDING");
+            assertThat(result.getLines().get(0).getProductCode()).isEqualTo("PRD-0001");
+            assertThat(result.getLines().get(0).getLineNo()).isEqualTo(1);
+
+            verify(inboundSlipRepository).save(any(InboundSlip.class));
+        }
+
+        @Test
+        @DisplayName("伝票番号が連番で生成される")
+        void create_slipNumberSequence() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(5);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 6L);
+                return s;
+            });
+
+            InboundSlip result = inboundSlipService.create(buildRequest());
+
+            assertThat(result.getSlipNumber()).isEqualTo("INB-20260322-0006");
+        }
+
+        @Test
+        @DisplayName("伝票番号衝突時にリトライして成功する")
+        void create_slipNumberCollision_retrySuccess() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            // First call returns 0, save throws collision; second call returns 1 for retry
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322"))
+                    .thenReturn(0)
+                    .thenReturn(1);
+            when(inboundSlipRepository.save(any(InboundSlip.class)))
+                    .thenThrow(new DataIntegrityViolationException("duplicate key"))
+                    .thenAnswer(inv -> {
+                        InboundSlip s = inv.getArgument(0);
+                        setField(s, "id", 1L);
+                        return s;
+                    });
+
+            InboundSlip result = inboundSlipService.create(buildRequest());
+
+            assertThat(result.getSlipNumber()).isEqualTo("INB-20260322-0002");
+            assertThat(result.getLines()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("倉庫が存在しない場合ResourceNotFoundExceptionをスローする")
+        void create_warehouseNotFound_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L))
+                    .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫が見つかりません"));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("WAREHOUSE_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("仕入先が存在しない場合ResourceNotFoundExceptionをスローする")
+        void create_partnerNotFound_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L))
+                    .thenThrow(new ResourceNotFoundException("PARTNER_NOT_FOUND", "取引先が見つかりません"));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("PARTNER_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("仕入先がCUSTOMERの場合BusinessRuleViolationExceptionをスローする")
+        void create_partnerNotSupplier_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.CUSTOMER));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_PARTNER_NOT_SUPPLIER");
+        }
+
+        @Test
+        @DisplayName("BOTHタイプの仕入先は受け入れる")
+        void create_partnerBoth_succeeds() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.BOTH));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            InboundSlip result = inboundSlipService.create(buildRequest());
+
+            assertThat(result.getPartnerCode()).isEqualTo("SUP-0001");
+        }
+
+        @Test
+        @DisplayName("入荷予定日が過去日の場合BusinessRuleViolationExceptionをスローする")
+        void create_plannedDateTooEarly_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+
+            CreateInboundSlipRequest request = buildRequest()
+                    .plannedDate(TODAY.minusDays(1));
+
+            assertThatThrownBy(() -> inboundSlipService.create(request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("PLANNED_DATE_TOO_EARLY");
+        }
+
+        @Test
+        @DisplayName("商品が存在しない場合ResourceNotFoundExceptionをスローする")
+        void create_productNotFound_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L))
+                    .thenThrow(new ResourceNotFoundException("PRODUCT_NOT_FOUND", "商品が見つかりません"));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("PRODUCT_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("無効な商品の場合BusinessRuleViolationExceptionをスローする")
+        void create_productInactive_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", false, false, false));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("ロット管理商品でロット番号未指定の場合BusinessRuleViolationExceptionをスローする")
+        void create_lotNumberRequired_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOT_NUMBER_REQUIRED");
+        }
+
+        @Test
+        @DisplayName("期限管理商品で期限日未指定の場合BusinessRuleViolationExceptionをスローする")
+        void create_expiryDateRequired_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, true));
+
+            assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("EXPIRY_DATE_REQUIRED");
+        }
+
+        @Test
+        @DisplayName("同一商品が複数行にある場合DuplicateResourceExceptionをスローする")
+        void create_duplicateProduct_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+
+            CreateInboundSlipRequest request = buildRequest()
+                    .lines(List.of(
+                            new CreateInboundLineRequest().productId(10L).unitType(UnitType.CASE).plannedQty(100),
+                            new CreateInboundLineRequest().productId(10L).unitType(UnitType.PIECE).plannedQty(50)
+                    ));
+
+            assertThatThrownBy(() -> inboundSlipService.create(request))
+                    .isInstanceOf(DuplicateResourceException.class)
+                    .extracting("errorCode").isEqualTo("DUPLICATE_PRODUCT_IN_LINES");
+        }
+
+        @Test
+        @DisplayName("倉庫振替入荷ではpartnerIdがnullでも作成できる")
+        void create_warehouseTransfer_noPartner_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            CreateInboundSlipRequest request = new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(null)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.WAREHOUSE_TRANSFER)
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                    ));
+
+            InboundSlip result = inboundSlipService.create(request);
+
+            assertThat(result.getSlipType()).isEqualTo("WAREHOUSE_TRANSFER");
+            assertThat(result.getPartnerId()).isNull();
+            assertThat(result.getPartnerCode()).isNull();
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_TRANSFERでpartnerIdを指定した場合も成功する")
+        void create_warehouseTransferWithPartner_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            CreateInboundSlipRequest request = new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(5L)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.WAREHOUSE_TRANSFER)
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                    ));
+
+            InboundSlip result = inboundSlipService.create(request);
+
+            assertThat(result.getSlipType()).isEqualTo("WAREHOUSE_TRANSFER");
+            assertThat(result.getPartnerId()).isEqualTo(5L);
+        }
+
+        @Test
+        @DisplayName("ロット管理商品でロット番号が空白の場合LOT_NUMBER_REQUIREDをスローする")
+        void create_lotManageWithBlankLotNumber_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
+
+            CreateInboundSlipRequest request = buildRequest()
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                                    .lotNumber("   ")
+                    ));
+
+            assertThatThrownBy(() -> inboundSlipService.create(request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOT_NUMBER_REQUIRED");
+        }
+
+        @Test
+        @DisplayName("NORMAL入荷でpartnerIdがnullの場合BusinessRuleViolationExceptionをスローする")
+        void create_normalWithoutPartner_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+
+            CreateInboundSlipRequest request = buildRequest().partnerId(null);
+
+            assertThatThrownBy(() -> inboundSlipService.create(request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("ロット管理商品でロット番号指定済みの場合は成功する")
+        void create_lotManageWithLotNumber_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            CreateInboundSlipRequest request = new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(5L)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.NORMAL)
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                                    .lotNumber("LOT-001")
+                    ));
+
+            InboundSlip result = inboundSlipService.create(request);
+
+            assertThat(result.getLines().get(0).getLotNumber()).isEqualTo("LOT-001");
+        }
+
+        @Test
+        @DisplayName("期限管理商品で期限日指定済みの場合は成功する")
+        void create_expiryManageWithExpiryDate_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, true));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            LocalDate expiryDate = LocalDate.of(2027, 3, 22);
+            CreateInboundSlipRequest request = new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(5L)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.NORMAL)
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                                    .expiryDate(expiryDate)
+                    ));
+
+            InboundSlip result = inboundSlipService.create(request);
+
+            assertThat(result.getLines().get(0).getExpiryDate()).isEqualTo(expiryDate);
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+            while (clazz != null) {
+                try {
+                    return clazz.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException e) {
+                    clazz = clazz.getSuperclass();
+                }
+            }
+            throw new RuntimeException("Field not found: " + fieldName);
+        }
+    }
+
+    @Nested
+    @DisplayName("delete")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("PLANNEDステータスの伝票を削除できる")
+        void delete_planned_success() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status("PLANNED")
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            inboundSlipService.delete(1L);
+
+            verify(inboundSlipRepository).delete(slip);
+        }
+
+        @Test
+        @DisplayName("存在しないIDで削除するとResourceNotFoundExceptionをスローする")
+        void delete_notFound_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inboundSlipService.delete(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("CONFIRMEDステータスの伝票を削除するとInvalidStateTransitionExceptionをスローする")
+        void delete_confirmed_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status("CONFIRMED")
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.delete(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+
+            verify(inboundSlipRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("INSPECTINGステータスの伝票を削除するとInvalidStateTransitionExceptionをスローする")
+        void delete_inspecting_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status("INSPECTING")
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.delete(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

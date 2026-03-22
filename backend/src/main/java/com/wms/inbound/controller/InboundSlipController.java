@@ -13,7 +13,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -55,19 +57,25 @@ public class InboundSlipController implements InboundApi {
         return ResponseEntity.ok(toDetail(slip));
     }
 
-    // --- 後続Issueで実装 ---
-
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<InboundSlipDetail> createInboundSlip(
             CreateInboundSlipRequest createInboundSlipRequest) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        InboundSlip created = inboundSlipService.create(createInboundSlipRequest);
+        // Re-fetch with lines to ensure audit fields (createdAt etc.) are populated after commit
+        InboundSlip withLines = inboundSlipService.findByIdWithLines(created.getId());
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(toDetail(withLines));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<Void> deleteInboundSlip(Long id) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        inboundSlipService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
@@ -191,10 +199,8 @@ public class InboundSlipController implements InboundApi {
                 .storedBy(l.getStoredBy());
     }
 
+    // sort parameter always has a default value from OpenAPI generated interface
     private Sort parseSort(String sort, String defaultProperty) {
-        if (sort == null || sort.isBlank()) {
-            return Sort.by(Sort.Direction.ASC, defaultProperty);
-        }
         String[] parts = sort.split(",");
         String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
                 ? parts[0] : defaultProperty;
