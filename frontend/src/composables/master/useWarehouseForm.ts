@@ -58,18 +58,23 @@ export function useWarehouseForm() {
     initialValues: { warehouseCode: '', warehouseName: '', warehouseNameKana: '', address: '' },
   })
 
-  // validateOnModelUpdate: false → blur 時のみバリデーション（入力中は発火しない）
+  // validateOnModelUpdate: false → 入力中（v-model 更新時）はバリデーションしない
+  // validateOnBlur: true     → フォーカスを外したタイミングでバリデーションを実行
   const [warehouseCode, warehouseCodeAttrs] = defineField('warehouseCode', {
     validateOnModelUpdate: false,
+    validateOnBlur: true,
   })
   const [warehouseName, warehouseNameAttrs] = defineField('warehouseName', {
     validateOnModelUpdate: false,
+    validateOnBlur: true,
   })
   const [warehouseNameKana, warehouseNameKanaAttrs] = defineField('warehouseNameKana', {
     validateOnModelUpdate: false,
+    validateOnBlur: true,
   })
   const [address, addressAttrs] = defineField('address', {
     validateOnModelUpdate: false,
+    validateOnBlur: true,
   })
 
   // --- 状態 ---
