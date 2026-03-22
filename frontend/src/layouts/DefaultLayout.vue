@@ -31,10 +31,15 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import { startSessionTimer, stopSessionTimer } from '@/utils/session-timer'
+import { useWarehouseStore } from '@/stores/warehouse'
 
 const sidebarCollapsed = ref(false)
+const warehouseStore = useWarehouseStore()
 
-onMounted(() => startSessionTimer())
+onMounted(() => {
+  startSessionTimer()
+  warehouseStore.fetchWarehouses()
+})
 onUnmounted(() => stopSessionTimer())
 </script>
 

@@ -10,6 +10,23 @@
     </div>
 
     <div class="app-header__right">
+      <!-- 倉庫切替 -->
+      <el-select
+        v-if="warehouseStore.warehouses.length > 0"
+        :model-value="warehouseStore.selectedWarehouseId"
+        :placeholder="t('nav.selectWarehouse')"
+        size="small"
+        style="width: 200px"
+        @update:model-value="warehouseStore.selectWarehouse($event as number)"
+      >
+        <el-option
+          v-for="wh in warehouseStore.warehouses"
+          :key="wh.id"
+          :label="`${wh.warehouseName} (${wh.warehouseCode})`"
+          :value="wh.id"
+        />
+      </el-select>
+
       <!-- 言語切替 -->
       <el-select v-model="locale" style="width: 80px" size="small">
         <el-option label="日本語" value="ja" />
@@ -40,6 +57,7 @@ import { useRouter } from 'vue-router'
 import { Expand, Fold, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { useWarehouseStore } from '@/stores/warehouse'
 
 defineProps<{
   sidebarCollapsed: boolean
@@ -48,9 +66,10 @@ defineEmits<{
   toggleSidebar: []
 }>()
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
+const warehouseStore = useWarehouseStore()
 
 async function handleCommand(command: string) {
   if (command === 'logout') {
