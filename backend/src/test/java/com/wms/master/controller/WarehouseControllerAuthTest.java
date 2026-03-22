@@ -165,6 +165,16 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがPUTすると403を返す")
+    void update_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_UPDATE_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがPATCHすると403を返す")
     void toggle_warehouseStaff_returns403() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/1/deactivate")
