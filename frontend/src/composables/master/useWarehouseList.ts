@@ -1,6 +1,7 @@
 import { ref, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 
@@ -38,8 +39,18 @@ export function useWarehouseList() {
     isActive: null as boolean | null,
   })
 
+  // --- 並行リクエスト制御 ---
+  // 新しいリクエストが来たら前のリクエストをキャンセルし、
+  // 古いレスポンスで画面が上書きされる Race Condition を防ぐ
+  let abortController: AbortController | null = null
+
   // --- API呼び出し ---
   async function fetchList() {
+    // 前のリクエストをキャンセル
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     loading.value = true
     try {
       const params: Record<string, unknown> = {
@@ -51,10 +62,15 @@ export function useWarehouseList() {
       if (searchForm.warehouseName) params.warehouseName = searchForm.warehouseName
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<WarehouseListResponse>('/master/warehouses', { params })
+      const res = await apiClient.get<WarehouseListResponse>('/master/warehouses', {
+        params,
+        signal,
+      })
       items.value = res.data.content
       total.value = res.data.totalElements
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return // キャンセル済み：新しいリクエストが loading を管理する
+
       // エラー時はページネーション状態と一致させるため空にリセット
       items.value = []
       total.value = 0
@@ -65,7 +81,11 @@ export function useWarehouseList() {
         ElMessage.error(t('master.warehouse.fetchError'))
       }
     } finally {
-      loading.value = false
+      // このリクエストがキャンセルされていなければ loading を解除
+      // （キャンセル時は新しいリクエストが loading を引き継ぐ）
+      if (!signal.aborted) {
+        loading.value = false
+      }
     }
   }
 
