@@ -488,7 +488,7 @@ flowchart TD
 | `401 Unauthorized` | `UNAUTHORIZED` | 未認証 |
 | `403 Forbidden` | `FORBIDDEN` | SYSTEM_ADMIN 以外のロールでアクセス |
 | `404 Not Found` | `USER_NOT_FOUND` | 指定したIDのユーザーが存在しない |
-| `409 Conflict` | `OPTIMISTIC_LOCK_ERROR` | 他のユーザーにより先に更新された（version不一致） |
+| `409 Conflict` | `OPTIMISTIC_LOCK_CONFLICT` | 他のユーザーにより先に更新された（version不一致） |
 | `422 Unprocessable Entity` | `CANNOT_CHANGE_SELF_ROLE` | 自分自身のロールを変更しようとした |
 | `422 Unprocessable Entity` | `CANNOT_DEACTIVATE_SELF` | 自分自身を無効化しようとした（`isActive = false`） |
 
@@ -515,7 +515,7 @@ flowchart TD
     CHK_SELF_DEACTIVATE -->|Yes| ERR_422_DEACTIVATE[422 CANNOT_DEACTIVATE_SELF]
     CHK_SELF_DEACTIVATE -->|No| CHK_VERSION{version一致?}
 
-    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_ERROR]
+    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_CONFLICT]
     CHK_VERSION -->|一致| UPDATE["UPDATE users SET<br/>- full_name<br/>- email<br/>- role<br/>- is_active<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
 
     UPDATE --> END([200 OK + 更新後ユーザーオブジェクト])
@@ -529,7 +529,7 @@ flowchart TD
 | 2 | ログイン中のユーザー自身の `role` 変更は不可。ロール変更によって自身のアクセス権が意図せず失われるのを防ぐ | `CANNOT_CHANGE_SELF_ROLE` |
 | 3 | ログイン中のユーザー自身を `isActive = false` に更新することは不可 | `CANNOT_DEACTIVATE_SELF` |
 | 4 | 更新対象ユーザーが存在しない場合は404を返す | `USER_NOT_FOUND` |
-| 5 | リクエストの `version` とDBの `version` が一致しない場合は409を返す（楽観的ロック） | `OPTIMISTIC_LOCK_ERROR` |
+| 5 | リクエストの `version` とDBの `version` が一致しない場合は409を返す（楽観的ロック） | `OPTIMISTIC_LOCK_CONFLICT` |
 
 > 自分自身かどうかの判定は JWT から取得したユーザーIDとパスパラメータの `id` を比較して行う。
 
@@ -619,7 +619,7 @@ flowchart TD
 | `401 Unauthorized` | `UNAUTHORIZED` | 未認証 |
 | `403 Forbidden` | `FORBIDDEN` | SYSTEM_ADMIN 以外のロールでアクセス |
 | `404 Not Found` | `USER_NOT_FOUND` | 指定したIDのユーザーが存在しない |
-| `409 Conflict` | `OPTIMISTIC_LOCK_ERROR` | 他のユーザーにより先に更新された（version不一致） |
+| `409 Conflict` | `OPTIMISTIC_LOCK_CONFLICT` | 他のユーザーにより先に更新された（version不一致） |
 | `422 Unprocessable Entity` | `CANNOT_DEACTIVATE_SELF` | 自分自身を無効化しようとした（`isActive = false`） |
 
 ---
@@ -642,7 +642,7 @@ flowchart TD
     CHK_SELF -->|Yes| ERR_422[422 CANNOT_DEACTIVATE_SELF]
     CHK_SELF -->|No| CHK_VERSION{version一致?}
 
-    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_ERROR]
+    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_CONFLICT]
     CHK_VERSION -->|一致| UPDATE["UPDATE users SET<br/>- is_active = :isActive<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
 
     UPDATE --> END([200 OK + 更新後ユーザーオブジェクト])
@@ -655,7 +655,7 @@ flowchart TD
 | 1 | ログイン中のユーザー自身を `isActive = false` に変更することは不可 | `CANNOT_DEACTIVATE_SELF` |
 | 2 | `isActive = true` への再有効化は制限なく実施可能（自分自身への適用も可） | — |
 | 3 | このAPIは `is_active` のみを変更する。`locked` フラグ等他のカラムには一切触れない | — |
-| 4 | リクエストの `version` とDBの `version` が一致しない場合は409を返す（楽観的ロック） | `OPTIMISTIC_LOCK_ERROR` |
+| 4 | リクエストの `version` とDBの `version` が一致しない場合は409を返す（楽観的ロック） | `OPTIMISTIC_LOCK_CONFLICT` |
 
 ---
 
@@ -851,7 +851,7 @@ flowchart TD
 | `VALIDATION_ERROR` | 400 | 001, 002, 004, 005, 007 | 入力バリデーションエラー |
 | `USER_NOT_FOUND` | 404 | 003, 004, 005, 006 | 指定したIDのユーザーが存在しない |
 | `DUPLICATE_CODE` | 409 | 002 | 指定した `userCode` がすでに存在する |
-| `OPTIMISTIC_LOCK_ERROR` | 409 | 004, 005 | 他のユーザーにより先に更新された（version不一致） |
+| `OPTIMISTIC_LOCK_CONFLICT` | 409 | 004, 005 | 他のユーザーにより先に更新された（version不一致） |
 | `CANNOT_CHANGE_SELF_ROLE` | 422 | 004 | 自分自身のロールを変更しようとした |
 | `CANNOT_DEACTIVATE_SELF` | 422 | 004, 005 | 自分自身を無効化しようとした |
 
