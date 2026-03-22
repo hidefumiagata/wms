@@ -14,7 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12);
+    private final PasswordEncoder passwordEncoder;
 
     public record UpdateUserCommand(Long id, String fullName, String email, String role,
                                      Boolean isActive, Integer version, Long currentUserId) {}
@@ -41,12 +41,12 @@ public class UserService {
     }
 
     @Transactional
-    public User create(User user) {
+    public User create(User user, String rawPassword) {
         if (userRepository.existsByUserCode(user.getUserCode())) {
             throw new DuplicateResourceException("DUPLICATE_CODE",
                     "ユーザーコードが既に存在します: " + user.getUserCode());
         }
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setPasswordChangeRequired(true);
         try {
             User created = userRepository.save(user);

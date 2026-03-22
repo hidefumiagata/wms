@@ -223,7 +223,7 @@ class UserControllerAuthTest {
     @DisplayName("SYSTEM_ADMINがPOSTすると201を返す")
     void create_systemAdmin_returns201() throws Exception {
         User created = createUser(1L, "USR001", "山田太郎");
-        when(userService.create(any(User.class))).thenReturn(created);
+        when(userService.create(any(User.class), any(String.class))).thenReturn(created);
 
         mockMvc.perform(post(BASE_URL)
                         .header("X-Requested-With", "XMLHttpRequest")

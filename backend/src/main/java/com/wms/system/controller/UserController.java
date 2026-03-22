@@ -57,7 +57,7 @@ public class UserController implements MasterUserApi {
 
         if (Boolean.TRUE.equals(all)) {
             Page<User> allUsers = userService.search(keyword, roleStr, statusStr,
-                    PageRequest.of(0, Integer.MAX_VALUE, parseSort(sort)));
+                    PageRequest.of(0, 1000, parseSort(sort)));
             List<UserDetail> items = allUsers.getContent().stream()
                     .map(this::toDetail)
                     .toList();
@@ -84,9 +84,8 @@ public class UserController implements MasterUserApi {
         user.setFullName(createUserRequest.getFullName());
         user.setEmail(createUserRequest.getEmail());
         user.setRole(createUserRequest.getRole().getValue());
-        user.setPasswordHash(createUserRequest.getInitialPassword());
 
-        User created = userService.create(user);
+        User created = userService.create(user, createUserRequest.getInitialPassword());
         URI location = URI.create("/api/v1/master/users/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created));
     }

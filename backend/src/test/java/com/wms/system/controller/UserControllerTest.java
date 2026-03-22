@@ -177,7 +177,7 @@ class UserControllerTest {
         @DisplayName("正常な登録リクエストで201を返す")
         void create_success_returns201() throws Exception {
             User created = createUser(1L, "USR002", "鈴木一郎");
-            when(userService.create(any(User.class))).thenReturn(created);
+            when(userService.create(any(User.class), any(String.class))).thenReturn(created);
 
             CreateUserRequest request = new CreateUserRequest()
                     .userCode("USR002")
@@ -198,7 +198,7 @@ class UserControllerTest {
         @Test
         @DisplayName("重複コードで409を返す")
         void create_duplicateCode_returns409() throws Exception {
-            when(userService.create(any(User.class)))
+            when(userService.create(any(User.class), any(String.class)))
                     .thenThrow(new DuplicateResourceException("DUPLICATE_CODE", "重複"));
 
             CreateUserRequest request = new CreateUserRequest()

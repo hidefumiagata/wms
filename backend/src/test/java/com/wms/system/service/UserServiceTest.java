@@ -6,6 +6,7 @@ import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +38,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserService userService;
@@ -117,7 +122,7 @@ class UserServiceTest {
         @DisplayName("新規ユーザーを登録できる")
         void create_success() {
             User u = createUser(null, "USR002", "鈴木一郎");
-            u.setPasswordHash("plainPassword");
+            when(passwordEncoder.encode("Password@123")).thenReturn("$2a$12$hashed");
             when(userRepository.existsByUserCode("USR002")).thenReturn(false);
             when(userRepository.save(any(User.class))).thenAnswer(inv -> {
                 User saved = inv.getArgument(0);
@@ -125,7 +130,7 @@ class UserServiceTest {
                 return saved;
             });
 
-            User result = userService.create(u);
+            User result = userService.create(u, "Password@123");
 
             assertThat(result.getUserCode()).isEqualTo("USR002");
             assertThat(result.getPasswordChangeRequired()).isTrue();
@@ -141,7 +146,7 @@ class UserServiceTest {
             u.setPasswordHash("plainPassword");
             when(userRepository.existsByUserCode("USR001")).thenReturn(true);
 
-            assertThatThrownBy(() -> userService.create(u))
+            assertThatThrownBy(() -> userService.create(u, "Password@123"))
                     .isInstanceOf(DuplicateResourceException.class)
                     .hasMessageContaining("USR001");
         }
@@ -154,7 +159,7 @@ class UserServiceTest {
             when(userRepository.existsByUserCode("USR002")).thenReturn(false);
             when(userRepository.save(any(User.class))).thenThrow(new DataIntegrityViolationException("unique constraint"));
 
-            assertThatThrownBy(() -> userService.create(u))
+            assertThatThrownBy(() -> userService.create(u, "Password@123"))
                     .isInstanceOf(DuplicateResourceException.class)
                     .hasMessageContaining("USR002");
         }
