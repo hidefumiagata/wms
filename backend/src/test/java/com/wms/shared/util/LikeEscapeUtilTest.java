@@ -49,4 +49,18 @@ class LikeEscapeUtilTest {
     void escape_empty_returnsEmpty() {
         assertThat(LikeEscapeUtil.escape("")).isEqualTo("");
     }
+
+    @Test
+    @DisplayName("日本語を含む文字列のワイルドカードがエスケープされる")
+    void escape_japaneseWithUnderscore_isEscaped() {
+        assertThat(LikeEscapeUtil.escape("倉庫A_B棟")).isEqualTo("倉庫A\\_B棟");
+    }
+
+    @Test
+    @DisplayName("連続するワイルドカードが正しくエスケープされる")
+    void escape_consecutiveWildcards_allEscaped() {
+        assertThat(LikeEscapeUtil.escape("%%")).isEqualTo("\\%\\%");
+        assertThat(LikeEscapeUtil.escape("__")).isEqualTo("\\_\\_");
+        assertThat(LikeEscapeUtil.escape("\\%")).isEqualTo("\\\\\\%");
+    }
 }
