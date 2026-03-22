@@ -20,12 +20,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,6 +100,24 @@ class WarehouseServiceTest {
     }
 
     @Nested
+    @DisplayName("findByIds")
+    class FindByIds {
+        @Test
+        @DisplayName("複数IDでMapを返す")
+        void findByIds_returnsMap() {
+            Warehouse w1 = createWarehouse(1L, "WARA", "東京DC");
+            Warehouse w2 = createWarehouse(2L, "WARB", "大阪DC");
+            when(warehouseRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(w1, w2));
+
+            Map<Long, Warehouse> result = warehouseService.findByIds(List.of(1L, 2L));
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(1L).getWarehouseCode()).isEqualTo("WARA");
+            assertThat(result.get(2L).getWarehouseCode()).isEqualTo("WARB");
+        }
+    }
+
+    @Nested
     @DisplayName("create")
     class Create {
         @Test
@@ -164,6 +184,16 @@ class WarehouseServiceTest {
         }
 
         @Test
+        @DisplayName("バージョン不一致で事前チェックによるOptimisticLockConflictExceptionをスロー")
+        void update_versionMismatch_throwsException() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> warehouseService.update(1L, "名前", null, null, 99))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        @Test
         @DisplayName("楽観的ロック競合でOptimisticLockConflictExceptionをスロー")
         void update_optimisticLockConflict_throwsException() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
@@ -202,6 +232,28 @@ class WarehouseServiceTest {
             Warehouse result = warehouseService.toggleActive(1L, true, 0);
 
             assertThat(result.getIsActive()).isTrue();
+        }
+
+        @Test
+        @DisplayName("既に同じ状態の場合はUPDATEなし（冪等性）")
+        void toggleActive_alreadySameState_noUpdate() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            Warehouse result = warehouseService.toggleActive(1L, true, 0);
+
+            assertThat(result.getIsActive()).isTrue();
+            verify(warehouseRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("バージョン不一致で事前チェックによるOptimisticLockConflictExceptionをスロー")
+        void toggleActive_versionMismatch_throwsException() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 99))
+                    .isInstanceOf(OptimisticLockConflictException.class);
         }
 
         @Test
