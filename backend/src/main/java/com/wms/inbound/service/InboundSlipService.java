@@ -270,57 +270,74 @@ public class InboundSlipService {
                     "STOREDまたはCANCELLEDステータスの入荷伝票はキャンセルできません (status=" + slip.getStatus() + ")");
         }
 
+        Long currentUserId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+
         // If PARTIAL_STORED, rollback stored inventory for lines with lineStatus == STORED
         if (InboundSlipStatus.PARTIAL_STORED.getValue().equals(slip.getStatus())) {
-            Long currentUserId = getCurrentUserId();
-            OffsetDateTime now = OffsetDateTime.now();
-
             for (InboundSlipLine line : slip.getLines()) {
                 if (InboundLineStatus.STORED.getValue().equals(line.getLineStatus())) {
-                    Inventory inventory = inventoryRepository
-                            .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                                    line.getPutawayLocationId(), line.getProductId(),
-                                    line.getUnitType(), line.getLotNumber(), line.getExpiryDate())
-                            .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                                    "在庫が見つかりません (locationId=" + line.getPutawayLocationId()
-                                            + ", productId=" + line.getProductId() + ")"));
-
-                    inventory.setQuantity(inventory.getQuantity() - line.getInspectedQty());
-                    inventoryRepository.save(inventory);
-
-                    InventoryMovement movement = InventoryMovement.builder()
-                            .warehouseId(slip.getWarehouseId())
-                            .locationId(line.getPutawayLocationId())
-                            .locationCode(line.getPutawayLocationCode())
-                            .productId(line.getProductId())
-                            .productCode(line.getProductCode())
-                            .productName(line.getProductName())
-                            .unitType(line.getUnitType())
-                            .lotNumber(line.getLotNumber())
-                            .expiryDate(line.getExpiryDate())
-                            .movementType("INBOUND_CANCEL")
-                            .quantity(-line.getInspectedQty())
-                            .quantityAfter(inventory.getQuantity())
-                            .referenceId(slip.getId())
-                            .referenceType("INBOUND_SLIP")
-                            .executedAt(now)
-                            .executedBy(currentUserId)
-                            .build();
-                    inventoryMovementRepository.save(movement);
+                    rollbackLineInventory(slip, line, currentUserId, now);
                 }
             }
         }
 
-        Long currentUserId = getCurrentUserId();
         slip.setStatus(InboundSlipStatus.CANCELLED.getValue());
-        slip.setCancelledAt(OffsetDateTime.now());
+        slip.setCancelledAt(now);
         slip.setCancelledBy(currentUserId);
         InboundSlip saved = inboundSlipRepository.save(slip);
         log.info("InboundSlip cancelled: id={}, slipNumber={}", id, saved.getSlipNumber());
         return saved;
     }
 
-    Long getCurrentUserId() {
+    private void rollbackLineInventory(InboundSlip slip, InboundSlipLine line,
+                                        Long userId, OffsetDateTime now) {
+        Inventory inventory = inventoryRepository
+                .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                        line.getPutawayLocationId(), line.getProductId(),
+                        line.getUnitType(), line.getLotNumber(), line.getExpiryDate())
+                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                        "在庫が見つかりません (locationId=" + line.getPutawayLocationId()
+                                + ", productId=" + line.getProductId() + ")"));
+
+        int newQty = inventory.getQuantity() - line.getInspectedQty();
+        if (newQty < 0) {
+            throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
+                    "在庫ロールバックで在庫数が負になります (inventoryId=" + inventory.getId()
+                            + ", quantity=" + inventory.getQuantity()
+                            + ", rollback=" + line.getInspectedQty() + ")");
+        }
+        if (newQty < inventory.getAllocatedQty()) {
+            throw new BusinessRuleViolationException("INVENTORY_ALLOCATED",
+                    "引当済み数量が在庫ロールバック後の数量を超えます (inventoryId=" + inventory.getId()
+                            + ", allocatedQty=" + inventory.getAllocatedQty()
+                            + ", newQuantity=" + newQty + ")");
+        }
+        inventory.setQuantity(newQty);
+        inventoryRepository.save(inventory);
+
+        InventoryMovement movement = InventoryMovement.builder()
+                .warehouseId(slip.getWarehouseId())
+                .locationId(line.getPutawayLocationId())
+                .locationCode(line.getPutawayLocationCode())
+                .productId(line.getProductId())
+                .productCode(line.getProductCode())
+                .productName(line.getProductName())
+                .unitType(line.getUnitType())
+                .lotNumber(line.getLotNumber())
+                .expiryDate(line.getExpiryDate())
+                .movementType("INBOUND_CANCEL")
+                .quantity(-line.getInspectedQty())
+                .quantityAfter(newQty)
+                .referenceId(slip.getId())
+                .referenceType("INBOUND_SLIP")
+                .executedAt(now)
+                .executedBy(userId)
+                .build();
+        inventoryMovementRepository.save(movement);
+    }
+
+    private Long getCurrentUserId() {
         WmsUserDetails userDetails = (WmsUserDetails) SecurityContextHolder.getContext()
                 .getAuthentication().getPrincipal();
         return userDetails.getUserId();

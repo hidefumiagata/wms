@@ -1095,6 +1095,76 @@ class InboundSlipServiceTest {
         }
 
         @Test
+        @DisplayName("PARTIAL_STOREDで在庫不足の場合BusinessRuleViolationExceptionをスローする")
+        void cancel_partialStored_insufficientInventory_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .putawayLocationId(200L).putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            Inventory inventory = Inventory.builder()
+                    .warehouseId(1L).locationId(200L).productId(100L).unitType("CASE")
+                    .quantity(10).allocatedQty(0).build(); // quantity < inspectedQty (48)
+            setField(inventory, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    200L, 100L, "CASE", null, null)).thenReturn(Optional.of(inventory));
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_INSUFFICIENT");
+        }
+
+        @Test
+        @DisplayName("PARTIAL_STOREDで引当済み数量超過の場合BusinessRuleViolationExceptionをスローする")
+        void cancel_partialStored_allocatedExceeds_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(30)
+                    .putawayLocationId(200L).putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            Inventory inventory = Inventory.builder()
+                    .warehouseId(1L).locationId(200L).productId(100L).unitType("CASE")
+                    .quantity(50).allocatedQty(25).build(); // newQty=20 < allocatedQty=25
+            setField(inventory, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    200L, 100L, "CASE", null, null)).thenReturn(Optional.of(inventory));
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_ALLOCATED");
+        }
+
+        @Test
         @DisplayName("存在しないIDでキャンセルするとResourceNotFoundExceptionをスローする")
         void cancel_notFound_throws() {
             when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
