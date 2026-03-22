@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Partner;
+import com.wms.master.entity.PartnerType;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
@@ -67,7 +68,7 @@ class PartnerServiceTest {
             Page<Partner> result = partnerService.search(null, null, "SUPPLIER", null, pageable);
 
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0).getPartnerType()).isEqualTo("SUPPLIER");
+            assertThat(result.getContent().get(0).getPartnerType()).isEqualTo(PartnerType.SUPPLIER);
         }
     }
 
@@ -175,12 +176,12 @@ class PartnerServiceTest {
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Partner result = partnerService.update(1L, "新名称", "シンメイショウ", "BOTH",
+            Partner result = partnerService.update(1L, "新名称", "シンメイショウ", PartnerType.BOTH,
                     "東京都", "03-1234-5678", "担当太郎", "test@example.com", 0);
 
             assertThat(result.getPartnerName()).isEqualTo("新名称");
             assertThat(result.getPartnerNameKana()).isEqualTo("シンメイショウ");
-            assertThat(result.getPartnerType()).isEqualTo("BOTH");
+            assertThat(result.getPartnerType()).isEqualTo(PartnerType.BOTH);
             assertThat(result.getPhone()).isEqualTo("03-1234-5678");
             assertThat(result.getEmail()).isEqualTo("test@example.com");
         }
@@ -194,7 +195,7 @@ class PartnerServiceTest {
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Partner result = partnerService.update(1L, "新名称", null, "SUPPLIER",
+            Partner result = partnerService.update(1L, "新名称", null, PartnerType.SUPPLIER,
                     null, null, null, null, 0);
 
             assertThat(result.getAddress()).isNull();
@@ -206,7 +207,7 @@ class PartnerServiceTest {
         void update_notFound_throwsException() {
             when(partnerRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> partnerService.update(999L, "name", null, "SUPPLIER",
+            assertThatThrownBy(() -> partnerService.update(999L, "name", null, PartnerType.SUPPLIER,
                     null, null, null, null, 0))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
@@ -219,7 +220,7 @@ class PartnerServiceTest {
             when(partnerRepository.save(any(Partner.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Partner.class.getName(), 1L));
 
-            assertThatThrownBy(() -> partnerService.update(1L, "名前", null, "SUPPLIER",
+            assertThatThrownBy(() -> partnerService.update(1L, "名前", null, PartnerType.SUPPLIER,
                     null, null, null, null, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
@@ -305,7 +306,7 @@ class PartnerServiceTest {
         Partner p = new Partner();
         p.setPartnerCode(code);
         p.setPartnerName(name);
-        p.setPartnerType(type);
+        p.setPartnerType(PartnerType.valueOf(type));
         if (id != null) {
             try {
                 var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");

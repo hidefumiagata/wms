@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Partner;
+import com.wms.master.entity.PartnerType;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
@@ -65,7 +66,7 @@ public class PartnerService {
     // TODO: #71 引数が9個と多い。UpdatePartnerCommand 等の record DTO への移行を検討
     @Transactional
     public Partner update(Long id, String partnerName, String partnerNameKana,
-                          String partnerType, String address, String phone,
+                          PartnerType partnerType, String address, String phone,
                           String contactPerson, String email, Integer version) {
         Partner partner = findById(id);
         partner.setPartnerName(partnerName);

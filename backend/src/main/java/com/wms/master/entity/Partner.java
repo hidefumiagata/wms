@@ -3,6 +3,8 @@ package com.wms.master.entity;
 import com.wms.shared.entity.MasterBaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,10 +28,9 @@ public class Partner extends MasterBaseEntity {
     @Column(name = "partner_name_kana", length = 200)
     private String partnerNameKana;
 
-    // TODO: #70 @Enumerated(EnumType.STRING) + Java Enum への移行を検討
-    //       現フェーズは JPQL の IN 句との相性を考慮して String のまま維持
+    @Enumerated(EnumType.STRING)
     @Column(name = "partner_type", nullable = false, length = 20)
-    private String partnerType;
+    private PartnerType partnerType;
 
     @Column(name = "address", length = 500)
     private String address;

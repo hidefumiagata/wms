@@ -488,7 +488,7 @@ class PartnerControllerTest {
         Partner p = new Partner();
         p.setPartnerCode(code);
         p.setPartnerName(name);
-        p.setPartnerType(type);
+        p.setPartnerType(com.wms.master.entity.PartnerType.valueOf(type));
         if (id != null) {
             try {
                 var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");
@@ -505,7 +505,7 @@ class PartnerControllerTest {
         Partner p = new Partner();
         p.setPartnerCode(code);
         p.setPartnerName(name);
-        p.setPartnerType(type);
+        p.setPartnerType(com.wms.master.entity.PartnerType.valueOf(type));
         if (id != null) {
             try {
                 var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");
