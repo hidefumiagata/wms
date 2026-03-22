@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Profile;
 @Profile("!prd")
 public class OpenApiConfig {
 
-    public static final String SECURITY_SCHEME_NAME = "bearerAuth";
+    public static final String SECURITY_SCHEME_NAME = "cookieAuth";
 
     @Bean
     public OpenAPI wmsOpenAPI() {
@@ -27,9 +27,11 @@ public class OpenApiConfig {
                 .components(new Components()
                         .addSecuritySchemes(SECURITY_SCHEME_NAME,
                                 new SecurityScheme()
-                                        .name(SECURITY_SCHEME_NAME)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")));
+                                        .name("access_token")
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)
+                                        .description("JWTアクセストークン（httpOnly Cookie）。"
+                                                + "Swagger UIでは /api/v1/auth/login でログイン後、"
+                                                + "ブラウザにCookieが設定されるため自動的に認証されます。")));
     }
 }

@@ -28,14 +28,14 @@ class OpenApiConfigTest {
     }
 
     @Test
-    @DisplayName("Bearer JWT セキュリティスキームが定義される")
+    @DisplayName("Cookie認証セキュリティスキームが定義される")
     void wmsOpenAPI_default_hasSecurityScheme() {
         assertThat(openAPI.getComponents().getSecuritySchemes())
-                .containsKey("bearerAuth");
-        var scheme = openAPI.getComponents().getSecuritySchemes().get("bearerAuth");
-        assertThat(scheme.getType().toString()).isEqualToIgnoringCase("HTTP");
-        assertThat(scheme.getScheme()).isEqualTo("bearer");
-        assertThat(scheme.getBearerFormat()).isEqualTo("JWT");
+                .containsKey("cookieAuth");
+        var scheme = openAPI.getComponents().getSecuritySchemes().get("cookieAuth");
+        assertThat(scheme.getType().toString()).isEqualToIgnoringCase("APIKEY");
+        assertThat(scheme.getIn().toString()).isEqualToIgnoringCase("COOKIE");
+        assertThat(scheme.getName()).isEqualTo("access_token");
     }
 
     @Test
