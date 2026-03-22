@@ -158,7 +158,7 @@ class PartnerControllerAuthTest {
     @DisplayName("SYSTEM_ADMINがPUTすると200を返す")
     void update_systemAdmin_returns200() throws Exception {
         Partner updated = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
-        when(partnerService.update(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        when(partnerService.update(any(com.wms.master.service.UpdatePartnerCommand.class)))
                 .thenReturn(updated);
 
         mockMvc.perform(put(BASE_URL + "/1")

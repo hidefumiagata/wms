@@ -135,7 +135,7 @@ public class ProductController {
     public ResponseEntity<ProductDetail> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody UpdateProductRequest request) {
-        Product updated = productService.update(
+        Product updated = productService.update(new com.wms.master.service.UpdateProductCommand(
                 id,
                 request.getProductName(),
                 request.getProductNameKana(),
@@ -148,7 +148,7 @@ public class ProductController {
                 request.getExpiryManageFlag(),
                 request.getShipmentStopFlag(),
                 request.getIsActive(),
-                request.getVersion());
+                request.getVersion()));
         return ResponseEntity.ok(toDetail(updated));
     }
 
