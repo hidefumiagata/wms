@@ -59,6 +59,28 @@ class SystemControllerTest {
                     .andExpect(jsonPath("$.timeoutMinutes").value(3))
                     .andExpect(jsonPath("$.warningMinutes").value(0));
         }
+
+        @Test
+        @DisplayName("タイムアウトがちょうど5分の場合warningMinutesは0になる")
+        void getSessionConfig_exactOffset_warningIsZero() throws Exception {
+            when(systemParameterService.getIntValue("SESSION_TIMEOUT_MINUTES")).thenReturn(5);
+
+            mockMvc.perform(get("/api/v1/system/session-config"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.timeoutMinutes").value(5))
+                    .andExpect(jsonPath("$.warningMinutes").value(0));
+        }
+
+        @Test
+        @DisplayName("タイムアウトが6分の場合warningMinutesは1になる")
+        void getSessionConfig_justAboveOffset_warningIsOne() throws Exception {
+            when(systemParameterService.getIntValue("SESSION_TIMEOUT_MINUTES")).thenReturn(6);
+
+            mockMvc.perform(get("/api/v1/system/session-config"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.timeoutMinutes").value(6))
+                    .andExpect(jsonPath("$.warningMinutes").value(1));
+        }
     }
 
     @Nested
