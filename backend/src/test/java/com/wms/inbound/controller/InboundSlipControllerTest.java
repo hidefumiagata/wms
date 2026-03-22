@@ -520,22 +520,96 @@ class InboundSlipControllerTest {
     }
 
     @Nested
+    @DisplayName("POST /api/v1/inbound/slips/{id}/confirm")
+    class ConfirmTests {
+
+        @Test
+        @DisplayName("正常に200を返す")
+        void confirm_returns200() throws Exception {
+            InboundSlip confirmed = createSlip(1L, "INB-20260320-0001", "CONFIRMED");
+
+            when(inboundSlipService.confirm(1L)).thenReturn(confirmed);
+            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(confirmed);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
+
+            mockMvc.perform(post(SLIPS_URL + "/1/confirm"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+            verify(inboundSlipService).confirm(1L);
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void confirm_notFound_returns404() throws Exception {
+            when(inboundSlipService.confirm(999L))
+                    .thenThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/confirm"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("PLANNED以外のステータスで409を返す")
+        void confirm_invalidStatus_returns409() throws Exception {
+            when(inboundSlipService.confirm(1L))
+                    .thenThrow(new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                            "PLANNED以外のステータスの入荷伝票は確定できません"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/confirm"))
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/inbound/slips/{id}/cancel")
+    class CancelTests {
+
+        @Test
+        @DisplayName("正常に200を返す")
+        void cancel_returns200() throws Exception {
+            InboundSlip cancelled = createSlip(1L, "INB-20260320-0001", "CANCELLED");
+
+            when(inboundSlipService.cancel(1L)).thenReturn(cancelled);
+            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(cancelled);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
+
+            mockMvc.perform(post(SLIPS_URL + "/1/cancel"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+            verify(inboundSlipService).cancel(1L);
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void cancel_notFound_returns404() throws Exception {
+            when(inboundSlipService.cancel(999L))
+                    .thenThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/cancel"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("STOREDステータスで409を返す")
+        void cancel_invalidStatus_returns409() throws Exception {
+            when(inboundSlipService.cancel(1L))
+                    .thenThrow(new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                            "STOREDステータスの入荷伝票はキャンセルできません"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/cancel"))
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Nested
     @DisplayName("未実装スタブエンドポイント")
     class StubTests {
-
-        @Test
-        @DisplayName("POST /slips/{id}/confirm は500を返す")
-        void confirm_returns500() throws Exception {
-            mockMvc.perform(post(SLIPS_URL + "/1/confirm"))
-                    .andExpect(status().isInternalServerError());
-        }
-
-        @Test
-        @DisplayName("POST /slips/{id}/cancel は500を返す")
-        void cancel_returns500() throws Exception {
-            mockMvc.perform(post(SLIPS_URL + "/1/cancel"))
-                    .andExpect(status().isInternalServerError());
-        }
 
         @Test
         @DisplayName("POST /slips/{id}/inspect は500を返す")
