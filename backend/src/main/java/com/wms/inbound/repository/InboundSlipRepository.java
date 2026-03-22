@@ -35,4 +35,7 @@ public interface InboundSlipRepository extends JpaRepository<InboundSlip, Long> 
     @EntityGraph(attributePaths = "lines")
     @Query("SELECT s FROM InboundSlip s WHERE s.id = :id")
     Optional<InboundSlip> findByIdWithLines(@Param("id") Long id);
+
+    @Query("SELECT COUNT(s) FROM InboundSlip s WHERE s.slipNumber LIKE CONCAT('INB-', :dateStr, '-%')")
+    long countBySlipDate(@Param("dateStr") String dateStr);
 }

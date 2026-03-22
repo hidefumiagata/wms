@@ -1,8 +1,12 @@
 package com.wms.inbound.controller;
 
+import com.wms.generated.model.CreateInboundSlipRequest;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;
+import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.DuplicateResourceException;
+import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
@@ -26,8 +30,12 @@ import java.util.List;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -296,24 +304,211 @@ class InboundSlipControllerTest {
     }
 
     @Nested
-    @DisplayName("未実装スタブエンドポイント")
-    class StubTests {
+    @DisplayName("POST /api/v1/inbound/slips (create)")
+    class CreateTests {
+
+        private static final String CREATE_REQUEST_JSON = """
+                {
+                    "warehouseId": 1,
+                    "partnerId": 5,
+                    "plannedDate": "2026-03-22",
+                    "slipType": "NORMAL",
+                    "note": "テスト備考",
+                    "lines": [
+                        {
+                            "productId": 10,
+                            "unitType": "CASE",
+                            "plannedQty": 100
+                        }
+                    ]
+                }
+                """;
 
         @Test
-        @DisplayName("POST /slips (create) は500を返す")
-        void create_returns500() throws Exception {
+        @DisplayName("正常に201 Createdを返す")
+        void create_returns201() throws Exception {
+            InboundSlip created = createSlip(1L, "INB-20260322-0001", "PLANNED");
+            InboundSlipLine line = createLine(1L, created, 1, "PRD-0001", 100);
+            created.getLines().add(line);
+
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class))).thenReturn(created);
+            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(created);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
+
             mockMvc.perform(post(SLIPS_URL)
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"warehouseId\":1,\"plannedDate\":\"2026-03-20\",\"slipType\":\"NORMAL\",\"partnerId\":1,\"lines\":[{\"productId\":1,\"unitType\":\"CASE\",\"plannedQty\":10}]}"))
-                    .andExpect(status().isInternalServerError());
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isCreated())
+                    .andExpect(header().exists("Location"))
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.slipNumber").value("INB-20260322-0001"))
+                    .andExpect(jsonPath("$.status").value("PLANNED"))
+                    .andExpect(jsonPath("$.lines", hasSize(1)))
+                    .andExpect(jsonPath("$.lines[0].productCode").value("PRD-0001"));
         }
 
         @Test
-        @DisplayName("DELETE /slips/{id} は500を返す")
-        void delete_returns500() throws Exception {
-            mockMvc.perform(delete(SLIPS_URL + "/1"))
-                    .andExpect(status().isInternalServerError());
+        @DisplayName("明細が空の場合400を返す")
+        void create_emptyLines_returns400() throws Exception {
+            String json = """
+                    {
+                        "warehouseId": 1,
+                        "partnerId": 5,
+                        "plannedDate": "2026-03-22",
+                        "slipType": "NORMAL",
+                        "lines": []
+                    }
+                    """;
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isBadRequest());
         }
+
+        @Test
+        @DisplayName("倉庫が存在しない場合404を返す")
+        void create_warehouseNotFound_returns404() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫が見つかりません"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("仕入先が存在しない場合404を返す")
+        void create_partnerNotFound_returns404() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("PARTNER_NOT_FOUND", "取引先が見つかりません"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("仕入先タイプ不正で422を返す")
+        void create_partnerNotSupplier_returns422() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("INBOUND_PARTNER_NOT_SUPPLIER",
+                            "仕入先がSUPPLIERではありません"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("入荷予定日が過去日で422を返す")
+        void create_plannedDateTooEarly_returns422() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("PLANNED_DATE_TOO_EARLY",
+                            "入荷予定日は営業日以降を指定してください"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("同一商品重複で409を返す")
+        void create_duplicateProduct_returns409() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new DuplicateResourceException("DUPLICATE_PRODUCT_IN_LINES",
+                            "同一伝票内に同じ商品が複数指定されています"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("ロット番号未指定で422を返す")
+        void create_lotNumberRequired_returns422() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("LOT_NUMBER_REQUIRED",
+                            "ロット管理対象商品にはロット番号が必須です"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("期限日未指定で422を返す")
+        void create_expiryDateRequired_returns422() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("EXPIRY_DATE_REQUIRED",
+                            "期限管理対象商品には期限日が必須です"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("商品が存在しない場合404を返す")
+        void create_productNotFound_returns404() throws Exception {
+            when(inboundSlipService.create(any(CreateInboundSlipRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("PRODUCT_NOT_FOUND", "商品が見つかりません"));
+
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_REQUEST_JSON))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/v1/inbound/slips/{id}")
+    class DeleteTests {
+
+        @Test
+        @DisplayName("正常に204 No Contentを返す")
+        void delete_returns204() throws Exception {
+            doNothing().when(inboundSlipService).delete(1L);
+
+            mockMvc.perform(delete(SLIPS_URL + "/1"))
+                    .andExpect(status().isNoContent());
+
+            verify(inboundSlipService).delete(1L);
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void delete_notFound_returns404() throws Exception {
+            doThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
+                    "入荷伝票が見つかりません (id=999)"))
+                    .when(inboundSlipService).delete(999L);
+
+            mockMvc.perform(delete(SLIPS_URL + "/999"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("PLANNED以外のステータスで409を返す")
+        void delete_invalidStatus_returns409() throws Exception {
+            doThrow(new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                    "PLANNED以外のステータスの入荷伝票は削除できません"))
+                    .when(inboundSlipService).delete(1L);
+
+            mockMvc.perform(delete(SLIPS_URL + "/1"))
+                    .andExpect(status().isConflict());
+        }
+    }
+
+    @Nested
+    @DisplayName("未実装スタブエンドポイント")
+    class StubTests {
 
         @Test
         @DisplayName("POST /slips/{id}/confirm は500を返す")
