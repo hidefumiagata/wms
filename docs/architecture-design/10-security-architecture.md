@@ -490,26 +490,33 @@ passwordResetTokenRepository.save(new PasswordResetToken(userId, tokenHash, expi
 
 ```java
 /**
- * Logback カスタムフィルターによる PII マスキング。
- * ログ出力前にメールアドレス・電話番号を自動マスクする。
+ * ログメッセージ中のPII（個人情報）・機密情報をマスクするユーティリティ。
+ * メールアドレス・電話番号に加え、JWT・パスワード系キーワードもマスク対象。
+ * 環境別の Logback 拡張（PiiMaskingPatternLayoutEncoder / PiiMaskingMessageJsonProvider）
+ * から呼び出される。
  */
-public class PiiMaskingFilter extends AbstractMatcherFilter<ILoggingEvent> {
+public final class PiiMasker {
 
-    // メールアドレスパターン
-    private static final Pattern EMAIL_PATTERN =
-        Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+    // メールアドレス（ReDoS対策: possessive quantifier 使用）
+    private static final Pattern EMAIL_PATTERN = ...;
 
-    // 電話番号パターン（日本の形式）
-    private static final Pattern PHONE_PATTERN =
-        Pattern.compile("0\\d{1,4}-?\\d{1,4}-?\\d{3,4}");
+    // 電話番号（日本形式: 先頭セグメント2桁以上、ワードバウンダリ付き）
+    private static final Pattern PHONE_PATTERN = ...;
 
-    public String mask(String message) {
-        String masked = EMAIL_PATTERN.matcher(message).replaceAll("**@**.***");
-        masked = PHONE_PATTERN.matcher(masked).replaceAll("***-****-****");
-        return masked;
-    }
+    // JWT トークン（JWE 5パート対応）
+    private static final Pattern JWT_PATTERN = ...;
+
+    // パスワード・シークレット系 KV 形式（key=value / key:value）
+    private static final Pattern PASSWORD_KV_PATTERN = ...;
+
+    // パスワード・シークレット系 JSON 形式（"key": "value"）
+    private static final Pattern PASSWORD_JSON_PATTERN = ...;
+
+    public static String mask(String message) { ... }
 }
 ```
+
+> コード全文は [08-common-infrastructure.md § 4.4](08-common-infrastructure.md#44-バックエンド--pii-マスキング) を参照。
 
 ### DB接続情報の保護
 
@@ -886,7 +893,7 @@ public class AuthEventLogger {
     }
 
     public void passwordResetRequested(String identifier) {
-        // identifier はマスク済み（PiiMaskingFilter が適用される）
+        // identifier はマスク済み（PiiMasker がログ出力時に自動適用される）
         log.info("PASSWORD_RESET_REQUESTED identifier={}", identifier);
     }
 

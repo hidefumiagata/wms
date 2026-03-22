@@ -254,8 +254,14 @@ com.wms/
     ├── entity/
     │   └── BaseEntity.java          # 共通カラム（id, created_at等）
     ├── logging/
+    │   ├── TraceIdFilter.java
+    │   ├── TraceContext.java
     │   ├── RequestLoggingFilter.java
-    │   └── PiiMaskingFilter.java
+    │   ├── PiiMasker.java
+    │   ├── PiiMaskingPatternLayoutEncoder.java
+    │   ├── PiiMaskingMessageJsonProvider.java
+    │   ├── PiiMaskingStackTraceJsonProvider.java
+    │   └── ServiceLoggingAspect.java
     └── util/
         └── BusinessDateService.java    # 営業日取得ユーティリティ
 ```
