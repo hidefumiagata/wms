@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +32,10 @@ public class LocationService {
 
     /** INBOUND/OUTBOUND/RETURN エリアに登録可能なロケーション最大件数 */
     private static final long SINGLE_LOCATION_AREA_LIMIT = 1L;
+
+    /** STOCK エリアのロケーションコード形式: 棟-フロア-エリア-棚-段-並び */
+    private static final Pattern STOCK_LOCATION_CODE_PATTERN =
+            Pattern.compile("^[A-Z]-\\d{2}-[A-Z]-\\d{2}-\\d{2}-\\d{2}$");
 
     public Page<Location> search(Long warehouseId, Long areaId,
                                   String codePrefix, Boolean isActive, Pageable pageable) {
@@ -58,6 +63,13 @@ public class LocationService {
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "AREA_NOT_FOUND", "エリア", location.getAreaId()));
         location.setWarehouseId(area.getWarehouseId());
+
+        // STOCK エリアはロケーションコードの形式を強制
+        if (area.getAreaType().equals("STOCK")
+                && !STOCK_LOCATION_CODE_PATTERN.matcher(location.getLocationCode()).matches()) {
+            throw new BusinessRuleViolationException("INVALID_LOCATION_CODE_FORMAT",
+                    "在庫エリアのロケーションコードは棟-フロア-エリア-棚-段-並び形式である必要があります: " + location.getLocationCode());
+        }
 
         // INBOUND/OUTBOUND/RETURN エリアはロケーション 1 件限定
         if (!area.getAreaType().equals("STOCK")
