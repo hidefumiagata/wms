@@ -54,6 +54,25 @@ const router = createRouter({
           name: 'forbidden',
           component: () => import('@/pages/ForbiddenPage.vue'),
         },
+        // 取引先マスタ — SCR-03: SYSTEM_ADMIN
+        {
+          path: 'master/partners',
+          name: 'partner-list',
+          component: () => import('@/pages/master/PartnerListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
+        {
+          path: 'master/partners/new',
+          name: 'partner-new',
+          component: () => import('@/pages/master/PartnerFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
+        {
+          path: 'master/partners/:id/edit',
+          name: 'partner-edit',
+          component: () => import('@/pages/master/PartnerFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
         // 倉庫マスタ — SCR-04: SYSTEM_ADMIN, WAREHOUSE_MANAGER
         {
           path: 'master/warehouses',
