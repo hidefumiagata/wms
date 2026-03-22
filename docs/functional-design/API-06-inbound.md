@@ -16,6 +16,7 @@ stateDiagram-v2
     PARTIAL_STORED --> CANCELLED : キャンセル（API-INB-007）
     CONFIRMED --> INSPECTING : 検品登録（API-INB-008）初回
     INSPECTING --> INSPECTING : 検品登録（API-INB-008）追加
+    PARTIAL_STORED --> PARTIAL_STORED : 検品登録（API-INB-008）残明細・ステータス変更なし
     INSPECTING --> PARTIAL_STORED : 入庫確定（API-INB-009）一部
     INSPECTING --> STORED : 入庫確定（API-INB-009）全件
     PARTIAL_STORED --> PARTIAL_STORED : 入庫確定（API-INB-009）追加
@@ -696,7 +697,7 @@ flowchart TD
 | **パス** | `/api/v1/inbound/slips/{id}/inspect` |
 | **認証** | 要 |
 | **対象ロール** | SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
-| **概要** | 到着した入荷品を明細単位で検品し、実際の入荷数を記録する。初回呼び出し時にステータスが `INSPECTING` に遷移する。検品数は再保存（上書き）可能。 |
+| **概要** | 到着した入荷品を明細単位で検品し、実際の入荷数を記録する。`CONFIRMED` からの初回呼び出し時にヘッダーステータスが `INSPECTING` に遷移する。`PARTIAL_STORED`（一部入庫済み）状態での呼び出しはヘッダーステータスを変更しない（残明細の追加検品として扱う）。検品数は再保存（上書き）可能。 |
 | **関連画面** | INB-004（入荷検品）の「検品内容を保存する」ボタン |
 
 ---
@@ -743,7 +744,7 @@ flowchart TD
 | `403` | `FORBIDDEN` | ロール不足 |
 | `404` | `INBOUND_SLIP_NOT_FOUND` | 伝票が存在しない |
 | `404` | `INBOUND_LINE_NOT_FOUND` | 指定の明細IDが当該伝票に存在しない |
-| `409` | `INBOUND_INVALID_STATUS` | ステータスが `CONFIRMED` / `INSPECTING` でない |
+| `409` | `INBOUND_INVALID_STATUS` | ステータスが `CONFIRMED` / `INSPECTING` / `PARTIAL_STORED` でない |
 | `422` | `EXPIRY_DATE_EXPIRED` | 賞味期限管理商品で賞味期限が営業日以前 |
 
 ---
@@ -754,19 +755,21 @@ flowchart TD
 flowchart TD
     START([開始]) --> FETCH[入荷伝票取得 WHERE id = ?]
     FETCH -->|存在しない| ERR404[404 INBOUND_SLIP_NOT_FOUND]
-    FETCH -->|存在する| CHECK_STATUS{status IN\nCONFIRMED, INSPECTING?}
+    FETCH -->|存在する| CHECK_STATUS{status IN\nCONFIRMED, INSPECTING,\nPARTIAL_STORED?}
     CHECK_STATUS -->|NO| ERR409[409 INBOUND_INVALID_STATUS]
     CHECK_STATUS -->|YES| VALIDATE[inspectedQty ≥ 0 チェック]
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
     VALIDATE -->|OK| LINE_LOOP[明細ループ]
     LINE_LOOP --> CHECK_LINE{lineId が当該伝票の\n明細IDか?}
     CHECK_LINE -->|NO| ERR_LINE[404 INBOUND_LINE_NOT_FOUND]
-    CHECK_LINE -->|YES| UPD_LINE[inbound_slip_lines UPDATE\ninspected_qty = ?\nline_status → INSPECTED\ninspected_at = now\ninspected_by = ログインユーザー]
+    CHECK_LINE -->|YES| CHECK_STORED{line_status = STORED?}
+    CHECK_STORED -->|YES| ERR_STORED[409 INBOUND_LINE_ALREADY_STORED]
+    CHECK_STORED -->|NO| UPD_LINE[inbound_slip_lines UPDATE\ninspected_qty = ?\nline_status → INSPECTED\ninspected_at = now\ninspected_by = ログインユーザー]
     UPD_LINE --> NEXT{次の明細あり?}
     NEXT -->|YES| LINE_LOOP
     NEXT -->|NO| CHECK_HEADER_STATUS{現在の status = CONFIRMED?}
     CHECK_HEADER_STATUS -->|YES 初回検品| UPD_HEADER_INSPECTING[inbound_slips UPDATE\nstatus → INSPECTING]
-    CHECK_HEADER_STATUS -->|NO 既にINSPECTING| SKIP_HEADER[ヘッダーステータス変更なし]
+    CHECK_HEADER_STATUS -->|NO INSPECTING or\nPARTIAL_STORED| SKIP_HEADER[ヘッダーステータス変更なし\n（PARTIAL_STOREDは維持）]
     UPD_HEADER_INSPECTING --> COMMIT[コミット]
     SKIP_HEADER --> COMMIT
     COMMIT --> RETURN[200 OK + 更新後伝票]
@@ -777,19 +780,21 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | ステータスが `CONFIRMED` または `INSPECTING` の伝票のみ検品登録可能 | `INBOUND_INVALID_STATUS` |
+| 1 | ステータスが `CONFIRMED`・`INSPECTING`・`PARTIAL_STORED` の伝票のみ検品登録可能 | `INBOUND_INVALID_STATUS` |
 | 2 | `inspectedQty = 0` は「全量不着」を意味する合法な値として許容する | — |
-| 3 | 初回の検品登録呼び出しでヘッダーステータスを `CONFIRMED → INSPECTING` に遷移させる | — |
+| 3 | `CONFIRMED` からの初回呼び出しでヘッダーステータスを `CONFIRMED → INSPECTING` に遷移させる | — |
 | 4 | すでに `INSPECTING` の場合、繰り返し呼び出して検品数を上書き更新できる（再検品可） | — |
-| 5 | リクエストに含まれない明細の `inspected_qty` は変更しない（部分更新） | — |
-| 6 | `lineId` は当該伝票（`inbound_slip_id = id`）に属する明細IDでなければならない | `INBOUND_LINE_NOT_FOUND` |
-| 7 | 既に `line_status = STORED` の明細は検品数上書き不可 | `VALIDATION_ERROR` |
+| 5 | `PARTIAL_STORED` の場合、ヘッダーステータスは変更しない。入庫済み明細（`STORED`）は検品対象外とし、残明細（`PENDING` / `INSPECTED`）のみ検品可能 | `INBOUND_LINE_ALREADY_STORED` |
+| 6 | リクエストに含まれない明細の `inspected_qty` は変更しない（部分更新） | — |
+| 7 | `lineId` は当該伝票（`inbound_slip_id = id`）に属する明細IDでなければならない | `INBOUND_LINE_NOT_FOUND` |
+| 8 | 既に `line_status = STORED` の明細は検品数上書き不可 | `INBOUND_LINE_ALREADY_STORED` |
 
 ---
 
 ### 5. 補足事項
 
-- 検品登録後に `line_status` が `STORED` の明細が一部存在する状態（`PARTIAL_STORED`）では、残りの `INSPECTED` 明細に対して検品数の再登録が可能。
+- 検品登録後に `line_status` が `STORED` の明細が一部存在する状態（`PARTIAL_STORED`）では、残りの `PENDING` / `INSPECTED` 明細に対して検品数の登録・再登録が可能。
+- `PARTIAL_STORED` での検品はヘッダーステータスを `PARTIAL_STORED` のまま維持する。`INSPECTING` に戻すことはしない（入庫済み明細が存在するため、INSPECTINGへの巻き戻しは不適切）。
 - 全明細が `INSPECTED` または `STORED` になった後も、`STORED` でない明細の検品数は再登録（上書き）可能とする。
 
 ---
