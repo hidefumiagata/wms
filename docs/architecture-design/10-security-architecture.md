@@ -299,9 +299,62 @@ Warehouse findByCodeNative(@Param("code") String code);
 
 ### 方針
 
-httpOnly Cookie の `SameSite=Lax` 属性による CSRF 対策を採用する。CSRF トークンは使用しない。
+httpOnly Cookie の `SameSite=Lax` 属性 **+ カスタムヘッダー検証（`X-Requested-With`）** による二重CSRF防御を採用する。CSRF トークンは使用しない。
 
 > 方針の詳細は [architecture-blueprint/07-auth-architecture.md](../architecture-blueprint/07-auth-architecture.md) を参照
+
+### 二重防御の構成
+
+| 防御レイヤー | 実装 | 役割 |
+|------------|------|------|
+| **第1層** | `SameSite=Lax` Cookie | クロスサイトからの Cookie 送信をブロック |
+| **第2層** | `CsrfCustomHeaderFilter`（`X-Requested-With` ヘッダー検証） | ブラウザが自動送信できないカスタムヘッダーを要求 |
+
+**設計意図**: SameSite=Lax は Safari などの一部ブラウザで実装差異が生じる可能性がある。カスタムヘッダー検証を追加することで、ブラウザの SameSite サポート状況に依存しない多層防御を実現する。
+
+### CsrfCustomHeaderFilter
+
+状態変更メソッド（POST / PUT / PATCH / DELETE）に対して `X-Requested-With` ヘッダーの存在を要求する。CORS プリフライト仕様により、クロスオリジンからのカスタムヘッダー付きリクエストはブラウザが自動的にブロックするため、正規フロントエンド（Axios）以外からは送信できない。
+
+```java
+/**
+ * CSRF対策としてカスタムヘッダ（X-Requested-With）の存在を検証するフィルタ。
+ * SameSite=Lax Cookieと組み合わせて二重防御を実現する。
+ */
+@Component
+public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
+
+    private static final String CUSTOM_HEADER = "X-Requested-With";
+    private static final Set<String> STATE_CHANGING_METHODS =
+        Set.of("POST", "PUT", "PATCH", "DELETE");
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        if (STATE_CHANGING_METHODS.contains(request.getMethod())) {
+            String headerValue = request.getHeader(CUSTOM_HEADER);
+            if (headerValue == null || headerValue.isBlank()) {
+                log.warn("CSRF protection: missing X-Requested-With header. method={}, uri={}",
+                        request.getMethod(), request.getRequestURI());
+                // 403 + CSRF_HEADER_MISSING エラーコードを返却
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                // ... ErrorResponse を JSON で返却
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}
+```
+
+フロントエンド（Axios）は全リクエストに `X-Requested-With: XMLHttpRequest` を付与する（`api/client.ts` のデフォルト設定）。
+
+**Spring Security FilterChain 内での実行順序**:
+```
+CsrfCustomHeaderFilter → JwtAuthenticationFilter → UsernamePasswordAuthenticationFilter
+```
+`CsrfCustomHeaderFilter` は JWT 検証より前に実行され、ヘッダーなしリクエストを認証前に拒否する。
 
 ### SameSite=Lax の動作
 

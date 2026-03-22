@@ -9980,13 +9980,15 @@ export function useWarehouseForm(mode: 'create' | 'edit') {
 <blockquote>ログ収集フロー・標準フォーマット・PII マスキングは <a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照。</blockquote>
 <h4>サーブレットフィルター実行順序</h4>
 <table>
-<thead><tr><th>順序</th><th>フィルター</th><th>@Order</th><th>役割</th></tr></thead>
+<thead><tr><th>順序</th><th>フィルター</th><th>@Order / 登録方法</th><th>役割</th></tr></thead>
 <tbody>
 <tr><td>1</td><td><code>TraceIdFilter</code></td><td><code>Ordered.HIGHEST_PRECEDENCE</code></td><td>traceId 生成・MDC 設定</td></tr>
 <tr><td>2</td><td><code>RequestLoggingFilter</code></td><td><code>Ordered.HIGHEST_PRECEDENCE + 1</code></td><td>リクエスト計時・アクセスログ</td></tr>
-<tr><td>3</td><td>Spring Security FilterChain</td><td>デフォルト</td><td>認証・認可（JWT検証、userId MDC設定）</td></tr>
+<tr><td>3</td><td>Spring Security FilterChain</td><td>デフォルト</td><td>以下の内部フィルターを含む</td></tr>
+<tr><td>3-1</td><td><code>CsrfCustomHeaderFilter</code></td><td><code>addFilterBefore(UsernamePasswordAuthenticationFilter)</code></td><td><code>X-Requested-With</code> ヘッダー検証（二重CSRF防御）</td></tr>
+<tr><td>3-2</td><td><code>JwtAuthenticationFilter</code></td><td><code>addFilterBefore(UsernamePasswordAuthenticationFilter)</code></td><td>JWT 検証・userId MDC 設定</td></tr>
 <p></tbody><br></table></p>
-<blockquote><strong>設計意図</strong>: TraceIdFilter を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。RequestLoggingFilter はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。</blockquote>
+<blockquote><strong>設計意図</strong>: <code>TraceIdFilter</code> を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。<code>RequestLoggingFilter</code> はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。Spring Security FilterChain 内では <code>CsrfCustomHeaderFilter</code> を JWT 検証より前に配置し、ヘッダーなしリクエストを認証前に拒否する（CSRF 二重防御の詳細は <a href="10-security-architecture.md#3-csrf対策設計" target="_blank">10-security-architecture.md §3</a> を参照）。</blockquote>
 <h3>4.1 バックエンド — 相関ID（TraceId）管理</h3>
 <p>リクエストごとにUUID v4 を生成し、MDC（Mapped Diagnostic Context）に設定する。全ログに自動付与される。</p>
 <pre><code class="lang-java">package com.wms.shared.logging;
@@ -12237,8 +12239,51 @@ Warehouse findByCodeNative(@Param(&quot;code&quot;) String code);
 <hr>
 <h2>3. CSRF対策設計</h2>
 <h3>方針</h3>
-<p>httpOnly Cookie の <code>SameSite=Lax</code> 属性による CSRF 対策を採用する。CSRF トークンは使用しない。</p>
+<p>httpOnly Cookie の <code>SameSite=Lax</code> 属性 <strong>+ カスタムヘッダー検証（<code>X-Requested-With</code>）</strong> による二重CSRF防御を採用する。CSRF トークンは使用しない。</p>
 <blockquote>方針の詳細は <a href="../architecture-blueprint/07-auth-architecture.md" target="_blank">architecture-blueprint/07-auth-architecture.md</a> を参照</blockquote>
+<h3>二重防御の構成</h3>
+<table>
+<thead><tr><th>防御レイヤー</th><th>実装</th><th>役割</th></tr></thead>
+<tbody>
+<tr><td><strong>第1層</strong></td><td><code>SameSite=Lax</code> Cookie</td><td>クロスサイトからの Cookie 送信をブロック</td></tr>
+<tr><td><strong>第2層</strong></td><td><code>CsrfCustomHeaderFilter</code>（<code>X-Requested-With</code> ヘッダー検証）</td><td>ブラウザが自動送信できないカスタムヘッダーを要求</td></tr>
+<p></tbody><br></table></p>
+<p><strong>設計意図</strong>: SameSite=Lax は Safari などの一部ブラウザで実装差異が生じる可能性がある。カスタムヘッダー検証を追加することで、ブラウザの SameSite サポート状況に依存しない多層防御を実現する。</p>
+<h3>CsrfCustomHeaderFilter</h3>
+<p>状態変更メソッド（POST / PUT / PATCH / DELETE）に対して <code>X-Requested-With</code> ヘッダーの存在を要求する。CORS プリフライト仕様により、クロスオリジンからのカスタムヘッダー付きリクエストはブラウザが自動的にブロックするため、正規フロントエンド（Axios）以外からは送信できない。</p>
+<pre><code class="lang-java">/**
+ * CSRF対策としてカスタムヘッダ（X-Requested-With）の存在を検証するフィルタ。
+ * SameSite=Lax Cookieと組み合わせて二重防御を実現する。
+ */
+@Component
+public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
+
+    private static final String CUSTOM_HEADER = &quot;X-Requested-With&quot;;
+    private static final Set&lt;String&gt; STATE_CHANGING_METHODS =
+        Set.of(&quot;POST&quot;, &quot;PUT&quot;, &quot;PATCH&quot;, &quot;DELETE&quot;);
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        if (STATE_CHANGING_METHODS.contains(request.getMethod())) {
+            String headerValue = request.getHeader(CUSTOM_HEADER);
+            if (headerValue == null || headerValue.isBlank()) {
+                log.warn(&quot;CSRF protection: missing X-Requested-With header. method={}, uri={}&quot;,
+                        request.getMethod(), request.getRequestURI());
+                // 403 + CSRF_HEADER_MISSING エラーコードを返却
+                response.setStatus(HttpStatus.FORBIDDEN.value());
+                // ... ErrorResponse を JSON で返却
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
+    }
+}</code></pre>
+<p>フロントエンド（Axios）は全リクエストに <code>X-Requested-With: XMLHttpRequest</code> を付与する（<code>api/client.ts</code> のデフォルト設定）。</p>
+<p><strong>Spring Security FilterChain 内での実行順序</strong>:</p>
+<pre><code class="lang-">CsrfCustomHeaderFilter → JwtAuthenticationFilter → UsernamePasswordAuthenticationFilter</code></pre>
+<code>CsrfCustomHeaderFilter</code> は JWT 検証より前に実行され、ヘッダーなしリクエストを認証前に拒否する。
 <h3>SameSite=Lax の動作</h3>
 <table>
 <thead><tr><th>リクエスト種別</th><th>Cookie送信</th><th>説明</th></tr></thead>
