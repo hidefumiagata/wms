@@ -20,6 +20,7 @@ export interface ParameterRow {
   original: SystemParameterDetail
   editValue: string
   saving: boolean
+  error: string | null
 }
 
 export function useSystemParameters() {
@@ -55,6 +56,7 @@ export function useSystemParameters() {
           original: param,
           editValue: param.paramValue ?? '',
           saving: false,
+          error: null,
         })
       }
 
@@ -103,6 +105,11 @@ export function useSystemParameters() {
     return null
   }
 
+  /** EVT-SYS-002: 値変更時にリアルタイムバリデーション実行 */
+  function handleValueChange(row: ParameterRow) {
+    row.error = validateValue(row)
+  }
+
   async function handleSave(row: ParameterRow) {
     const validationError = validateValue(row)
     if (validationError) {
@@ -144,8 +151,6 @@ export function useSystemParameters() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 400) {
         ElMessage.error(t('system.parameters.validationError'))
-      } else if (error.response.status === 409) {
-        ElMessage.error(t('error.optimisticLock'))
       } else {
         ElMessage.error(t('system.parameters.saveError'))
       }
@@ -173,6 +178,7 @@ export function useSystemParameters() {
     toggleCategory,
     isDirty,
     validateValue,
+    handleValueChange,
     handleSave,
     categoryLabels,
   }

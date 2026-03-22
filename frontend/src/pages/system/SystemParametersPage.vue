@@ -37,21 +37,25 @@
             </template>
           </el-table-column>
 
-          <el-table-column :label="t('system.parameters.currentValue')" width="200">
+          <el-table-column :label="t('system.parameters.currentValue')" width="220">
             <template #default="{ row }">
-              <el-input-number
-                v-if="row.original.valueType === SystemParameterValueType.Integer"
-                v-model="row.editValue"
-                :min="0"
-                :controls="false"
-                style="width: 100%"
-                @change="(val: number | undefined) => { row.editValue = String(val ?? 0) }"
-              />
-              <el-input
-                v-else
-                v-model="row.editValue"
-                maxlength="500"
-              />
+              <div>
+                <el-input-number
+                  v-if="row.original.valueType === SystemParameterValueType.Integer"
+                  v-model="row.editValue"
+                  :min="0"
+                  :controls="false"
+                  style="width: 100%"
+                  @change="(val: number | undefined) => { row.editValue = String(val ?? 0); handleValueChange(row) }"
+                />
+                <el-input
+                  v-else
+                  v-model="row.editValue"
+                  maxlength="500"
+                  @input="handleValueChange(row)"
+                />
+                <div v-if="row.error" class="inline-error">{{ row.error }}</div>
+              </div>
             </template>
           </el-table-column>
 
@@ -111,6 +115,7 @@ const {
   fetchParameters,
   toggleCategory,
   isDirty,
+  handleValueChange,
   handleSave,
   categoryLabels,
 } = useSystemParameters()
@@ -171,5 +176,11 @@ onMounted(() => fetchParameters())
 
 .empty-state {
   padding: 40px 0;
+}
+
+.inline-error {
+  color: var(--el-color-danger);
+  font-size: 12px;
+  margin-top: 2px;
 }
 </style>
