@@ -2,9 +2,11 @@ package com.wms.master.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wms.master.entity.Area;
+import com.wms.master.entity.Building;
 import com.wms.master.entity.Location;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.AreaService;
+import com.wms.master.service.BuildingService;
 import com.wms.master.service.LocationService;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.security.JwtAuthenticationFilter;
@@ -64,6 +66,9 @@ class LocationControllerTest {
     private AreaService areaService;
 
     @MockitoBean
+    private BuildingService buildingService;
+
+    @MockitoBean
     private WarehouseService warehouseService;
 
     @MockitoBean
@@ -118,6 +123,23 @@ class LocationControllerTest {
             }
         }
         return a;
+    }
+
+    private Building createBuilding(Long id, Long warehouseId, String code) {
+        Building b = new Building();
+        b.setWarehouseId(warehouseId);
+        b.setBuildingCode(code);
+        b.setBuildingName("棟" + code);
+        if (id != null) {
+            try {
+                var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");
+                field.setAccessible(true);
+                field.set(b, id);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return b;
     }
 
     private Warehouse createWarehouse(Long id, String code) {
@@ -215,16 +237,10 @@ class LocationControllerTest {
         }
 
         @Test
-        @DisplayName("sizeが100を超える場合は100に丸める")
-        void listLocations_oversizeSize_cappedTo100() throws Exception {
-            Page<Location> page = new PageImpl<>(List.of());
-            when(locationService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(areaService.findByIds(any())).thenReturn(Map.of());
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("size", "200"))
-                    .andExpect(status().isOk());
+        @DisplayName("sizeが100を超える場合は400を返す（Bean Validation @Max(100)）")
+        void listLocations_oversizeSize_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL).param("size", "101"))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
@@ -380,10 +396,12 @@ class LocationControllerTest {
         void getLocation_exists_returns200() throws Exception {
             Location l = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             Area area = createArea(10L, "AREA-01", "STOCK");
+            Building building = createBuilding(1L, 100L, "B01");
             Warehouse warehouse = createWarehouse(100L, "WH-001");
 
             when(locationService.findById(1L)).thenReturn(l);
             when(areaService.findById(10L)).thenReturn(area);
+            when(buildingService.findById(1L)).thenReturn(building);
             when(warehouseService.findById(100L)).thenReturn(warehouse);
 
             mockMvc.perform(get(BASE_URL + "/1"))
@@ -396,10 +414,12 @@ class LocationControllerTest {
         void getLocation_nullTimestamps_returns200() throws Exception {
             Location l = createLocation(null, 10L, 100L, "A-01-A-01-01-01");
             Area area = createArea(10L, "AREA-01", "STOCK");
+            Building building = createBuilding(1L, 100L, "B01");
             Warehouse warehouse = createWarehouse(100L, "WH-001");
 
             when(locationService.findById(1L)).thenReturn(l);
             when(areaService.findById(10L)).thenReturn(area);
+            when(buildingService.findById(1L)).thenReturn(building);
             when(warehouseService.findById(100L)).thenReturn(warehouse);
 
             mockMvc.perform(get(BASE_URL + "/1"))
@@ -412,10 +432,12 @@ class LocationControllerTest {
             Location l = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             // locationName は設定しない（null）
             Area area = createArea(10L, "AREA-01", "STOCK");
+            Building building = createBuilding(1L, 100L, "B01");
             Warehouse warehouse = createWarehouse(100L, "WH-001");
 
             when(locationService.findById(1L)).thenReturn(l);
             when(areaService.findById(10L)).thenReturn(area);
+            when(buildingService.findById(1L)).thenReturn(building);
             when(warehouseService.findById(100L)).thenReturn(warehouse);
 
             mockMvc.perform(get(BASE_URL + "/1"))

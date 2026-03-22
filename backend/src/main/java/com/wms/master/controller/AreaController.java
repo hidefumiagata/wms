@@ -1,5 +1,6 @@
 package com.wms.master.controller;
 
+import com.wms.generated.api.MasterAreaApi;
 import com.wms.generated.model.AreaDetail;
 import com.wms.generated.model.AreaListItem;
 import com.wms.generated.model.AreaPageResponse;
@@ -16,24 +17,12 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.service.AreaService;
 import com.wms.master.service.BuildingService;
 import com.wms.master.service.WarehouseService;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -46,44 +35,34 @@ import java.util.stream.Collectors;
 
 /**
  * エリアマスタ CRUD コントローラー。
- * OpenAPI生成の MasterFacilityApi は全施設を含むため個別コントローラーとして定義する。
- * 全施設の実装完了後に MasterFacilityApi implements へのリファクタリングを検討する。
+ * OpenAPI生成の MasterAreaApi を実装する。
  */
 @RestController
-@RequestMapping("/api/v1/master/areas")
 @RequiredArgsConstructor
-@Validated
-@Slf4j
-public class AreaController {
-
-    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "areaCode", "areaName", "areaType", "storageCondition", "createdAt", "updatedAt");
-    private static final int MAX_PAGE_SIZE = 100;
+public class AreaController implements MasterAreaApi {
 
     private final AreaService areaService;
     private final BuildingService buildingService;
     private final WarehouseService warehouseService;
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping
+    @Override
     public ResponseEntity<AreaPageResponse> listAreas(
-            @RequestParam(required = false) Long warehouseId,
-            @RequestParam(required = false) Long buildingId,
-            @RequestParam(required = false) AreaType areaType,
-            @RequestParam(required = false) StorageCondition storageCondition,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(defaultValue = "0") @Min(0) Integer page,
-            @RequestParam(defaultValue = "20") @Min(1) Integer size,
-            @RequestParam(defaultValue = "areaCode,asc") String sort) {
+            Long warehouseId,
+            Long buildingId,
+            StorageCondition storageCondition,
+            AreaType areaType,
+            Boolean isActive,
+            Integer page,
+            Integer size) {
 
         String areaTypeValue = areaType != null ? areaType.getValue() : null;
         String storageConditionValue = storageCondition != null ? storageCondition.getValue() : null;
 
-        int cappedSize = Math.min(size, MAX_PAGE_SIZE);
-        Sort sortObj = parseSort(sort);
+        Sort sortObj = Sort.by(Sort.Direction.ASC, "areaCode");
         Page<Area> resultPage = areaService.search(
                 warehouseId, buildingId, areaTypeValue, storageConditionValue, isActive,
-                PageRequest.of(page, cappedSize, sortObj));
+                PageRequest.of(page, size, sortObj));
 
         // バッチフェッチで N+1 を回避
         Set<Long> buildingIds = resultPage.getContent().stream()
@@ -106,18 +85,17 @@ public class AreaController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PostMapping
+    @Override
     public ResponseEntity<AreaDetail> createArea(
-            @Valid @RequestBody CreateAreaRequest request) {
+            CreateAreaRequest createAreaRequest) {
         Area area = new Area();
-        area.setBuildingId(request.getBuildingId());
-        area.setAreaCode(request.getAreaCode());
-        area.setAreaName(request.getAreaName());
-        area.setStorageCondition(request.getStorageCondition().getValue());
-        area.setAreaType(request.getAreaType().getValue());
+        area.setBuildingId(createAreaRequest.getBuildingId());
+        area.setAreaCode(createAreaRequest.getAreaCode());
+        area.setAreaName(createAreaRequest.getAreaName());
+        area.setStorageCondition(createAreaRequest.getStorageCondition().getValue());
+        area.setAreaType(createAreaRequest.getAreaType().getValue());
 
         Area created = areaService.create(area);
-        log.info("Area created via API: id={}", created.getId());
 
         Building building = buildingService.findById(created.getBuildingId());
         Warehouse warehouse = warehouseService.findById(created.getWarehouseId());
@@ -126,8 +104,8 @@ public class AreaController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{id}")
-    public ResponseEntity<AreaDetail> getArea(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<AreaDetail> getArea(Long id) {
         Area area = areaService.findById(id);
         Building building = buildingService.findById(area.getBuildingId());
         Warehouse warehouse = warehouseService.findById(area.getWarehouseId());
@@ -135,23 +113,21 @@ public class AreaController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PutMapping("/{id}")
+    @Override
     public ResponseEntity<AreaUpdateResponse> updateArea(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateAreaRequest request) {
+            Long id,
+            UpdateAreaRequest updateAreaRequest) {
         Area updated = areaService.update(
-                id, request.getAreaName(), request.getStorageCondition().getValue(), request.getVersion());
-        log.info("Area updated via API: id={}", id);
+                id, updateAreaRequest.getAreaName(), updateAreaRequest.getStorageCondition().getValue(), updateAreaRequest.getVersion());
         return ResponseEntity.ok(toUpdateResponse(updated));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PatchMapping("/{id}/deactivate")
+    @Override
     public ResponseEntity<AreaToggleResponse> toggleAreaActive(
-            @PathVariable Long id,
-            @Valid @RequestBody ToggleActiveRequest request) {
-        Area updated = areaService.toggleActive(id, request.getIsActive(), request.getVersion());
-        log.info("Area toggled via API: id={}, isActive={}", id, request.getIsActive());
+            Long id,
+            ToggleActiveRequest toggleActiveRequest) {
+        Area updated = areaService.toggleActive(id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
@@ -216,14 +192,5 @@ public class AreaController {
 
     private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
         return odt != null ? odt.toLocalDateTime() : null;
-    }
-
-    private Sort parseSort(String sort) {
-        String[] parts = sort.split(",");
-        String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
-                ? parts[0] : "areaCode";
-        Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-        return Sort.by(direction, property);
     }
 }

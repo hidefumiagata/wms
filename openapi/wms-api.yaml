@@ -20,8 +20,14 @@ tags:
     description: 認証・認可
   - name: system
     description: システム共通
-  - name: master-facility
-    description: 施設マスタ（倉庫・棟・エリア・ロケーション）
+  - name: master-warehouse
+    description: 倉庫マスタ
+  - name: master-building
+    description: 棟マスタ
+  - name: master-area
+    description: エリアマスタ
+  - name: master-location
+    description: ロケーションマスタ
   - name: master-partner
     description: 取引先マスタ
   - name: master-product
@@ -337,7 +343,7 @@ paths:
       operationId: listWarehouses
       summary: 倉庫一覧取得
       description: 倉庫マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
-      tags: [master-facility]
+      tags: [master-warehouse]
       parameters:
         - name: warehouseCode
           in: query
@@ -388,7 +394,7 @@ paths:
       operationId: createWarehouse
       summary: 倉庫登録
       description: 倉庫マスタに新規倉庫を登録する
-      tags: [master-facility]
+      tags: [master-warehouse]
       requestBody:
         required: true
         content:
@@ -430,7 +436,7 @@ paths:
       operationId: getWarehouse
       summary: 倉庫取得
       description: 指定IDの倉庫マスタを1件取得する
-      tags: [master-facility]
+      tags: [master-warehouse]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       responses:
@@ -457,7 +463,7 @@ paths:
       operationId: updateWarehouse
       summary: 倉庫更新
       description: 指定IDの倉庫マスタを更新する。倉庫コードは変更不可
-      tags: [master-facility]
+      tags: [master-warehouse]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -493,7 +499,7 @@ paths:
       operationId: toggleWarehouseActive
       summary: 倉庫無効化／有効化
       description: 指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可
-      tags: [master-facility]
+      tags: [master-warehouse]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -540,7 +546,7 @@ paths:
       operationId: checkWarehouseCodeExists
       summary: 倉庫コード存在確認
       description: 指定された倉庫コードがすでに登録されているか確認する
-      tags: [master-facility]
+      tags: [master-warehouse]
       parameters:
         - name: warehouseCode
           in: query
@@ -569,7 +575,7 @@ paths:
       operationId: listBuildings
       summary: 棟一覧取得
       description: 指定倉庫に属する棟の一覧を取得する
-      tags: [master-facility]
+      tags: [master-building]
       parameters:
         - name: warehouseId
           in: query
@@ -613,7 +619,7 @@ paths:
       operationId: createBuilding
       summary: 棟登録
       description: 棟マスタに新規棟を登録する
-      tags: [master-facility]
+      tags: [master-building]
       requestBody:
         required: true
         content:
@@ -661,7 +667,7 @@ paths:
       operationId: getBuilding
       summary: 棟取得
       description: 指定IDの棟マスタを1件取得する
-      tags: [master-facility]
+      tags: [master-building]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       responses:
@@ -688,7 +694,7 @@ paths:
       operationId: updateBuilding
       summary: 棟更新
       description: 指定IDの棟マスタを更新する。棟コード・倉庫IDは変更不可
-      tags: [master-facility]
+      tags: [master-building]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -724,7 +730,7 @@ paths:
       operationId: toggleBuildingActive
       summary: 棟無効化／有効化
       description: 指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可
-      tags: [master-facility]
+      tags: [master-building]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -773,7 +779,7 @@ paths:
       operationId: listAreas
       summary: エリア一覧取得
       description: エリアマスタの一覧を取得する
-      tags: [master-facility]
+      tags: [master-area]
       parameters:
         - name: warehouseId
           in: query
@@ -821,7 +827,7 @@ paths:
       operationId: createArea
       summary: エリア登録
       description: エリアマスタに新規エリアを登録する
-      tags: [master-facility]
+      tags: [master-area]
       requestBody:
         required: true
         content:
@@ -869,7 +875,7 @@ paths:
       operationId: getArea
       summary: エリア取得
       description: 指定IDのエリアマスタを1件取得する
-      tags: [master-facility]
+      tags: [master-area]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       responses:
@@ -896,7 +902,7 @@ paths:
       operationId: updateArea
       summary: エリア更新
       description: 指定IDのエリアマスタを更新する。エリアコード・棟ID・エリア種別は変更不可
-      tags: [master-facility]
+      tags: [master-area]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -932,7 +938,7 @@ paths:
       operationId: toggleAreaActive
       summary: エリア無効化／有効化
       description: 指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可
-      tags: [master-facility]
+      tags: [master-area]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -981,7 +987,7 @@ paths:
       operationId: listLocations
       summary: ロケーション一覧取得
       description: ロケーションマスタの一覧を取得する
-      tags: [master-facility]
+      tags: [master-location]
       parameters:
         - name: warehouseId
           in: query
@@ -1031,7 +1037,7 @@ paths:
       operationId: createLocation
       summary: ロケーション登録
       description: ロケーションマスタに新規ロケーションを登録する。エリア種別に応じた制約チェックを行う
-      tags: [master-facility]
+      tags: [master-location]
       requestBody:
         required: true
         content:
@@ -1090,7 +1096,7 @@ paths:
       operationId: countLocations
       summary: ロケーション件数取得
       description: 棚卸開始プレビュー用のロケーション件数を取得する
-      tags: [master-facility]
+      tags: [master-location]
       parameters:
         - name: warehouseId
           in: query
@@ -1130,7 +1136,7 @@ paths:
       operationId: getLocation
       summary: ロケーション取得
       description: 指定IDのロケーションマスタを1件取得する
-      tags: [master-facility]
+      tags: [master-location]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       responses:
@@ -1157,7 +1163,7 @@ paths:
       operationId: updateLocation
       summary: ロケーション更新
       description: 指定IDのロケーションマスタを更新する。ロケーションコード・エリアIDは変更不可
-      tags: [master-facility]
+      tags: [master-location]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:
@@ -1193,7 +1199,7 @@ paths:
       operationId: toggleLocationActive
       summary: ロケーション無効化／有効化
       description: 指定IDのロケーションの有効/無効を切り替える。在庫が存在する・棚卸中のロケーションは無効化不可
-      tags: [master-facility]
+      tags: [master-location]
       parameters:
         - $ref: '#/components/parameters/ResourceId'
       requestBody:

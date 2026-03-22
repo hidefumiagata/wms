@@ -219,6 +219,7 @@ class BuildingControllerAuthTest {
         when(warehouseService.findByIds(any())).thenReturn(Map.of());
 
         mockMvc.perform(get(BASE_URL)
+                        .param("warehouseId", "1")
                         .header("X-Requested-With", "XMLHttpRequest"))
                 .andExpect(status().isOk());
     }
@@ -244,7 +245,7 @@ class BuildingControllerAuthTest {
      * CSRF無効・認証必須・メソッドセキュリティ有効の最小構成。
      */
     @TestConfiguration
-    @EnableMethodSecurity
+    @EnableMethodSecurity(proxyTargetClass = true)
     static class TestSecurityConfig {
 
         @Bean

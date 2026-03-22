@@ -232,16 +232,10 @@ class AreaControllerTest {
         }
 
         @Test
-        @DisplayName("sizeが100を超える場合は100に丸める")
-        void listAreas_oversizeSize_cappedTo100() throws Exception {
-            Page<Area> page = new PageImpl<>(List.of());
-            when(areaService.search(isNull(), isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(buildingService.findByIds(any())).thenReturn(Map.of());
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("size", "200"))
-                    .andExpect(status().isOk());
+        @DisplayName("sizeが100を超える場合は400を返す（Bean Validation @Max(100)）")
+        void listAreas_oversizeSize_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL).param("size", "101"))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test

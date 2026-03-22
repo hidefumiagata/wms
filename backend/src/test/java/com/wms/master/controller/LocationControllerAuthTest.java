@@ -2,9 +2,11 @@ package com.wms.master.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wms.master.entity.Area;
+import com.wms.master.entity.Building;
 import com.wms.master.entity.Location;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.AreaService;
+import com.wms.master.service.BuildingService;
 import com.wms.master.service.LocationService;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.security.JwtAuthenticationFilter;
@@ -63,6 +65,9 @@ class LocationControllerAuthTest {
 
     @MockitoBean
     private AreaService areaService;
+
+    @MockitoBean
+    private BuildingService buildingService;
 
     @MockitoBean
     private WarehouseService warehouseService;
@@ -246,6 +251,7 @@ class LocationControllerAuthTest {
         Warehouse warehouse = createWarehouse(100L, "WH-001");
         when(locationService.findById(1L)).thenReturn(l);
         when(areaService.findById(10L)).thenReturn(area);
+        when(buildingService.findById(anyLong())).thenReturn(createBuilding(1L, 100L, "B01"));
         when(warehouseService.findById(100L)).thenReturn(warehouse);
 
         mockMvc.perform(get(BASE_URL + "/1")
@@ -271,7 +277,7 @@ class LocationControllerAuthTest {
      * CSRF無効・認証必須・メソッドセキュリティ有効の最小構成。
      */
     @TestConfiguration
-    @EnableMethodSecurity
+    @EnableMethodSecurity(proxyTargetClass = true)
     static class TestSecurityConfig {
 
         @Bean
@@ -346,6 +352,23 @@ class LocationControllerAuthTest {
             }
         }
         return a;
+    }
+
+    private static Building createBuilding(Long id, Long warehouseId, String code) {
+        Building b = new Building();
+        b.setWarehouseId(warehouseId);
+        b.setBuildingCode(code);
+        b.setBuildingName("棟" + code);
+        if (id != null) {
+            try {
+                var field = com.wms.shared.entity.BaseEntity.class.getDeclaredField("id");
+                field.setAccessible(true);
+                field.set(b, id);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return b;
     }
 
     private static Warehouse createWarehouse(Long id, String code) {

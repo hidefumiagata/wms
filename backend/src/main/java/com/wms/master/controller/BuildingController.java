@@ -1,5 +1,6 @@
 package com.wms.master.controller;
 
+import com.wms.generated.api.MasterBuildingApi;
 import com.wms.generated.model.BuildingDetail;
 import com.wms.generated.model.BuildingListItem;
 import com.wms.generated.model.BuildingPageResponse;
@@ -11,24 +12,12 @@ import com.wms.master.entity.Building;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.BuildingService;
 import com.wms.master.service.WarehouseService;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -41,39 +30,28 @@ import java.util.stream.Collectors;
 
 /**
  * 棟マスタ CRUD コントローラー。
- * OpenAPI生成の MasterFacilityApi は全施設を含むため個別コントローラーとして定義する。
- * 全施設の実装完了後に MasterFacilityApi implements へのリファクタリングを検討する。
+ * OpenAPI生成の MasterBuildingApi を実装する。
  */
 @RestController
-@RequestMapping("/api/v1/master/buildings")
 @RequiredArgsConstructor
-@Validated
-@Slf4j
-public class BuildingController {
-
-    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "buildingCode", "buildingName", "createdAt", "updatedAt");
-    private static final int MAX_PAGE_SIZE = 100;
+public class BuildingController implements MasterBuildingApi {
 
     private final BuildingService buildingService;
     private final WarehouseService warehouseService;
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping
+    @Override
     public ResponseEntity<BuildingPageResponse> listBuildings(
-            @RequestParam(required = false) Long warehouseId,
-            @RequestParam(required = false) String buildingCode,
-            @RequestParam(required = false) String buildingName,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(defaultValue = "0") @Min(0) Integer page,
-            @RequestParam(defaultValue = "20") @Min(1) Integer size,
-            @RequestParam(defaultValue = "buildingCode,asc") String sort) {
+            Long warehouseId,
+            String buildingCode,
+            Boolean isActive,
+            Integer page,
+            Integer size) {
 
-        int cappedSize = Math.min(size, MAX_PAGE_SIZE);
-        Sort sortObj = parseSort(sort);
+        Sort sortObj = Sort.by(Sort.Direction.ASC, "buildingCode");
         Page<Building> resultPage = buildingService.search(
-                warehouseId, buildingCode, buildingName, isActive,
-                PageRequest.of(page, cappedSize, sortObj));
+                warehouseId, buildingCode, null, isActive,
+                PageRequest.of(page, size, sortObj));
 
         // バッチフェッチで N+1 を回避
         Set<Long> warehouseIds = resultPage.getContent().stream()
@@ -93,48 +71,45 @@ public class BuildingController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PostMapping
+    @Override
     public ResponseEntity<BuildingDetail> createBuilding(
-            @Valid @RequestBody CreateBuildingRequest request) {
+            CreateBuildingRequest createBuildingRequest) {
         // 倉庫の存在確認
-        Warehouse warehouse = warehouseService.findById(request.getWarehouseId());
+        Warehouse warehouse = warehouseService.findById(createBuildingRequest.getWarehouseId());
         Building building = new Building();
-        building.setWarehouseId(request.getWarehouseId());
-        building.setBuildingCode(request.getBuildingCode());
-        building.setBuildingName(request.getBuildingName());
+        building.setWarehouseId(createBuildingRequest.getWarehouseId());
+        building.setBuildingCode(createBuildingRequest.getBuildingCode());
+        building.setBuildingName(createBuildingRequest.getBuildingName());
 
         Building created = buildingService.create(building);
-        log.info("Building created via API: id={}", created.getId());
         URI location = URI.create("/api/v1/master/buildings/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created, warehouse));
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{id}")
-    public ResponseEntity<BuildingDetail> getBuilding(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<BuildingDetail> getBuilding(Long id) {
         Building building = buildingService.findById(id);
         Warehouse warehouse = warehouseService.findById(building.getWarehouseId());
         return ResponseEntity.ok(toDetail(building, warehouse));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PutMapping("/{id}")
+    @Override
     public ResponseEntity<BuildingDetail> updateBuilding(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateBuildingRequest request) {
-        Building updated = buildingService.update(id, request.getBuildingName(), request.getVersion());
+            Long id,
+            UpdateBuildingRequest updateBuildingRequest) {
+        Building updated = buildingService.update(id, updateBuildingRequest.getBuildingName(), updateBuildingRequest.getVersion());
         Warehouse warehouse = warehouseService.findById(updated.getWarehouseId());
-        log.info("Building updated via API: id={}", id);
         return ResponseEntity.ok(toDetail(updated, warehouse));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PatchMapping("/{id}/deactivate")
+    @Override
     public ResponseEntity<BuildingToggleResponse> toggleBuildingActive(
-            @PathVariable Long id,
-            @Valid @RequestBody ToggleActiveRequest request) {
-        Building updated = buildingService.toggleActive(id, request.getIsActive(), request.getVersion());
-        log.info("Building toggled via API: id={}, isActive={}", id, request.getIsActive());
+            Long id,
+            ToggleActiveRequest toggleActiveRequest) {
+        Building updated = buildingService.toggleActive(id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
@@ -178,14 +153,5 @@ public class BuildingController {
 
     private LocalDateTime toLocalDateTime(OffsetDateTime odt) {
         return odt != null ? odt.toLocalDateTime() : null;
-    }
-
-    private Sort parseSort(String sort) {
-        String[] parts = sort.split(",");
-        String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
-                ? parts[0] : "buildingCode";
-        Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-        return Sort.by(direction, property);
     }
 }

@@ -1,146 +1,130 @@
 package com.wms.master.controller;
 
+import com.wms.generated.api.MasterWarehouseApi;
 import com.wms.generated.model.CreateWarehouseRequest;
 import com.wms.generated.model.ExistsResponse;
+import com.wms.generated.model.ListWarehouses200Response;
 import com.wms.generated.model.ToggleActiveRequest;
 import com.wms.generated.model.UpdateWarehouseRequest;
 import com.wms.generated.model.WarehouseDetail;
 import com.wms.generated.model.WarehouseListItem;
 import com.wms.generated.model.WarehousePageResponse;
-import com.wms.generated.model.WarehouseSimple;
 import com.wms.generated.model.WarehouseToggleResponse;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 
 /**
  * 倉庫マスタ CRUD コントローラー。
- * OpenAPI生成の MasterFacilityApi は全施設(倉庫・棟・エリア・ロケーション)を含むため、
- * 施設種別ごとに段階的に実装する設計とし、個別コントローラーとして定義する。
- * 全施設の実装完了後に MasterFacilityApi implements へのリファクタリングを検討する。
+ * OpenAPI生成の MasterWarehouseApi を実装する。
  */
 @RestController
-@RequestMapping("/api/v1/master/warehouses")
 @RequiredArgsConstructor
-@Validated
-@Slf4j
-public class WarehouseController {
+public class WarehouseController implements MasterWarehouseApi {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "warehouseCode", "warehouseName", "createdAt", "updatedAt");
-    private static final int MAX_PAGE_SIZE = 100;
-
     private final WarehouseService warehouseService;
 
     /**
-     * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト、
+     * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト（WarehousePageResponseでラップ）、
      * それ以外はページング形式で返却する。
      */
     @PreAuthorize("isAuthenticated()")
-    @GetMapping
-    public ResponseEntity<?> listWarehouses(
-            @RequestParam(required = false) String warehouseCode,
-            @RequestParam(required = false) String warehouseName,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) Boolean all,
-            @RequestParam(defaultValue = "0") @Min(0) Integer page,
-            @RequestParam(defaultValue = "20") @Min(1) Integer size,
-            @RequestParam(defaultValue = "warehouseCode,asc") String sort) {
+    @Override
+    public ResponseEntity<ListWarehouses200Response> listWarehouses(
+            String warehouseCode,
+            String warehouseName,
+            Boolean isActive,
+            Boolean all,
+            Integer page,
+            Integer size,
+            String sort) {
 
         if (Boolean.TRUE.equals(all)) {
-            List<WarehouseSimple> simpleList = warehouseService.findAllSimple(isActive).stream()
-                    .map(this::toSimple)
+            List<Warehouse> allWarehouses = warehouseService.findAllSimple(isActive);
+            List<WarehouseListItem> items = allWarehouses.stream()
+                    .map(this::toListItem)
                     .toList();
-            return ResponseEntity.ok(simpleList);
+            WarehousePageResponse response = new WarehousePageResponse()
+                    .content(items)
+                    .page(0)
+                    .size(items.size())
+                    .totalElements((long) items.size())
+                    .totalPages(1);
+            return ResponseEntity.ok(response);
         }
 
-        int cappedSize = Math.min(size, MAX_PAGE_SIZE);
         Sort sortObj = parseSort(sort);
         Page<Warehouse> resultPage = warehouseService.search(
                 warehouseCode, warehouseName, isActive,
-                PageRequest.of(page, cappedSize, sortObj));
+                PageRequest.of(page, size, sortObj));
         return ResponseEntity.ok(toPageResponse(resultPage));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PostMapping
+    @Override
     public ResponseEntity<WarehouseDetail> createWarehouse(
-            @Valid @RequestBody CreateWarehouseRequest request) {
+            CreateWarehouseRequest createWarehouseRequest) {
         Warehouse warehouse = new Warehouse();
-        warehouse.setWarehouseCode(request.getWarehouseCode());
-        warehouse.setWarehouseName(request.getWarehouseName());
-        warehouse.setWarehouseNameKana(request.getWarehouseNameKana());
-        warehouse.setAddress(request.getAddress());
+        warehouse.setWarehouseCode(createWarehouseRequest.getWarehouseCode());
+        warehouse.setWarehouseName(createWarehouseRequest.getWarehouseName());
+        warehouse.setWarehouseNameKana(createWarehouseRequest.getWarehouseNameKana());
+        warehouse.setAddress(createWarehouseRequest.getAddress());
 
         Warehouse created = warehouseService.create(warehouse);
-        log.info("Warehouse created: code={}", created.getWarehouseCode());
         URI location = URI.create("/api/v1/master/warehouses/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{id}")
-    public ResponseEntity<WarehouseDetail> getWarehouse(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<WarehouseDetail> getWarehouse(Long id) {
         Warehouse warehouse = warehouseService.findById(id);
         return ResponseEntity.ok(toDetail(warehouse));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PutMapping("/{id}")
+    @Override
     public ResponseEntity<WarehouseDetail> updateWarehouse(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateWarehouseRequest request) {
+            Long id,
+            UpdateWarehouseRequest updateWarehouseRequest) {
         Warehouse updated = warehouseService.update(
                 id,
-                request.getWarehouseName(),
-                request.getWarehouseNameKana(),
-                request.getAddress(),
-                request.getVersion());
-        log.info("Warehouse updated: id={}, name={}", id, request.getWarehouseName());
+                updateWarehouseRequest.getWarehouseName(),
+                updateWarehouseRequest.getWarehouseNameKana(),
+                updateWarehouseRequest.getAddress(),
+                updateWarehouseRequest.getVersion());
         return ResponseEntity.ok(toDetail(updated));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PatchMapping("/{id}/deactivate")
+    @Override
     public ResponseEntity<WarehouseToggleResponse> toggleWarehouseActive(
-            @PathVariable Long id,
-            @Valid @RequestBody ToggleActiveRequest request) {
+            Long id,
+            ToggleActiveRequest toggleActiveRequest) {
         Warehouse updated = warehouseService.toggleActive(
-                id, request.getIsActive(), request.getVersion());
-        log.info("Warehouse toggled: id={}, isActive={}", id, request.getIsActive());
+                id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
     // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/exists")
+    @Override
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
-            @RequestParam String warehouseCode) {
+            String warehouseCode) {
         boolean exists = warehouseService.existsByCode(warehouseCode);
         return ResponseEntity.ok(new ExistsResponse().exists(exists));
     }
@@ -158,14 +142,6 @@ public class WarehouseController {
                 .version(w.getVersion())
                 .createdAt(toLocalDateTime(w.getCreatedAt()))
                 .updatedAt(toLocalDateTime(w.getUpdatedAt()));
-    }
-
-    private WarehouseSimple toSimple(Warehouse w) {
-        return new WarehouseSimple()
-                .id(w.getId())
-                .warehouseCode(w.getWarehouseCode())
-                .warehouseName(w.getWarehouseName())
-                .isActive(w.getIsActive());
     }
 
     private WarehouseToggleResponse toToggleResponse(Warehouse w) {
