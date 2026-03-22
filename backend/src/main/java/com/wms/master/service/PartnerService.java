@@ -29,8 +29,15 @@ public class PartnerService {
         return partnerRepository.search(partnerCode, partnerName, partnerType, isActive, pageable);
     }
 
+    private static final int FIND_ALL_SIMPLE_LIMIT = 1000;
+
     public List<Partner> findAllSimple(Boolean isActive) {
-        return partnerRepository.findAllSimple(isActive);
+        List<Partner> all = partnerRepository.findAllSimple(isActive);
+        if (all.size() > FIND_ALL_SIMPLE_LIMIT) {
+            log.warn("findAllSimple: 取引先件数が上限を超過しています (count={}, limit={})", all.size(), FIND_ALL_SIMPLE_LIMIT);
+            return all.subList(0, FIND_ALL_SIMPLE_LIMIT);
+        }
+        return all;
     }
 
     public Partner findById(Long id) {

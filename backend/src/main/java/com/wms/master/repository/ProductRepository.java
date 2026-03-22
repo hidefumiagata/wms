@@ -32,7 +32,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("shipmentStopFlag") Boolean shipmentStopFlag,
             Pageable pageable);
 
-    // TODO: #73 パターン — 件数増大時の上限設定を検討
     @Query("SELECT p FROM Product p WHERE (:isActive IS NULL OR p.isActive = :isActive) ORDER BY p.productCode ASC")
     List<Product> findAllSimple(@Param("isActive") Boolean isActive);
 }

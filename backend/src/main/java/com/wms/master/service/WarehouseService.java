@@ -32,8 +32,15 @@ public class WarehouseService {
         return warehouseRepository.search(warehouseCode, warehouseName, isActive, pageable);
     }
 
+    private static final int FIND_ALL_SIMPLE_LIMIT = 1000;
+
     public List<Warehouse> findAllSimple(Boolean isActive) {
-        return warehouseRepository.findAllSimple(isActive);
+        List<Warehouse> all = warehouseRepository.findAllSimple(isActive);
+        if (all.size() > FIND_ALL_SIMPLE_LIMIT) {
+            log.warn("findAllSimple: 倉庫件数が上限を超過しています (count={}, limit={})", all.size(), FIND_ALL_SIMPLE_LIMIT);
+            return all.subList(0, FIND_ALL_SIMPLE_LIMIT);
+        }
+        return all;
     }
 
     public Warehouse findById(Long id) {
