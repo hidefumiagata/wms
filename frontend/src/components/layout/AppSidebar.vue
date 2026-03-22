@@ -44,13 +44,25 @@
         <span>{{ t('nav.location') }}</span>
       </el-menu-item>
     </el-sub-menu>
+
+    <!-- システム管理 -->
+    <el-sub-menu index="system">
+      <template #title>
+        <el-icon><Setting /></el-icon>
+        <span>{{ t('nav.system') }}</span>
+      </template>
+      <el-menu-item index="/system/parameters">
+        <el-icon><Operation /></el-icon>
+        <span>{{ t('nav.systemParameters') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
   </el-menu>
 </template>
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, Setting, Operation } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
