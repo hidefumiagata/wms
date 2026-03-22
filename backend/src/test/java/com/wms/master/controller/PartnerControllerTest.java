@@ -90,15 +90,25 @@ class PartnerControllerTest {
         }
 
         @Test
-        @DisplayName("all=trueでページングなし全件リストを返す")
-        void list_all_returnsAllPartners() throws Exception {
+        @DisplayName("all=trueでPII除外の軽量レスポンスを返す")
+        void list_all_returnsSimpleWithoutPii() throws Exception {
             Partner p = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            p.setEmail("secret@example.com");
+            p.setPhone("03-1234-5678");
+            p.setAddress("東京都千代田区");
+            p.setContactPerson("担当太郎");
             when(partnerService.findAllSimple(true)).thenReturn(List.of(p));
 
             mockMvc.perform(get(BASE_URL).param("all", "true").param("isActive", "true"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content", hasSize(1)))
                     .andExpect(jsonPath("$.content[0].partnerCode").value("SUP-001"))
+                    .andExpect(jsonPath("$.content[0].partnerType").value("SUPPLIER"))
+                    .andExpect(jsonPath("$.content[0].isActive").value(true))
+                    .andExpect(jsonPath("$.content[0].email").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].phone").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].address").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].contactPerson").doesNotExist())
                     .andExpect(jsonPath("$.totalElements").value(1));
         }
 

@@ -6146,7 +6146,7 @@ components:
 
     PartnerSimple:
       type: object
-      required: [id, partnerCode, partnerName]
+      required: [id, partnerCode, partnerName, partnerType, isActive]
       properties:
         id:
           type: integer
@@ -6155,6 +6155,10 @@ components:
           type: string
         partnerName:
           type: string
+        partnerType:
+          $ref: '#/components/schemas/PartnerType'
+        isActive:
+          type: boolean
 
     PartnerPageResponse:
       type: object
