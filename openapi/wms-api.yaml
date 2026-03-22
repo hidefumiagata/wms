@@ -4818,6 +4818,8 @@ paths:
                   value:
                     errorCode: PARAM_NOT_FOUND
                     message: 指定されたパラメータキーが見つかりません
+        '409':
+          $ref: '#/components/responses/OptimisticLockConflict'
 
   # ============================================================
   # ALLOCATION - 在庫引当
@@ -8857,6 +8859,7 @@ components:
         - OUTBOUND
         - INBOUND
         - SYSTEM
+        - SECURITY
       description: パラメータカテゴリ
 
     SystemParameterValueType:
@@ -8896,15 +8899,22 @@ components:
           type: integer
           format: int64
           description: 最終更新者ID
+        version:
+          type: integer
+          description: 楽観ロック用バージョン
 
     UpdateSystemParameterRequest:
       type: object
       required:
         - paramValue
+        - version
       properties:
         paramValue:
           type: string
           description: 更新後の値（文字列で送信）
+        version:
+          type: integer
+          description: 楽観ロック用バージョン
 
     # ----------------------------------------------------------
     # Allocation - 在庫引当

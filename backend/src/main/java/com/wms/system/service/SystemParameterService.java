@@ -1,18 +1,28 @@
 package com.wms.system.service;
 
+import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.repository.SystemParameterRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class SystemParameterService {
 
     private final SystemParameterRepository systemParameterRepository;
+
+    public List<SystemParameter> findAll() {
+        return systemParameterRepository.findAll();
+    }
 
     public SystemParameter findByKey(String paramKey) {
         return systemParameterRepository.findByParamKey(paramKey)
@@ -23,5 +33,39 @@ public class SystemParameterService {
 
     public int getIntValue(String paramKey) {
         return findByKey(paramKey).getIntValue();
+    }
+
+    @Transactional
+    public SystemParameter updateValue(String paramKey, String paramValue, Integer version) {
+        SystemParameter param = findByKey(paramKey);
+        if (!param.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+        }
+        validateParamValue(param, paramValue);
+        param.setParamValue(paramValue);
+        param.setVersion(version);
+        try {
+            SystemParameter saved = systemParameterRepository.save(param);
+            log.info("SystemParameter updated: key={}", paramKey);
+            return saved;
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+        }
+    }
+
+    private void validateParamValue(SystemParameter param, String newValue) {
+        if ("INTEGER".equals(param.getValueType())) {
+            try {
+                Integer.parseInt(newValue);
+            } catch (NumberFormatException e) {
+                throw new com.wms.shared.exception.BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "INTEGER型パラメータに不正な値: " + newValue);
+            }
+        }
     }
 }
