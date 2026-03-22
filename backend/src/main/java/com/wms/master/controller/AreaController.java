@@ -43,8 +43,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AreaController implements MasterAreaApi {
 
-    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "areaCode", "areaName", "areaType", "storageCondition", "createdAt", "updatedAt");
     private final AreaService areaService;
     private final BuildingService buildingService;
     private final WarehouseService warehouseService;

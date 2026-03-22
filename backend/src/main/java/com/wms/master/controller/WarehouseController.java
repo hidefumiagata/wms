@@ -9,7 +9,6 @@ import com.wms.generated.model.UpdateWarehouseRequest;
 import com.wms.generated.model.WarehouseDetail;
 import com.wms.generated.model.WarehouseListItem;
 import com.wms.generated.model.WarehousePageResponse;
-import com.wms.generated.model.WarehouseSimple;
 import com.wms.generated.model.WarehouseToggleResponse;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
@@ -148,14 +147,6 @@ public class WarehouseController implements MasterWarehouseApi {
                 .version(w.getVersion())
                 .createdAt(toLocalDateTime(w.getCreatedAt()))
                 .updatedAt(toLocalDateTime(w.getUpdatedAt()));
-    }
-
-    private WarehouseSimple toSimple(Warehouse w) {
-        return new WarehouseSimple()
-                .id(w.getId())
-                .warehouseCode(w.getWarehouseCode())
-                .warehouseName(w.getWarehouseName())
-                .isActive(w.getIsActive());
     }
 
     private WarehouseToggleResponse toToggleResponse(Warehouse w) {

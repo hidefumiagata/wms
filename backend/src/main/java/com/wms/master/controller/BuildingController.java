@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BuildingController implements MasterBuildingApi {
 
-    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "buildingCode", "buildingName", "createdAt", "updatedAt");
     private final BuildingService buildingService;
     private final WarehouseService warehouseService;
 
