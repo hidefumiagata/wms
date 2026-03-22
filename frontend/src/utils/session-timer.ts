@@ -5,6 +5,7 @@
  * - 55分無操作で警告ダイアログ表示
  * - 60分無操作で強制ログアウト
  * - Axiosレスポンス成功時・DOM操作時にタイマーリセット
+ * - BroadcastChannel によるマルチタブ間ログアウト同期
  */
 import { ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
@@ -22,16 +23,40 @@ let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 let warningShown = false
 let isLoggingOut = false
 
+// --- マルチタブ同期 ---
+// BroadcastChannel: 同一オリジンの複数タブ間でメッセージを送受信する Web API。
+// 1タブでログアウトが発生した際、他タブにも即座に伝播させる。
+// 非対応ブラウザ（IE等）では機能をスキップし、単タブ動作にフォールバックする。
+const bc: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+
+if (bc) {
+  bc.onmessage = (event: MessageEvent<{ type: string }>) => {
+    if (event.data?.type === 'logout') {
+      // 他タブからのログアウト通知を受信 → このタブもログアウト
+      // broadcast: false で再ブロードキャストを防ぎ無限ループを回避
+      doLogout({ broadcast: false })
+    }
+  }
+}
+
+// --- タイマー管理 ---
 function clearTimers() {
   if (warningTimer !== null) { clearTimeout(warningTimer); warningTimer = null }
   if (timeoutTimer !== null) { clearTimeout(timeoutTimer); timeoutTimer = null }
 }
 
-async function doLogout() {
+async function doLogout(options?: { broadcast?: boolean }) {
   if (isLoggingOut) return
   isLoggingOut = true
   clearTimers()
   ElMessageBox.close()
+
+  // 他タブにログアウトを通知（受信側は再ブロードキャストしない）
+  if (options?.broadcast !== false && bc) {
+    bc.postMessage({ type: 'logout' })
+  }
+
   try {
     await useAuthStore().logout()
   } catch {

@@ -1171,6 +1171,51 @@ apiClient.interceptors.response.use((response) => {
 })
 ```
 
+### 7.4 マルチタブ間ログアウト同期
+
+複数タブでアプリを開いている場合、1タブでログアウトが発生した際に他タブも即座にログアウトする。`BroadcastChannel` API を使用してタブ間でログアウトイベントを伝播させる。
+
+#### 設計方針
+
+- **`BroadcastChannel('wms_session')`** をモジュールロード時に初期化（`session-timer.ts` 内）
+- セッションタイムアウト・手動ログアウトの両方で `{ type: 'logout' }` メッセージを送信
+- 受信側は `broadcast: false` で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）
+- `BroadcastChannel` 非対応ブラウザ（IE等）は `typeof BroadcastChannel !== 'undefined'` で検出し、単タブ動作にフォールバック
+
+```typescript
+// BroadcastChannel 初期化（モジュールレベル）
+const bc: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+
+// 他タブからの受信
+if (bc) {
+  bc.onmessage = (event) => {
+    if (event.data?.type === 'logout') {
+      doLogout({ broadcast: false })  // 再ブロードキャストしない
+    }
+  }
+}
+
+// ログアウト時に送信
+async function doLogout(options?: { broadcast?: boolean }) {
+  if (isLoggingOut) return
+  isLoggingOut = true
+  if (options?.broadcast !== false && bc) {
+    bc.postMessage({ type: 'logout' })
+  }
+  // ... ログアウト処理
+}
+```
+
+#### 同期対象
+
+| イベント | 同期 | 備考 |
+|---------|------|------|
+| セッションタイムアウト（60分） | ✅ | `doLogout()` 経由で送信 |
+| 警告ダイアログでログアウト選択 | ✅ | `doLogout()` 経由で送信 |
+| 手動ログアウト（ヘッダーボタン） | ✅ | `doLogout()` 経由で送信 |
+| セッション延長（リフレッシュ） | ❌ | 各タブが独立したタイマーで動作（許容） |
+
 ---
 
 ## 8. 共通コンポーネント設計
