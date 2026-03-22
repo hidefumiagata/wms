@@ -26,8 +26,12 @@ export function usePartnerList() {
   })
 
   // --- 並行リクエスト制御 ---
+  // 新しいリクエストが来たら前のリクエストをキャンセルし、
+  // 古いレスポンスで画面が上書きされる Race Condition を防ぐ
   let abortController: AbortController | null = null
 
+  // コンポーネントのアンマウント時に進行中のリクエストをキャンセルし、
+  // アンマウント後のステート更新（メモリリーク）を防ぐ
   onUnmounted(() => {
     abortController?.abort()
   })
@@ -142,6 +146,7 @@ export function usePartnerList() {
       } else if (error.response.status === 409) {
         ElMessage.error(t('error.optimisticLock'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }

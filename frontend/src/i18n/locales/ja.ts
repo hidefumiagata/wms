@@ -100,6 +100,8 @@ export default {
       list: '取引先一覧',
       create: '取引先登録',
       edit: '取引先編集',
+      sectionBasicInfo: '基本情報',
+      sectionContactInfo: '連絡先情報',
       partnerCode: '取引先コード',
       partnerName: '取引先名',
       partnerNameKana: '取引先名カナ',

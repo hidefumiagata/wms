@@ -8,7 +8,9 @@ import { z } from 'zod'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { PartnerDetail } from '@/api/generated/models/partner-detail'
-import type { PartnerType } from '@/api/generated/models/partner-type'
+import { PartnerType } from '@/api/generated/models/partner-type'
+import type { CreatePartnerRequest } from '@/api/generated/models/create-partner-request'
+import type { UpdatePartnerRequest } from '@/api/generated/models/update-partner-request'
 
 // 全角カタカナ（長音・スペース含む）
 const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
@@ -44,7 +46,7 @@ export function usePartnerForm() {
       .min(1, t('master.partner.validation.kanaRequired'))
       .max(200, t('master.partner.validation.kanaMaxLength'))
       .regex(KATAKANA_REGEX, t('master.partner.validation.kanaFormat')),
-    partnerType: z.enum(['SUPPLIER', 'CUSTOMER', 'BOTH'] as const),
+    partnerType: z.enum([PartnerType.Supplier, PartnerType.Customer, PartnerType.Both]),
     address: z
       .string()
       .max(200, t('master.partner.validation.addressMaxLength'))
@@ -82,7 +84,7 @@ export function usePartnerForm() {
       partnerCode: '',
       partnerName: '',
       partnerNameKana: '',
-      partnerType: 'SUPPLIER' as PartnerType,
+      partnerType: PartnerType.Supplier as PartnerType,
       address: '',
       phone: '',
       contactPerson: '',
@@ -160,28 +162,30 @@ export function usePartnerForm() {
     loading.value = true
     try {
       if (isEdit.value) {
-        await apiClient.put(`/master/partners/${partnerId.value}`, {
+        const body: UpdatePartnerRequest = {
           partnerName: values.partnerName,
           partnerNameKana: values.partnerNameKana,
-          partnerType: values.partnerType,
+          partnerType: values.partnerType as PartnerType,
           address: values.address || undefined,
           phone: values.phone || undefined,
           contactPerson: values.contactPerson || undefined,
           email: values.email || undefined,
           version: version.value,
-        })
+        }
+        await apiClient.put(`/master/partners/${partnerId.value}`, body)
         ElMessage.success(t('master.partner.updateSuccess'))
       } else {
-        await apiClient.post('/master/partners', {
+        const body: CreatePartnerRequest = {
           partnerCode: values.partnerCode,
           partnerName: values.partnerName,
           partnerNameKana: values.partnerNameKana,
-          partnerType: values.partnerType,
+          partnerType: values.partnerType as PartnerType,
           address: values.address || undefined,
           phone: values.phone || undefined,
           contactPerson: values.contactPerson || undefined,
           email: values.email || undefined,
-        })
+        }
+        await apiClient.post('/master/partners', body)
         ElMessage.success(t('master.partner.createSuccess'))
       }
       router.push({ name: 'partner-list' })

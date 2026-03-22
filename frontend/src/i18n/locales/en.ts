@@ -100,6 +100,8 @@ export default {
       list: 'Partner List',
       create: 'New Partner',
       edit: 'Edit Partner',
+      sectionBasicInfo: 'Basic Information',
+      sectionContactInfo: 'Contact Information',
       partnerCode: 'Partner Code',
       partnerName: 'Partner Name',
       partnerNameKana: 'Partner Name (Kana)',

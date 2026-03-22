@@ -18,7 +18,7 @@
         @submit.prevent="handleSubmit"
       >
         <!-- 基本情報 -->
-        <el-divider content-position="left">{{ t('master.partner.partnerCode') }}</el-divider>
+        <el-divider content-position="left">{{ t('master.partner.sectionBasicInfo') }}</el-divider>
 
         <!-- 取引先コード -->
         <el-form-item
@@ -78,7 +78,7 @@
         </el-form-item>
 
         <!-- 連絡先情報 -->
-        <el-divider content-position="left">{{ t('master.partner.contactPerson') }}</el-divider>
+        <el-divider content-position="left">{{ t('master.partner.sectionContactInfo') }}</el-divider>
 
         <!-- 住所 -->
         <el-form-item

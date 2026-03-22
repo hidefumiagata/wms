@@ -158,6 +158,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Refresh, Plus, Edit } from '@element-plus/icons-vue'
 import { usePartnerList } from '@/composables/master/usePartnerList'
+import { PartnerType } from '@/api/generated/models/partner-type'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -179,9 +180,9 @@ const {
 
 function partnerTypeLabel(type: string): string {
   switch (type) {
-    case 'SUPPLIER': return t('master.partner.typeSupplier')
-    case 'CUSTOMER': return t('master.partner.typeCustomer')
-    case 'BOTH': return t('master.partner.typeBoth')
+    case PartnerType.Supplier: return t('master.partner.typeSupplier')
+    case PartnerType.Customer: return t('master.partner.typeCustomer')
+    case PartnerType.Both: return t('master.partner.typeBoth')
     default: return type
   }
 }
