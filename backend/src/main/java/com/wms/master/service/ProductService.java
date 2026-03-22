@@ -31,8 +31,15 @@ public class ProductService {
                 isActive, shipmentStopFlag, pageable);
     }
 
+    private static final int FIND_ALL_SIMPLE_LIMIT = 1000;
+
     public List<Product> findAllSimple(Boolean isActive) {
-        return productRepository.findAllSimple(isActive);
+        List<Product> all = productRepository.findAllSimple(isActive);
+        if (all.size() > FIND_ALL_SIMPLE_LIMIT) {
+            log.warn("findAllSimple: 商品件数が上限を超過しています (count={}, limit={})", all.size(), FIND_ALL_SIMPLE_LIMIT);
+            return all.subList(0, FIND_ALL_SIMPLE_LIMIT);
+        }
+        return all;
     }
 
     public Product findById(Long id) {

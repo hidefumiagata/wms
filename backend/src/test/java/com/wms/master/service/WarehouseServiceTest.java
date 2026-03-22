@@ -72,6 +72,19 @@ class WarehouseServiceTest {
 
             assertThat(result).hasSize(1);
         }
+
+        @Test
+        @DisplayName("上限(1000件)を超える場合は1000件に切り詰められる")
+        void findAllSimple_exceedsLimit_truncatedTo1000() {
+            List<Warehouse> largeList = java.util.stream.IntStream.rangeClosed(1, 1001)
+                    .mapToObj(i -> createWarehouse((long) i, "W-" + i, "倉庫" + i))
+                    .toList();
+            when(warehouseRepository.findAllSimple(null)).thenReturn(largeList);
+
+            List<Warehouse> result = warehouseService.findAllSimple(null);
+
+            assertThat(result).hasSize(1000);
+        }
     }
 
     @Nested

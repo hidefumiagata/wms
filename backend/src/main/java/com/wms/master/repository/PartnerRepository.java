@@ -37,7 +37,6 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
             @Param("isActive") Boolean isActive,
             Pageable pageable);
 
-    // TODO: #73 件数増大時の上限設定を検討（例: 1000件超で警告ログ）
     @Query("SELECT p FROM Partner p WHERE (:isActive IS NULL OR p.isActive = :isActive) ORDER BY p.partnerCode ASC")
     List<Partner> findAllSimple(@Param("isActive") Boolean isActive);
 }

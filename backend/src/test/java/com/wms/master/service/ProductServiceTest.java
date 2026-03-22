@@ -100,6 +100,19 @@ class ProductServiceTest {
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getProductCode()).isEqualTo("P-001");
         }
+
+        @Test
+        @DisplayName("上限(1000件)を超える場合は1000件に切り詰められる")
+        void findAllSimple_exceedsLimit_truncatedTo1000() {
+            List<Product> largeList = java.util.stream.IntStream.rangeClosed(1, 1001)
+                    .mapToObj(i -> createProduct((long) i, "P-" + i, "商品" + i, "AMBIENT"))
+                    .toList();
+            when(productRepository.findAllSimple(null)).thenReturn(largeList);
+
+            List<Product> result = productService.findAllSimple(null);
+
+            assertThat(result).hasSize(1000);
+        }
     }
 
     @Nested

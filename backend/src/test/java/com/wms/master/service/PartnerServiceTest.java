@@ -85,6 +85,19 @@ class PartnerServiceTest {
             assertThat(result).hasSize(1);
             assertThat(result.get(0).getPartnerCode()).isEqualTo("SUP-001");
         }
+
+        @Test
+        @DisplayName("上限(1000件)を超える場合は1000件に切り詰められる")
+        void findAllSimple_exceedsLimit_truncatedTo1000() {
+            List<Partner> largeList = java.util.stream.IntStream.rangeClosed(1, 1001)
+                    .mapToObj(i -> createPartner((long) i, "P-" + i, "取引先" + i, "SUPPLIER"))
+                    .toList();
+            when(partnerRepository.findAllSimple(null)).thenReturn(largeList);
+
+            List<Partner> result = partnerService.findAllSimple(null);
+
+            assertThat(result).hasSize(1000);
+        }
     }
 
     @Nested
