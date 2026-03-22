@@ -196,6 +196,7 @@ export default {
       cannotDeactivateHasInventory: 'Cannot deactivate because inventory exists.',
       confirmDeactivate: 'Deactivate this product? Deactivated products cannot be selected for new inbound/outbound/stocktake registrations.',
       confirmActivate: 'Activate this product?',
+      confirmCancel: 'Your changes will be lost. Are you sure you want to cancel?',
       cannotChangeLotFlag: 'Cannot change lot management flag because inventory exists.',
       cannotChangeExpiryFlag: 'Cannot change expiry management flag because inventory exists.',
       inventoryExistsTooltip: 'Cannot change because inventory exists',

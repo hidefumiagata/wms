@@ -196,6 +196,7 @@ export default {
       cannotDeactivateHasInventory: '在庫が存在するため無効化できません。',
       confirmDeactivate: 'この商品を無効化します。無効化すると入荷・出荷・棚卸の新規登録で選択できなくなります。よろしいですか？',
       confirmActivate: 'この商品を有効化します。よろしいですか？',
+      confirmCancel: '入力内容が失われます。キャンセルしてよろしいですか？',
       cannotChangeLotFlag: '在庫が存在するため、ロット管理フラグは変更できません。',
       cannotChangeExpiryFlag: '在庫が存在するため、賞味/使用期限管理フラグは変更できません。',
       inventoryExistsTooltip: '在庫が存在するため変更できません',

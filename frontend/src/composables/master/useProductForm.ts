@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
@@ -151,8 +151,8 @@ export function useProductForm() {
         productNameKana: res.data.productNameKana ?? '',
         barcode: res.data.barcode ?? '',
         storageCondition: res.data.storageCondition,
-        caseQuantity: res.data.caseQuantity || undefined,
-        ballQuantity: res.data.ballQuantity || undefined,
+        caseQuantity: res.data.caseQuantity > 0 ? res.data.caseQuantity : undefined,
+        ballQuantity: res.data.ballQuantity > 0 ? res.data.ballQuantity : undefined,
         isHazardous: res.data.isHazardous,
         lotManageFlag: res.data.lotManageFlag,
         expiryManageFlag: res.data.expiryManageFlag,
@@ -181,8 +181,8 @@ export function useProductForm() {
         const body: UpdateProductRequest = {
           productName: values.productName,
           productNameKana: values.productNameKana || undefined,
-          caseQuantity: values.caseQuantity || 0,
-          ballQuantity: values.ballQuantity || 0,
+          caseQuantity: values.caseQuantity ?? 0,
+          ballQuantity: values.ballQuantity ?? 0,
           barcode: values.barcode || undefined,
           storageCondition: values.storageCondition as StorageCondition,
           isHazardous: values.isHazardous,
@@ -199,8 +199,8 @@ export function useProductForm() {
           productCode: values.productCode,
           productName: values.productName,
           productNameKana: values.productNameKana || undefined,
-          caseQuantity: values.caseQuantity || 0,
-          ballQuantity: values.ballQuantity || 0,
+          caseQuantity: values.caseQuantity ?? 0,
+          ballQuantity: values.ballQuantity ?? 0,
           barcode: values.barcode || undefined,
           storageCondition: values.storageCondition as StorageCondition,
           isHazardous: values.isHazardous,
@@ -237,7 +237,20 @@ export function useProductForm() {
     }
   })
 
-  function handleCancel() {
+  async function handleCancel() {
+    try {
+      await ElMessageBox.confirm(
+        t('master.product.confirmCancel'),
+        t('common.confirm'),
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        }
+      )
+    } catch {
+      return // ダイアログキャンセル
+    }
     router.push({ name: 'product-list' })
   }
 

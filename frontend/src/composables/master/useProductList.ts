@@ -137,7 +137,10 @@ export function useProductList() {
       if (!error.response) {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 422) {
-        ElMessage.error(t('master.product.cannotDeactivateHasInventory'))
+        const errorCode = error.response.data?.errorCode
+        if (errorCode === 'CANNOT_DEACTIVATE_HAS_INVENTORY') {
+          ElMessage.error(t('master.product.cannotDeactivateHasInventory'))
+        }
       } else if (error.response.status === 409) {
         ElMessage.error(t('error.optimisticLock'))
       }
