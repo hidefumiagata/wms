@@ -20,7 +20,10 @@ CREATE TABLE inbound_slip_lines (
     stored_by               BIGINT          REFERENCES users(id),
     created_at              TIMESTAMPTZ     NOT NULL DEFAULT now(),
     updated_at              TIMESTAMPTZ     NOT NULL DEFAULT now(),
+    version                 INT             NOT NULL DEFAULT 0,
 
     CONSTRAINT uq_inbound_slip_lines_slip_line UNIQUE (inbound_slip_id, line_no),
-    CONSTRAINT chk_inbound_slip_lines_unit_type CHECK (unit_type IN ('CASE', 'BALL', 'PIECE'))
+    CONSTRAINT chk_inbound_slip_lines_unit_type CHECK (unit_type IN ('CASE', 'BALL', 'PIECE')),
+    CONSTRAINT chk_inbound_slip_lines_line_status CHECK (line_status IN ('PENDING', 'INSPECTED', 'STORED')),
+    CONSTRAINT chk_inbound_slip_lines_planned_qty CHECK (planned_qty > 0)
 );

@@ -6,8 +6,6 @@ import com.wms.inbound.service.InboundSlipService;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
-import com.wms.system.entity.User;
-import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,13 +22,12 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,9 +41,6 @@ class InboundSlipControllerTest {
 
     @MockitoBean
     private InboundSlipService inboundSlipService;
-
-    @MockitoBean
-    private UserRepository userRepository;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -101,12 +96,11 @@ class InboundSlipControllerTest {
         @DisplayName("入荷予定一覧をページング形式で返す")
         void list_returns200() throws Exception {
             InboundSlip slip = createSlip(1L, "INB-20260320-0001", "PLANNED");
-            InboundSlipLine line = createLine(1L, slip, 1, "PRD-0001", 100);
-            slip.getLines().add(line);
 
             when(inboundSlipService.search(
                     eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(slip)));
+            when(inboundSlipService.countLinesBySlipId(1L)).thenReturn(3L);
 
             mockMvc.perform(get(SLIPS_URL).param("warehouseId", "1"))
                     .andExpect(status().isOk())
@@ -114,7 +108,7 @@ class InboundSlipControllerTest {
                     .andExpect(jsonPath("$.content[0].slipNumber").value("INB-20260320-0001"))
                     .andExpect(jsonPath("$.content[0].slipType").value("NORMAL"))
                     .andExpect(jsonPath("$.content[0].status").value("PLANNED"))
-                    .andExpect(jsonPath("$.content[0].lineCount").value(1))
+                    .andExpect(jsonPath("$.content[0].lineCount").value(3))
                     .andExpect(jsonPath("$.content[0].warehouseCode").value("WH-001"))
                     .andExpect(jsonPath("$.content[0].partnerCode").value("SUP-0001"))
                     .andExpect(jsonPath("$.content[0].partnerName").value("ABC商事"))
@@ -214,11 +208,8 @@ class InboundSlipControllerTest {
             line.setLineStatus("INSPECTED");
             slip.getLines().add(line);
 
-            when(inboundSlipService.findById(1L)).thenReturn(slip);
-
-            User user = new User();
-            user.setFullName("山田 太郎");
-            when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
 
             mockMvc.perform(get(SLIPS_URL + "/1"))
                     .andExpect(status().isOk())
@@ -249,8 +240,8 @@ class InboundSlipControllerTest {
             InboundSlipLine line = createLine(1L, slip, 1, "PRD-0001", 100);
             slip.getLines().add(line);
 
-            when(inboundSlipService.findById(1L)).thenReturn(slip);
-            when(userRepository.findById(10L)).thenReturn(Optional.empty());
+            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn(null);
 
             mockMvc.perform(get(SLIPS_URL + "/1"))
                     .andExpect(status().isOk())
@@ -261,7 +252,7 @@ class InboundSlipControllerTest {
         @Test
         @DisplayName("存在しないIDで404を返す")
         void getDetail_notFound_returns404() throws Exception {
-            when(inboundSlipService.findById(999L))
+            when(inboundSlipService.findByIdWithLines(999L))
                     .thenThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
                             "入荷伝票が見つかりません (id=999)"));
 
@@ -292,8 +283,8 @@ class InboundSlipControllerTest {
             setField(slip, "updatedAt", OffsetDateTime.now());
             setField(slip, "updatedBy", 10L);
 
-            when(inboundSlipService.findById(2L)).thenReturn(slip);
-            when(userRepository.findById(10L)).thenReturn(Optional.empty());
+            when(inboundSlipService.findByIdWithLines(2L)).thenReturn(slip);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn(null);
 
             mockMvc.perform(get(SLIPS_URL + "/2"))
                     .andExpect(status().isOk())
@@ -301,6 +292,67 @@ class InboundSlipControllerTest {
                     .andExpect(jsonPath("$.transferSlipNumber").value("OUT-20260320-0001"))
                     .andExpect(jsonPath("$.partnerId").doesNotExist())
                     .andExpect(jsonPath("$.partnerCode").doesNotExist());
+        }
+    }
+
+    @Nested
+    @DisplayName("未実装スタブエンドポイント")
+    class StubTests {
+
+        @Test
+        @DisplayName("POST /slips (create) は500を返す")
+        void create_returns500() throws Exception {
+            mockMvc.perform(post(SLIPS_URL)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"warehouseId\":1,\"plannedDate\":\"2026-03-20\",\"slipType\":\"NORMAL\",\"partnerId\":1,\"lines\":[{\"productId\":1,\"unitType\":\"CASE\",\"plannedQty\":10}]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("DELETE /slips/{id} は500を返す")
+        void delete_returns500() throws Exception {
+            mockMvc.perform(delete(SLIPS_URL + "/1"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /slips/{id}/confirm は500を返す")
+        void confirm_returns500() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/confirm"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /slips/{id}/cancel は500を返す")
+        void cancel_returns500() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/cancel"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /slips/{id}/inspect は500を返す")
+        void inspect_returns500() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"inspectedQty\":10}]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /slips/{id}/store は500を返す")
+        void store_returns500() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/store")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":1}]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("GET /results は500を返す")
+        void results_returns500() throws Exception {
+            mockMvc.perform(get("/api/v1/inbound/results")
+                            .param("warehouseId", "1"))
+                    .andExpect(status().isInternalServerError());
         }
     }
 

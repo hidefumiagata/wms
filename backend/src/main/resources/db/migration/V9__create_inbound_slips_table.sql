@@ -19,8 +19,11 @@ CREATE TABLE inbound_slips (
     created_by      BIGINT          NOT NULL REFERENCES users(id),
     updated_at      TIMESTAMPTZ     NOT NULL DEFAULT now(),
     updated_by      BIGINT          NOT NULL REFERENCES users(id),
+    version         INT             NOT NULL DEFAULT 0,
 
-    CONSTRAINT uq_inbound_slips_slip_number UNIQUE (slip_number)
+    CONSTRAINT uq_inbound_slips_slip_number UNIQUE (slip_number),
+    CONSTRAINT chk_inbound_slips_slip_type CHECK (slip_type IN ('NORMAL', 'WAREHOUSE_TRANSFER')),
+    CONSTRAINT chk_inbound_slips_status CHECK (status IN ('PLANNED', 'CONFIRMED', 'INSPECTING', 'PARTIAL_STORED', 'STORED', 'CANCELLED'))
 );
 
 CREATE INDEX idx_inbound_slips_wh_planned ON inbound_slips (warehouse_id, planned_date);

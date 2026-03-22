@@ -17,7 +17,6 @@ import java.time.OffsetDateTime;
 @Table(name = "inbound_slip_lines")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,6 +26,7 @@ public class InboundSlipLine {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inbound_slip_id", nullable = false)
     private InboundSlip inboundSlip;
@@ -49,6 +49,7 @@ public class InboundSlipLine {
     @Column(name = "planned_qty", nullable = false)
     private Integer plannedQty;
 
+    @Setter
     @Column(name = "inspected_qty")
     private Integer inspectedQty;
 
@@ -58,24 +59,31 @@ public class InboundSlipLine {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
+    @Setter
     @Column(name = "putaway_location_id")
     private Long putawayLocationId;
 
+    @Setter
     @Column(name = "putaway_location_code", length = 50)
     private String putawayLocationCode;
 
+    @Setter
     @Column(name = "line_status", nullable = false, length = 20)
     private String lineStatus;
 
+    @Setter
     @Column(name = "inspected_at")
     private OffsetDateTime inspectedAt;
 
+    @Setter
     @Column(name = "inspected_by")
     private Long inspectedBy;
 
+    @Setter
     @Column(name = "stored_at")
     private OffsetDateTime storedAt;
 
+    @Setter
     @Column(name = "stored_by")
     private Long storedBy;
 
@@ -86,4 +94,8 @@ public class InboundSlipLine {
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
 }

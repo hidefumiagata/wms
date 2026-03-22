@@ -5,8 +5,8 @@ import com.wms.generated.model.*;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;
-import com.wms.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,13 +20,13 @@ import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class InboundSlipController implements InboundApi {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "plannedDate", "slipNumber", "status", "createdAt");
 
     private final InboundSlipService inboundSlipService;
-    private final UserRepository userRepository;
 
     @PreAuthorize("isAuthenticated()")
     @Override
@@ -51,7 +51,7 @@ public class InboundSlipController implements InboundApi {
     @PreAuthorize("isAuthenticated()")
     @Override
     public ResponseEntity<InboundSlipDetail> getInboundSlip(Long id) {
-        InboundSlip slip = inboundSlipService.findById(id);
+        InboundSlip slip = inboundSlipService.findByIdWithLines(id);
         return ResponseEntity.ok(toDetail(slip));
     }
 
@@ -120,6 +120,7 @@ public class InboundSlipController implements InboundApi {
     }
 
     private InboundSlipSummary toSummary(InboundSlip s) {
+        long lineCount = inboundSlipService.countLinesBySlipId(s.getId());
         return new InboundSlipSummary()
                 .id(s.getId())
                 .slipNumber(s.getSlipNumber())
@@ -129,14 +130,12 @@ public class InboundSlipController implements InboundApi {
                 .partnerName(s.getPartnerName())
                 .plannedDate(s.getPlannedDate())
                 .status(InboundSlipStatus.fromValue(s.getStatus()))
-                .lineCount(s.getLines().size())
+                .lineCount((int) lineCount)
                 .createdAt(s.getCreatedAt());
     }
 
-    InboundSlipDetail toDetail(InboundSlip s) {
-        String createdByName = userRepository.findById(s.getCreatedBy())
-                .map(u -> u.getFullName())
-                .orElse(null);
+    private InboundSlipDetail toDetail(InboundSlip s) {
+        String createdByName = inboundSlipService.resolveUserName(s.getCreatedBy());
 
         List<InboundSlipLineDetail> lineDetails = s.getLines().stream()
                 .map(this::toLineDetail)
@@ -193,6 +192,9 @@ public class InboundSlipController implements InboundApi {
     }
 
     private Sort parseSort(String sort, String defaultProperty) {
+        if (sort == null || sort.isBlank()) {
+            return Sort.by(Sort.Direction.ASC, defaultProperty);
+        }
         String[] parts = sort.split(",");
         String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
                 ? parts[0] : defaultProperty;

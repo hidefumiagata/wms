@@ -4,7 +4,6 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.service.InboundSlipService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
-import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,9 +48,6 @@ class InboundSlipControllerAuthTest {
 
     @MockitoBean
     private InboundSlipService inboundSlipService;
-
-    @MockitoBean
-    private UserRepository userRepository;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -211,8 +206,8 @@ class InboundSlipControllerAuthTest {
     @DisplayName("VIEWERがGET詳細すると200（isAuthenticated）")
     void getSlip_viewer_returns200() throws Exception {
         InboundSlip slip = createSlip(1L);
-        when(inboundSlipService.findById(1L)).thenReturn(slip);
-        when(userRepository.findById(any())).thenReturn(Optional.empty());
+        when(inboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+        when(inboundSlipService.resolveUserName(any())).thenReturn(null);
 
         mockMvc.perform(get(SLIPS_URL + "/1")
                         .header("X-Requested-With", "XMLHttpRequest"))

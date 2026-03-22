@@ -21,7 +21,6 @@ import java.util.List;
 @Table(name = "inbound_slips")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -61,15 +60,18 @@ public class InboundSlip {
     @Column(name = "planned_date", nullable = false)
     private LocalDate plannedDate;
 
+    @Setter
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
+    @Setter
     @Column(name = "cancelled_at")
     private OffsetDateTime cancelledAt;
 
+    @Setter
     @Column(name = "cancelled_by")
     private Long cancelledBy;
 
@@ -88,6 +90,10 @@ public class InboundSlip {
     @LastModifiedBy
     @Column(name = "updated_by", nullable = false)
     private Long updatedBy;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Integer version = 0;
 
     @OneToMany(mappedBy = "inboundSlip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("lineNo ASC")

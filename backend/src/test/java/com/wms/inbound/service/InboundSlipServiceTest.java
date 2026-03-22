@@ -1,10 +1,13 @@
 package com.wms.inbound.service;
 
 import com.wms.inbound.entity.InboundSlip;
+import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.exception.ResourceNotFoundException;
+import com.wms.system.entity.User;
+import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,7 +39,13 @@ class InboundSlipServiceTest {
     private InboundSlipRepository inboundSlipRepository;
 
     @Mock
+    private InboundSlipLineRepository inboundSlipLineRepository;
+
+    @Mock
     private WarehouseService warehouseService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private InboundSlipService inboundSlipService;
@@ -48,8 +57,7 @@ class InboundSlipServiceTest {
         @Test
         @DisplayName("倉庫存在チェック後に検索結果を返す")
         void search_returnsPage() {
-            Warehouse wh = new Warehouse();
-            when(warehouseService.findById(1L)).thenReturn(wh);
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
 
             InboundSlip slip = InboundSlip.builder()
                     .slipNumber("INB-20260320-0001")
@@ -77,7 +85,8 @@ class InboundSlipServiceTest {
             assertThatThrownBy(() -> inboundSlipService.search(
                     999L, null, null, null, null, null, PageRequest.of(0, 20)))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("倉庫");
+                    .hasMessageContaining("倉庫")
+                    .extracting("errorCode").isEqualTo("WAREHOUSE_NOT_FOUND");
         }
 
         @Test
@@ -126,7 +135,7 @@ class InboundSlipServiceTest {
         }
 
         @Test
-        @DisplayName("伝票番号フィルタ付きで検索できる")
+        @DisplayName("伝票番号フィルタ付きで検索できる（LikeEscapeUtil適用）")
         void search_withSlipNumber() {
             when(warehouseService.findById(1L)).thenReturn(new Warehouse());
             when(inboundSlipRepository.search(
@@ -159,13 +168,85 @@ class InboundSlipServiceTest {
         }
 
         @Test
-        @DisplayName("存在しないIDでResourceNotFoundExceptionをスローする")
+        @DisplayName("存在しないIDでINBOUND_SLIP_NOT_FOUNDをスローする")
         void findById_notExists_throws() {
             when(inboundSlipRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inboundSlipService.findById(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("入荷伝票");
+                    .hasMessageContaining("入荷伝票")
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+    }
+
+    @Nested
+    @DisplayName("findByIdWithLines")
+    class FindByIdWithLinesTests {
+
+        @Test
+        @DisplayName("存在するIDで伝票+明細を返す")
+        void findByIdWithLines_exists() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260320-0001")
+                    .status("PLANNED")
+                    .build();
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InboundSlip result = inboundSlipService.findByIdWithLines(1L);
+
+            assertThat(result.getSlipNumber()).isEqualTo("INB-20260320-0001");
+        }
+
+        @Test
+        @DisplayName("存在しないIDでINBOUND_SLIP_NOT_FOUNDをスローする")
+        void findByIdWithLines_notExists_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inboundSlipService.findByIdWithLines(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+    }
+
+    @Nested
+    @DisplayName("countLinesBySlipId")
+    class CountLinesTests {
+
+        @Test
+        @DisplayName("明細件数を返す")
+        void countLines_returnsCount() {
+            when(inboundSlipLineRepository.countByInboundSlipId(1L)).thenReturn(3L);
+
+            assertThat(inboundSlipService.countLinesBySlipId(1L)).isEqualTo(3L);
+        }
+    }
+
+    @Nested
+    @DisplayName("resolveUserName")
+    class ResolveUserNameTests {
+
+        @Test
+        @DisplayName("存在するユーザーIDでフルネームを返す")
+        void resolveUserName_exists() {
+            User user = new User();
+            user.setFullName("山田 太郎");
+            when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+
+            assertThat(inboundSlipService.resolveUserName(10L)).isEqualTo("山田 太郎");
+        }
+
+        @Test
+        @DisplayName("存在しないユーザーIDでnullを返す")
+        void resolveUserName_notExists() {
+            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThat(inboundSlipService.resolveUserName(999L)).isNull();
+        }
+
+        @Test
+        @DisplayName("nullのユーザーIDでnullを返す")
+        void resolveUserName_null() {
+            assertThat(inboundSlipService.resolveUserName(null)).isNull();
         }
     }
 }
