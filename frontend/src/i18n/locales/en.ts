@@ -149,5 +149,6 @@ export default {
     conflict: 'Data already exists',
     optimisticLock: 'Data was updated by another user. Please reload.',
     forbidden: 'You do not have permission to perform this action',
+    forbiddenDescription: 'You do not have permission to access this page. Please contact your system administrator if you need access.',
   },
 }

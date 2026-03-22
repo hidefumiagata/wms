@@ -1,5 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import type { UserRole } from '@/stores/auth'
+
+// ルートメタの型定義
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    // roles が指定されている場合、ユーザーのロールが含まれていなければ forbidden へリダイレクト
+    // 未指定の場合はロールチェックをスキップ（認証のみで到達可能）
+    roles?: UserRole[]
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +46,13 @@ const router = createRouter({
           component: () => import('@/pages/auth/PasswordResetConfirmPage.vue'),
           meta: { requiresAuth: false },
         },
+        // 403 Forbidden（認証済みでも権限なし）
+        {
+          path: 'forbidden',
+          name: 'forbidden',
+          component: () => import('@/pages/ForbiddenPage.vue'),
+          meta: { requiresAuth: true },
+        },
       ],
     },
     // メインレイアウト（認証済みページ）
@@ -47,21 +65,24 @@ const router = createRouter({
           path: '',
           redirect: '/master/warehouses',
         },
-        // 倉庫マスタ
+        // 倉庫マスタ — SCR-04: SYSTEM_ADMIN, WAREHOUSE_MANAGER
         {
           path: 'master/warehouses',
           name: 'warehouse-list',
           component: () => import('@/pages/master/WarehouseListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
         {
           path: 'master/warehouses/new',
           name: 'warehouse-new',
           component: () => import('@/pages/master/WarehouseFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
         {
           path: 'master/warehouses/:id',
           name: 'warehouse-edit',
           component: () => import('@/pages/master/WarehouseFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
       ],
     },
@@ -96,6 +117,15 @@ router.beforeEach(async (to) => {
   // パスワード変更要求フラグ：change-password 以外へのアクセスはブロック
   if (auth.user?.passwordChangeRequired && to.name !== 'change-password') {
     return { name: 'change-password' }
+  }
+
+  // ロールベースアクセス制御：meta.roles が指定されている場合のみチェック
+  const requiredRoles = to.meta.roles
+  if (requiredRoles && requiredRoles.length > 0) {
+    const userRole = auth.user?.role
+    if (!userRole || !requiredRoles.includes(userRole)) {
+      return { name: 'forbidden' }
+    }
   }
 
   return true
