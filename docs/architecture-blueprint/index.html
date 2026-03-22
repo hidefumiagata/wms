@@ -822,7 +822,7 @@ Optional&lt;Stock&gt; findByLocationIdAndProductIdForUpdate(
 <tr><td><strong>方式</strong></td><td>JWT（JSON Web Token）+ httpOnly Cookie</td></tr>
 <tr><td><strong>実装</strong></td><td>Spring Security + jjwt</td></tr>
 <tr><td><strong>トークン保存</strong></td><td>httpOnly Cookie（XSS対策）</td></tr>
-<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax（httpOnly Cookie の SameSite 属性による CSRF 対策。CSRFトークンは不要。Lax はトップレベルナビゲーション（リンク遷移）ではCookieを送信するため、ブックマークやメール内リンクからのアクセスで再ログインを強制されない）</td></tr>
+<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax + <code>X-Requested-With</code> カスタムヘッダー検証（二重防御）。SameSite=Lax でクロスサイトからの Cookie 送信をブロックし、<code>CsrfCustomHeaderFilter</code> でカスタムヘッダーの存在を検証。CSRFトークンは不要。詳細は <a href="../architecture-design/10-security-architecture.md#3-csrf対策設計" target="_blank">architecture-design/10-security-architecture.md §3</a> を参照</td></tr>
 <tr><td><strong>トークン有効期限</strong></td><td>アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから24時間で失効）</td></tr>
 <p></tbody><br></table></p>
 <h2>認証フロー</h2>
