@@ -364,7 +364,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     public PageResponse<WarehouseResponse> getWarehouses(
             WarehouseSearchCriteria criteria,
             @PageableDefault(size = 20, sort = "warehouseCode") Pageable pageable) {
@@ -382,7 +382,7 @@ public class WarehouseController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     public WarehouseResponse getWarehouse(@PathVariable Long id) {
         Warehouse warehouse = warehouseService.findById(id);
         return WarehouseResponse.from(warehouse);

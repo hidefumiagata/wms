@@ -165,6 +165,16 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがPUTすると403を返す")
+    void update_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(put(BASE_URL + "/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_UPDATE_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがPATCHすると403を返す")
     void toggle_warehouseStaff_returns403() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
@@ -232,8 +242,44 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
-    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す（isAuthenticated）")
-    void list_warehouseStaff_returns200() throws Exception {
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると403を返す")
+    void list_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET一覧すると403を返す")
+    void list_viewer_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET詳細すると403を返す")
+    void get_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET詳細すると403を返す")
+    void get_viewer_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがGET一覧すると200を返す")
+    void list_warehouseManager_returns200() throws Exception {
         when(warehouseService.search(any(), any(), any(), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
 
@@ -243,15 +289,39 @@ class WarehouseControllerAuthTest {
     }
 
     @Test
-    @WithMockUser(roles = "WAREHOUSE_STAFF")
-    @DisplayName("WAREHOUSE_STAFFがGET詳細すると200を返す（isAuthenticated）")
-    void get_warehouseStaff_returns200() throws Exception {
+    @WithMockUser(roles = "SYSTEM_ADMIN")
+    @DisplayName("SYSTEM_ADMINがGET詳細すると200を返す")
+    void get_systemAdmin_returns200() throws Exception {
         Warehouse w = createWarehouse(1L, "TKYO", "東京倉庫");
         when(warehouseService.findById(1L)).thenReturn(w);
 
         mockMvc.perform(get(BASE_URL + "/1")
                         .header("X-Requested-With", "XMLHttpRequest"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがGET存在確認すると200を返す")
+    void exists_warehouseManager_returns200() throws Exception {
+        when(rateLimiterService.tryConsumeCodeExists(any())).thenReturn(true);
+        when(warehouseService.existsByCode("TKYO")).thenReturn(false);
+
+        mockMvc.perform(get(BASE_URL + "/exists")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .param("warehouseCode", "TKYO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.exists").value(false));
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET存在確認すると403を返す")
+    void exists_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/exists")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .param("warehouseCode", "TKYO"))
+                .andExpect(status().isForbidden());
     }
 
     // --- Test Config ---

@@ -916,13 +916,18 @@ export const inboundRoutes: RouteRecordRaw[] = [
 ```typescript
 // types/router.d.ts
 import 'vue-router'
+import type { UserRole } from '@/stores/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
     /** 認証必須フラグ（デフォルト: 親ルートから継承） */
     requiresAuth?: boolean
-    /** アクセス許可ロール（空配列 = 全ロール許可） */
-    roles?: Array<'SYSTEM_ADMIN' | 'WAREHOUSE_MANAGER' | 'WAREHOUSE_STAFF' | 'VIEWER'>
+    /**
+     * アクセス許可ロール。
+     * 指定された場合、ユーザーのロールが含まれていなければ /forbidden へリダイレクト。
+     * 未指定の場合はロールチェックをスキップ（認証のみで到達可能）。
+     */
+    roles?: UserRole[]
     /** パンくずリストのi18nキー配列 */
     breadcrumb?: string[]
   }
@@ -931,59 +936,71 @@ declare module 'vue-router' {
 
 ### 6.4 ナビゲーションガード
 
+ガードは `router/index.ts` の `beforeEach` に直接記述する（ファイル分割なし）。
+
 ```typescript
-// router/guards.ts
-import type { Router } from 'vue-router'
+// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage } from 'element-plus'
+// RouteMeta 型拡張は types/router.d.ts で定義
 
-export function setupGuards(router: Router) {
-  router.beforeEach(async (to, _from, next) => {
-    const authStore = useAuthStore()
+const router = createRouter({ ... })
 
-    // --- 1. 認証チェック ---
-    if (to.meta.requiresAuth !== false && !authStore.isLoggedIn) {
-      // 未認証 → ログイン画面
-      // まずサーバーにセッション確認を試行
-      await authStore.fetchCurrentUser()
-      if (!authStore.isLoggedIn) {
-        return next({ name: 'login', query: { redirect: to.fullPath } })
-      }
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+
+  // --- 1. 認証不要ページ ---
+  if (to.meta.requiresAuth === false) {
+    if (auth.isAuthenticated) return { path: '/' }
+    return true
+  }
+
+  // --- 2. 認証チェック（リフレッシュ試行）---
+  if (!auth.isAuthenticated) {
+    const ok = await auth.refresh()
+    if (!ok) {
+      return { name: 'login', query: { redirect: to.fullPath, reason: 'session_expired' } }
     }
+  }
 
-    // --- 2. パスワード変更強制 ---
-    if (authStore.requiresPasswordChange && to.name !== 'change-password' && to.name !== 'login') {
-      return next({ name: 'change-password' })
+  // --- 3. パスワード変更強制 ---
+  if (auth.user?.passwordChangeRequired && to.name !== 'change-password') {
+    return { name: 'change-password' }
+  }
+
+  // --- 4. ロールチェック ---
+  const requiredRoles = to.meta.roles
+  if (requiredRoles && requiredRoles.length > 0) {
+    const userRole = auth.user?.role
+    if (!userRole || !requiredRoles.includes(userRole)) {
+      return { name: 'forbidden' }  // /forbidden ページへリダイレクト
     }
+  }
 
-    // --- 3. ロールチェック ---
-    const requiredRoles = to.meta.roles
-    if (requiredRoles && requiredRoles.length > 0 && authStore.userRole) {
-      if (!requiredRoles.includes(authStore.userRole)) {
-        ElMessage.error('この操作を実行する権限がありません')
-        return next(false)
-      }
-    }
-
-    next()
-  })
-}
+  return true
+})
 ```
 
 ### 6.5 ナビゲーションガードのフロー
 
 ```mermaid
 flowchart TD
-    START["beforeEach"] --> AUTH_CHECK{"認証済み？"}
-    AUTH_CHECK -->|"No"| FETCH["fetchCurrentUser()"]
-    FETCH --> STILL_NO{"まだ未認証？"}
-    STILL_NO -->|"Yes"| LOGIN["→ /login"]
-    STILL_NO -->|"No"| PW_CHECK
-    AUTH_CHECK -->|"Yes"| PW_CHECK{"パスワード変更必要？"}
-    PW_CHECK -->|"Yes & 遷移先≠ChangePassword"| CHANGE_PW["→ /change-password"]
-    PW_CHECK -->|"No"| ROLE_CHECK{"ロール許可？"}
-    ROLE_CHECK -->|"No"| FORBIDDEN["ElMessage.error → 遷移中止"]
-    ROLE_CHECK -->|"Yes"| NEXT["next()"]
+    START["beforeEach"] --> REQUIRES_AUTH{"requiresAuth === false?"}
+    REQUIRES_AUTH -->|"Yes"| LOGGED_IN{"認証済み？"}
+    LOGGED_IN -->|"Yes"| REDIRECT_HOME["→ /"]
+    LOGGED_IN -->|"No"| ALLOW["next()"]
+    REQUIRES_AUTH -->|"No"| AUTH_CHECK{"認証済み？"}
+    AUTH_CHECK -->|"No"| REFRESH["auth.refresh()"]
+    REFRESH --> REFRESH_OK{"成功？"}
+    REFRESH_OK -->|"No"| LOGIN["→ /login?reason=session_expired"]
+    REFRESH_OK -->|"Yes"| PW_CHECK
+    AUTH_CHECK -->|"Yes"| PW_CHECK{"passwordChangeRequired?"}
+    PW_CHECK -->|"Yes & 遷移先≠change-password"| CHANGE_PW["→ /change-password"]
+    PW_CHECK -->|"No"| ROLE_CHECK{"meta.roles あり？"}
+    ROLE_CHECK -->|"No"| NEXT["next()"]
+    ROLE_CHECK -->|"Yes"| ROLE_OK{"ロール一致？"}
+    ROLE_OK -->|"No"| FORBIDDEN["→ /forbidden"]
+    ROLE_OK -->|"Yes"| NEXT
 ```
 
 ---
