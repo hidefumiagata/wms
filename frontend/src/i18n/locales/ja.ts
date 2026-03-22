@@ -340,7 +340,7 @@ export default {
       validation: {
         buildingRequired: '棟コードは必須です',
         codeRequired: 'エリアコードは必須です',
-        codeMaxLength: 'エリアコードは10文字以内で入力してください',
+        codeMaxLength: 'エリアコードは20文字以内で入力してください',
         codeFormat: 'エリアコードは英数字・ハイフンで入力してください',
         codeDuplicate: 'このコードはこの棟内で既に登録されています',
         nameRequired: 'エリア名称は必須です',

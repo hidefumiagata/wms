@@ -340,7 +340,7 @@ export default {
       validation: {
         buildingRequired: 'Building is required',
         codeRequired: 'Area code is required',
-        codeMaxLength: 'Area code must be 10 characters or less',
+        codeMaxLength: 'Area code must be 20 characters or less',
         codeFormat: 'Area code must contain only alphanumeric characters and hyphens',
         codeDuplicate: 'This code is already registered in this building',
         nameRequired: 'Area name is required',

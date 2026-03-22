@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -76,6 +76,19 @@ export function useLocationForm() {
   const selectedArea = computed(() =>
     areas.value.find((a) => a.id === areaId.value) ?? null,
   )
+
+  // EVT-MST052-002: 在庫エリア選択時にロケーションコードの棟部分を自動補完
+  watch(areaId, (newId) => {
+    if (isEdit.value || !newId) return
+    const area = areas.value.find((a) => a.id === newId)
+    if (area?.areaType === 'STOCK') {
+      // 棟コードをプレフィックスとして自動入力（ユーザーが残りを入力）
+      const prefix = area.buildingCode + '-'
+      if (!locationCode.value || locationCode.value === '') {
+        locationCode.value = prefix
+      }
+    }
+  })
 
   async function fetchAreas() {
     if (!warehouseStore.selectedWarehouseId) return

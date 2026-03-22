@@ -51,7 +51,7 @@
             v-model="areaCode"
             v-bind="areaCodeAttrs"
             :placeholder="t('master.area.codePlaceholder')"
-            maxlength="10"
+            maxlength="20"
             show-word-limit
           />
           <span v-else class="readonly-value">{{ areaCode }}</span>

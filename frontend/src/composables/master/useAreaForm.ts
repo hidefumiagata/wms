@@ -35,7 +35,7 @@ export function useAreaForm() {
     areaCode: z
       .string()
       .min(1, t('master.area.validation.codeRequired'))
-      .max(10, t('master.area.validation.codeMaxLength'))
+      .max(20, t('master.area.validation.codeMaxLength'))
       .regex(AREA_CODE_REGEX, t('master.area.validation.codeFormat')),
     areaName: z
       .string()
