@@ -8857,6 +8857,7 @@ components:
         - OUTBOUND
         - INBOUND
         - SYSTEM
+        - SECURITY
       description: パラメータカテゴリ
 
     SystemParameterValueType:
