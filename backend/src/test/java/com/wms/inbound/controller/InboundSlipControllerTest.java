@@ -176,6 +176,19 @@ class InboundSlipControllerTest {
         }
 
         @Test
+        @DisplayName("ソートにカンマなしの場合ASCデフォルトで検索できる")
+        void list_withSortNoDirction_returns200() throws Exception {
+            when(inboundSlipService.search(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(SLIPS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "slipNumber"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
         @DisplayName("不正なソートプロパティはデフォルトにフォールバック")
         void list_withInvalidSortProperty_returns200() throws Exception {
             when(inboundSlipService.search(

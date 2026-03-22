@@ -19,6 +19,7 @@ import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.util.BusinessDateProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -369,6 +370,31 @@ class InboundSlipServiceTest {
             InboundSlip result = inboundSlipService.create(buildRequest());
 
             assertThat(result.getSlipNumber()).isEqualTo("INB-20260322-0006");
+        }
+
+        @Test
+        @DisplayName("伝票番号衝突時にリトライして成功する")
+        void create_slipNumberCollision_retrySuccess() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            // First call returns 0, save throws collision; second call returns 1 for retry
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322"))
+                    .thenReturn(0)
+                    .thenReturn(1);
+            when(inboundSlipRepository.save(any(InboundSlip.class)))
+                    .thenThrow(new DataIntegrityViolationException("duplicate key"))
+                    .thenAnswer(inv -> {
+                        InboundSlip s = inv.getArgument(0);
+                        setField(s, "id", 1L);
+                        return s;
+                    });
+
+            InboundSlip result = inboundSlipService.create(buildRequest());
+
+            assertThat(result.getSlipNumber()).isEqualTo("INB-20260322-0002");
+            assertThat(result.getLines()).hasSize(1);
         }
 
         @Test

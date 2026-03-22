@@ -199,10 +199,8 @@ public class InboundSlipController implements InboundApi {
                 .storedBy(l.getStoredBy());
     }
 
+    // sort parameter always has a default value from OpenAPI generated interface
     private Sort parseSort(String sort, String defaultProperty) {
-        if (sort == null || sort.isBlank()) {
-            return Sort.by(Sort.Direction.ASC, defaultProperty);
-        }
         String[] parts = sort.split(",");
         String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
                 ? parts[0] : defaultProperty;
