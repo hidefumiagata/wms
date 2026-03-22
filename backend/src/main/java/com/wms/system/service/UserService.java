@@ -96,12 +96,12 @@ public class UserService {
 
     @Transactional
     public User toggleActive(Long id, boolean isActive, Integer version, Long currentUserId) {
+        User user = findById(id);
         // 自己無効化禁止
         if (currentUserId.equals(id) && !isActive) {
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_SELF",
                     "自分自身を無効化することはできません");
         }
-        User user = findById(id);
         if (!user.getVersion().equals(version)) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",

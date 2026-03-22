@@ -230,6 +230,22 @@ class UserServiceTest {
         }
 
         @Test
+        @DisplayName("楽観的ロック競合(JPA)でOptimisticLockConflictExceptionをスロー")
+        void update_optimisticLockConflict_throwsException() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setRole("SYSTEM_ADMIN");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class)))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(User.class.getName(), 1L));
+
+            UserService.UpdateUserCommand cmd = new UserService.UpdateUserCommand(
+                    1L, "山田次郎", "jiro@example.com", "SYSTEM_ADMIN", true, 0, 99L);
+
+            assertThatThrownBy(() -> userService.update(cmd))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        @Test
         @DisplayName("存在しないIDでResourceNotFoundExceptionをスロー")
         void update_notFound_throwsException() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
@@ -260,6 +276,9 @@ class UserServiceTest {
         @Test
         @DisplayName("自己無効化禁止でBusinessRuleViolationExceptionをスロー")
         void toggleActive_selfDeactivate_throwsException() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 0, 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasMessageContaining("無効化");
@@ -284,6 +303,18 @@ class UserServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 99, 99L))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        @Test
+        @DisplayName("楽観的ロック競合(JPA)でOptimisticLockConflictExceptionをスロー")
+        void toggleActive_optimisticLockConflict_throwsException() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class)))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(User.class.getName(), 1L));
+
+            assertThatThrownBy(() -> userService.toggleActive(1L, false, 0, 99L))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
     }

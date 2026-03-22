@@ -36,7 +36,9 @@ import java.util.Set;
 public class UserController implements MasterUserApi {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "userCode", "fullName", "email", "role", "createdAt", "updatedAt");
+            "userCode", "fullName", "role", "createdAt", "updatedAt");
+    private static final String DEFAULT_SORT_PROPERTY = "createdAt";
+    private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.DESC;
 
     private final UserService userService;
     private final RateLimiterService rateLimiterService;
@@ -181,11 +183,14 @@ public class UserController implements MasterUserApi {
     }
 
     private Sort parseSort(String sort) {
+        if (sort == null || sort.isBlank()) {
+            return Sort.by(DEFAULT_SORT_DIRECTION, DEFAULT_SORT_PROPERTY);
+        }
         String[] parts = sort.split(",");
         String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
-                ? parts[0] : "userCode";
+                ? parts[0] : DEFAULT_SORT_PROPERTY;
         Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
+                ? Sort.Direction.DESC : DEFAULT_SORT_DIRECTION;
         return Sort.by(direction, property);
     }
 }

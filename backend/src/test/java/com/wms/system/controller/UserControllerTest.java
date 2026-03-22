@@ -129,7 +129,7 @@ class UserControllerTest {
 
             ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
             verify(userService).search(any(), any(), any(), pageableCaptor.capture());
-            assertThat(pageableCaptor.getValue().getSort().getOrderFor("userCode")).isNotNull();
+            assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt")).isNotNull();
         }
 
         @Test
