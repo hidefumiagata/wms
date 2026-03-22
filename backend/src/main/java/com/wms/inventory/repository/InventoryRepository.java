@@ -10,4 +10,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     Optional<Inventory> findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
             Long locationId, Long productId, String unitType, String lotNumber, LocalDate expiryDate);
+
+    boolean existsByLocationIdAndProductIdNot(Long locationId, Long productId);
 }

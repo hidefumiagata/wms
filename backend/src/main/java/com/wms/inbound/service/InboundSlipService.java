@@ -3,15 +3,23 @@ package com.wms.inbound.service;
 import com.wms.generated.model.CreateInboundLineRequest;
 import com.wms.generated.model.CreateInboundSlipRequest;
 import com.wms.generated.model.InboundSlipType;
+import com.wms.generated.model.InspectInboundRequest;
+import com.wms.generated.model.InspectLineRequest;
+import com.wms.generated.model.StoreInboundRequest;
+import com.wms.generated.model.StoreLineRequest;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.inventory.service.InventoryService;
+import com.wms.master.entity.Area;
+import com.wms.master.entity.Location;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
+import com.wms.master.service.AreaService;
+import com.wms.master.service.LocationService;
 import com.wms.master.service.PartnerService;
 import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
@@ -56,6 +64,8 @@ public class InboundSlipService {
     private final WarehouseService warehouseService;
     private final PartnerService partnerService;
     private final ProductService productService;
+    private final LocationService locationService;
+    private final AreaService areaService;
     private final BusinessDateProvider businessDateProvider;
     private final UserRepository userRepository;
 
@@ -286,14 +296,169 @@ public class InboundSlipService {
         return saved;
     }
 
+    @Transactional
+    public InboundSlip inspect(Long id, InspectInboundRequest request) {
+        InboundSlip slip = findByIdWithLines(id);
+
+        String status = slip.getStatus();
+        if (!InboundSlipStatus.CONFIRMED.getValue().equals(status)
+                && !InboundSlipStatus.INSPECTING.getValue().equals(status)
+                && !InboundSlipStatus.PARTIAL_STORED.getValue().equals(status)) {
+            throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                    "検品可能なステータスではありません (status=" + status + ")");
+        }
+
+        // Duplicate lineId check
+        Set<Long> inspectLineIds = new HashSet<>();
+        for (InspectLineRequest lineReq : request.getLines()) {
+            if (!inspectLineIds.add(lineReq.getLineId())) {
+                throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
+                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+            }
+        }
+
+        Long currentUserId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (InspectLineRequest lineReq : request.getLines()) {
+            InboundSlipLine line = slip.getLines().stream()
+                    .filter(l -> l.getId().equals(lineReq.getLineId()))
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
+                            "入荷伝票明細が見つかりません (lineId=" + lineReq.getLineId() + ")"));
+
+            if (InboundLineStatus.STORED.getValue().equals(line.getLineStatus())) {
+                throw new InvalidStateTransitionException("INBOUND_LINE_ALREADY_STORED",
+                        "格納済みの明細は検品できません (lineId=" + line.getId() + ")");
+            }
+
+            if (lineReq.getInspectedQty() < 0) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "検品数は0以上である必要があります (lineId=" + line.getId()
+                                + ", inspectedQty=" + lineReq.getInspectedQty() + ")");
+            }
+
+            line.setInspectedQty(lineReq.getInspectedQty());
+            line.setLineStatus(InboundLineStatus.INSPECTED.getValue());
+            line.setInspectedAt(now);
+            line.setInspectedBy(currentUserId);
+        }
+
+        if (InboundSlipStatus.CONFIRMED.getValue().equals(status)) {
+            slip.setStatus(InboundSlipStatus.INSPECTING.getValue());
+        }
+
+        InboundSlip saved = inboundSlipRepository.save(slip);
+        log.info("InboundSlip inspected: id={}, slipNumber={}, inspectedLines={}",
+                id, saved.getSlipNumber(), request.getLines().size());
+        return saved;
+    }
+
+    @Transactional
+    public InboundSlip store(Long id, StoreInboundRequest request) {
+        InboundSlip slip = findByIdWithLines(id);
+
+        String status = slip.getStatus();
+        if (!InboundSlipStatus.INSPECTING.getValue().equals(status)
+                && !InboundSlipStatus.PARTIAL_STORED.getValue().equals(status)) {
+            throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                    "格納可能なステータスではありません (status=" + status + ")");
+        }
+
+        // Duplicate lineId check
+        Set<Long> storeLineIds = new HashSet<>();
+        for (StoreLineRequest lineReq : request.getLines()) {
+            if (!storeLineIds.add(lineReq.getLineId())) {
+                throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
+                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+            }
+        }
+
+        Long currentUserId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (StoreLineRequest lineReq : request.getLines()) {
+            InboundSlipLine line = slip.getLines().stream()
+                    .filter(l -> l.getId().equals(lineReq.getLineId()))
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
+                            "入荷伝票明細が見つかりません (lineId=" + lineReq.getLineId() + ")"));
+
+            if (!InboundLineStatus.INSPECTED.getValue().equals(line.getLineStatus())) {
+                throw new InvalidStateTransitionException("INBOUND_LINE_NOT_INSPECTED",
+                        "検品済みでない明細は格納できません (lineId=" + line.getId() + ", lineStatus=" + line.getLineStatus() + ")");
+            }
+
+            if (line.getInspectedQty() == null || line.getInspectedQty() <= 0) {
+                throw new BusinessRuleViolationException("INSPECTED_QTY_ZERO",
+                        "検品数が0の明細は格納できません (lineId=" + line.getId() + ")");
+            }
+
+            Location location = locationService.findById(lineReq.getLocationId());
+
+            if (!location.getWarehouseId().equals(slip.getWarehouseId())) {
+                throw new BusinessRuleViolationException("LOCATION_WAREHOUSE_MISMATCH",
+                        "ロケーションが入荷伝票の倉庫に属していません (locationId=" + location.getId()
+                                + ", locationWarehouseId=" + location.getWarehouseId()
+                                + ", slipWarehouseId=" + slip.getWarehouseId() + ")");
+            }
+
+            if (!Boolean.TRUE.equals(location.getIsActive())) {
+                throw new BusinessRuleViolationException("LOCATION_INACTIVE",
+                        "無効なロケーションです (locationId=" + location.getId() + ")");
+            }
+
+            Area area = areaService.findById(location.getAreaId());
+
+            if (!"INBOUND".equals(area.getAreaType())) {
+                throw new BusinessRuleViolationException("AREA_NOT_INBOUND",
+                        "入荷エリア以外のロケーションには格納できません (areaType=" + area.getAreaType() + ")");
+            }
+
+            if (Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
+                throw new BusinessRuleViolationException("LOCATION_STOCKTAKE_LOCKED",
+                        "棚卸中のロケーションには格納できません (locationId=" + location.getId() + ")");
+            }
+
+            if (inventoryService.existsDifferentProductAtLocation(location.getId(), line.getProductId())) {
+                throw new BusinessRuleViolationException("DIFFERENT_PRODUCT_AT_LOCATION",
+                        "同一ロケーションに異なる商品の在庫が存在します (locationId=" + location.getId() + ")");
+            }
+
+            inventoryService.storeInboundStock(new InventoryService.StoreInboundCommand(
+                    slip.getWarehouseId(),
+                    location.getId(), location.getLocationCode(),
+                    line.getProductId(), line.getProductCode(), line.getProductName(),
+                    line.getUnitType(), line.getLotNumber(), line.getExpiryDate(),
+                    line.getInspectedQty(), slip.getId(), currentUserId, now));
+
+            line.setLineStatus(InboundLineStatus.STORED.getValue());
+            line.setPutawayLocationId(location.getId());
+            line.setPutawayLocationCode(location.getLocationCode());
+            line.setStoredAt(now);
+            line.setStoredBy(currentUserId);
+        }
+
+        boolean allStored = slip.getLines().stream()
+                .allMatch(l -> InboundLineStatus.STORED.getValue().equals(l.getLineStatus()));
+        slip.setStatus(allStored
+                ? InboundSlipStatus.STORED.getValue()
+                : InboundSlipStatus.PARTIAL_STORED.getValue());
+
+        InboundSlip saved = inboundSlipRepository.save(slip);
+        log.info("InboundSlip stored: id={}, slipNumber={}, storedLines={}, newStatus={}",
+                id, saved.getSlipNumber(), request.getLines().size(), saved.getStatus());
+        return saved;
+    }
+
     private void rollbackLineInventory(InboundSlip slip, InboundSlipLine line,
                                         Long userId, OffsetDateTime now) {
-        inventoryService.rollbackInboundStock(
+        inventoryService.rollbackInboundStock(new InventoryService.RollbackInboundCommand(
                 slip.getWarehouseId(),
                 line.getPutawayLocationId(), line.getPutawayLocationCode(),
                 line.getProductId(), line.getProductCode(), line.getProductName(),
                 line.getUnitType(), line.getLotNumber(), line.getExpiryDate(),
-                line.getInspectedQty(), slip.getId(), userId, now);
+                line.getInspectedQty(), slip.getId(), userId, now));
     }
 
     private Long getCurrentUserId() {
