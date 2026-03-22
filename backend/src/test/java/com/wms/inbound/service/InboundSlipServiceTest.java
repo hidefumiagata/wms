@@ -1435,6 +1435,22 @@ class InboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("DUPLICATE_LINE_IN_REQUEST");
         }
 
+        @Test
+        @DisplayName("検品数が負の場合BusinessRuleViolationExceptionをスローする")
+        void inspect_negativeQty_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(InboundSlipStatus.CONFIRMED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(-1)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
         private static void setField(Object obj, String fieldName, Object value) {
             try {
                 java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);

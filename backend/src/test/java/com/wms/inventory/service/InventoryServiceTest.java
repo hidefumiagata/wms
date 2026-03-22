@@ -5,7 +5,9 @@ import com.wms.inventory.entity.InventoryMovement;
 import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -175,6 +177,28 @@ class InventoryServiceTest {
                     .extracting("errorCode").isEqualTo("INVENTORY_ALLOCATED");
         }
 
+        @Test
+        @DisplayName("楽観的ロック衝突時にOptimisticLockConflictExceptionをスローする")
+        void rollbackInboundStock_optimisticLock_throws() {
+            Inventory existing = Inventory.builder()
+                    .warehouseId(WAREHOUSE_ID).locationId(LOCATION_ID).productId(PRODUCT_ID)
+                    .unitType(UNIT_TYPE).quantity(148).allocatedQty(0).build();
+            setField(existing, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
+                    .thenReturn(Optional.of(existing));
+            when(inventoryRepository.save(any(Inventory.class)))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(Inventory.class.getName(), 1L));
+
+            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(
+                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
+                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
+                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
+                    48, REFERENCE_ID, USER_ID, EXECUTED_AT))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .extracting("errorCode").isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
+        }
+
         private static void setField(Object obj, String fieldName, Object value) {
             try {
                 java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
@@ -284,6 +308,25 @@ class InventoryServiceTest {
             assertThat(savedMovement.getMovementType()).isEqualTo("INBOUND");
             assertThat(savedMovement.getQuantity()).isEqualTo(48);
             assertThat(savedMovement.getQuantityAfter()).isEqualTo(48);
+        }
+
+        @Test
+        @DisplayName("楽観的ロック衝突時にOptimisticLockConflictExceptionをスローする")
+        void storeInboundStock_optimisticLock_throws() {
+            Inventory existing = Inventory.builder()
+                    .warehouseId(1L).locationId(200L).productId(100L).unitType("CASE")
+                    .quantity(100).allocatedQty(0).build();
+            setField(existing, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    200L, 100L, "CASE", null, null)).thenReturn(Optional.of(existing));
+            when(inventoryRepository.save(any(Inventory.class)))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(Inventory.class.getName(), 1L));
+
+            assertThatThrownBy(() -> inventoryService.storeInboundStock(
+                    1L, 200L, "LOC-A01", 100L, "PRD-0001", "商品A",
+                    "CASE", null, null, 48, 1L, 10L, OffsetDateTime.now()))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .extracting("errorCode").isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
         }
 
         private static void setField(Object obj, String fieldName, Object value) {

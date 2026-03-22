@@ -332,6 +332,12 @@ public class InboundSlipService {
                         "格納済みの明細は検品できません (lineId=" + line.getId() + ")");
             }
 
+            if (lineReq.getInspectedQty() < 0) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "検品数は0以上である必要があります (lineId=" + line.getId()
+                                + ", inspectedQty=" + lineReq.getInspectedQty() + ")");
+            }
+
             line.setInspectedQty(lineReq.getInspectedQty());
             line.setLineStatus(InboundLineStatus.INSPECTED.getValue());
             line.setInspectedAt(now);

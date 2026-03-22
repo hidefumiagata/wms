@@ -5,9 +5,11 @@ import com.wms.inventory.entity.InventoryMovement;
 import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,23 +47,28 @@ public class InventoryService {
                 .orElse(null);
 
         int newQty;
-        if (inventory != null) {
-            newQty = inventory.getQuantity() + storeQty;
-            inventory.setQuantity(newQty);
-            inventoryRepository.save(inventory);
-        } else {
-            newQty = storeQty;
-            inventory = Inventory.builder()
-                    .warehouseId(warehouseId)
-                    .locationId(locationId)
-                    .productId(productId)
-                    .unitType(unitType)
-                    .lotNumber(lotNumber)
-                    .expiryDate(expiryDate)
-                    .quantity(newQty)
-                    .allocatedQty(0)
-                    .build();
-            inventoryRepository.save(inventory);
+        try {
+            if (inventory != null) {
+                newQty = inventory.getQuantity() + storeQty;
+                inventory.setQuantity(newQty);
+                inventoryRepository.save(inventory);
+            } else {
+                newQty = storeQty;
+                inventory = Inventory.builder()
+                        .warehouseId(warehouseId)
+                        .locationId(locationId)
+                        .productId(productId)
+                        .unitType(unitType)
+                        .lotNumber(lotNumber)
+                        .expiryDate(expiryDate)
+                        .quantity(newQty)
+                        .allocatedQty(0)
+                        .build();
+                inventoryRepository.save(inventory);
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
+                    "在庫の並行更新が検出されました (locationId=" + locationId + ", productId=" + productId + ")");
         }
 
         InventoryMovement movement = InventoryMovement.builder()
@@ -118,7 +125,12 @@ public class InventoryService {
                             + ", newQuantity=" + newQty + ")");
         }
         inventory.setQuantity(newQty);
-        inventoryRepository.save(inventory);
+        try {
+            inventoryRepository.save(inventory);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
+                    "在庫の並行更新が検出されました (locationId=" + locationId + ", productId=" + productId + ")");
+        }
 
         InventoryMovement movement = InventoryMovement.builder()
                 .warehouseId(warehouseId)
