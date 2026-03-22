@@ -529,7 +529,6 @@ class InboundSlipControllerTest {
             InboundSlip confirmed = createSlip(1L, "INB-20260320-0001", "CONFIRMED");
 
             when(inboundSlipService.confirm(1L)).thenReturn(confirmed);
-            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(confirmed);
             when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
 
             mockMvc.perform(post(SLIPS_URL + "/1/confirm"))
@@ -573,7 +572,6 @@ class InboundSlipControllerTest {
             InboundSlip cancelled = createSlip(1L, "INB-20260320-0001", "CANCELLED");
 
             when(inboundSlipService.cancel(1L)).thenReturn(cancelled);
-            when(inboundSlipService.findByIdWithLines(1L)).thenReturn(cancelled);
             when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
 
             mockMvc.perform(post(SLIPS_URL + "/1/cancel"))

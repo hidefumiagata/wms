@@ -10,10 +10,7 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
-import com.wms.inventory.entity.Inventory;
-import com.wms.inventory.entity.InventoryMovement;
-import com.wms.inventory.repository.InventoryMovementRepository;
-import com.wms.inventory.repository.InventoryRepository;
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -35,7 +32,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -55,7 +51,10 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,10 +70,7 @@ class InboundSlipServiceTest {
     private InboundSlipLineRepository inboundSlipLineRepository;
 
     @Mock
-    private InventoryRepository inventoryRepository;
-
-    @Mock
-    private InventoryMovementRepository inventoryMovementRepository;
+    private InventoryService inventoryService;
 
     @Mock
     private WarehouseService warehouseService;
@@ -1011,45 +1007,20 @@ class InboundSlipServiceTest {
             setField(slip, "id", 1L);
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
-
-            Inventory inventory = Inventory.builder()
-                    .warehouseId(1L)
-                    .locationId(200L)
-                    .productId(100L)
-                    .unitType("CASE")
-                    .lotNumber("LOT-001")
-                    .expiryDate(LocalDate.of(2027, 3, 22))
-                    .quantity(148)
-                    .allocatedQty(0)
-                    .build();
-            setField(inventory, "id", 500L);
-
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    200L, 100L, "CASE", "LOT-001", LocalDate.of(2027, 3, 22)))
-                    .thenReturn(Optional.of(inventory));
-            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(inventoryService).rollbackInboundStock(
+                    any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                    anyInt(), any(), any(), any());
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
 
             InboundSlip result = inboundSlipService.cancel(1L);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
-            assertThat(inventory.getQuantity()).isEqualTo(100); // 148 - 48
 
-            ArgumentCaptor<InventoryMovement> movementCaptor = ArgumentCaptor.forClass(InventoryMovement.class);
-            verify(inventoryMovementRepository).save(movementCaptor.capture());
-            InventoryMovement savedMovement = movementCaptor.getValue();
-            assertThat(savedMovement.getMovementType()).isEqualTo("INBOUND_CANCEL");
-            assertThat(savedMovement.getQuantity()).isEqualTo(-48);
-            assertThat(savedMovement.getQuantityAfter()).isEqualTo(100);
-            assertThat(savedMovement.getWarehouseId()).isEqualTo(1L);
-            assertThat(savedMovement.getLocationId()).isEqualTo(200L);
-            assertThat(savedMovement.getLocationCode()).isEqualTo("LOC-A01");
-            assertThat(savedMovement.getProductId()).isEqualTo(100L);
-            assertThat(savedMovement.getProductCode()).isEqualTo("PRD-0001");
-            assertThat(savedMovement.getReferenceId()).isEqualTo(1L);
-            assertThat(savedMovement.getReferenceType()).isEqualTo("INBOUND_SLIP");
-            assertThat(savedMovement.getExecutedBy()).isEqualTo(10L);
+            verify(inventoryService).rollbackInboundStock(
+                    eq(1L), eq(200L), eq("LOC-A01"),
+                    eq(100L), eq("PRD-0001"), eq("商品A"),
+                    eq("CASE"), eq("LOT-001"), eq(LocalDate.of(2027, 3, 22)),
+                    eq(48), eq(1L), eq(10L), any());
         }
 
         @Test
@@ -1085,9 +1056,10 @@ class InboundSlipServiceTest {
             setField(slip, "id", 1L);
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    200L, 100L, "CASE", "LOT-001", LocalDate.of(2027, 3, 22)))
-                    .thenReturn(Optional.empty());
+            doThrow(new ResourceNotFoundException("INVENTORY_NOT_FOUND", "在庫が見つかりません"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -1115,14 +1087,11 @@ class InboundSlipServiceTest {
                     .warehouseId(1L).lines(lines).build();
             setField(slip, "id", 1L);
 
-            Inventory inventory = Inventory.builder()
-                    .warehouseId(1L).locationId(200L).productId(100L).unitType("CASE")
-                    .quantity(10).allocatedQty(0).build(); // quantity < inspectedQty (48)
-            setField(inventory, "id", 1L);
-
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    200L, 100L, "CASE", null, null)).thenReturn(Optional.of(inventory));
+            doThrow(new BusinessRuleViolationException("INVENTORY_INSUFFICIENT", "在庫ロールバックで在庫数が負になります"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -1150,14 +1119,11 @@ class InboundSlipServiceTest {
                     .warehouseId(1L).lines(lines).build();
             setField(slip, "id", 1L);
 
-            Inventory inventory = Inventory.builder()
-                    .warehouseId(1L).locationId(200L).productId(100L).unitType("CASE")
-                    .quantity(50).allocatedQty(25).build(); // newQty=20 < allocatedQty=25
-            setField(inventory, "id", 1L);
-
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    200L, 100L, "CASE", null, null)).thenReturn(Optional.of(inventory));
+            doThrow(new BusinessRuleViolationException("INVENTORY_ALLOCATED", "引当済み数量が在庫ロールバック後の数量を超えます"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(BusinessRuleViolationException.class)

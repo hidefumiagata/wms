@@ -7,10 +7,7 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
-import com.wms.inventory.entity.Inventory;
-import com.wms.inventory.entity.InventoryMovement;
-import com.wms.inventory.repository.InventoryMovementRepository;
-import com.wms.inventory.repository.InventoryRepository;
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -55,8 +52,7 @@ public class InboundSlipService {
 
     private final InboundSlipRepository inboundSlipRepository;
     private final InboundSlipLineRepository inboundSlipLineRepository;
-    private final InventoryRepository inventoryRepository;
-    private final InventoryMovementRepository inventoryMovementRepository;
+    private final InventoryService inventoryService;
     private final WarehouseService warehouseService;
     private final PartnerService partnerService;
     private final ProductService productService;
@@ -292,49 +288,12 @@ public class InboundSlipService {
 
     private void rollbackLineInventory(InboundSlip slip, InboundSlipLine line,
                                         Long userId, OffsetDateTime now) {
-        Inventory inventory = inventoryRepository
-                .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                        line.getPutawayLocationId(), line.getProductId(),
-                        line.getUnitType(), line.getLotNumber(), line.getExpiryDate())
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "在庫が見つかりません (locationId=" + line.getPutawayLocationId()
-                                + ", productId=" + line.getProductId() + ")"));
-
-        int newQty = inventory.getQuantity() - line.getInspectedQty();
-        if (newQty < 0) {
-            throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
-                    "在庫ロールバックで在庫数が負になります (inventoryId=" + inventory.getId()
-                            + ", quantity=" + inventory.getQuantity()
-                            + ", rollback=" + line.getInspectedQty() + ")");
-        }
-        if (newQty < inventory.getAllocatedQty()) {
-            throw new BusinessRuleViolationException("INVENTORY_ALLOCATED",
-                    "引当済み数量が在庫ロールバック後の数量を超えます (inventoryId=" + inventory.getId()
-                            + ", allocatedQty=" + inventory.getAllocatedQty()
-                            + ", newQuantity=" + newQty + ")");
-        }
-        inventory.setQuantity(newQty);
-        inventoryRepository.save(inventory);
-
-        InventoryMovement movement = InventoryMovement.builder()
-                .warehouseId(slip.getWarehouseId())
-                .locationId(line.getPutawayLocationId())
-                .locationCode(line.getPutawayLocationCode())
-                .productId(line.getProductId())
-                .productCode(line.getProductCode())
-                .productName(line.getProductName())
-                .unitType(line.getUnitType())
-                .lotNumber(line.getLotNumber())
-                .expiryDate(line.getExpiryDate())
-                .movementType("INBOUND_CANCEL")
-                .quantity(-line.getInspectedQty())
-                .quantityAfter(newQty)
-                .referenceId(slip.getId())
-                .referenceType("INBOUND_SLIP")
-                .executedAt(now)
-                .executedBy(userId)
-                .build();
-        inventoryMovementRepository.save(movement);
+        inventoryService.rollbackInboundStock(
+                slip.getWarehouseId(),
+                line.getPutawayLocationId(), line.getPutawayLocationCode(),
+                line.getProductId(), line.getProductCode(), line.getProductName(),
+                line.getUnitType(), line.getLotNumber(), line.getExpiryDate(),
+                line.getInspectedQty(), slip.getId(), userId, now);
     }
 
     private Long getCurrentUserId() {
