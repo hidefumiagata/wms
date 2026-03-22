@@ -1,0 +1,6 @@
+wwwroot/*.js
+node_modules
+typings
+dist
+# Exclude emitted JS files — only .ts sources are needed
+*.js
