@@ -80,8 +80,8 @@
 | `EVT-MST031-002` | クリアボタンクリック | 検索条件を初期値にリセット | 同画面（検索フォームリセット） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST031-003` | 棟登録ボタンクリック | 棟登録画面へ遷移 | MST-032 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST031-004` | 編集ボタンクリック | 対象棟の編集画面へ遷移 | MST-033（`:id/edit`） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST031-005` | 無効化ボタンクリック | 確認ダイアログを表示。OKで `PATCH /api/v1/master/buildings/:id/deactivate`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST031-006` | 有効化ボタンクリック | `PATCH /api/v1/master/buildings/:id/deactivate`（リクエストボディ: `{ "isActive": true }`）を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST031-005` | 無効化ボタンクリック | 確認ダイアログを表示。OKで `PATCH /api/v1/master/buildings/:id/toggle-active`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST031-006` | 有効化ボタンクリック | `PATCH /api/v1/master/buildings/:id/toggle-active`（リクエストボディ: `{ "isActive": true }`）を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST031-007` | ページ変更 | 指定ページのデータを取得 | 同画面（テーブル更新） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 ---
@@ -320,8 +320,8 @@
 | `EVT-MST041-002` | クリアボタンクリック | 検索条件を初期値にリセット | 同画面（検索フォームリセット） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST041-003` | エリア登録ボタンクリック | エリア登録画面へ遷移 | MST-042 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST041-004` | 編集ボタンクリック | 対象エリアの編集画面へ遷移 | MST-043 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST041-005` | 無効化ボタンクリック | 確認ダイアログ → `PATCH /api/v1/master/areas/:id/deactivate`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード（成功メッセージ） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST041-006` | 有効化ボタンクリック | `PATCH /api/v1/master/areas/:id/deactivate`（リクエストボディ: `{ "isActive": true }`） | 同画面リロード（成功メッセージ） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST041-005` | 無効化ボタンクリック | 確認ダイアログ → `PATCH /api/v1/master/areas/:id/toggle-active`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード（成功メッセージ） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST041-006` | 有効化ボタンクリック | `PATCH /api/v1/master/areas/:id/toggle-active`（リクエストボディ: `{ "isActive": true }`） | 同画面リロード（成功メッセージ） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 ---
 
@@ -574,8 +574,8 @@
 | `EVT-MST051-002` | クリアボタンクリック | 検索条件を初期値にリセット | 同画面（検索フォームリセット） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST051-003` | ロケーション登録ボタンクリック | ロケーション登録画面へ遷移 | MST-052 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST051-004` | 編集ボタンクリック | 対象ロケーションの編集画面へ遷移 | MST-053 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST051-005` | 無効化ボタンクリック | 確認ダイアログ → `PATCH /api/v1/master/locations/:id/deactivate`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST051-006` | 有効化ボタンクリック | `PATCH /api/v1/master/locations/:id/deactivate`（リクエストボディ: `{ "isActive": true }`） | 同画面リロード | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST051-005` | 無効化ボタンクリック | 確認ダイアログ → `PATCH /api/v1/master/locations/:id/toggle-active`（リクエストボディ: `{ "isActive": false }`） | 同画面リロード | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST051-006` | 有効化ボタンクリック | `PATCH /api/v1/master/locations/:id/toggle-active`（リクエストボディ: `{ "isActive": true }`） | 同画面リロード | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 ---
 

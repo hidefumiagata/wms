@@ -996,7 +996,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
 <thead><tr><th>#</th><th>ルール</th></tr></thead>
 <tbody>
 <tr><td>BR-001</td><td><code>warehouseCode</code> は更新対象外。リクエストに含まれていても無視する</td></tr>
-<tr><td>BR-002</td><td><code>isActive</code> の変更は API-MST-FAC-005（PATCH /deactivate）で行う。本APIには含めない</td></tr>
+<tr><td>BR-002</td><td><code>isActive</code> の変更は API-MST-FAC-005（PATCH /toggle-active）で行う。本APIには含めない</td></tr>
 <p></tbody><br></table></p>
 <h3>5. 補足事項</h3>
 <ul><li style="margin-left:0px">楽観的ロックは <code>version</code> フィールドで実現する。更新時にリクエストの <code>version</code> とDBの <code>version</code> を比較し、不一致の場合は <code>409 OPTIMISTIC_LOCK_CONFLICT</code> を返す。更新成功時は <code>version</code> をインクリメントする。</li></ul>
@@ -1009,7 +1009,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
 <tr><td><strong>API ID</strong></td><td><code>API-MST-FAC-005</code></td></tr>
 <tr><td><strong>API名</strong></td><td>倉庫無効化／有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td>PATCH</td></tr>
-<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/warehouses/{id}/deactivate</code></td></tr>
+<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/warehouses/{id}/toggle-active</code></td></tr>
 <tr><td><strong>概要</strong></td><td>指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可。</td></tr>
 <tr><td><strong>認可ロール</strong></td><td>SYSTEM_ADMIN、WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
@@ -1074,7 +1074,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
 <tr><td>BR-003</td><td>既に同じ状態（例: 既に無効の倉庫を再度無効化）でも更新処理を実行してよい（冪等性を保証）</td></tr>
 <p></tbody><br></table></p>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">エンドポイント名は <code>/deactivate</code> だが、有効化（<code>isActive=true</code>）もこのエンドポイントで行う（トグル操作）。</li></ul>
+<ul><li style="margin-left:0px">エンドポイント名は <code>/toggle-active</code> だが、有効化（<code>isActive=true</code>）もこのエンドポイントで行う（トグル操作）。</li></ul>
 <hr>
 <hr>
 <h2>API-MST-FAC-006 倉庫コード存在確認</h2>
@@ -1428,7 +1428,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
 <tr><td><strong>API ID</strong></td><td><code>API-MST-FAC-015</code></td></tr>
 <tr><td><strong>API名</strong></td><td>棟無効化／有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td>PATCH</td></tr>
-<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/buildings/{id}/deactivate</code></td></tr>
+<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/buildings/{id}/toggle-active</code></td></tr>
 <tr><td><strong>概要</strong></td><td>指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可。</td></tr>
 <tr><td><strong>認可ロール</strong></td><td>SYSTEM_ADMIN、WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
@@ -1808,7 +1808,7 @@ GET /api/v1/master/areas?warehouseId=1&amp;areaType=STOCK&amp;isActive=true</cod
 <tr><td><strong>API ID</strong></td><td><code>API-MST-FAC-025</code></td></tr>
 <tr><td><strong>API名</strong></td><td>エリア無効化／有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td>PATCH</td></tr>
-<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/areas/{id}/deactivate</code></td></tr>
+<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/areas/{id}/toggle-active</code></td></tr>
 <tr><td><strong>概要</strong></td><td>指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可。</td></tr>
 <tr><td><strong>認可ロール</strong></td><td>SYSTEM_ADMIN、WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
@@ -2202,7 +2202,7 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
 <tbody>
 <tr><td>BR-001</td><td><code>locationCode</code>・<code>areaId</code>・<code>warehouseId</code> は更新不可</td></tr>
 <tr><td>BR-002</td><td><code>locationName</code> に <code>null</code> または空文字を指定した場合は NULL に更新する（名称のクリアを許容）</td></tr>
-<tr><td>BR-003</td><td><code>isActive</code> の変更は API-MST-FAC-035（PATCH /deactivate）で行う</td></tr>
+<tr><td>BR-003</td><td><code>isActive</code> の変更は API-MST-FAC-035（PATCH /toggle-active）で行う</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h2>API-MST-FAC-035 ロケーション無効化／有効化</h2>
@@ -2213,7 +2213,7 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
 <tr><td><strong>API ID</strong></td><td><code>API-MST-FAC-035</code></td></tr>
 <tr><td><strong>API名</strong></td><td>ロケーション無効化／有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td>PATCH</td></tr>
-<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/locations/{id}/deactivate</code></td></tr>
+<tr><td><strong>エンドポイント</strong></td><td><code>/api/v1/master/locations/{id}/toggle-active</code></td></tr>
 <tr><td><strong>概要</strong></td><td>指定IDのロケーションの有効/無効を切り替える。在庫が存在するロケーション・棚卸中のロケーションは無効化不可。</td></tr>
 <tr><td><strong>認可ロール</strong></td><td>SYSTEM_ADMIN、WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
@@ -2291,23 +2291,23 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
 <tr><td>API-MST-FAC-002</td><td>POST</td><td><code>/api/v1/master/warehouses</code></td><td>倉庫登録</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-003</td><td>GET</td><td><code>/api/v1/master/warehouses/{id}</code></td><td>倉庫取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-004</td><td>PUT</td><td><code>/api/v1/master/warehouses/{id}</code></td><td>倉庫更新</td><td>SA, WM</td></tr>
-<tr><td>API-MST-FAC-005</td><td>PATCH</td><td><code>/api/v1/master/warehouses/{id}/deactivate</code></td><td>倉庫無効化/有効化</td><td>SA, WM</td></tr>
+<tr><td>API-MST-FAC-005</td><td>PATCH</td><td><code>/api/v1/master/warehouses/{id}/toggle-active</code></td><td>倉庫無効化/有効化</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-011</td><td>GET</td><td><code>/api/v1/master/buildings</code></td><td>棟一覧取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-012</td><td>POST</td><td><code>/api/v1/master/buildings</code></td><td>棟登録</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-013</td><td>GET</td><td><code>/api/v1/master/buildings/{id}</code></td><td>棟取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-014</td><td>PUT</td><td><code>/api/v1/master/buildings/{id}</code></td><td>棟更新</td><td>SA, WM</td></tr>
-<tr><td>API-MST-FAC-015</td><td>PATCH</td><td><code>/api/v1/master/buildings/{id}/deactivate</code></td><td>棟無効化/有効化</td><td>SA, WM</td></tr>
+<tr><td>API-MST-FAC-015</td><td>PATCH</td><td><code>/api/v1/master/buildings/{id}/toggle-active</code></td><td>棟無効化/有効化</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-021</td><td>GET</td><td><code>/api/v1/master/areas</code></td><td>エリア一覧取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-022</td><td>POST</td><td><code>/api/v1/master/areas</code></td><td>エリア登録</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-023</td><td>GET</td><td><code>/api/v1/master/areas/{id}</code></td><td>エリア取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-024</td><td>PUT</td><td><code>/api/v1/master/areas/{id}</code></td><td>エリア更新</td><td>SA, WM</td></tr>
-<tr><td>API-MST-FAC-025</td><td>PATCH</td><td><code>/api/v1/master/areas/{id}/deactivate</code></td><td>エリア無効化/有効化</td><td>SA, WM</td></tr>
+<tr><td>API-MST-FAC-025</td><td>PATCH</td><td><code>/api/v1/master/areas/{id}/toggle-active</code></td><td>エリア無効化/有効化</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-031</td><td>GET</td><td><code>/api/v1/master/locations</code></td><td>ロケーション一覧取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-031a</td><td>GET</td><td><code>/api/v1/master/locations/count</code></td><td>ロケーション件数取得（棚卸プレビュー）</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-032</td><td>POST</td><td><code>/api/v1/master/locations</code></td><td>ロケーション登録</td><td>SA, WM</td></tr>
 <tr><td>API-MST-FAC-033</td><td>GET</td><td><code>/api/v1/master/locations/{id}</code></td><td>ロケーション取得</td><td>全ロール</td></tr>
 <tr><td>API-MST-FAC-034</td><td>PUT</td><td><code>/api/v1/master/locations/{id}</code></td><td>ロケーション更新</td><td>SA, WM</td></tr>
-<tr><td>API-MST-FAC-035</td><td>PATCH</td><td><code>/api/v1/master/locations/{id}/deactivate</code></td><td>ロケーション無効化/有効化</td><td>SA, WM</td></tr>
+<tr><td>API-MST-FAC-035</td><td>PATCH</td><td><code>/api/v1/master/locations/{id}/toggle-active</code></td><td>ロケーション無効化/有効化</td><td>SA, WM</td></tr>
 <p></tbody><br></table></p>
 <p><strong>凡例</strong>: SA = SYSTEM_ADMIN、WM = WAREHOUSE_MANAGER</p>
 <hr>
@@ -2844,7 +2844,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><strong>API ID</strong></td><td><code>API-MST-PAR-005</code></td></tr>
 <tr><td><strong>API名</strong></td><td>取引先無効化/有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td><code>PATCH</code></td></tr>
-<tr><td><strong>パス</strong></td><td><code>/api/v1/master/partners/{id}/deactivate</code></td></tr>
+<tr><td><strong>パス</strong></td><td><code>/api/v1/master/partners/{id}/toggle-active</code></td></tr>
 <tr><td><strong>認証</strong></td><td>要</td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><strong>概要</strong></td><td>指定された ID の取引先の有効フラグ（<code>is_active</code>）を切り替える。<code>isActive: false</code> で無効化、<code>isActive: true</code> で再有効化を行う。パス名は <code>deactivate</code> だが、有効化（<code>isActive: true</code>）にも対応する。</td></tr>
@@ -2941,7 +2941,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 業務制約チェック（入荷予定・受注の存在確認）と UPDATE を同一トランザクションで実行する。トランザクション分離レベルはデフォルト（READ COMMITTED）で問題ない。</li><li style="margin-left:0px"><strong>冪等性</strong>: 既に無効化済みの取引先に <code>isActive: false</code> を送った場合、または有効な取引先に <code>isActive: true</code> を送った場合は UPDATE を行わず <code>200 OK</code> を返す（PATCH の冪等性）。</li><li style="margin-left:0px"><strong>有効化時の制約チェック不要</strong>: <code>isActive: true</code>（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。</li><li style="margin-left:0px"><strong>エラーコードの追加</strong>: <code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> および <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> は本 API 専用のエラーコードとして <code>08-api-overview.md</code> のエラーコード一覧に追記が必要。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントパスは <code>/deactivate</code> だが、リクエストボディの <code>isActive</code> フラグにより無効化・有効化の両方を担う設計としている（将来的に <code>/activate</code> を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。</li></ul>
+<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 業務制約チェック（入荷予定・受注の存在確認）と UPDATE を同一トランザクションで実行する。トランザクション分離レベルはデフォルト（READ COMMITTED）で問題ない。</li><li style="margin-left:0px"><strong>冪等性</strong>: 既に無効化済みの取引先に <code>isActive: false</code> を送った場合、または有効な取引先に <code>isActive: true</code> を送った場合は UPDATE を行わず <code>200 OK</code> を返す（PATCH の冪等性）。</li><li style="margin-left:0px"><strong>有効化時の制約チェック不要</strong>: <code>isActive: true</code>（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。</li><li style="margin-left:0px"><strong>エラーコードの追加</strong>: <code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> および <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> は本 API 専用のエラーコードとして <code>08-api-overview.md</code> のエラーコード一覧に追記が必要。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントパスは <code>/toggle-active</code> だが、リクエストボディの <code>isActive</code> フラグにより無効化・有効化の両方を担う設計としている（将来的に <code>/activate</code> を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。</li></ul>
 <hr>
 <hr>
 <h2>API-MST-PAR-006 取引先コード存在確認</h2>
@@ -3525,7 +3525,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><strong>API ID</strong></td><td><code>API-MST-PRD-005</code></td></tr>
 <tr><td><strong>API名</strong></td><td>商品無効化/有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td><code>PATCH</code></td></tr>
-<tr><td><strong>パス</strong></td><td><code>/api/v1/master/products/{id}/deactivate</code></td></tr>
+<tr><td><strong>パス</strong></td><td><code>/api/v1/master/products/{id}/toggle-active</code></td></tr>
 <tr><td><strong>認証</strong></td><td>要</td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><strong>概要</strong></td><td>指定した商品の有効/無効フラグを切り替える。無効化時は在庫の有無をチェックし、在庫が存在する場合は無効化不可とする。有効化は無条件で実施可能。</td></tr>
@@ -3620,7 +3620,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 在庫有無チェック → UPDATE の一連の操作をひとつのトランザクション内で実行すること（<code>@Transactional</code>）。</li><li style="margin-left:0px"><strong>冪等性</strong>: 同一状態への再リクエストは正常（200 OK）として処理する。これによりフロントエンドのリトライが安全に行える。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントのパスは <code>/deactivate</code> だが、<code>isActive: true</code> を送信することで有効化も行える。パス名は有効化・無効化の切り替え操作を表す慣用的な命名として許容する。</li><li style="margin-left:0px"><strong>出荷禁止フラグとの関係</strong>: <code>isActive: false</code>（無効化）と <code>shipmentStopFlag: true</code>（出荷禁止）は独立した概念である。無効化は商品マスタ自体の使用停止を意味し、出荷禁止は一時的な出荷停止措置を意味する。</li></ul>
+<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 在庫有無チェック → UPDATE の一連の操作をひとつのトランザクション内で実行すること（<code>@Transactional</code>）。</li><li style="margin-left:0px"><strong>冪等性</strong>: 同一状態への再リクエストは正常（200 OK）として処理する。これによりフロントエンドのリトライが安全に行える。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントのパスは <code>/toggle-active</code> だが、<code>isActive: true</code> を送信することで有効化も行える。パス名は有効化・無効化の切り替え操作を表す慣用的な命名として許容する。</li><li style="margin-left:0px"><strong>出荷禁止フラグとの関係</strong>: <code>isActive: false</code>（無効化）と <code>shipmentStopFlag: true</code>（出荷禁止）は独立した概念である。無効化は商品マスタ自体の使用停止を意味し、出荷禁止は一時的な出荷停止措置を意味する。</li></ul>
 <hr>
 <hr>
 <h2>API-MST-PRD-006 商品コード存在確認</h2>
@@ -4136,7 +4136,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><strong>API ID</strong></td><td><code>API-MST-USR-005</code></td></tr>
 <tr><td><strong>API名</strong></td><td>ユーザー無効化/有効化</td></tr>
 <tr><td><strong>メソッド</strong></td><td><code>PATCH</code></td></tr>
-<tr><td><strong>パス</strong></td><td><code>/api/v1/master/users/{id}/deactivate</code></td></tr>
+<tr><td><strong>パス</strong></td><td><code>/api/v1/master/users/{id}/toggle-active</code></td></tr>
 <tr><td><strong>認証</strong></td><td>要</td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN のみ</td></tr>
 <tr><td><strong>概要</strong></td><td>指定されたIDのユーザーの有効/無効フラグを切り替える。ユーザー編集画面のステータスフィールドから操作する。自分自身の無効化は禁止する。</td></tr>
@@ -4193,7 +4193,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr>
 <h3>4. 業務ロジック</h3>
 <div class="mermaid">flowchart TD
-    START([開始: PATCH /api/v1/master/users/:id/deactivate]) --> AUTH[JWT認証・ロール確認]
+    START([開始: PATCH /api/v1/master/users/:id/toggle-active]) --> AUTH[JWT認証・ロール確認]
     AUTH -->|未認証| ERR_401[401 UNAUTHORIZED]
     AUTH -->|SYSTEM_ADMIN以外| ERR_403[403 FORBIDDEN]
     AUTH -->|SYSTEM_ADMIN| VALIDATE[入力バリデーション\nisActiveがBooleanか確認]
@@ -4222,7 +4222,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">パスは <code>/deactivate</code> だが <code>isActive = true</code> での有効化も同一エンドポイントで受け付ける（有効化・無効化の両方に対応）。</li><li style="margin-left:0px">無効化されたユーザーは次回ログイン時に <code>ACCOUNT_INACTIVE</code> エラーで弾かれる。ただし発行済み JWT は有効期限まで有効（既知の仕様）。</li><li style="margin-left:0px">トランザクション: UPDATE は単一トランザクションで処理する。</li></ul>
+<ul><li style="margin-left:0px">パスは <code>/toggle-active</code> だが <code>isActive = true</code> での有効化も同一エンドポイントで受け付ける（有効化・無効化の両方に対応）。</li><li style="margin-left:0px">無効化されたユーザーは次回ログイン時に <code>ACCOUNT_INACTIVE</code> エラーで弾かれる。ただし発行済み JWT は有効期限まで有効（既知の仕様）。</li><li style="margin-left:0px">トランザクション: UPDATE は単一トランザクションで処理する。</li></ul>
 <hr>
 <hr>
 <h2>API-MST-USR-006 アカウントロック解除</h2>

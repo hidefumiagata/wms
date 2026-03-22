@@ -100,8 +100,8 @@
 | `EVT-MST021-003` | 新規登録ボタンクリック | MST-022に遷移 | MST-022 倉庫登録 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST021-004` | 倉庫コードリンククリック | MST-023（編集画面）に遷移 | MST-023 倉庫編集 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST021-005` | 編集ボタンクリック | MST-023（編集画面）に遷移 | MST-023 倉庫編集 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST021-006` | 無効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/warehouses/{id}/deactivate` を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `EVT-MST021-007` | 有効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/warehouses/{id}/deactivate`（`isActive: true`）を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST021-006` | 無効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/warehouses/{id}/toggle-active` を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-MST021-007` | 有効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/warehouses/{id}/toggle-active`（`isActive: true`）を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-MST021-008` | ページ番号クリック | 指定ページを `GET /api/v1/master/warehouses?page={n}` で取得 | 同画面（ページ変更） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 ---

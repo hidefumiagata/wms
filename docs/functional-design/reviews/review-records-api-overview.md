@@ -68,7 +68,7 @@
 |---|---------|---------|-------|---------|
 | B-1 | §全API一覧「入荷管理」 | `API-INB-confirm`（入荷確認: `POST /api/v1/inbound/slips/{id}/confirm`、SYSTEM_ADMIN・WAREHOUSE_MANAGER・WAREHOUSE_STAFF）および `API-INB-cancel`（入荷キャンセル: `POST /api/v1/inbound/slips/{id}/cancel`、同ロール）を追加する。これらは業務フロー上必須の操作であり、固有のAPI IDを持つため全API一覧への掲載が必要 | **高** | ✅ 対応完了（2026-03-18確認） |
 | B-2 | §全API一覧「レポート」 | API-RPT-002 の欠番理由を補足注記として追記する（例: 「API-RPT-002 は欠番（当初予定していた入荷検品サマリーレポートを API-RPT-001 に統合したため）」等の記載） | **低** | ✅ 対応完了（2026-03-18修正）`_standard-api.md` の全API一覧に「※ API-RPT-002は欠番」の注記を追加 |
-| B-3 | §全API一覧（各マスタ管理グループ） | `PATCH .../deactivate` エンドポイントの API 名表記を「商品無効化」から「商品無効化/有効化」に統一する（MST-PRD-005, MST-PAR-005, MST-FAC-005/015/025/035, MST-USR-005）。実際のAPI設計書では無効化・有効化の両方向をサポートしており、一覧の表記が実態と合っていない | **低** | ✅ 対応完了（2026-03-18修正）`_standard-api.md` の全API一覧で施設・取引先・倉庫・商品・棟・エリア・ロケーションの各deactivate APIを「無効化/有効化」に統一 |
+| B-3 | §全API一覧（各マスタ管理グループ） | `PATCH .../toggle-active` エンドポイントの API 名表記を「商品無効化」から「商品無効化/有効化」に統一する（MST-PRD-005, MST-PAR-005, MST-FAC-005/015/025/035, MST-USR-005）。実際のAPI設計書では無効化・有効化の両方向をサポートしており、一覧の表記が実態と合っていない | **低** | ✅ 対応完了（2026-03-18修正）`_standard-api.md` の全API一覧で施設・取引先・倉庫・商品・棟・エリア・ロケーションの各deactivate APIを「無効化/有効化」に統一 |
 
 ## 10-api-master-facility.md 修正要 アクションアイテム
 

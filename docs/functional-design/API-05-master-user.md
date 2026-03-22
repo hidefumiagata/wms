@@ -555,7 +555,7 @@ flowchart TD
 | **API ID** | `API-MST-USR-005` |
 | **API名** | ユーザー無効化/有効化 |
 | **メソッド** | `PATCH` |
-| **パス** | `/api/v1/master/users/{id}/deactivate` |
+| **パス** | `/api/v1/master/users/{id}/toggle-active` |
 | **認証** | 要 |
 | **対象ロール** | SYSTEM_ADMIN のみ |
 | **概要** | 指定されたIDのユーザーの有効/無効フラグを切り替える。ユーザー編集画面のステータスフィールドから操作する。自分自身の無効化は禁止する。 |
@@ -628,7 +628,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START([開始: PATCH /api/v1/master/users/:id/deactivate]) --> AUTH[JWT認証・ロール確認]
+    START([開始: PATCH /api/v1/master/users/:id/toggle-active]) --> AUTH[JWT認証・ロール確認]
     AUTH -->|未認証| ERR_401[401 UNAUTHORIZED]
     AUTH -->|SYSTEM_ADMIN以外| ERR_403[403 FORBIDDEN]
     AUTH -->|SYSTEM_ADMIN| VALIDATE[入力バリデーション\nisActiveがBooleanか確認]
@@ -661,7 +661,7 @@ flowchart TD
 
 ### 5. 補足事項
 
-- パスは `/deactivate` だが `isActive = true` での有効化も同一エンドポイントで受け付ける（有効化・無効化の両方に対応）。
+- パスは `/toggle-active` だが `isActive = true` での有効化も同一エンドポイントで受け付ける（有効化・無効化の両方に対応）。
 - 無効化されたユーザーは次回ログイン時に `ACCOUNT_INACTIVE` エラーで弾かれる。ただし発行済み JWT は有効期限まで有効（既知の仕様）。
 - トランザクション: UPDATE は単一トランザクションで処理する。
 

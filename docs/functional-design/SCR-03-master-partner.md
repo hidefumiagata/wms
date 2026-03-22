@@ -102,7 +102,7 @@
 | `EVT-MST011-003` | 新規登録ボタンクリック | MST-012に遷移 | MST-012 取引先登録 | SYSTEM_ADMIN |
 | `EVT-MST011-004` | 取引先コードリンククリック | MST-013（編集画面）に遷移 | MST-013 取引先編集 | SYSTEM_ADMIN |
 | `EVT-MST011-005` | 編集ボタンクリック | MST-013（編集画面）に遷移 | MST-013 取引先編集 | SYSTEM_ADMIN |
-| `EVT-MST011-006` | 無効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/partners/{id}/deactivate` を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN |
+| `EVT-MST011-006` | 無効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/partners/{id}/toggle-active` を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN |
 | `EVT-MST011-007` | 有効化ボタンクリック | 確認ダイアログを表示。確認後 `PATCH /api/v1/master/partners/{id}/activate` を呼び出し | 同画面リロード（成功メッセージ表示） | SYSTEM_ADMIN |
 | `EVT-MST011-008` | ページ番号クリック | 指定ページを `GET /api/v1/master/partners?page={n}` で取得 | 同画面（ページ変更） | SYSTEM_ADMIN |
 | `EVT-MST011-009` | 表示件数変更 | 選択件数で再取得 | 同画面リロード | SYSTEM_ADMIN |
