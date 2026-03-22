@@ -875,13 +875,15 @@ export function useWarehouseForm(mode: 'create' | 'edit') {
 
 #### サーブレットフィルター実行順序
 
-| 順序 | フィルター | @Order | 役割 |
+| 順序 | フィルター | @Order / 登録方法 | 役割 |
 |------|-----------|--------|------|
 | 1 | `TraceIdFilter` | `Ordered.HIGHEST_PRECEDENCE` | traceId 生成・MDC 設定 |
 | 2 | `RequestLoggingFilter` | `Ordered.HIGHEST_PRECEDENCE + 1` | リクエスト計時・アクセスログ |
-| 3 | Spring Security FilterChain | デフォルト | 認証・認可（JWT検証、userId MDC設定） |
+| 3 | Spring Security FilterChain | デフォルト | 以下の内部フィルターを含む |
+| 3-1 | `CsrfCustomHeaderFilter` | `addFilterBefore(UsernamePasswordAuthenticationFilter)` | `X-Requested-With` ヘッダー検証（二重CSRF防御） |
+| 3-2 | `JwtAuthenticationFilter` | `addFilterBefore(UsernamePasswordAuthenticationFilter)` | JWT 検証・userId MDC 設定 |
 
-> **設計意図**: TraceIdFilter を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。RequestLoggingFilter はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。
+> **設計意図**: `TraceIdFilter` を最優先で実行し、後続の全フィルター・ログに traceId が付与されることを保証する。`RequestLoggingFilter` はその直後に配置し、セキュリティフィルターを含むリクエスト全体の処理時間を計測する。Spring Security FilterChain 内では `CsrfCustomHeaderFilter` を JWT 検証より前に配置し、ヘッダーなしリクエストを認証前に拒否する（CSRF 二重防御の詳細は [10-security-architecture.md §3](10-security-architecture.md#3-csrf対策設計) を参照）。
 
 ### 4.1 バックエンド — 相関ID（TraceId）管理
 

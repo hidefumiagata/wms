@@ -21,7 +21,7 @@
 | **認証方式** | JWT（JSON Web Token）+ httpOnly Cookie |
 | **認可方式** | RBAC（ロールベースアクセス制御） |
 | **セッション管理** | ステートレス（サーバー側セッション不使用） |
-| **CSRF対策** | SameSite=Lax（CSRFトークン不要） |
+| **CSRF対策** | SameSite=Lax + `X-Requested-With` カスタムヘッダー検証（二重防御。詳細は [10-security-architecture.md §3](10-security-architecture.md#3-csrf対策設計)） |
 | **XSS対策** | httpOnly Cookie（JavaScriptからトークンにアクセス不可） |
 | **フレームワーク** | Spring Security 6.x |
 | **JWTライブラリ** | jjwt（io.jsonwebtoken） |
@@ -1678,7 +1678,7 @@ DBの `system_parameters` テーブルで管理するパラメータ。詳細は
 | 対策 | 実装 |
 |------|------|
 | **XSS対策** | httpOnly Cookie（JavaScript からトークンにアクセス不可） |
-| **CSRF対策** | SameSite=Lax Cookie（CSRFトークン不要） |
+| **CSRF対策** | SameSite=Lax Cookie + `X-Requested-With` カスタムヘッダー検証（二重防御） |
 | **タイミング攻撃対策** | ユーザー不存在時のBCryptダミー照合、パスワードリセット時の統一レスポンス |
 | **ユーザー列挙対策** | ログイン失敗・パスワードリセットで同一エラーメッセージ |
 | **リプレイ攻撃対策** | リフレッシュトークンローテーション |
