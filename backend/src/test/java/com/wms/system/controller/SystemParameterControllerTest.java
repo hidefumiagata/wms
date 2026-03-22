@@ -92,12 +92,12 @@ class SystemParameterControllerTest {
         @DisplayName("パラメータ値を更新して200を返す")
         void updateSystemParameter_returns200() throws Exception {
             SystemParameter updated = createParam("SESSION_TIMEOUT_MINUTES", "30", "SECURITY", "INTEGER");
-            when(systemParameterService.updateValue(eq("SESSION_TIMEOUT_MINUTES"), eq("30")))
+            when(systemParameterService.updateValue(eq("SESSION_TIMEOUT_MINUTES"), eq("30"), any()))
                     .thenReturn(updated);
 
             mockMvc.perform(put(BASE_URL + "/SESSION_TIMEOUT_MINUTES")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"paramValue\":\"30\"}"))
+                            .content("{\"paramValue\":\"30\",\"version\":0}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.paramKey").value("SESSION_TIMEOUT_MINUTES"))
                     .andExpect(jsonPath("$.paramValue").value("30"));
@@ -106,13 +106,13 @@ class SystemParameterControllerTest {
         @Test
         @DisplayName("存在しないキーで404を返す")
         void updateSystemParameter_notFound_returns404() throws Exception {
-            when(systemParameterService.updateValue(eq("UNKNOWN_KEY"), any()))
+            when(systemParameterService.updateValue(eq("UNKNOWN_KEY"), any(), any()))
                     .thenThrow(new com.wms.shared.exception.ResourceNotFoundException(
                             "SYSTEM_PARAMETER_NOT_FOUND", "システムパラメータが見つかりません: UNKNOWN_KEY"));
 
             mockMvc.perform(put(BASE_URL + "/UNKNOWN_KEY")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"paramValue\":\"x\"}"))
+                            .content("{\"paramValue\":\"x\",\"version\":0}"))
                     .andExpect(status().isNotFound());
         }
 

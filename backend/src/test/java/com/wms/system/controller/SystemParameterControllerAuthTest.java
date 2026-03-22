@@ -116,13 +116,13 @@ class SystemParameterControllerAuthTest {
                 .category("SECURITY")
                 .valueType("INTEGER")
                 .build();
-        when(systemParameterService.updateValue(eq("SESSION_TIMEOUT_MINUTES"), eq("30")))
+        when(systemParameterService.updateValue(eq("SESSION_TIMEOUT_MINUTES"), eq("30"), any()))
                 .thenReturn(updated);
 
         mockMvc.perform(put(BASE_URL + "/SESSION_TIMEOUT_MINUTES")
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"paramValue\":\"30\"}"))
+                        .content("{\"paramValue\":\"30\",\"version\":0}"))
                 .andExpect(status().isOk());
     }
 

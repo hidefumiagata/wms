@@ -36,17 +36,36 @@ public class SystemParameterService {
     }
 
     @Transactional
-    public SystemParameter updateValue(String paramKey, String paramValue) {
+    public SystemParameter updateValue(String paramKey, String paramValue, Integer version) {
         SystemParameter param = findByKey(paramKey);
+        if (!param.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+        }
+        validateParamValue(param, paramValue);
         param.setParamValue(paramValue);
+        param.setVersion(version);
         try {
             SystemParameter saved = systemParameterRepository.save(param);
-            log.info("SystemParameter updated: key={}, value={}", paramKey, paramValue);
+            log.info("SystemParameter updated: key={}", paramKey);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+        }
+    }
+
+    private void validateParamValue(SystemParameter param, String newValue) {
+        if ("INTEGER".equals(param.getValueType())) {
+            try {
+                Integer.parseInt(newValue);
+            } catch (NumberFormatException e) {
+                throw new com.wms.shared.exception.BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "INTEGER型パラメータに不正な値: " + newValue);
+            }
         }
     }
 }

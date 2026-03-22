@@ -39,7 +39,8 @@ public class SystemParameterController implements SystemParameterApi {
             String paramKey,
             UpdateSystemParameterRequest updateSystemParameterRequest) {
         SystemParameter updated = systemParameterService.updateValue(
-                paramKey, updateSystemParameterRequest.getParamValue());
+                paramKey, updateSystemParameterRequest.getParamValue(),
+                updateSystemParameterRequest.getVersion());
         return ResponseEntity.ok(toDetail(updated));
     }
 
@@ -55,6 +56,7 @@ public class SystemParameterController implements SystemParameterApi {
                 .valueType(SystemParameterValueType.fromValue(p.getValueType()))
                 .description(p.getDescription())
                 .updatedAt(p.getUpdatedAt())
-                .updatedBy(p.getUpdatedBy());
+                .updatedBy(p.getUpdatedBy())
+                .version(p.getVersion());
     }
 }

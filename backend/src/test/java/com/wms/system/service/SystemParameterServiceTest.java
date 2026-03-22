@@ -81,7 +81,7 @@ class SystemParameterServiceTest {
         when(systemParameterRepository.save(any(SystemParameter.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        SystemParameter result = systemParameterService.updateValue("SESSION_TIMEOUT_MINUTES", "30");
+        SystemParameter result = systemParameterService.updateValue("SESSION_TIMEOUT_MINUTES", "30", 0);
 
         assertThat(result.getParamValue()).isEqualTo("30");
     }
@@ -91,7 +91,7 @@ class SystemParameterServiceTest {
         when(systemParameterRepository.findByParamKey("UNKNOWN"))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> systemParameterService.updateValue("UNKNOWN", "x"))
+        assertThatThrownBy(() -> systemParameterService.updateValue("UNKNOWN", "x", 0))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -104,7 +104,7 @@ class SystemParameterServiceTest {
         when(systemParameterRepository.save(any(SystemParameter.class)))
                 .thenThrow(new ObjectOptimisticLockingFailureException(SystemParameter.class.getName(), 1L));
 
-        assertThatThrownBy(() -> systemParameterService.updateValue("KEY1", "V2"))
+        assertThatThrownBy(() -> systemParameterService.updateValue("KEY1", "V2", 0))
                 .isInstanceOf(OptimisticLockConflictException.class);
     }
 }
