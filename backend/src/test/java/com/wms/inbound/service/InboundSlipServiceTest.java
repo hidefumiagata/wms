@@ -938,14 +938,27 @@ class InboundSlipServiceTest {
         }
 
         @Test
-        @DisplayName("INSPECTINGステータスの伝票をキャンセルできる")
+        @DisplayName("INSPECTINGステータスの伝票をキャンセルすると明細もCANCELLEDになる")
         void cancel_inspecting_success() {
             setUpSecurityContext(10L);
+            InboundSlipLine inspectedLine = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(10)
+                    .inspectedQty(10)
+                    .lineStatus(InboundLineStatus.INSPECTED.getValue())
+                    .build();
+            setField(inspectedLine, "id", 11L);
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(inspectedLine);
             InboundSlip slip = InboundSlip.builder()
                     .slipNumber("INB-20260322-0001")
                     .status(InboundSlipStatus.INSPECTING.getValue())
                     .warehouseId(1L)
-                    .lines(new ArrayList<>())
+                    .lines(lines)
                     .build();
             setField(slip, "id", 1L);
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
@@ -954,6 +967,8 @@ class InboundSlipServiceTest {
             InboundSlip result = inboundSlipService.cancel(1L);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+            assertThat(result.getLines()).allSatisfy(line ->
+                    assertThat(line.getLineStatus()).isEqualTo(InboundLineStatus.CANCELLED.getValue()));
         }
 
         @Test
@@ -1007,6 +1022,8 @@ class InboundSlipServiceTest {
             InboundSlip result = inboundSlipService.cancel(1L);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+            assertThat(result.getLines()).allSatisfy(line ->
+                    assertThat(line.getLineStatus()).isEqualTo(InboundLineStatus.CANCELLED.getValue()));
 
             verify(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
         }

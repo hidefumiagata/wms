@@ -313,6 +313,11 @@ public class InboundSlipService {
             }
         }
 
+        // Update all lines to CANCELLED
+        for (InboundSlipLine line : slip.getLines()) {
+            line.setLineStatus(InboundLineStatus.CANCELLED.getValue());
+        }
+
         slip.setStatus(InboundSlipStatus.CANCELLED.getValue());
         slip.setCancelledAt(now);
         slip.setCancelledBy(currentUserId);

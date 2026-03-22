@@ -33,6 +33,10 @@ stateDiagram-v2
     INSPECTED --> INSPECTED : 検品数再登録（上書き可）
     INSPECTED --> STORED : 入庫確定（API-INB-009）
     STORED --> [*]
+    PENDING --> CANCELLED : キャンセル（API-INB-007）
+    INSPECTED --> CANCELLED : キャンセル（API-INB-007）
+    STORED --> CANCELLED : キャンセル（API-INB-007）
+    CANCELLED --> [*]
 ```
 
 ---
@@ -432,7 +436,7 @@ flowchart TD
 | `expiryDate` | String | 賞味/使用期限日 |
 | `putawayLocationId` | Long | 入庫先ロケーションID（入庫確定後） |
 | `putawayLocationCode` | String | 入庫先ロケーションコード（入庫確定後） |
-| `lineStatus` | String | 明細ステータス（`PENDING` / `INSPECTED` / `STORED`） |
+| `lineStatus` | String | 明細ステータス（`PENDING` / `INSPECTED` / `STORED` / `CANCELLED`） |
 | `inspectedAt` | String | 検品日時 |
 | `inspectedBy` | Long | 検品者ID |
 | `storedAt` | String | 入庫確定日時 |
@@ -662,9 +666,11 @@ flowchart TD
     FETCH -->|存在する| CHECK{status IN PLANNED,\nCONFIRMED, INSPECTING,\nPARTIAL_STORED?}
     CHECK -->|NO（STORED/CANCELLED）| ERR409[409 INBOUND_INVALID_STATUS]
     CHECK -->|YES| CHECK_PARTIAL{status =\nPARTIAL_STORED?}
-    CHECK_PARTIAL -->|NO（PLANNED/CONFIRMED/INSPECTING）| UPDATE
+    CHECK_PARTIAL -->|NO（PLANNED/CONFIRMED/INSPECTING）| UPDATE_LINES
     CHECK_PARTIAL -->|YES| ROLLBACK[入庫確定済み明細の在庫ロールバック\nline_status=STOREDの明細ごとに:\ninventories UPDATE quantity -= stored_qty\ninventory_movements INSERT\nmovement_type=INBOUND_CANCEL\nquantity=stored_qty（負値）]
-    ROLLBACK --> UPDATE
+    ROLLBACK --> UPDATE_LINES
+    UPDATE_LINES[inbound_slip_lines UPDATE\nline_status → CANCELLED（全明細）]
+    UPDATE_LINES --> UPDATE
     UPDATE[inbound_slips UPDATE\nstatus → CANCELLED\ncancelled_at = now\ncancelled_by = ログインユーザー]
     UPDATE --> COMMIT[コミット]
     COMMIT --> RETURN[200 OK + 更新後伝票]
@@ -679,6 +685,7 @@ flowchart TD
 | 2 | キャンセル時に `cancelled_at`（現在日時）と `cancelled_by`（実行ユーザーID）を記録する | — |
 | 3 | `PARTIAL_STORED` の伝票をキャンセルする場合、`line_status = STORED` の明細に対して在庫ロールバック処理を行う（`inventories.quantity` から入庫数量を減算し、`inventory_movements` に `INBOUND_CANCEL` レコードを挿入する） | — |
 | 4 | `PLANNED`・`CONFIRMED`・`INSPECTING` の伝票キャンセルは在庫への影響なし（検品は在庫を変動させない） | — |
+| 5 | キャンセル時に全明細の `line_status` を `CANCELLED` に更新する（ステータス不整合防止） | — |
 
 ---
 
