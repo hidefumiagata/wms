@@ -18,10 +18,7 @@
             clearable
             :placeholder="t('master.user.roleAll')"
           >
-            <el-option label="SYSTEM_ADMIN" value="SYSTEM_ADMIN" />
-            <el-option label="WAREHOUSE_MANAGER" value="WAREHOUSE_MANAGER" />
-            <el-option label="WAREHOUSE_STAFF" value="WAREHOUSE_STAFF" />
-            <el-option label="VIEWER" value="VIEWER" />
+            <el-option v-for="r in roleOptions" :key="r" :label="r" :value="r" />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('master.user.status')">
@@ -88,6 +85,11 @@
             <el-tag size="small">{{ row.role }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column :label="t('master.user.createdAt')" width="160">
+          <template #default="{ row }">
+            {{ formatDateTime(row.createdAt) }}
+          </template>
+        </el-table-column>
         <el-table-column :label="t('master.user.status')" width="110" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.locked" type="danger" size="small">
@@ -148,10 +150,20 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Refresh, Plus, Edit } from '@element-plus/icons-vue'
 import { useUserList } from '@/composables/master/useUserList'
+import { UserRole } from '@/api/generated/models/user-role'
 import type { UserDetail } from '@/api/generated/models/user-detail'
+
+const roleOptions = Object.values(UserRole)
 
 const { t } = useI18n()
 const router = useRouter()
+
+function formatDateTime(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const {
   items,

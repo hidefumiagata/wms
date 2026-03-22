@@ -449,7 +449,7 @@ export default {
         codeRequired: 'ユーザーコードは必須です',
         codeMaxLength: 'ユーザーコードは50文字以内で入力してください',
         codeFormat: 'ユーザーコードは半角英数字・アンダースコアのみ使用できます',
-        codeDuplicate: 'このユーザーコードは既に登録されています',
+        codeDuplicate: '{code}は既に登録されています',
         nameRequired: '氏名は必須です',
         nameMaxLength: '氏名は200文字以内で入力してください',
         emailRequired: 'メールアドレスは必須です',

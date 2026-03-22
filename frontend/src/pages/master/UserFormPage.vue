@@ -78,10 +78,7 @@
             :disabled="isSelf"
             style="width: 100%"
           >
-            <el-option label="SYSTEM_ADMIN" value="SYSTEM_ADMIN" />
-            <el-option label="WAREHOUSE_MANAGER" value="WAREHOUSE_MANAGER" />
-            <el-option label="WAREHOUSE_STAFF" value="WAREHOUSE_STAFF" />
-            <el-option label="VIEWER" value="VIEWER" />
+            <el-option v-for="r in roleOptions" :key="r" :label="r" :value="r" />
           </el-select>
           <div v-if="isSelf" class="form-hint">{{ t('master.user.selfRoleHint') }}</div>
         </el-form-item>
@@ -170,8 +167,10 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, View, Hide } from '@element-plus/icons-vue'
 import { useUserForm } from '@/composables/master/useUserForm'
+import { UserRole } from '@/api/generated/models/user-role'
 
 const { t } = useI18n()
+const roleOptions = Object.values(UserRole)
 
 const {
   userCode,

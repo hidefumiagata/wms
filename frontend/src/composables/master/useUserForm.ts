@@ -70,10 +70,11 @@ export function useUserForm() {
       .email(t('master.user.validation.emailFormat')),
     role: z.string().min(1, t('master.user.validation.roleRequired')),
     isActive: z.boolean(),
-    initialPassword: z.string().optional(),
-    confirmPassword: z.string().optional(),
   })
 
+  // スキーマは初期化時に決定される。DefaultLayout の RouterView が :key="route.fullPath" を
+  // 使用しているため、/users/new → /users/:id/edit 間の遷移ではコンポーネントが再マウントされ
+  // 正しいスキーマが選択される。
   const schema = isEdit.value ? editSchema : createSchema
 
   const {
@@ -144,7 +145,7 @@ export function useUserForm() {
         params: { code },
       })
       if (res.data.exists) {
-        setFieldError('userCode', t('master.user.validation.codeDuplicate'))
+        setFieldError('userCode', t('master.user.validation.codeDuplicate', { code: userCode.value }))
       }
     } catch {
       // サーバー側バリデーションに委ねる
@@ -214,7 +215,7 @@ export function useUserForm() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 409) {
         if (error.response.data?.errorCode === 'DUPLICATE_CODE') {
-          setFieldError('userCode', t('master.user.validation.codeDuplicate'))
+          setFieldError('userCode', t('master.user.validation.codeDuplicate', { code: userCode.value }))
         } else {
           ElMessage.error(t('error.optimisticLock'))
         }

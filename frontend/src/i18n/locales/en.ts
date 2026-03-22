@@ -449,7 +449,7 @@ export default {
         codeRequired: 'User code is required',
         codeMaxLength: 'User code must be 50 characters or less',
         codeFormat: 'User code must contain only alphanumeric characters and underscores',
-        codeDuplicate: 'This user code is already registered',
+        codeDuplicate: '{code} is already registered',
         nameRequired: 'Full name is required',
         nameMaxLength: 'Full name must be 200 characters or less',
         emailRequired: 'Email is required',
