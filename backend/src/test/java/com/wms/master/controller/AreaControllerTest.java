@@ -367,7 +367,7 @@ class AreaControllerTest {
         }
 
         @Test
-        @DisplayName("createdAt/updatedAtがnullのエリアでも200を返す（toLocalDateTime nullブランチ）")
+        @DisplayName("createdAt/updatedAtがnullのエリアでも200を返す")
         void getArea_nullTimestamps_returns200() throws Exception {
             Area a = createArea(null, 1L, 1L, "A01", "テストエリア", "STOCK", "AMBIENT");
             Building building = createBuilding(1L, 1L, "B01");

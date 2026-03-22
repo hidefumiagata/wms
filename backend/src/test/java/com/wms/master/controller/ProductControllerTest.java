@@ -310,7 +310,7 @@ class ProductControllerTest {
         }
 
         @Test
-        @DisplayName("createdAt/updatedAtがnullの商品でも200を返す（toLocalDateTime nullブランチ）")
+        @DisplayName("createdAt/updatedAtがnullの商品でも200を返す")
         void getProduct_nullTimestamps_returns200() throws Exception {
             Product p = createProduct(null, "P-001", "テスト商品A", "AMBIENT");
             when(productService.findById(1L)).thenReturn(p);

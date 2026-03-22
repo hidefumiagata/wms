@@ -30,7 +30,7 @@ openApiGenerate {
         interfaceOnly        : "true",
         useSpringBoot3       : "true",
         useTags              : "true",
-        dateLibrary          : "java8-localdatetime",
+        dateLibrary          : "java8",
         openApiNullable      : "false",
         additionalModelTypeAnnotations: "@lombok.Generated",
         skipDefaultInterface : "true"

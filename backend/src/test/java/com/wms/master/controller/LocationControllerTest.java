@@ -410,7 +410,7 @@ class LocationControllerTest {
         }
 
         @Test
-        @DisplayName("createdAt/updatedAtがnullのロケーションでも200を返す（toLocalDateTime nullブランチ）")
+        @DisplayName("createdAt/updatedAtがnullのロケーションでも200を返す")
         void getLocation_nullTimestamps_returns200() throws Exception {
             Location l = createLocation(null, 10L, 100L, "A-01-A-01-01-01");
             Area area = createArea(10L, "AREA-01", "STOCK");
