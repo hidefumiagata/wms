@@ -74,16 +74,15 @@ public class PartnerController {
         String partnerTypeValue = partnerType != null ? partnerType.getValue() : null;
 
         if (Boolean.TRUE.equals(all)) {
-            // TODO: #75 プルダウン用途では PartnerSimple（code/name/type/isActive のみ）への切り替えを検討（PII削減）
-            List<PartnerDetail> detailList = partnerService.findAllSimple(isActive).stream()
-                    .map(this::toDetail)
+            List<PartnerDetail> items = partnerService.findAllSimple(isActive).stream()
+                    .map(this::toSimpleDetail)
                     .toList();
             PartnerPageResponse response = new PartnerPageResponse()
-                    .content(detailList)
+                    .content(items)
                     .page(0)
-                    .size(detailList.size())
-                    .totalElements((long) detailList.size())
-                    .totalPages(detailList.isEmpty() ? 0 : 1);
+                    .size(items.size())
+                    .totalElements((long) items.size())
+                    .totalPages(items.isEmpty() ? 0 : 1);
             return ResponseEntity.ok(response);
         }
 
@@ -161,6 +160,20 @@ public class PartnerController {
     }
 
     // --- Converters ---
+
+    /**
+     * プルダウン用の軽量レスポンス。PII（email, phone, address, contactPerson）を含めない。
+     */
+    private PartnerDetail toSimpleDetail(Partner p) {
+        return new PartnerDetail()
+                .id(p.getId())
+                .partnerCode(p.getPartnerCode())
+                .partnerName(p.getPartnerName())
+                .partnerNameKana(p.getPartnerNameKana())
+                .partnerType(PartnerType.fromValue(p.getPartnerType()))
+                .isActive(p.getIsActive())
+                .version(p.getVersion());
+    }
 
     private PartnerDetail toDetail(Partner p) {
         return new PartnerDetail()
