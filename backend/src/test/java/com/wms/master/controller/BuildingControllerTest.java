@@ -282,7 +282,7 @@ class BuildingControllerTest {
         }
 
         @Test
-        @DisplayName("createdAt/updatedAtがnullの棟でも200を返す（toLocalDateTime nullブランチ）")
+        @DisplayName("createdAt/updatedAtがnullの棟でも200を返す")
         void getBuilding_nullTimestamps_returns200() throws Exception {
             Building b = createBuilding(null, 10L, "BLDG01", "棟A");
             Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
