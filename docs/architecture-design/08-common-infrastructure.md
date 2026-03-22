@@ -949,33 +949,49 @@ public final class TraceContext {
 
 ### 4.2 バックエンド — Logback JSON設定
 
+プロファイルごとに異なるエンコーダーを使用し、両環境でPIIマスキングを適用する。
+
 ```xml
 <!-- src/main/resources/logback-spring.xml -->
 <configuration>
-  <springProfile name="default,dev">
-    <appender name="CONSOLE"
-        class="ch.qos.logback.core.ConsoleAppender">
-      <encoder class=
-          "net.logstash.logback.encoder.LogstashEncoder">
+  <!-- 開発環境: テキスト形式 + PIIマスキング -->
+  <springProfile name="dev">
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="com.wms.shared.logging.PiiMaskingPatternLayoutEncoder">
+        <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] [%X{userId}] - %msg%n</pattern>
+      </encoder>
+    </appender>
+    <root level="DEBUG">
+      <appender-ref ref="CONSOLE" />
+    </root>
+  </springProfile>
+
+  <!-- 本番環境: JSON形式 + PIIマスキング -->
+  <springProfile name="prd">
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+      <encoder class="net.logstash.logback.encoder.LogstashEncoder">
         <includeMdcKeyName>traceId</includeMdcKeyName>
         <includeMdcKeyName>userId</includeMdcKeyName>
         <includeMdcKeyName>module</includeMdcKeyName>
+        <!-- デフォルトの message/stackTrace を PIIマスキング版で置換 -->
+        <provider class="com.wms.shared.logging.PiiMaskingMessageJsonProvider">
+          <fieldName>message</fieldName>
+        </provider>
+        <provider class="com.wms.shared.logging.PiiMaskingStackTraceJsonProvider">
+          <fieldName>stack_trace</fieldName>
+        </provider>
         <fieldNames>
           <timestamp>timestamp</timestamp>
-          <version>[ignore]</version>
-          <levelValue>[ignore]</levelValue>
+          <message>[ignore]</message>
+          <stackTrace>[ignore]</stackTrace>
+          <logger>logger</logger>
+          <level>level</level>
         </fieldNames>
       </encoder>
     </appender>
-
     <root level="INFO">
-      <appender-ref ref="CONSOLE" />
+      <appender-ref ref="JSON" />
     </root>
-
-    <!-- 開発環境のみDEBUG -->
-    <springProfile name="dev">
-      <logger name="com.wms" level="DEBUG" />
-    </springProfile>
   </springProfile>
 </configuration>
 ```
@@ -1046,39 +1062,61 @@ public class ServiceLoggingAspect {
 
 ### 4.4 バックエンド — PII マスキング
 
+PIIマスキングはロジック（`PiiMasker`）と環境別の Logback 拡張クラスに分離している。
+
+| クラス | 役割 |
+|--------|------|
+| `PiiMasker` | マスキングロジック本体（メール・電話・JWT・パスワード系） |
+| `PiiMaskingPatternLayoutEncoder` | dev プロファイル: テキストフォーマットログのマスキング |
+| `PiiMaskingMessageJsonProvider` | prd プロファイル: LogstashEncoder の `message` フィールドへの適用 |
+| `PiiMaskingStackTraceJsonProvider` | prd プロファイル: LogstashEncoder のスタックトレースへの適用 |
+
 ```java
 package com.wms.shared.logging;
-
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
 
 import java.util.regex.Pattern;
 
 /**
- * ログメッセージ中のメールアドレス・電話番号をマスクする
- * Logback カスタムフィルターではなく、
- * LogstashEncoder の MessageJsonProvider をカスタマイズして
- * マスキングを適用する方式を採用する。
+ * ログメッセージ中のPII（個人情報）・機密情報をマスクするユーティリティ。
+ * LogstashEncoder の MessageJsonProvider カスタマイズで自動適用される。
  */
 public final class PiiMasker {
 
     private PiiMasker() {}
 
+    // ReDoS対策: possessive quantifier(++) 使用
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile(
-            "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+            "[a-zA-Z0-9._%+\\-]++@[a-zA-Z0-9\\-]++(?:\\.[a-zA-Z0-9\\-]++)*\\.[a-zA-Z]{2,}");
 
+    // 先頭セグメント2桁以上に制限、ワードバウンダリ付き
     private static final Pattern PHONE_PATTERN =
+        Pattern.compile("\\b0[0-9]{1,3}-[0-9]{1,4}-[0-9]{3,4}\\b");
+
+    // JWE(5パート)対応、Base64URLパディング(=)対応
+    private static final Pattern JWT_PATTERN =
         Pattern.compile(
-            "0\\d{1,4}[-\\s]?\\d{1,4}[-\\s]?\\d{2,5}");
+            "eyJ[a-zA-Z0-9_=-]+\\.[a-zA-Z0-9_=-]+\\.[a-zA-Z0-9_=-]+(?:\\.[a-zA-Z0-9_=-]+)*");
+
+    // KV形式（key=value / key:value）、token キーワード含む
+    // (?!\[JWT): JWT-REDACTED済みの値を再マスキングしない
+    private static final Pattern PASSWORD_KV_PATTERN =
+        Pattern.compile(
+            "(?i)(password|passwd|pwd|secret|token)(\\s*[=:]\\s*)(?!\\[JWT)\\S+");
+
+    // JSON形式（"key": "value"）
+    private static final Pattern PASSWORD_JSON_PATTERN =
+        Pattern.compile(
+            "(?i)(password|passwd|pwd|secret|token)(\"\\s*:\\s*\")([^\"]*)\"");
 
     public static String mask(String message) {
         if (message == null) return null;
-        String masked = EMAIL_PATTERN.matcher(message)
-            .replaceAll("***@***.***");
-        masked = PHONE_PATTERN.matcher(masked)
-            .replaceAll("***-****-****");
+        if (!mayContainSensitiveData(message)) return message; // fast-path
+        String masked = EMAIL_PATTERN.matcher(message).replaceAll("***@***.***");
+        masked = PHONE_PATTERN.matcher(masked).replaceAll("***-****-****");
+        masked = JWT_PATTERN.matcher(masked).replaceAll("[JWT-REDACTED]");
+        masked = PASSWORD_JSON_PATTERN.matcher(masked).replaceAll("$1$2*****\"");
+        masked = PASSWORD_KV_PATTERN.matcher(masked).replaceAll("$1$2*****");
         return masked;
     }
 }
@@ -2330,6 +2368,9 @@ com.wms.shared/
 │   ├── TraceIdFilter.java
 │   ├── TraceContext.java
 │   ├── PiiMasker.java
+│   ├── PiiMaskingPatternLayoutEncoder.java
+│   ├── PiiMaskingMessageJsonProvider.java
+│   ├── PiiMaskingStackTraceJsonProvider.java
 │   └── ServiceLoggingAspect.java
 ├── security/         # JWT 認証
 │   └── ...（認証設計書で定義）

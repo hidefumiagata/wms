@@ -111,9 +111,14 @@ com.wms.shared/
 │   ├── JwtAuthenticationFilter.java # Servlet Filter
 │   └── WmsUserDetails.java      # UserDetails 実装
 ├── logging/             # ロギング
-│   ├── RequestLoggingFilter.java   # リクエストログ
-│   ├── PiiMaskingConverter.java    # PIIマスキング
-│   └── TraceIdFilter.java             # traceId・userId のMDC設定
+│   ├── RequestLoggingFilter.java          # リクエストログ
+│   ├── PiiMasker.java                     # PIIマスキングロジック（メール・電話・JWT・パスワード）
+│   ├── PiiMaskingMessageJsonProvider.java # 本番: LogstashEncoder の message フィールドマスキング
+│   ├── PiiMaskingStackTraceJsonProvider.java # 本番: スタックトレースのマスキング
+│   ├── PiiMaskingPatternLayoutEncoder.java  # 開発: テキストログのマスキング
+│   ├── TraceIdFilter.java                 # traceId・userId のMDC設定
+│   ├── TraceContext.java                  # MDC キー定数
+│   └── ServiceLoggingAspect.java          # 業務操作AOPログ
 ├── entity/              # 共通Entityクラス
 │   ├── BaseEntity.java             # 監査カラム基底クラス
 │   └── AuditorAwareImpl.java       # 監査ユーザー取得
@@ -1641,22 +1646,16 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
 ### 9.5 PII マスキング
 
-```java
-public class PiiMaskingConverter extends CompositeConverter<ILoggingEvent> {
+> 詳細設計・コードサンプルは [architecture-design/08-common-infrastructure.md § 4.4](08-common-infrastructure.md#44-バックエンド--pii-マスキング) を参照。
 
-    private static final Pattern EMAIL_PATTERN =
-            Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
-    private static final Pattern PHONE_PATTERN =
-            Pattern.compile("\\d{2,4}-\\d{2,4}-\\d{4}");
+PII マスキングは `PiiMasker.java`（ロジック）と環境別の Logback 拡張クラスに分離されている。
 
-    @Override
-    protected String transform(ILoggingEvent event, String message) {
-        String masked = EMAIL_PATTERN.matcher(message).replaceAll("**@**.***");
-        masked = PHONE_PATTERN.matcher(masked).replaceAll("***-****-****");
-        return masked;
-    }
-}
-```
+| クラス | 用途 |
+|--------|------|
+| `PiiMasker` | メール・電話・JWT・パスワードのマスキングロジック（ユーティリティ） |
+| `PiiMaskingPatternLayoutEncoder` | 開発環境（dev）: テキストフォーマットログに適用 |
+| `PiiMaskingMessageJsonProvider` | 本番環境（prd）: LogstashEncoder の message フィールドに適用 |
+| `PiiMaskingStackTraceJsonProvider` | 本番環境（prd）: LogstashEncoder のスタックトレースに適用 |
 
 ### 9.6 業務操作ログ
 
