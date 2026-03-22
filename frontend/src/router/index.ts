@@ -168,6 +168,25 @@ const router = createRouter({
           component: () => import('@/pages/master/LocationFormPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
+        // ユーザーマスタ — SCR-06 (MST-061/062/063): SYSTEM_ADMIN のみ
+        {
+          path: 'master/users',
+          name: 'user-list',
+          component: () => import('@/pages/master/UserListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
+        {
+          path: 'master/users/new',
+          name: 'user-new',
+          component: () => import('@/pages/master/UserFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
+        {
+          path: 'master/users/:id/edit',
+          name: 'user-edit',
+          component: () => import('@/pages/master/UserFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
       ],
     },
     // 404

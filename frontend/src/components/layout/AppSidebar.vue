@@ -43,6 +43,10 @@
         <el-icon><Location /></el-icon>
         <span>{{ t('nav.location') }}</span>
       </el-menu-item>
+      <el-menu-item index="/master/users">
+        <el-icon><User /></el-icon>
+        <span>{{ t('nav.user') }}</span>
+      </el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>
@@ -50,7 +54,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
