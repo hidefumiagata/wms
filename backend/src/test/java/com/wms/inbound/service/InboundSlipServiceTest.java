@@ -897,14 +897,26 @@ class InboundSlipServiceTest {
         }
 
         @Test
-        @DisplayName("PLANNEDステータスの伝票をキャンセルできる")
+        @DisplayName("PLANNEDステータスの伝票をキャンセルすると明細もCANCELLEDになる")
         void cancel_planned_success() {
             setUpSecurityContext(10L);
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(10)
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
+                    .build();
+            setField(pendingLine, "id", 11L);
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(pendingLine);
             InboundSlip slip = InboundSlip.builder()
                     .slipNumber("INB-20260322-0001")
                     .status(InboundSlipStatus.PLANNED.getValue())
                     .warehouseId(1L)
-                    .lines(new ArrayList<>())
+                    .lines(lines)
                     .build();
             setField(slip, "id", 1L);
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
@@ -915,18 +927,32 @@ class InboundSlipServiceTest {
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
             assertThat(result.getCancelledBy()).isEqualTo(10L);
             assertThat(result.getCancelledAt()).isNotNull();
+            assertThat(result.getLines()).allSatisfy(line ->
+                    assertThat(line.getLineStatus()).isEqualTo(InboundLineStatus.CANCELLED.getValue()));
             verify(inboundSlipRepository).save(slip);
         }
 
         @Test
-        @DisplayName("CONFIRMEDステータスの伝票をキャンセルできる")
+        @DisplayName("CONFIRMEDステータスの伝票をキャンセルすると明細もCANCELLEDになる")
         void cancel_confirmed_success() {
             setUpSecurityContext(10L);
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(10)
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
+                    .build();
+            setField(pendingLine, "id", 11L);
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(pendingLine);
             InboundSlip slip = InboundSlip.builder()
                     .slipNumber("INB-20260322-0001")
                     .status(InboundSlipStatus.CONFIRMED.getValue())
                     .warehouseId(1L)
-                    .lines(new ArrayList<>())
+                    .lines(lines)
                     .build();
             setField(slip, "id", 1L);
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
@@ -935,6 +961,8 @@ class InboundSlipServiceTest {
             InboundSlip result = inboundSlipService.cancel(1L);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+            assertThat(result.getLines()).allSatisfy(line ->
+                    assertThat(line.getLineStatus()).isEqualTo(InboundLineStatus.CANCELLED.getValue()));
         }
 
         @Test
