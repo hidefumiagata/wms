@@ -454,10 +454,10 @@ class AreaControllerTest {
         }
     }
 
-    // ===== PATCH /api/v1/master/areas/{id}/deactivate =====
+    // ===== PATCH /api/v1/master/areas/{id}/toggle-active =====
 
     @Nested
-    @DisplayName("PATCH /areas/{id}/deactivate（有効化/無効化）")
+    @DisplayName("PATCH /areas/{id}/toggle-active（有効化/無効化）")
     class ToggleAreaActive {
 
         private static final String VALID_JSON = """
@@ -472,7 +472,7 @@ class AreaControllerTest {
 
             when(areaService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
@@ -482,7 +482,7 @@ class AreaControllerTest {
         @Test
         @DisplayName("必須項目未設定で400を返す")
         void toggleAreaActive_missingRequired_returns400() throws Exception {
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isBadRequest());
@@ -495,7 +495,7 @@ class AreaControllerTest {
                     .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
                             "AREA_NOT_FOUND", "エリア", 999L));
 
-            mockMvc.perform(patch(BASE_URL + "/999/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/999/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isNotFound());
@@ -509,7 +509,7 @@ class AreaControllerTest {
                             "CANNOT_DEACTIVATE_HAS_CHILDREN",
                             "配下にロケーションが存在するため無効化できません (id=1)"));
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isUnprocessableEntity());
@@ -522,7 +522,7 @@ class AreaControllerTest {
                     .thenThrow(new com.wms.shared.exception.OptimisticLockConflictException(
                             "OPTIMISTIC_LOCK_CONFLICT", "競合が発生しました"));
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isConflict());

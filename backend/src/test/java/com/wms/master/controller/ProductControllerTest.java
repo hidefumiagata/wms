@@ -393,10 +393,10 @@ class ProductControllerTest {
         }
     }
 
-    // ===== PATCH /api/v1/master/products/{id}/deactivate =====
+    // ===== PATCH /api/v1/master/products/{id}/toggle-active =====
 
     @Nested
-    @DisplayName("PATCH /products/{id}/deactivate（有効化/無効化）")
+    @DisplayName("PATCH /products/{id}/toggle-active（有効化/無効化）")
     class ToggleProductActive {
 
         private static final String VALID_JSON = """
@@ -410,7 +410,7 @@ class ProductControllerTest {
             updated.deactivate();
             when(productService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
@@ -420,7 +420,7 @@ class ProductControllerTest {
         @Test
         @DisplayName("必須項目未設定で400を返す")
         void toggleProductActive_missingRequired_returns400() throws Exception {
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{}"))
                     .andExpect(status().isBadRequest());
@@ -433,7 +433,7 @@ class ProductControllerTest {
                     .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
                             "PRODUCT_NOT_FOUND", "商品", 999L));
 
-            mockMvc.perform(patch(BASE_URL + "/999/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/999/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isNotFound());
@@ -446,7 +446,7 @@ class ProductControllerTest {
                     .thenThrow(new com.wms.shared.exception.OptimisticLockConflictException(
                             "OPTIMISTIC_LOCK_CONFLICT", "競合が発生しました"));
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isConflict());

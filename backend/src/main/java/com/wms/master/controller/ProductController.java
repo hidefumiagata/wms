@@ -153,7 +153,7 @@ public class ProductController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PatchMapping("/{id}/deactivate")
+    @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<ProductDetail> toggleProductActive(
             @PathVariable Long id,
             @Valid @RequestBody ToggleActiveRequest request) {

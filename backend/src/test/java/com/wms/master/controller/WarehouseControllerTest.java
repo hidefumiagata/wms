@@ -310,7 +310,7 @@ class WarehouseControllerTest {
     // ========== toggleWarehouseActive ==========
 
     @Nested
-    @DisplayName("PATCH /api/v1/master/warehouses/{id}/deactivate")
+    @DisplayName("PATCH /api/v1/master/warehouses/{id}/toggle-active")
     class ToggleTests {
 
         @Test
@@ -324,7 +324,7 @@ class WarehouseControllerTest {
                     .isActive(false)
                     .version(0);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -341,7 +341,7 @@ class WarehouseControllerTest {
                     .isActive(true)
                     .version(0);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())

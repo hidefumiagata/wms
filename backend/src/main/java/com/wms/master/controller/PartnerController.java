@@ -138,7 +138,7 @@ public class PartnerController {
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
-    @PatchMapping("/{id}/deactivate")
+    @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<PartnerDetail> togglePartnerActive(
             @PathVariable Long id,
             @Valid @RequestBody ToggleActiveRequest request) {
