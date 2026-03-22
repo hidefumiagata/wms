@@ -81,13 +81,15 @@ public class InboundSlipController implements InboundApi {
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<InboundSlipDetail> confirmInboundSlip(Long id) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        InboundSlip confirmed = inboundSlipService.confirm(id);
+        return ResponseEntity.ok(toDetail(confirmed));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<InboundSlipDetail> cancelInboundSlip(Long id) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        InboundSlip cancelled = inboundSlipService.cancel(id);
+        return ResponseEntity.ok(toDetail(cancelled));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")

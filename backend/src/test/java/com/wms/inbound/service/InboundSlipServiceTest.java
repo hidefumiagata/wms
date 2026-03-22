@@ -2,11 +2,15 @@ package com.wms.inbound.service;
 
 import com.wms.generated.model.CreateInboundLineRequest;
 import com.wms.generated.model.CreateInboundSlipRequest;
+import com.wms.generated.model.InboundLineStatus;
+import com.wms.generated.model.InboundSlipStatus;
 import com.wms.generated.model.InboundSlipType;
 import com.wms.generated.model.UnitType;
 import com.wms.inbound.entity.InboundSlip;
+import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -18,15 +22,16 @@ import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,15 +39,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,6 +68,9 @@ class InboundSlipServiceTest {
 
     @Mock
     private InboundSlipLineRepository inboundSlipLineRepository;
+
+    @Mock
+    private InventoryService inventoryService;
 
     @Mock
     private WarehouseService warehouseService;
@@ -780,6 +795,383 @@ class InboundSlipServiceTest {
             assertThatThrownBy(() -> inboundSlipService.delete(1L))
                     .isInstanceOf(InvalidStateTransitionException.class)
                     .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("confirm")
+    class ConfirmTests {
+
+        @Test
+        @DisplayName("PLANNEDステータスの伝票を確定できる")
+        void confirm_planned_success() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PLANNED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InboundSlip result = inboundSlipService.confirm(1L);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CONFIRMED.getValue());
+            verify(inboundSlipRepository).save(slip);
+        }
+
+        @Test
+        @DisplayName("存在しないIDで確定するとResourceNotFoundExceptionをスローする")
+        void confirm_notFound_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inboundSlipService.confirm(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("CONFIRMEDステータスの伝票を確定するとInvalidStateTransitionExceptionをスローする")
+        void confirm_confirmed_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.CONFIRMED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.confirm(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+
+            verify(inboundSlipRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("STOREDステータスの伝票を確定するとInvalidStateTransitionExceptionをスローする")
+        void confirm_stored_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.STORED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.confirm(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+
+            verify(inboundSlipRepository, never()).save(any());
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("cancel")
+    class CancelTests {
+
+        @AfterEach
+        void clearSecurityContext() {
+            SecurityContextHolder.clearContext();
+        }
+
+        private void setUpSecurityContext(Long userId) {
+            WmsUserDetails userDetails = new WmsUserDetails(
+                    userId, "testuser", "password", "WH-001",
+                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        @Test
+        @DisplayName("PLANNEDステータスの伝票をキャンセルできる")
+        void cancel_planned_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PLANNED.getValue())
+                    .warehouseId(1L)
+                    .lines(new ArrayList<>())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InboundSlip result = inboundSlipService.cancel(1L);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+            assertThat(result.getCancelledBy()).isEqualTo(10L);
+            assertThat(result.getCancelledAt()).isNotNull();
+            verify(inboundSlipRepository).save(slip);
+        }
+
+        @Test
+        @DisplayName("CONFIRMEDステータスの伝票をキャンセルできる")
+        void cancel_confirmed_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.CONFIRMED.getValue())
+                    .warehouseId(1L)
+                    .lines(new ArrayList<>())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InboundSlip result = inboundSlipService.cancel(1L);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+        }
+
+        @Test
+        @DisplayName("INSPECTINGステータスの伝票をキャンセルできる")
+        void cancel_inspecting_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.INSPECTING.getValue())
+                    .warehouseId(1L)
+                    .lines(new ArrayList<>())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InboundSlip result = inboundSlipService.cancel(1L);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+        }
+
+        @Test
+        @DisplayName("PARTIAL_STOREDステータスの伝票をキャンセルすると在庫がロールバックされる")
+        void cancel_partialStored_rollbackInventory() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .lotNumber("LOT-001")
+                    .expiryDate(LocalDate.of(2027, 3, 22))
+                    .plannedQty(50)
+                    .inspectedQty(48)
+                    .putawayLocationId(200L)
+                    .putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue())
+                    .build();
+            setField(storedLine, "id", 11L);
+
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(2)
+                    .productId(101L)
+                    .productCode("PRD-0002")
+                    .productName("商品B")
+                    .unitType("PIECE")
+                    .plannedQty(30)
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
+                    .build();
+            setField(pendingLine, "id", 12L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+            lines.add(pendingLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            doNothing().when(inventoryService).rollbackInboundStock(
+                    any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                    anyInt(), any(), any(), any());
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InboundSlip result = inboundSlipService.cancel(1L);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
+
+            verify(inventoryService).rollbackInboundStock(
+                    eq(1L), eq(200L), eq("LOC-A01"),
+                    eq(100L), eq("PRD-0001"), eq("商品A"),
+                    eq("CASE"), eq("LOT-001"), eq(LocalDate.of(2027, 3, 22)),
+                    eq(48), eq(1L), eq(10L), any());
+        }
+
+        @Test
+        @DisplayName("PARTIAL_STOREDで在庫が見つからない場合ResourceNotFoundExceptionをスローする")
+        void cancel_partialStored_inventoryNotFound_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .lotNumber("LOT-001")
+                    .expiryDate(LocalDate.of(2027, 3, 22))
+                    .plannedQty(50)
+                    .inspectedQty(48)
+                    .putawayLocationId(200L)
+                    .putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue())
+                    .build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            doThrow(new ResourceNotFoundException("INVENTORY_NOT_FOUND", "在庫が見つかりません"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("PARTIAL_STOREDで在庫不足の場合BusinessRuleViolationExceptionをスローする")
+        void cancel_partialStored_insufficientInventory_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .putawayLocationId(200L).putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            doThrow(new BusinessRuleViolationException("INVENTORY_INSUFFICIENT", "在庫ロールバックで在庫数が負になります"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_INSUFFICIENT");
+        }
+
+        @Test
+        @DisplayName("PARTIAL_STOREDで引当済み数量超過の場合BusinessRuleViolationExceptionをスローする")
+        void cancel_partialStored_allocatedExceeds_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(30)
+                    .putawayLocationId(200L).putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            doThrow(new BusinessRuleViolationException("INVENTORY_ALLOCATED", "引当済み数量が在庫ロールバック後の数量を超えます"))
+                    .when(inventoryService).rollbackInboundStock(
+                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                            anyInt(), any(), any(), any());
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_ALLOCATED");
+        }
+
+        @Test
+        @DisplayName("存在しないIDでキャンセルするとResourceNotFoundExceptionをスローする")
+        void cancel_notFound_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("STOREDステータスの伝票をキャンセルするとInvalidStateTransitionExceptionをスローする")
+        void cancel_stored_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.STORED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+
+            verify(inboundSlipRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("CANCELLEDステータスの伝票をキャンセルするとInvalidStateTransitionExceptionをスローする")
+        void cancel_cancelled_throws() {
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.CANCELLED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            assertThatThrownBy(() -> inboundSlipService.cancel(1L))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+
+            verify(inboundSlipRepository, never()).save(any());
         }
 
         private static void setField(Object obj, String fieldName, Object value) {
