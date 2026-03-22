@@ -19,6 +19,10 @@
         <el-icon><Grid /></el-icon>
         <span>{{ t('nav.master') }}</span>
       </template>
+      <el-menu-item index="/master/products">
+        <el-icon><Box /></el-icon>
+        <span>{{ t('nav.product') }}</span>
+      </el-menu-item>
       <el-menu-item index="/master/partners">
         <el-icon><Coordinate /></el-icon>
         <span>{{ t('nav.partner') }}</span>
@@ -34,7 +38,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean

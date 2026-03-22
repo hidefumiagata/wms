@@ -54,6 +54,25 @@ const router = createRouter({
           name: 'forbidden',
           component: () => import('@/pages/ForbiddenPage.vue'),
         },
+        // 商品マスタ — SCR-05: SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'master/products',
+          name: 'product-list',
+          component: () => import('@/pages/master/ProductListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/products/new',
+          name: 'product-new',
+          component: () => import('@/pages/master/ProductFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/products/:id/edit',
+          name: 'product-edit',
+          component: () => import('@/pages/master/ProductFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
         // 取引先マスタ — SCR-03: SYSTEM_ADMIN
         {
           path: 'master/partners',
