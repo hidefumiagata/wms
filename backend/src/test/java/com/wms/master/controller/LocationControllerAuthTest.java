@@ -140,7 +140,7 @@ class LocationControllerAuthTest {
     @WithAnonymousUser
     @DisplayName("未認証ユーザーがPATCHすると401を返す")
     void toggle_anonymous_returns401() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+        mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TOGGLE_JSON))
                 .andExpect(status().isUnauthorized());
@@ -172,7 +172,7 @@ class LocationControllerAuthTest {
     @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがPATCHすると403を返す")
     void toggle_warehouseStaff_returns403() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+        mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TOGGLE_JSON))
                 .andExpect(status().isForbidden());
@@ -221,7 +221,7 @@ class LocationControllerAuthTest {
         Location updated = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
         when(locationService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
 
-        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+        mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                         .header("X-Requested-With", "XMLHttpRequest")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(TOGGLE_JSON))

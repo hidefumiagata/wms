@@ -99,7 +99,7 @@ class PartnerControllerAuthTest {
     @WithAnonymousUser
     @DisplayName("未認証ユーザーがPATCHすると401を返す")
     void toggle_anonymous_returns401() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+        mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_TOGGLE_JSON))
                 .andExpect(status().isUnauthorized());
@@ -131,7 +131,7 @@ class PartnerControllerAuthTest {
     @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがPATCHすると403を返す")
     void toggle_warehouseStaff_returns403() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+        mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_TOGGLE_JSON))
                 .andExpect(status().isForbidden());

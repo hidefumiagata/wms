@@ -382,7 +382,7 @@ class PartnerControllerTest {
     // ========== togglePartnerActive ==========
 
     @Nested
-    @DisplayName("PATCH /api/v1/master/partners/{id}/deactivate")
+    @DisplayName("PATCH /api/v1/master/partners/{id}/toggle-active")
     class ToggleTests {
 
         @Test
@@ -396,7 +396,7 @@ class PartnerControllerTest {
                     .isActive(false)
                     .version(0);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -413,7 +413,7 @@ class PartnerControllerTest {
                     .isActive(true)
                     .version(0);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
@@ -430,7 +430,7 @@ class PartnerControllerTest {
                     .isActive(false)
                     .version(0);
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isConflict());
@@ -441,7 +441,7 @@ class PartnerControllerTest {
         void toggle_missingRequired_returns400() throws Exception {
             ToggleActiveRequest request = new ToggleActiveRequest();
 
-            mockMvc.perform(patch(BASE_URL + "/1/deactivate")
+            mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest());
