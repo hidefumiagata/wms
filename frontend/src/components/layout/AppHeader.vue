@@ -42,8 +42,8 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="change-password">パスワード変更</el-dropdown-item>
-            <el-dropdown-item command="logout" divided>ログアウト</el-dropdown-item>
+            <el-dropdown-item command="change-password">{{ t('auth.changePassword') }}</el-dropdown-item>
+            <el-dropdown-item command="logout" divided>{{ t('auth.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -73,7 +73,7 @@ const warehouseStore = useWarehouseStore()
 
 async function handleCommand(command: string) {
   if (command === 'logout') {
-    await ElMessageBox.confirm('ログアウトしますか？', '確認', { type: 'warning' })
+    await ElMessageBox.confirm(t('auth.logoutConfirm'), t('common.confirm'), { type: 'warning' })
     await auth.logout()
     router.push('/login')
   } else if (command === 'change-password') {

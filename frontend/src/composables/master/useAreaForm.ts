@@ -10,16 +10,9 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { AreaDetail } from '@/api/generated/models/area-detail'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
+import type { PageResponse } from '@/api/types'
 
 const AREA_CODE_REGEX = /^[A-Za-z0-9\-]+$/
-
-interface BuildingPageResponse {
-  content: BuildingListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
 
 export function useAreaForm() {
   const { t } = useI18n()
@@ -100,7 +93,7 @@ export function useAreaForm() {
   async function fetchBuildings() {
     if (!warehouseStore.selectedWarehouseId) return
     try {
-      const res = await apiClient.get<BuildingPageResponse>('/master/buildings', {
+      const res = await apiClient.get<PageResponse<BuildingListItem>>('/master/buildings', {
         params: { warehouseId: warehouseStore.selectedWarehouseId, isActive: true, size: 100 },
       })
       buildings.value = res.data.content

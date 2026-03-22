@@ -33,6 +33,8 @@ export const useWarehouseStore = defineStore('warehouse', () => {
       if (!selectedWarehouseId.value && res.data.length === 1) {
         selectedWarehouseId.value = res.data[0].id
       }
+    } catch {
+      warehouses.value = []
     } finally {
       loading.value = false
     }

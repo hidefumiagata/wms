@@ -7,14 +7,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
 import type { BuildingDetail } from '@/api/generated/models/building-detail'
-
-interface BuildingPageResponse {
-  content: BuildingListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
+import type { PageResponse } from '@/api/types'
 
 export function useBuildingList() {
   const { t } = useI18n()
@@ -56,7 +49,7 @@ export function useBuildingList() {
       }
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<BuildingPageResponse>('/master/buildings', {
+      const res = await apiClient.get<PageResponse<BuildingListItem>>('/master/buildings', {
         params,
         signal,
       })

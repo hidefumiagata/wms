@@ -8,22 +8,7 @@ import { useWarehouseStore } from '@/stores/warehouse'
 import type { LocationListItem } from '@/api/generated/models/location-list-item'
 import type { LocationFullDetail } from '@/api/generated/models/location-full-detail'
 import type { AreaListItem } from '@/api/generated/models/area-list-item'
-
-interface LocationPageResponse {
-  content: LocationListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
-
-interface AreaPageResponse {
-  content: AreaListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
+import type { PageResponse } from '@/api/types'
 
 export function useLocationList() {
   const { t } = useI18n()
@@ -51,7 +36,7 @@ export function useLocationList() {
   async function fetchAreas() {
     if (!warehouseStore.selectedWarehouseId) return
     try {
-      const res = await apiClient.get<AreaPageResponse>('/master/areas', {
+      const res = await apiClient.get<PageResponse<AreaListItem>>('/master/areas', {
         params: { warehouseId: warehouseStore.selectedWarehouseId, isActive: true, size: 100 },
       })
       areas.value = res.data.content
@@ -83,7 +68,7 @@ export function useLocationList() {
       if (searchForm.areaId) params.areaId = searchForm.areaId
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<LocationPageResponse>('/master/locations', {
+      const res = await apiClient.get<PageResponse<LocationListItem>>('/master/locations', {
         params,
         signal,
       })

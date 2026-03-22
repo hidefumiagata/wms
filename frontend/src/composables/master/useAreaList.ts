@@ -8,22 +8,7 @@ import { useWarehouseStore } from '@/stores/warehouse'
 import type { AreaListItem } from '@/api/generated/models/area-list-item'
 import type { AreaDetail } from '@/api/generated/models/area-detail'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
-
-interface AreaPageResponse {
-  content: AreaListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
-
-interface BuildingPageResponse {
-  content: BuildingListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
+import type { PageResponse } from '@/api/types'
 
 export function useAreaList() {
   const { t } = useI18n()
@@ -52,7 +37,7 @@ export function useAreaList() {
   async function fetchBuildings() {
     if (!warehouseStore.selectedWarehouseId) return
     try {
-      const res = await apiClient.get<BuildingPageResponse>('/master/buildings', {
+      const res = await apiClient.get<PageResponse<BuildingListItem>>('/master/buildings', {
         params: { warehouseId: warehouseStore.selectedWarehouseId, isActive: true, size: 100 },
       })
       buildings.value = res.data.content
@@ -84,7 +69,7 @@ export function useAreaList() {
       if (searchForm.areaType) params.areaType = searchForm.areaType
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<AreaPageResponse>('/master/areas', { params, signal })
+      const res = await apiClient.get<PageResponse<AreaListItem>>('/master/areas', { params, signal })
       items.value = res.data.content
       total.value = res.data.totalElements
     } catch (err: unknown) {

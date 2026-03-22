@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -10,14 +10,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { LocationFullDetail } from '@/api/generated/models/location-full-detail'
 import type { AreaListItem } from '@/api/generated/models/area-list-item'
-
-interface AreaPageResponse {
-  content: AreaListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
+import type { PageResponse } from '@/api/types'
 
 export function useLocationForm() {
   const { t } = useI18n()
@@ -84,16 +77,10 @@ export function useLocationForm() {
     areas.value.find((a) => a.id === areaId.value) ?? null,
   )
 
-  // エリア変更時にロケーションコードのプレフィックスを自動補完（新規のみ）
-  watch(areaId, (newId) => {
-    if (isEdit.value || !newId) return
-    // 自動補完は行わない — ユーザーが自由に入力
-  })
-
   async function fetchAreas() {
     if (!warehouseStore.selectedWarehouseId) return
     try {
-      const res = await apiClient.get<AreaPageResponse>('/master/areas', {
+      const res = await apiClient.get<PageResponse<AreaListItem>>('/master/areas', {
         params: { warehouseId: warehouseStore.selectedWarehouseId, isActive: true, size: 100 },
       })
       areas.value = res.data.content
@@ -136,7 +123,7 @@ export function useLocationForm() {
     try {
       if (isEdit.value) {
         await apiClient.put(`/master/locations/${locationId.value}`, {
-          locationName: values.locationName || null,
+          locationName: values.locationName?.trim() || null,
           version: version.value,
         })
         ElMessage.success(t('master.location.updateSuccess'))
@@ -144,7 +131,7 @@ export function useLocationForm() {
         await apiClient.post('/master/locations', {
           areaId: values.areaId,
           locationCode: values.locationCode,
-          locationName: values.locationName || null,
+          locationName: values.locationName?.trim() || null,
         })
         ElMessage.success(t('master.location.createSuccess'))
       }
