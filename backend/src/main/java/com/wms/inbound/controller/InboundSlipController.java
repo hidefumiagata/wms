@@ -28,6 +28,9 @@ public class InboundSlipController implements InboundApi {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "plannedDate", "slipNumber", "status", "createdAt");
 
+    private static final Set<String> ALLOWED_RESULT_SORT_PROPERTIES = Set.of(
+            "storedAt", "slipNumber", "productCode");
+
     private final InboundSlipService inboundSlipService;
 
     @PreAuthorize("isAuthenticated()")
@@ -114,7 +117,14 @@ public class InboundSlipController implements InboundApi {
             Long warehouseId, LocalDate storedDateFrom, LocalDate storedDateTo,
             Long partnerId, String slipNumber, String productCode,
             Integer page, Integer size, String sort) {
-        throw new UnsupportedOperationException("Not yet implemented");
+
+        Sort sortObj = parseResultSort(sort, "storedAt");
+        Page<InboundSlipLine> resultPage = inboundSlipService.findResults(
+                warehouseId, storedDateFrom, storedDateTo, partnerId,
+                slipNumber, productCode,
+                PageRequest.of(page, size, sortObj));
+
+        return ResponseEntity.ok(toResultPageResponse(resultPage));
     }
 
     // --- Converters ---
@@ -203,10 +213,57 @@ public class InboundSlipController implements InboundApi {
                 .storedBy(l.getStoredBy());
     }
 
+    private InboundResultPageResponse toResultPageResponse(Page<InboundSlipLine> page) {
+        List<InboundResultItem> items = page.getContent().stream()
+                .map(this::toResultItem)
+                .toList();
+        return new InboundResultPageResponse()
+                .content(items)
+                .page(page.getNumber())
+                .size(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages());
+    }
+
+    private InboundResultItem toResultItem(InboundSlipLine line) {
+        InboundSlip slip = line.getInboundSlip();
+        Integer diffQty = line.getInspectedQty() - line.getPlannedQty();
+        String storedByName = inboundSlipService.resolveUserName(line.getStoredBy());
+
+        return new InboundResultItem()
+                .slipId(slip.getId())
+                .slipNumber(slip.getSlipNumber())
+                .slipType(InboundSlipType.fromValue(slip.getSlipType()))
+                .partnerCode(slip.getPartnerCode())
+                .partnerName(slip.getPartnerName())
+                .lineId(line.getId())
+                .lineNo(line.getLineNo())
+                .productCode(line.getProductCode())
+                .productName(line.getProductName())
+                .unitType(UnitType.fromValue(line.getUnitType()))
+                .lotNumber(line.getLotNumber())
+                .expiryDate(line.getExpiryDate())
+                .plannedQty(line.getPlannedQty())
+                .inspectedQty(line.getInspectedQty())
+                .diffQty(diffQty)
+                .locationCode(line.getPutawayLocationCode())
+                .storedAt(line.getStoredAt())
+                .storedByName(storedByName);
+    }
+
     // sort parameter always has a default value from OpenAPI generated interface
     private Sort parseSort(String sort, String defaultProperty) {
         String[] parts = sort.split(",");
         String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
+                ? parts[0] : defaultProperty;
+        Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        return Sort.by(direction, property);
+    }
+
+    private Sort parseResultSort(String sort, String defaultProperty) {
+        String[] parts = sort.split(",");
+        String property = ALLOWED_RESULT_SORT_PROPERTIES.contains(parts[0])
                 ? parts[0] : defaultProperty;
         Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
