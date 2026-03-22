@@ -347,9 +347,7 @@ class ProductControllerTest {
         @DisplayName("正常更新で200を返す")
         void updateProduct_success_returns200() throws Exception {
             Product updated = createProduct(1L, "P-001", "更新商品名", "REFRIGERATED");
-            when(productService.update(anyLong(), anyString(), any(), anyInt(), anyInt(),
-                    any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(),
-                    anyBoolean(), anyBoolean(), anyInt()))
+            when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                     .thenReturn(updated);
 
             mockMvc.perform(put(BASE_URL + "/1")
@@ -371,9 +369,7 @@ class ProductControllerTest {
         @Test
         @DisplayName("存在しないIDで404を返す")
         void updateProduct_notFound_returns404() throws Exception {
-            when(productService.update(anyLong(), anyString(), any(), anyInt(), anyInt(),
-                    any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(),
-                    anyBoolean(), anyBoolean(), anyInt()))
+            when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                     .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
                             "PRODUCT_NOT_FOUND", "商品", 999L));
 
@@ -386,9 +382,7 @@ class ProductControllerTest {
         @Test
         @DisplayName("楽観的ロック競合で409を返す")
         void updateProduct_optimisticLock_returns409() throws Exception {
-            when(productService.update(anyLong(), anyString(), any(), anyInt(), anyInt(),
-                    any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(),
-                    anyBoolean(), anyBoolean(), anyInt()))
+            when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                     .thenThrow(new com.wms.shared.exception.OptimisticLockConflictException(
                             "OPTIMISTIC_LOCK_CONFLICT", "競合が発生しました"));
 

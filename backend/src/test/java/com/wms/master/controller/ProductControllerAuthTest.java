@@ -191,9 +191,7 @@ class ProductControllerAuthTest {
     @DisplayName("SYSTEM_ADMINがPUTすると200を返す")
     void update_systemAdmin_returns200() throws Exception {
         Product updated = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
-        when(productService.update(anyLong(), anyString(), any(), anyInt(), anyInt(),
-                any(), anyString(), anyBoolean(), anyBoolean(), anyBoolean(),
-                anyBoolean(), anyBoolean(), anyInt()))
+        when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                 .thenReturn(updated);
 
         mockMvc.perform(put(BASE_URL + "/1")

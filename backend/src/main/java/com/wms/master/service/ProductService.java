@@ -65,48 +65,43 @@ public class ProductService {
         }
     }
 
-    // TODO: 引数が13個と多い。UpdateProductCommand 等の record DTO への移行を検討（Issue #71 パターン）
     @Transactional
-    public Product update(Long id, String productName, String productNameKana,
-                          Integer caseQuantity, Integer ballQuantity, String barcode,
-                          String storageCondition, Boolean isHazardous,
-                          Boolean lotManageFlag, Boolean expiryManageFlag,
-                          Boolean shipmentStopFlag, Boolean isActive, Integer version) {
-        Product product = findById(id);
+    public Product update(UpdateProductCommand cmd) {
+        Product product = findById(cmd.id());
 
-        if (!product.getVersion().equals(version)) {
+        if (!product.getVersion().equals(cmd.version())) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
         }
 
         // TODO: 在庫テーブル実装後に lotManageFlag / expiryManageFlag 変更時の在庫存在チェックを追加
         //       在庫あり && フラグ変更 → CANNOT_CHANGE_LOT_MANAGE_FLAG / CANNOT_CHANGE_EXPIRY_MANAGE_FLAG (422)
 
-        product.setProductName(productName);
-        product.setProductNameKana(productNameKana);
-        product.setCaseQuantity(caseQuantity);
-        product.setBallQuantity(ballQuantity);
-        product.setBarcode(barcode);
-        product.setStorageCondition(storageCondition);
-        product.setIsHazardous(isHazardous);
-        product.setLotManageFlag(lotManageFlag);
-        product.setExpiryManageFlag(expiryManageFlag);
-        product.setShipmentStopFlag(shipmentStopFlag);
-        if (Boolean.TRUE.equals(isActive)) {
+        product.setProductName(cmd.productName());
+        product.setProductNameKana(cmd.productNameKana());
+        product.setCaseQuantity(cmd.caseQuantity());
+        product.setBallQuantity(cmd.ballQuantity());
+        product.setBarcode(cmd.barcode());
+        product.setStorageCondition(cmd.storageCondition());
+        product.setIsHazardous(cmd.isHazardous());
+        product.setLotManageFlag(cmd.lotManageFlag());
+        product.setExpiryManageFlag(cmd.expiryManageFlag());
+        product.setShipmentStopFlag(cmd.shipmentStopFlag());
+        if (Boolean.TRUE.equals(cmd.isActive())) {
             product.activate();
         } else {
             product.deactivate();
         }
-        product.setVersion(version);
+        product.setVersion(cmd.version());
         try {
             Product saved = productRepository.save(product);
-            log.info("Product updated: id={}, name={}", id, productName);
+            log.info("Product updated: id={}, name={}", cmd.id(), cmd.productName());
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
         }
     }
 

@@ -63,28 +63,30 @@ public class PartnerService {
         }
     }
 
-    // TODO: #71 引数が9個と多い。UpdatePartnerCommand 等の record DTO への移行を検討
     @Transactional
-    public Partner update(Long id, String partnerName, String partnerNameKana,
-                          PartnerType partnerType, String address, String phone,
-                          String contactPerson, String email, Integer version) {
-        Partner partner = findById(id);
-        partner.setPartnerName(partnerName);
-        partner.setPartnerNameKana(partnerNameKana);
-        partner.setPartnerType(partnerType);
-        partner.setAddress(address);
-        partner.setPhone(phone);
-        partner.setContactPerson(contactPerson);
-        partner.setEmail(email);
-        partner.setVersion(version);
+    public Partner update(UpdatePartnerCommand cmd) {
+        Partner partner = findById(cmd.id());
+        if (!partner.getVersion().equals(cmd.version())) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+        }
+        partner.setPartnerName(cmd.partnerName());
+        partner.setPartnerNameKana(cmd.partnerNameKana());
+        partner.setPartnerType(cmd.partnerType());
+        partner.setAddress(cmd.address());
+        partner.setPhone(cmd.phone());
+        partner.setContactPerson(cmd.contactPerson());
+        partner.setEmail(cmd.email());
+        partner.setVersion(cmd.version());
         try {
             Partner saved = partnerRepository.save(partner);
-            log.info("Partner updated: id={}, name={}", id, partnerName);
+            log.info("Partner updated: id={}, name={}", cmd.id(), cmd.partnerName());
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException(
                     "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
         }
     }
 

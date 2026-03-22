@@ -315,7 +315,7 @@ class PartnerControllerTest {
         @DisplayName("正常な更新で200を返す")
         void update_success_returns200() throws Exception {
             Partner updated = createPartner(1L, "SUP-001", "仕入先A（更新）", "SUPPLIER");
-            when(partnerService.update(eq(1L), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(partnerService.update(any(com.wms.master.service.UpdatePartnerCommand.class)))
                     .thenReturn(updated);
 
             UpdatePartnerRequest request = new UpdatePartnerRequest()
@@ -334,7 +334,7 @@ class PartnerControllerTest {
         @Test
         @DisplayName("楽観的ロック競合で409を返す")
         void update_conflict_returns409() throws Exception {
-            when(partnerService.update(eq(1L), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(partnerService.update(any(com.wms.master.service.UpdatePartnerCommand.class)))
                     .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
 
             UpdatePartnerRequest request = new UpdatePartnerRequest()
@@ -363,7 +363,7 @@ class PartnerControllerTest {
         @Test
         @DisplayName("存在しないIDで404を返す")
         void update_notFound_returns404() throws Exception {
-            when(partnerService.update(eq(999L), any(), any(), any(), any(), any(), any(), any(), any()))
+            when(partnerService.update(any(com.wms.master.service.UpdatePartnerCommand.class)))
                     .thenThrow(ResourceNotFoundException.of("PARTNER_NOT_FOUND", "取引先", 999L));
 
             UpdatePartnerRequest request = new UpdatePartnerRequest()

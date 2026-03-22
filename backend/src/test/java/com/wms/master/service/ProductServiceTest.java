@@ -2,6 +2,7 @@ package com.wms.master.service;
 
 import com.wms.master.entity.Product;
 import com.wms.master.repository.ProductRepository;
+import com.wms.master.service.UpdateProductCommand;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -190,9 +191,9 @@ class ProductServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Product result = productService.update(1L, "新商品名", "シンショウヒンメイ",
+            Product result = productService.update(new UpdateProductCommand(1L, "新商品名", "シンショウヒンメイ",
                     12, 6, "4901234567890", "REFRIGERATED",
-                    false, true, false, false, true, 0);
+                    false, true, false, false, true, 0));
 
             assertThat(result.getProductName()).isEqualTo("新商品名");
             assertThat(result.getProductNameKana()).isEqualTo("シンショウヒンメイ");
@@ -213,9 +214,9 @@ class ProductServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Product result = productService.update(1L, "新商品名", null,
+            Product result = productService.update(new UpdateProductCommand(1L, "新商品名", null,
                     6, 10, null, "AMBIENT",
-                    false, false, false, false, true, 0);
+                    false, false, false, false, true, 0));
 
             assertThat(result.getProductNameKana()).isNull();
             assertThat(result.getBarcode()).isNull();
@@ -228,9 +229,9 @@ class ProductServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Product result = productService.update(1L, "商品A", null,
+            Product result = productService.update(new UpdateProductCommand(1L, "商品A", null,
                     6, 10, null, "AMBIENT",
-                    false, false, false, false, false, 0);
+                    false, false, false, false, false, 0));
 
             assertThat(result.getIsActive()).isFalse();
         }
@@ -240,9 +241,9 @@ class ProductServiceTest {
         void update_notFound_throwsException() {
             when(productRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> productService.update(999L, "商品名", null,
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(999L, "商品名", null,
                     6, 10, null, "AMBIENT",
-                    false, false, false, false, true, 0))
+                    false, false, false, false, true, 0)))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
@@ -253,9 +254,9 @@ class ProductServiceTest {
             // existing.version == 0, request version == 99
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
 
-            assertThatThrownBy(() -> productService.update(1L, "商品A", null,
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(1L, "商品A", null,
                     6, 10, null, "AMBIENT",
-                    false, false, false, false, true, 99))
+                    false, false, false, false, true, 99)))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
 
@@ -267,9 +268,9 @@ class ProductServiceTest {
             when(productRepository.save(any(Product.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Product.class.getName(), 1L));
 
-            assertThatThrownBy(() -> productService.update(1L, "商品A", null,
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(1L, "商品A", null,
                     6, 10, null, "AMBIENT",
-                    false, false, false, false, true, 0))
+                    false, false, false, false, true, 0)))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
     }

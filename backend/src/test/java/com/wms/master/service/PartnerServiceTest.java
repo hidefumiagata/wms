@@ -2,6 +2,7 @@ package com.wms.master.service;
 
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
+import com.wms.master.service.UpdatePartnerCommand;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
@@ -176,8 +177,8 @@ class PartnerServiceTest {
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Partner result = partnerService.update(1L, "新名称", "シンメイショウ", PartnerType.BOTH,
-                    "東京都", "03-1234-5678", "担当太郎", "test@example.com", 0);
+            Partner result = partnerService.update(new UpdatePartnerCommand(1L, "新名称", "シンメイショウ", PartnerType.BOTH,
+                    "東京都", "03-1234-5678", "担当太郎", "test@example.com", 0));
 
             assertThat(result.getPartnerName()).isEqualTo("新名称");
             assertThat(result.getPartnerNameKana()).isEqualTo("シンメイショウ");
@@ -195,8 +196,8 @@ class PartnerServiceTest {
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            Partner result = partnerService.update(1L, "新名称", null, PartnerType.SUPPLIER,
-                    null, null, null, null, 0);
+            Partner result = partnerService.update(new UpdatePartnerCommand(1L, "新名称", null, PartnerType.SUPPLIER,
+                    null, null, null, null, 0));
 
             assertThat(result.getAddress()).isNull();
             assertThat(result.getPhone()).isNull();
@@ -207,8 +208,8 @@ class PartnerServiceTest {
         void update_notFound_throwsException() {
             when(partnerRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> partnerService.update(999L, "name", null, PartnerType.SUPPLIER,
-                    null, null, null, null, 0))
+            assertThatThrownBy(() -> partnerService.update(new UpdatePartnerCommand(999L, "name", null, PartnerType.SUPPLIER,
+                    null, null, null, null, 0)))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
@@ -220,8 +221,8 @@ class PartnerServiceTest {
             when(partnerRepository.save(any(Partner.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Partner.class.getName(), 1L));
 
-            assertThatThrownBy(() -> partnerService.update(1L, "名前", null, PartnerType.SUPPLIER,
-                    null, null, null, null, 0))
+            assertThatThrownBy(() -> partnerService.update(new UpdatePartnerCommand(1L, "名前", null, PartnerType.SUPPLIER,
+                    null, null, null, null, 0)))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
     }

@@ -124,7 +124,7 @@ public class PartnerController {
     public ResponseEntity<PartnerDetail> updatePartner(
             @PathVariable Long id,
             @Valid @RequestBody UpdatePartnerRequest request) {
-        Partner updated = partnerService.update(
+        Partner updated = partnerService.update(new com.wms.master.service.UpdatePartnerCommand(
                 id,
                 request.getPartnerName(),
                 request.getPartnerNameKana(),
@@ -133,7 +133,7 @@ public class PartnerController {
                 request.getPhone(),
                 request.getContactPerson(),
                 request.getEmail(),
-                request.getVersion());
+                request.getVersion()));
         return ResponseEntity.ok(toDetail(updated));
     }
 
