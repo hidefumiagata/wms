@@ -621,7 +621,7 @@ flowchart TD
 | **API ID** | `API-MST-PAR-005` |
 | **API名** | 取引先無効化/有効化 |
 | **メソッド** | `PATCH` |
-| **パス** | `/api/v1/master/partners/{id}/deactivate` |
+| **パス** | `/api/v1/master/partners/{id}/toggle-active` |
 | **認証** | 要 |
 | **対象ロール** | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | **概要** | 指定された ID の取引先の有効フラグ（`is_active`）を切り替える。`isActive: false` で無効化、`isActive: true` で再有効化を行う。パス名は `deactivate` だが、有効化（`isActive: true`）にも対応する。 |
@@ -741,7 +741,7 @@ flowchart TD
 - **冪等性**: 既に無効化済みの取引先に `isActive: false` を送った場合、または有効な取引先に `isActive: true` を送った場合は UPDATE を行わず `200 OK` を返す（PATCH の冪等性）。
 - **有効化時の制約チェック不要**: `isActive: true`（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。
 - **エラーコードの追加**: `CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND` および `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` は本 API 専用のエラーコードとして `08-api-overview.md` のエラーコード一覧に追記が必要。
-- **パス名について**: エンドポイントパスは `/deactivate` だが、リクエストボディの `isActive` フラグにより無効化・有効化の両方を担う設計としている（将来的に `/activate` を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。
+- **パス名について**: エンドポイントパスは `/toggle-active` だが、リクエストボディの `isActive` フラグにより無効化・有効化の両方を担う設計としている（将来的に `/activate` を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。
 
 ---
 

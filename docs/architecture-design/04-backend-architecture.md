@@ -397,7 +397,7 @@ public class WarehouseController {
         return WarehouseResponse.from(warehouse);
     }
 
-    @PatchMapping("/{id}/deactivate")
+    @PatchMapping("/{id}/toggle-active")
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     public WarehouseResponse deactivateWarehouse(@PathVariable Long id) {
         Warehouse warehouse = warehouseService.deactivate(id);

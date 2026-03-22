@@ -444,7 +444,7 @@ flowchart TD
 | # | ルール |
 |---|--------|
 | BR-001 | `warehouseCode` は更新対象外。リクエストに含まれていても無視する |
-| BR-002 | `isActive` の変更は API-MST-FAC-005（PATCH /deactivate）で行う。本APIには含めない |
+| BR-002 | `isActive` の変更は API-MST-FAC-005（PATCH /toggle-active）で行う。本APIには含めない |
 
 ### 5. 補足事項
 
@@ -461,7 +461,7 @@ flowchart TD
 | **API ID** | `API-MST-FAC-005` |
 | **API名** | 倉庫無効化／有効化 |
 | **メソッド** | PATCH |
-| **エンドポイント** | `/api/v1/master/warehouses/{id}/deactivate` |
+| **エンドポイント** | `/api/v1/master/warehouses/{id}/toggle-active` |
 | **概要** | 指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可。 |
 | **認可ロール** | SYSTEM_ADMIN、WAREHOUSE_MANAGER |
 
@@ -540,7 +540,7 @@ flowchart TD
 
 ### 5. 補足事項
 
-- エンドポイント名は `/deactivate` だが、有効化（`isActive=true`）もこのエンドポイントで行う（トグル操作）。
+- エンドポイント名は `/toggle-active` だが、有効化（`isActive=true`）もこのエンドポイントで行う（トグル操作）。
 
 ---
 
@@ -988,7 +988,7 @@ flowchart TD
 | **API ID** | `API-MST-FAC-015` |
 | **API名** | 棟無効化／有効化 |
 | **メソッド** | PATCH |
-| **エンドポイント** | `/api/v1/master/buildings/{id}/deactivate` |
+| **エンドポイント** | `/api/v1/master/buildings/{id}/toggle-active` |
 | **概要** | 指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可。 |
 | **認可ロール** | SYSTEM_ADMIN、WAREHOUSE_MANAGER |
 
@@ -1450,7 +1450,7 @@ flowchart TD
 | **API ID** | `API-MST-FAC-025` |
 | **API名** | エリア無効化／有効化 |
 | **メソッド** | PATCH |
-| **エンドポイント** | `/api/v1/master/areas/{id}/deactivate` |
+| **エンドポイント** | `/api/v1/master/areas/{id}/toggle-active` |
 | **概要** | 指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可。 |
 | **認可ロール** | SYSTEM_ADMIN、WAREHOUSE_MANAGER |
 
@@ -1932,7 +1932,7 @@ flowchart TD
 |---|--------|
 | BR-001 | `locationCode`・`areaId`・`warehouseId` は更新不可 |
 | BR-002 | `locationName` に `null` または空文字を指定した場合は NULL に更新する（名称のクリアを許容） |
-| BR-003 | `isActive` の変更は API-MST-FAC-035（PATCH /deactivate）で行う |
+| BR-003 | `isActive` の変更は API-MST-FAC-035（PATCH /toggle-active）で行う |
 
 ---
 
@@ -1945,7 +1945,7 @@ flowchart TD
 | **API ID** | `API-MST-FAC-035` |
 | **API名** | ロケーション無効化／有効化 |
 | **メソッド** | PATCH |
-| **エンドポイント** | `/api/v1/master/locations/{id}/deactivate` |
+| **エンドポイント** | `/api/v1/master/locations/{id}/toggle-active` |
 | **概要** | 指定IDのロケーションの有効/無効を切り替える。在庫が存在するロケーション・棚卸中のロケーションは無効化不可。 |
 | **認可ロール** | SYSTEM_ADMIN、WAREHOUSE_MANAGER |
 
@@ -2036,23 +2036,23 @@ flowchart TD
 | API-MST-FAC-002 | POST | `/api/v1/master/warehouses` | 倉庫登録 | SA, WM |
 | API-MST-FAC-003 | GET | `/api/v1/master/warehouses/{id}` | 倉庫取得 | 全ロール |
 | API-MST-FAC-004 | PUT | `/api/v1/master/warehouses/{id}` | 倉庫更新 | SA, WM |
-| API-MST-FAC-005 | PATCH | `/api/v1/master/warehouses/{id}/deactivate` | 倉庫無効化/有効化 | SA, WM |
+| API-MST-FAC-005 | PATCH | `/api/v1/master/warehouses/{id}/toggle-active` | 倉庫無効化/有効化 | SA, WM |
 | API-MST-FAC-011 | GET | `/api/v1/master/buildings` | 棟一覧取得 | 全ロール |
 | API-MST-FAC-012 | POST | `/api/v1/master/buildings` | 棟登録 | SA, WM |
 | API-MST-FAC-013 | GET | `/api/v1/master/buildings/{id}` | 棟取得 | 全ロール |
 | API-MST-FAC-014 | PUT | `/api/v1/master/buildings/{id}` | 棟更新 | SA, WM |
-| API-MST-FAC-015 | PATCH | `/api/v1/master/buildings/{id}/deactivate` | 棟無効化/有効化 | SA, WM |
+| API-MST-FAC-015 | PATCH | `/api/v1/master/buildings/{id}/toggle-active` | 棟無効化/有効化 | SA, WM |
 | API-MST-FAC-021 | GET | `/api/v1/master/areas` | エリア一覧取得 | 全ロール |
 | API-MST-FAC-022 | POST | `/api/v1/master/areas` | エリア登録 | SA, WM |
 | API-MST-FAC-023 | GET | `/api/v1/master/areas/{id}` | エリア取得 | 全ロール |
 | API-MST-FAC-024 | PUT | `/api/v1/master/areas/{id}` | エリア更新 | SA, WM |
-| API-MST-FAC-025 | PATCH | `/api/v1/master/areas/{id}/deactivate` | エリア無効化/有効化 | SA, WM |
+| API-MST-FAC-025 | PATCH | `/api/v1/master/areas/{id}/toggle-active` | エリア無効化/有効化 | SA, WM |
 | API-MST-FAC-031 | GET | `/api/v1/master/locations` | ロケーション一覧取得 | 全ロール |
 | API-MST-FAC-031a | GET | `/api/v1/master/locations/count` | ロケーション件数取得（棚卸プレビュー） | 全ロール |
 | API-MST-FAC-032 | POST | `/api/v1/master/locations` | ロケーション登録 | SA, WM |
 | API-MST-FAC-033 | GET | `/api/v1/master/locations/{id}` | ロケーション取得 | 全ロール |
 | API-MST-FAC-034 | PUT | `/api/v1/master/locations/{id}` | ロケーション更新 | SA, WM |
-| API-MST-FAC-035 | PATCH | `/api/v1/master/locations/{id}/deactivate` | ロケーション無効化/有効化 | SA, WM |
+| API-MST-FAC-035 | PATCH | `/api/v1/master/locations/{id}/toggle-active` | ロケーション無効化/有効化 | SA, WM |
 
 **凡例**: SA = SYSTEM_ADMIN、WM = WAREHOUSE_MANAGER
 

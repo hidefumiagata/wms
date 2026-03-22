@@ -500,7 +500,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API: `PATCH /api/v1/master/products/:id/deactivate` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_INVENTORY`）が返される | HTTPステータスとエラーコードの確認 |
+| 1 | API: `PATCH /api/v1/master/products/:id/toggle-active` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_INVENTORY`）が返される | HTTPステータスとエラーコードの確認 |
 | 2 | E2E: 一覧画面で無効化ボタンをクリック → 確認ダイアログOK | エラーメッセージ「在庫が存在するため、この商品を無効化できません」が表示される | エラーメッセージの確認 |
 
 ---
@@ -572,7 +572,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API: `PATCH /api/v1/master/partners/:id/deactivate` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND`）が返される | HTTPステータスとエラーコードの確認 |
+| 1 | API: `PATCH /api/v1/master/partners/:id/toggle-active` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND`）が返される | HTTPステータスとエラーコードの確認 |
 
 **DB検証（結合テストのみ）:**
 
@@ -594,7 +594,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API: `PATCH /api/v1/master/partners/:id/deactivate` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND`）が返される | HTTPステータスとエラーコードの確認 |
+| 1 | API: `PATCH /api/v1/master/partners/:id/toggle-active` で `isActive: false` を送信 | `422 Unprocessable Entity`（`CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND`）が返される | HTTPステータスとエラーコードの確認 |
 
 ---
 
@@ -610,7 +610,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API: `PATCH /api/v1/master/partners/:id/deactivate` で `isActive: false` を送信 | `200 OK` で正常に無効化される | `isActive: false` がレスポンスに含まれる |
+| 1 | API: `PATCH /api/v1/master/partners/:id/toggle-active` で `isActive: false` を送信 | `200 OK` で正常に無効化される | `isActive: false` がレスポンスに含まれる |
 
 ---
 
@@ -905,7 +905,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API: `PATCH /api/v1/master/locations/:id/deactivate` で `isActive: false` を送信 | エラーが返される。MSG-E-MST051-002相当「このロケーションは棚卸中のため無効化できません」 | HTTPステータスとエラーコードの確認 |
+| 1 | API: `PATCH /api/v1/master/locations/:id/toggle-active` で `isActive: false` を送信 | エラーが返される。MSG-E-MST051-002相当「このロケーションは棚卸中のため無効化できません」 | HTTPステータスとエラーコードの確認 |
 
 ---
 

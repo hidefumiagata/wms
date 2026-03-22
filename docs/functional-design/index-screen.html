@@ -525,8 +525,8 @@ Content-Type: application/json
 <tr><td><code>EVT-MST031-002</code></td><td>クリアボタンクリック</td><td>検索条件を初期値にリセット</td><td>同画面（検索フォームリセット）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST031-003</code></td><td>棟登録ボタンクリック</td><td>棟登録画面へ遷移</td><td>MST-032</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST031-004</code></td><td>編集ボタンクリック</td><td>対象棟の編集画面へ遷移</td><td>MST-033（<code>:id/edit</code>）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST031-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。OKで <code>PATCH /api/v1/master/buildings/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST031-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/buildings/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST031-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。OKで <code>PATCH /api/v1/master/buildings/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST031-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/buildings/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST031-007</code></td><td>ページ変更</td><td>指定ページのデータを取得</td><td>同画面（テーブル更新）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -732,8 +732,8 @@ Content-Type: application/json
 <tr><td><code>EVT-MST041-002</code></td><td>クリアボタンクリック</td><td>検索条件を初期値にリセット</td><td>同画面（検索フォームリセット）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST041-003</code></td><td>エリア登録ボタンクリック</td><td>エリア登録画面へ遷移</td><td>MST-042</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST041-004</code></td><td>編集ボタンクリック</td><td>対象エリアの編集画面へ遷移</td><td>MST-043</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST041-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログ → <code>PATCH /api/v1/master/areas/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード（成功メッセージ）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST041-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/areas/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）</td><td>同画面リロード（成功メッセージ）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST041-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログ → <code>PATCH /api/v1/master/areas/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード（成功メッセージ）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST041-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/areas/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）</td><td>同画面リロード（成功メッセージ）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. メッセージ一覧</h3>
@@ -953,8 +953,8 @@ Content-Type: application/json
 <tr><td><code>EVT-MST051-002</code></td><td>クリアボタンクリック</td><td>検索条件を初期値にリセット</td><td>同画面（検索フォームリセット）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST051-003</code></td><td>ロケーション登録ボタンクリック</td><td>ロケーション登録画面へ遷移</td><td>MST-052</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST051-004</code></td><td>編集ボタンクリック</td><td>対象ロケーションの編集画面へ遷移</td><td>MST-053</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST051-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログ → <code>PATCH /api/v1/master/locations/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST051-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/locations/:id/deactivate</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）</td><td>同画面リロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST051-005</code></td><td>無効化ボタンクリック</td><td>確認ダイアログ → <code>PATCH /api/v1/master/locations/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: false }</code>）</td><td>同画面リロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST051-006</code></td><td>有効化ボタンクリック</td><td><code>PATCH /api/v1/master/locations/:id/toggle-active</code>（リクエストボディ: <code>{ &quot;isActive&quot;: true }</code>）</td><td>同画面リロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. メッセージ一覧</h3>
@@ -1198,7 +1198,7 @@ Content-Type: application/json
 <tr><td><code>EVT-MST011-003</code></td><td>新規登録ボタンクリック</td><td>MST-012に遷移</td><td>MST-012 取引先登録</td><td>SYSTEM_ADMIN</td></tr>
 <tr><td><code>EVT-MST011-004</code></td><td>取引先コードリンククリック</td><td>MST-013（編集画面）に遷移</td><td>MST-013 取引先編集</td><td>SYSTEM_ADMIN</td></tr>
 <tr><td><code>EVT-MST011-005</code></td><td>編集ボタンクリック</td><td>MST-013（編集画面）に遷移</td><td>MST-013 取引先編集</td><td>SYSTEM_ADMIN</td></tr>
-<tr><td><code>EVT-MST011-006</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/partners/{id}/deactivate</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN</td></tr>
+<tr><td><code>EVT-MST011-006</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/partners/{id}/toggle-active</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN</td></tr>
 <tr><td><code>EVT-MST011-007</code></td><td>有効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/partners/{id}/activate</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN</td></tr>
 <tr><td><code>EVT-MST011-008</code></td><td>ページ番号クリック</td><td>指定ページを <code>GET /api/v1/master/partners?page={n}</code> で取得</td><td>同画面（ページ変更）</td><td>SYSTEM_ADMIN</td></tr>
 <tr><td><code>EVT-MST011-009</code></td><td>表示件数変更</td><td>選択件数で再取得</td><td>同画面リロード</td><td>SYSTEM_ADMIN</td></tr>
@@ -1469,8 +1469,8 @@ Content-Type: application/json
 <tr><td><code>EVT-MST021-003</code></td><td>新規登録ボタンクリック</td><td>MST-022に遷移</td><td>MST-022 倉庫登録</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-004</code></td><td>倉庫コードリンククリック</td><td>MST-023（編集画面）に遷移</td><td>MST-023 倉庫編集</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-005</code></td><td>編集ボタンクリック</td><td>MST-023（編集画面）に遷移</td><td>MST-023 倉庫編集</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST021-006</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/deactivate</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST021-007</code></td><td>有効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/deactivate</code>（<code>isActive: true</code>）を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST021-006</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/toggle-active</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST021-007</code></td><td>有効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/toggle-active</code>（<code>isActive: true</code>）を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-008</code></td><td>ページ番号クリック</td><td>指定ページを <code>GET /api/v1/master/warehouses?page={n}</code> で取得</td><td>同画面（ページ変更）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>

@@ -290,7 +290,7 @@
 | `API-MST-PRD-002` | `POST` | `/api/v1/master/products` | 商品登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-PRD-003` | `GET` | `/api/v1/master/products/{id}` | 商品取得 | 要 | 全ロール |
 | `API-MST-PRD-004` | `PUT` | `/api/v1/master/products/{id}` | 商品更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-PRD-005` | `PATCH` | `/api/v1/master/products/{id}/deactivate` | 商品無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-PRD-005` | `PATCH` | `/api/v1/master/products/{id}/toggle-active` | 商品無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 #### 取引先マスタ（master/partners）
 
@@ -300,7 +300,7 @@
 | `API-MST-PAR-002` | `POST` | `/api/v1/master/partners` | 取引先登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-PAR-003` | `GET` | `/api/v1/master/partners/{id}` | 取引先取得 | 要 | 全ロール |
 | `API-MST-PAR-004` | `PUT` | `/api/v1/master/partners/{id}` | 取引先更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-PAR-005` | `PATCH` | `/api/v1/master/partners/{id}/deactivate` | 取引先無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-PAR-005` | `PATCH` | `/api/v1/master/partners/{id}/toggle-active` | 取引先無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 #### 施設マスタ（master/facilities）
 
@@ -312,7 +312,7 @@
 | `API-MST-FAC-002` | `POST` | `/api/v1/master/warehouses` | 倉庫登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-FAC-003` | `GET` | `/api/v1/master/warehouses/{id}` | 倉庫取得 | 要 | 全ロール |
 | `API-MST-FAC-004` | `PUT` | `/api/v1/master/warehouses/{id}` | 倉庫更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-FAC-005` | `PATCH` | `/api/v1/master/warehouses/{id}/deactivate` | 倉庫無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-FAC-005` | `PATCH` | `/api/v1/master/warehouses/{id}/toggle-active` | 倉庫無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 **棟**
 
@@ -322,7 +322,7 @@
 | `API-MST-FAC-012` | `POST` | `/api/v1/master/buildings` | 棟登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-FAC-013` | `GET` | `/api/v1/master/buildings/{id}` | 棟取得 | 要 | 全ロール |
 | `API-MST-FAC-014` | `PUT` | `/api/v1/master/buildings/{id}` | 棟更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-FAC-015` | `PATCH` | `/api/v1/master/buildings/{id}/deactivate` | 棟無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-FAC-015` | `PATCH` | `/api/v1/master/buildings/{id}/toggle-active` | 棟無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 **エリア**
 
@@ -332,7 +332,7 @@
 | `API-MST-FAC-022` | `POST` | `/api/v1/master/areas` | エリア登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-FAC-023` | `GET` | `/api/v1/master/areas/{id}` | エリア取得 | 要 | 全ロール |
 | `API-MST-FAC-024` | `PUT` | `/api/v1/master/areas/{id}` | エリア更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-FAC-025` | `PATCH` | `/api/v1/master/areas/{id}/deactivate` | エリア無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-FAC-025` | `PATCH` | `/api/v1/master/areas/{id}/toggle-active` | エリア無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 **ロケーション**
 
@@ -342,7 +342,7 @@
 | `API-MST-FAC-032` | `POST` | `/api/v1/master/locations` | ロケーション登録 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `API-MST-FAC-033` | `GET` | `/api/v1/master/locations/{id}` | ロケーション取得 | 要 | 全ロール |
 | `API-MST-FAC-034` | `PUT` | `/api/v1/master/locations/{id}` | ロケーション更新 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
-| `API-MST-FAC-035` | `PATCH` | `/api/v1/master/locations/{id}/deactivate` | ロケーション無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `API-MST-FAC-035` | `PATCH` | `/api/v1/master/locations/{id}/toggle-active` | ロケーション無効化/有効化 | 要 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 
 #### ユーザーマスタ（master/users）
 
@@ -352,7 +352,7 @@
 | `API-MST-USR-002` | `POST` | `/api/v1/master/users` | ユーザー登録 | 要 | SYSTEM_ADMIN |
 | `API-MST-USR-003` | `GET` | `/api/v1/master/users/{id}` | ユーザー取得 | 要 | SYSTEM_ADMIN |
 | `API-MST-USR-004` | `PUT` | `/api/v1/master/users/{id}` | ユーザー更新 | 要 | SYSTEM_ADMIN |
-| `API-MST-USR-005` | `PATCH` | `/api/v1/master/users/{id}/deactivate` | ユーザー無効化/有効化 | 要 | SYSTEM_ADMIN |
+| `API-MST-USR-005` | `PATCH` | `/api/v1/master/users/{id}/toggle-active` | ユーザー無効化/有効化 | 要 | SYSTEM_ADMIN |
 | `API-MST-USR-006` | `PATCH` | `/api/v1/master/users/{id}/unlock` | アカウントロック解除 | 要 | SYSTEM_ADMIN |
 | `API-MST-USR-007` | `GET` | `/api/v1/master/users/exists` | ユーザーコード存在確認 | 要 | SYSTEM_ADMIN |
 
