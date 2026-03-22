@@ -748,15 +748,163 @@ class InboundSlipControllerTest {
     }
 
     @Nested
-    @DisplayName("未実装スタブエンドポイント")
-    class StubTests {
+    @DisplayName("GET /api/v1/inbound/results")
+    class ResultsTests {
+
+        private static final String RESULTS_URL = "/api/v1/inbound/results";
+
+        private InboundSlipLine createResultLine(Long lineId, InboundSlip slip) {
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .inboundSlip(slip)
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(50)
+                    .inspectedQty(48)
+                    .lotNumber("LOT-001")
+                    .expiryDate(LocalDate.of(2027, 1, 1))
+                    .putawayLocationId(200L)
+                    .putawayLocationCode("LOC-A01")
+                    .lineStatus("STORED")
+                    .build();
+            setField(line, "id", lineId);
+            setField(line, "storedAt", OffsetDateTime.now());
+            setField(line, "storedBy", 10L);
+            return line;
+        }
 
         @Test
-        @DisplayName("GET /results は500を返す")
-        void results_returns500() throws Exception {
-            mockMvc.perform(get("/api/v1/inbound/results")
-                            .param("warehouseId", "1"))
-                    .andExpect(status().isInternalServerError());
+        @DisplayName("入荷実績一覧をページング形式で返す")
+        void results_returns200() throws Exception {
+            InboundSlip slip = createSlip(1L, "INB-20260320-0001", "STORED");
+            InboundSlipLine line = createResultLine(11L, slip);
+
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(line)));
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("テスト太郎");
+
+            mockMvc.perform(get(RESULTS_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(1)))
+                    .andExpect(jsonPath("$.content[0].slipId").value(1))
+                    .andExpect(jsonPath("$.content[0].slipNumber").value("INB-20260320-0001"))
+                    .andExpect(jsonPath("$.content[0].slipType").value("NORMAL"))
+                    .andExpect(jsonPath("$.content[0].partnerCode").value("SUP-0001"))
+                    .andExpect(jsonPath("$.content[0].partnerName").value("ABC商事"))
+                    .andExpect(jsonPath("$.content[0].lineId").value(11))
+                    .andExpect(jsonPath("$.content[0].lineNo").value(1))
+                    .andExpect(jsonPath("$.content[0].productCode").value("PRD-0001"))
+                    .andExpect(jsonPath("$.content[0].productName").value("商品A"))
+                    .andExpect(jsonPath("$.content[0].unitType").value("CASE"))
+                    .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-001"))
+                    .andExpect(jsonPath("$.content[0].plannedQty").value(50))
+                    .andExpect(jsonPath("$.content[0].inspectedQty").value(48))
+                    .andExpect(jsonPath("$.content[0].diffQty").value(-2))
+                    .andExpect(jsonPath("$.content[0].locationCode").value("LOC-A01"))
+                    .andExpect(jsonPath("$.content[0].storedByName").value("テスト太郎"))
+                    .andExpect(jsonPath("$.page").value(0))
+                    .andExpect(jsonPath("$.totalElements").value(1));
+        }
+
+        @Test
+        @DisplayName("空の場合でも200を返す")
+        void results_empty_returns200() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(RESULTS_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(0)))
+                    .andExpect(jsonPath("$.totalElements").value(0));
+        }
+
+        @Test
+        @DisplayName("inspectedQtyがnullの場合diffQtyもnull")
+        void results_nullInspectedQty_returns200() throws Exception {
+            InboundSlip slip = createSlip(1L, "INB-20260320-0001", "STORED");
+            InboundSlipLine line = createResultLine(11L, slip);
+            line.setInspectedQty(null);
+
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(line)));
+            when(inboundSlipService.resolveUserName(any())).thenReturn(null);
+
+            mockMvc.perform(get(RESULTS_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].inspectedQty").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].diffQty").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("倉庫が存在しない場合404を返す")
+        void results_warehouseNotFound_returns404() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(999L), any(), any(), any(), any(), any(), any()))
+                    .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫 が見つかりません (id=999)"));
+
+            mockMvc.perform(get(RESULTS_URL).param("warehouseId", "999"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("フィルタパラメータ付きで検索できる")
+        void results_withFilters_returns200() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), eq(5L), eq("INB-2026"), eq("PRD"), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(RESULTS_URL)
+                            .param("warehouseId", "1")
+                            .param("partnerId", "5")
+                            .param("slipNumber", "INB-2026")
+                            .param("productCode", "PRD")
+                            .param("storedDateFrom", "2026-03-01")
+                            .param("storedDateTo", "2026-03-22"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("descソート指定で検索できる")
+        void results_withDescSort_returns200() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(RESULTS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "storedAt,desc"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("不正なソートプロパティはデフォルトにフォールバック")
+        void results_withInvalidSort_returns200() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(RESULTS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "invalidField,asc"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("ソートにカンマなしの場合ASCデフォルトで検索できる")
+        void results_withSortNoDirection_returns200() throws Exception {
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get(RESULTS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "productCode"))
+                    .andExpect(status().isOk());
         }
     }
 

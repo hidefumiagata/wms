@@ -1909,4 +1909,125 @@ class InboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("LOCATION_WAREHOUSE_MISMATCH");
         }
     }
+
+    @Nested
+    @DisplayName("findResults")
+    class FindResultsTests {
+
+        @Test
+        @DisplayName("格納済み明細一覧を返す")
+        void findResults_returnsPage() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .lineStatus("STORED").build();
+            setField(line, "id", 11L);
+
+            Page<InboundSlipLine> page = new PageImpl<>(List.of(line));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(page);
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 22),
+                    null, null, null, PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).hasSize(1);
+            verify(warehouseService).findById(1L);
+        }
+
+        @Test
+        @DisplayName("倉庫が存在しない場合ResourceNotFoundExceptionをスローする")
+        void findResults_warehouseNotFound_throws() {
+            when(warehouseService.findById(999L))
+                    .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫 が見つかりません (id=999)"));
+
+            assertThatThrownBy(() -> inboundSlipService.findResults(
+                    999L, null, null, null, null, null, PageRequest.of(0, 20)))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("WAREHOUSE_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("日付パラメータがnullの場合デフォルト値が使用される")
+        void findResults_defaultDates() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, null, null, null, null, null, PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).isEmpty();
+            verify(businessDateProvider).today();
+        }
+
+        @Test
+        @DisplayName("フィルタ付きで検索できる")
+        void findResults_withFilters() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), eq(5L), eq("INB-2026"), eq("PRD"), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 22),
+                    5L, "INB-2026", "PRD", PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("LIKE特殊文字がエスケープされる")
+        void findResults_escapesLikeChars() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), any(), eq("INB\\%"), eq("PRD\\_"), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, null, null, null, "INB%", "PRD_", PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("storedDateFromのみ指定した場合storedDateToはデフォルトになる")
+        void findResults_onlyFromDate() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, LocalDate.of(2026, 3, 10), null, null, null, null, PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).isEmpty();
+            verify(businessDateProvider).today();
+        }
+
+        @Test
+        @DisplayName("storedDateToのみ指定した場合storedDateFromはデフォルトになる")
+        void findResults_onlyToDate() {
+            when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 22));
+            when(inboundSlipLineRepository.searchResults(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            Page<InboundSlipLine> result = inboundSlipService.findResults(
+                    1L, null, LocalDate.of(2026, 3, 15), null, null, null, PageRequest.of(0, 20));
+
+            assertThat(result.getContent()).isEmpty();
+            verify(businessDateProvider).today();
+        }
+    }
 }

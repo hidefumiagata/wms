@@ -42,7 +42,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +59,7 @@ import static com.wms.shared.util.LikeEscapeUtil.escape;
 public class InboundSlipService {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
     private final InboundSlipRepository inboundSlipRepository;
     private final InboundSlipLineRepository inboundSlipLineRepository;
@@ -81,6 +84,28 @@ public class InboundSlipService {
         return inboundSlipRepository.search(
                 warehouseId, escapedSlipNumber, statuses,
                 plannedDateFrom, plannedDateTo, partnerId, pageable);
+    }
+
+    public Page<InboundSlipLine> findResults(Long warehouseId, LocalDate storedDateFrom,
+                                              LocalDate storedDateTo, Long partnerId,
+                                              String slipNumber, String productCode,
+                                              Pageable pageable) {
+        warehouseService.findById(warehouseId);
+
+        LocalDate today = businessDateProvider.today();
+        LocalDate fromDate = storedDateFrom != null ? storedDateFrom : today.withDayOfMonth(1);
+        LocalDate toDate = storedDateTo != null ? storedDateTo : today;
+
+        OffsetDateTime fromDateTime = fromDate.atStartOfDay(JST).toOffsetDateTime();
+        OffsetDateTime toDateTime = toDate.plusDays(1).atStartOfDay(JST).toOffsetDateTime();
+
+        String escapedSlipNumber = slipNumber != null ? escape(slipNumber) : null;
+        String escapedProductCode = productCode != null ? escape(productCode) : null;
+
+        log.debug("InboundResult search: warehouseId={}, storedDateFrom={}, storedDateTo={}", warehouseId, fromDate, toDate);
+        return inboundSlipLineRepository.searchResults(
+                warehouseId, fromDateTime, toDateTime, partnerId,
+                escapedSlipNumber, escapedProductCode, pageable);
     }
 
     public InboundSlip findById(Long id) {

@@ -1,6 +1,7 @@
 package com.wms.inbound.controller;
 
 import com.wms.inbound.entity.InboundSlip;
+import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
@@ -56,6 +57,7 @@ class InboundSlipControllerAuthTest {
     private JwtTokenProvider jwtTokenProvider;
 
     private static final String SLIPS_URL = "/api/v1/inbound/slips";
+    private static final String RESULTS_URL = "/api/v1/inbound/results";
 
     // ===== 未認証（401） =====
 
@@ -126,6 +128,14 @@ class InboundSlipControllerAuthTest {
         mockMvc.perform(post(SLIPS_URL + "/1/store")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"lines\":[]}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("未認証ユーザーがGET(results)すると401")
+    void results_anonymous_returns401() throws Exception {
+        mockMvc.perform(get(RESULTS_URL).param("warehouseId", "1"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -210,6 +220,20 @@ class InboundSlipControllerAuthTest {
         when(inboundSlipService.resolveUserName(any())).thenReturn(null);
 
         mockMvc.perform(get(SLIPS_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET(results)すると200（isAuthenticated）")
+    void results_viewer_returns200() throws Exception {
+        when(inboundSlipService.findResults(
+                eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get(RESULTS_URL)
+                        .param("warehouseId", "1")
                         .header("X-Requested-With", "XMLHttpRequest"))
                 .andExpect(status().isOk());
     }
