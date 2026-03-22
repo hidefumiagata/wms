@@ -185,4 +185,136 @@ class InventoryServiceTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("storeInboundStock")
+    class StoreInboundStockTests {
+
+        private static final Long WAREHOUSE_ID = 1L;
+        private static final Long LOCATION_ID = 200L;
+        private static final String LOCATION_CODE = "LOC-A01";
+        private static final Long PRODUCT_ID = 100L;
+        private static final String PRODUCT_CODE = "PRD-0001";
+        private static final String PRODUCT_NAME = "商品A";
+        private static final String UNIT_TYPE = "CASE";
+        private static final String LOT_NUMBER = "LOT-001";
+        private static final LocalDate EXPIRY_DATE = LocalDate.of(2027, 3, 22);
+        private static final int STORE_QTY = 48;
+        private static final Long REFERENCE_ID = 1L;
+        private static final Long USER_ID = 10L;
+        private static final OffsetDateTime EXECUTED_AT = OffsetDateTime.now();
+
+        @Test
+        @DisplayName("正常系: 既存在庫に加算され、INBOUND移動記録が作成される")
+        void storeInboundStock_existingInventory_success() {
+            Inventory inventory = Inventory.builder()
+                    .warehouseId(WAREHOUSE_ID)
+                    .locationId(LOCATION_ID)
+                    .productId(PRODUCT_ID)
+                    .unitType(UNIT_TYPE)
+                    .lotNumber(LOT_NUMBER)
+                    .expiryDate(EXPIRY_DATE)
+                    .quantity(100)
+                    .allocatedQty(0)
+                    .build();
+            setField(inventory, "id", 500L);
+
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
+                    .thenReturn(Optional.of(inventory));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            inventoryService.storeInboundStock(
+                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
+                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
+                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
+                    STORE_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+
+            assertThat(inventory.getQuantity()).isEqualTo(148); // 100 + 48
+
+            ArgumentCaptor<InventoryMovement> movementCaptor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository).save(movementCaptor.capture());
+            InventoryMovement savedMovement = movementCaptor.getValue();
+            assertThat(savedMovement.getMovementType()).isEqualTo("INBOUND");
+            assertThat(savedMovement.getQuantity()).isEqualTo(48);
+            assertThat(savedMovement.getQuantityAfter()).isEqualTo(148);
+            assertThat(savedMovement.getWarehouseId()).isEqualTo(WAREHOUSE_ID);
+            assertThat(savedMovement.getLocationId()).isEqualTo(LOCATION_ID);
+            assertThat(savedMovement.getLocationCode()).isEqualTo(LOCATION_CODE);
+            assertThat(savedMovement.getProductId()).isEqualTo(PRODUCT_ID);
+            assertThat(savedMovement.getProductCode()).isEqualTo(PRODUCT_CODE);
+            assertThat(savedMovement.getProductName()).isEqualTo(PRODUCT_NAME);
+            assertThat(savedMovement.getReferenceId()).isEqualTo(REFERENCE_ID);
+            assertThat(savedMovement.getReferenceType()).isEqualTo("INBOUND_SLIP");
+            assertThat(savedMovement.getExecutedBy()).isEqualTo(USER_ID);
+            assertThat(savedMovement.getExecutedAt()).isEqualTo(EXECUTED_AT);
+        }
+
+        @Test
+        @DisplayName("正常系: 在庫が存在しない場合、新規作成される")
+        void storeInboundStock_newInventory_success() {
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
+                    .thenReturn(Optional.empty());
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            inventoryService.storeInboundStock(
+                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
+                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
+                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
+                    STORE_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+
+            ArgumentCaptor<Inventory> inventoryCaptor = ArgumentCaptor.forClass(Inventory.class);
+            verify(inventoryRepository).save(inventoryCaptor.capture());
+            Inventory saved = inventoryCaptor.getValue();
+            assertThat(saved.getQuantity()).isEqualTo(48);
+            assertThat(saved.getAllocatedQty()).isEqualTo(0);
+            assertThat(saved.getWarehouseId()).isEqualTo(WAREHOUSE_ID);
+            assertThat(saved.getLocationId()).isEqualTo(LOCATION_ID);
+            assertThat(saved.getProductId()).isEqualTo(PRODUCT_ID);
+            assertThat(saved.getUnitType()).isEqualTo(UNIT_TYPE);
+            assertThat(saved.getLotNumber()).isEqualTo(LOT_NUMBER);
+            assertThat(saved.getExpiryDate()).isEqualTo(EXPIRY_DATE);
+
+            ArgumentCaptor<InventoryMovement> movementCaptor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository).save(movementCaptor.capture());
+            InventoryMovement savedMovement = movementCaptor.getValue();
+            assertThat(savedMovement.getMovementType()).isEqualTo("INBOUND");
+            assertThat(savedMovement.getQuantity()).isEqualTo(48);
+            assertThat(savedMovement.getQuantityAfter()).isEqualTo(48);
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("existsDifferentProductAtLocation")
+    class ExistsDifferentProductAtLocationTests {
+
+        @Test
+        @DisplayName("異なる商品が存在する場合trueを返す")
+        void existsDifferentProduct_true() {
+            when(inventoryRepository.existsByLocationIdAndProductIdNot(200L, 100L)).thenReturn(true);
+
+            assertThat(inventoryService.existsDifferentProductAtLocation(200L, 100L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("異なる商品が存在しない場合falseを返す")
+        void existsDifferentProduct_false() {
+            when(inventoryRepository.existsByLocationIdAndProductIdNot(200L, 100L)).thenReturn(false);
+
+            assertThat(inventoryService.existsDifferentProductAtLocation(200L, 100L)).isFalse();
+        }
+    }
 }

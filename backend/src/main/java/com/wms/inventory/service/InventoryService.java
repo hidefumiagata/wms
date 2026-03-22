@@ -24,6 +24,71 @@ public class InventoryService {
     private final InventoryMovementRepository inventoryMovementRepository;
 
     /**
+     * 同一ロケーションに異なる商品の在庫が存在するかチェックする。
+     */
+    public boolean existsDifferentProductAtLocation(Long locationId, Long productId) {
+        return inventoryRepository.existsByLocationIdAndProductIdNot(locationId, productId);
+    }
+
+    /**
+     * 入荷格納時に在庫をUPSERTし、INBOUND移動記録を作成する。
+     */
+    @Transactional
+    public void storeInboundStock(Long warehouseId, Long locationId, String locationCode,
+                                   Long productId, String productCode, String productName,
+                                   String unitType, String lotNumber, LocalDate expiryDate,
+                                   int storeQty, Long referenceId, Long userId,
+                                   OffsetDateTime executedAt) {
+        Inventory inventory = inventoryRepository
+                .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                        locationId, productId, unitType, lotNumber, expiryDate)
+                .orElse(null);
+
+        int newQty;
+        if (inventory != null) {
+            newQty = inventory.getQuantity() + storeQty;
+            inventory.setQuantity(newQty);
+            inventoryRepository.save(inventory);
+        } else {
+            newQty = storeQty;
+            inventory = Inventory.builder()
+                    .warehouseId(warehouseId)
+                    .locationId(locationId)
+                    .productId(productId)
+                    .unitType(unitType)
+                    .lotNumber(lotNumber)
+                    .expiryDate(expiryDate)
+                    .quantity(newQty)
+                    .allocatedQty(0)
+                    .build();
+            inventoryRepository.save(inventory);
+        }
+
+        InventoryMovement movement = InventoryMovement.builder()
+                .warehouseId(warehouseId)
+                .locationId(locationId)
+                .locationCode(locationCode)
+                .productId(productId)
+                .productCode(productCode)
+                .productName(productName)
+                .unitType(unitType)
+                .lotNumber(lotNumber)
+                .expiryDate(expiryDate)
+                .movementType("INBOUND")
+                .quantity(storeQty)
+                .quantityAfter(newQty)
+                .referenceId(referenceId)
+                .referenceType("INBOUND_SLIP")
+                .executedAt(executedAt)
+                .executedBy(userId)
+                .build();
+        inventoryMovementRepository.save(movement);
+
+        log.info("Inventory stored: locationId={}, productId={}, qty=+{}, after={}",
+                locationId, productId, storeQty, newQty);
+    }
+
+    /**
      * 在庫をロールバックする（入荷キャンセル時）。
      * 在庫数量を減算し、INBOUND_CANCEL移動記録を作成する。
      */

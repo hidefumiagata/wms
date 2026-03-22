@@ -96,14 +96,16 @@ public class InboundSlipController implements InboundApi {
     @Override
     public ResponseEntity<InboundSlipDetail> inspectInboundSlip(
             Long id, InspectInboundRequest inspectInboundRequest) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        InboundSlip inspected = inboundSlipService.inspect(id, inspectInboundRequest);
+        return ResponseEntity.ok(toDetail(inspected));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<InboundSlipDetail> storeInboundSlip(
             Long id, StoreInboundRequest storeInboundRequest) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        InboundSlip stored = inboundSlipService.store(id, storeInboundRequest);
+        return ResponseEntity.ok(toDetail(stored));
     }
 
     @PreAuthorize("isAuthenticated()")

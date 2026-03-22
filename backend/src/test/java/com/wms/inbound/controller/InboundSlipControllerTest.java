@@ -1,6 +1,8 @@
 package com.wms.inbound.controller;
 
 import com.wms.generated.model.CreateInboundSlipRequest;
+import com.wms.generated.model.InspectInboundRequest;
+import com.wms.generated.model.StoreInboundRequest;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;
@@ -606,26 +608,148 @@ class InboundSlipControllerTest {
     }
 
     @Nested
-    @DisplayName("未実装スタブエンドポイント")
-    class StubTests {
+    @DisplayName("POST /api/v1/inbound/slips/{id}/inspect")
+    class InspectTests {
 
         @Test
-        @DisplayName("POST /slips/{id}/inspect は500を返す")
-        void inspect_returns500() throws Exception {
+        @DisplayName("正常に200を返す")
+        void inspect_returns200() throws Exception {
+            InboundSlip inspected = createSlip(1L, "INB-20260320-0001", "INSPECTING");
+            InboundSlipLine line = createLine(1L, inspected, 1, "PRD-0001", 100);
+            line.setInspectedQty(98);
+            line.setLineStatus("INSPECTED");
+            inspected.getLines().add(line);
+
+            when(inboundSlipService.inspect(eq(1L), any(InspectInboundRequest.class))).thenReturn(inspected);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
+
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"inspectedQty\":98}]}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.status").value("INSPECTING"))
+                    .andExpect(jsonPath("$.lines[0].inspectedQty").value(98))
+                    .andExpect(jsonPath("$.lines[0].lineStatus").value("INSPECTED"));
+
+            verify(inboundSlipService).inspect(eq(1L), any(InspectInboundRequest.class));
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void inspect_notFound_returns404() throws Exception {
+            when(inboundSlipService.inspect(eq(999L), any(InspectInboundRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"inspectedQty\":10}]}"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("不正なステータスで409を返す")
+        void inspect_invalidStatus_returns409() throws Exception {
+            when(inboundSlipService.inspect(eq(1L), any(InspectInboundRequest.class)))
+                    .thenThrow(new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                            "検品可能なステータスではありません"));
+
             mockMvc.perform(post(SLIPS_URL + "/1/inspect")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"lines\":[{\"lineId\":1,\"inspectedQty\":10}]}"))
-                    .andExpect(status().isInternalServerError());
+                    .andExpect(status().isConflict());
         }
 
         @Test
-        @DisplayName("POST /slips/{id}/store は500を返す")
-        void store_returns500() throws Exception {
+        @DisplayName("空のlinesで400を返す")
+        void inspect_emptyLines_returns400() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[]}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/inbound/slips/{id}/store")
+    class StoreTests {
+
+        @Test
+        @DisplayName("正常に200を返す")
+        void store_returns200() throws Exception {
+            InboundSlip stored = createSlip(1L, "INB-20260320-0001", "STORED");
+            InboundSlipLine line = createLine(1L, stored, 1, "PRD-0001", 100);
+            line.setInspectedQty(98);
+            line.setLineStatus("STORED");
+            stored.getLines().add(line);
+
+            when(inboundSlipService.store(eq(1L), any(StoreInboundRequest.class))).thenReturn(stored);
+            when(inboundSlipService.resolveUserName(10L)).thenReturn("山田 太郎");
+
             mockMvc.perform(post(SLIPS_URL + "/1/store")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":1}]}"))
-                    .andExpect(status().isInternalServerError());
+                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":200}]}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.status").value("STORED"))
+                    .andExpect(jsonPath("$.lines[0].lineStatus").value("STORED"));
+
+            verify(inboundSlipService).store(eq(1L), any(StoreInboundRequest.class));
         }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void store_notFound_returns404() throws Exception {
+            when(inboundSlipService.store(eq(999L), any(StoreInboundRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/store")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":200}]}"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("不正なステータスで409を返す")
+        void store_invalidStatus_returns409() throws Exception {
+            when(inboundSlipService.store(eq(1L), any(StoreInboundRequest.class)))
+                    .thenThrow(new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
+                            "格納可能なステータスではありません"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/store")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":200}]}"))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("ビジネスルール違反で422を返す")
+        void store_businessRuleViolation_returns422() throws Exception {
+            when(inboundSlipService.store(eq(1L), any(StoreInboundRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("LOCATION_INACTIVE",
+                            "無効なロケーションです"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/store")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[{\"lineId\":1,\"locationId\":200}]}"))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("空のlinesで400を返す")
+        void store_emptyLines_returns400() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/store")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\":[]}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("未実装スタブエンドポイント")
+    class StubTests {
 
         @Test
         @DisplayName("GET /results は500を返す")

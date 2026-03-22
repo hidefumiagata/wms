@@ -5,16 +5,24 @@ import com.wms.generated.model.CreateInboundSlipRequest;
 import com.wms.generated.model.InboundLineStatus;
 import com.wms.generated.model.InboundSlipStatus;
 import com.wms.generated.model.InboundSlipType;
+import com.wms.generated.model.InspectInboundRequest;
+import com.wms.generated.model.InspectLineRequest;
+import com.wms.generated.model.StoreInboundRequest;
+import com.wms.generated.model.StoreLineRequest;
 import com.wms.generated.model.UnitType;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.repository.InboundSlipLineRepository;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.inventory.service.InventoryService;
+import com.wms.master.entity.Area;
+import com.wms.master.entity.Location;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
+import com.wms.master.service.AreaService;
+import com.wms.master.service.LocationService;
 import com.wms.master.service.PartnerService;
 import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
@@ -80,6 +88,12 @@ class InboundSlipServiceTest {
 
     @Mock
     private ProductService productService;
+
+    @Mock
+    private LocationService locationService;
+
+    @Mock
+    private AreaService areaService;
 
     @Mock
     private BusinessDateProvider businessDateProvider;
@@ -1182,6 +1196,736 @@ class InboundSlipServiceTest {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("inspect")
+    class InspectTests {
+
+        @AfterEach
+        void clearSecurityContext() {
+            SecurityContextHolder.clearContext();
+        }
+
+        private void setUpSecurityContext(Long userId) {
+            WmsUserDetails userDetails = new WmsUserDetails(
+                    userId, "testuser", "password", "WH-001",
+                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        private InboundSlip createSlipWithLine(String headerStatus, String lineStatus, Long lineId) {
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(50)
+                    .lineStatus(lineStatus)
+                    .build();
+            setField(line, "id", lineId);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(line);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(headerStatus)
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+            return slip;
+        }
+
+        @Test
+        @DisplayName("正常系: CONFIRMED→INSPECTINGに遷移する")
+        void inspect_confirmed_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.CONFIRMED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            InboundSlip result = inboundSlipService.inspect(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.INSPECTING.getValue());
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(48);
+            assertThat(result.getLines().get(0).getLineStatus()).isEqualTo(InboundLineStatus.INSPECTED.getValue());
+            assertThat(result.getLines().get(0).getInspectedBy()).isEqualTo(10L);
+            assertThat(result.getLines().get(0).getInspectedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("正常系: INSPECTINGステータスで再検品できる")
+        void inspect_inspecting_reInspect_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.INSPECTING.getValue(),
+                    InboundLineStatus.INSPECTED.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(50)));
+
+            InboundSlip result = inboundSlipService.inspect(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.INSPECTING.getValue());
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(50);
+        }
+
+        @Test
+        @DisplayName("正常系: PARTIAL_STOREDステータスでも検品できる")
+        void inspect_partialStored_success() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(2).productId(101L).productCode("PRD-0002").productName("商品B")
+                    .unitType("PIECE").plannedQty(30)
+                    .lineStatus(InboundLineStatus.PENDING.getValue()).build();
+            setField(pendingLine, "id", 12L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+            lines.add(pendingLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(12L).inspectedQty(28)));
+
+            InboundSlip result = inboundSlipService.inspect(1L, request);
+
+            assertThat(result.getLines().get(1).getInspectedQty()).isEqualTo(28);
+            assertThat(result.getLines().get(1).getLineStatus()).isEqualTo(InboundLineStatus.INSPECTED.getValue());
+        }
+
+        @Test
+        @DisplayName("STORED明細は検品できない")
+        void inspect_storedLine_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.PARTIAL_STORED.getValue(),
+                    InboundLineStatus.STORED.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_LINE_ALREADY_STORED");
+        }
+
+        @Test
+        @DisplayName("明細が見つからない場合ResourceNotFoundExceptionをスローする")
+        void inspect_lineNotFound_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.CONFIRMED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(999L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("PLANNEDステータスでは検品できない")
+        void inspect_planned_throws() {
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.PLANNED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("STOREDステータスでは検品できない")
+        void inspect_stored_throws() {
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.STORED.getValue(),
+                    InboundLineStatus.STORED.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("CANCELLEDステータスでは検品できない")
+        void inspect_cancelled_throws() {
+            InboundSlip slip = createSlipWithLine(
+                    InboundSlipStatus.CANCELLED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("伝票が存在しない場合ResourceNotFoundExceptionをスローする")
+        void inspect_slipNotFound_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(999L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("store")
+    class StoreTests {
+
+        @AfterEach
+        void clearSecurityContext() {
+            SecurityContextHolder.clearContext();
+        }
+
+        private void setUpSecurityContext(Long userId) {
+            WmsUserDetails userDetails = new WmsUserDetails(
+                    userId, "testuser", "password", "WH-001",
+                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+
+        private Location createLocation(Long id, Long areaId, boolean active, boolean stocktakeLocked) {
+            Location loc = new Location();
+            loc.setWarehouseId(1L);
+            loc.setAreaId(areaId);
+            loc.setLocationCode("LOC-A01");
+            loc.setLocationName("入荷ロケ1");
+            loc.setIsStocktakingLocked(stocktakeLocked);
+            setField(loc, "id", id);
+            setField(loc, "isActive", active);
+            return loc;
+        }
+
+        private Area createArea(Long id, String areaType) {
+            Area area = new Area();
+            area.setWarehouseId(1L);
+            area.setBuildingId(1L);
+            area.setAreaCode("AREA-001");
+            area.setAreaName("入荷エリア");
+            area.setStorageCondition("NORMAL");
+            area.setAreaType(areaType);
+            setField(area, "id", id);
+            setField(area, "isActive", true);
+            return area;
+        }
+
+        private InboundSlip createSlipWithInspectedLine(String headerStatus, Long lineId, int inspectedQty) {
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(50)
+                    .inspectedQty(inspectedQty)
+                    .lotNumber("LOT-001")
+                    .expiryDate(java.time.LocalDate.of(2027, 3, 22))
+                    .lineStatus(InboundLineStatus.INSPECTED.getValue())
+                    .build();
+            setField(line, "id", lineId);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(line);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(headerStatus)
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+            return slip;
+        }
+
+        @Test
+        @DisplayName("正常系: 全明細格納でINSPECTING→STOREDに遷移する")
+        void store_allLinesStored_success() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, true, false));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "INBOUND"));
+            when(inventoryService.existsDifferentProductAtLocation(200L, 100L)).thenReturn(false);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            InboundSlip result = inboundSlipService.store(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.STORED.getValue());
+            assertThat(result.getLines().get(0).getLineStatus()).isEqualTo(InboundLineStatus.STORED.getValue());
+            assertThat(result.getLines().get(0).getPutawayLocationId()).isEqualTo(200L);
+            assertThat(result.getLines().get(0).getPutawayLocationCode()).isEqualTo("LOC-A01");
+            assertThat(result.getLines().get(0).getStoredBy()).isEqualTo(10L);
+            assertThat(result.getLines().get(0).getStoredAt()).isNotNull();
+
+            verify(inventoryService).storeInboundStock(
+                    eq(1L), eq(200L), eq("LOC-A01"),
+                    eq(100L), eq("PRD-0001"), eq("商品A"),
+                    eq("CASE"), eq("LOT-001"), eq(java.time.LocalDate.of(2027, 3, 22)),
+                    eq(48), eq(1L), eq(10L), any());
+        }
+
+        @Test
+        @DisplayName("正常系: 一部明細のみ格納でPARTIAL_STOREDに遷移する")
+        void store_partialLines_partialStored() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine inspectedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .lotNumber("LOT-001").expiryDate(java.time.LocalDate.of(2027, 3, 22))
+                    .lineStatus(InboundLineStatus.INSPECTED.getValue()).build();
+            setField(inspectedLine, "id", 11L);
+
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(2).productId(101L).productCode("PRD-0002").productName("商品B")
+                    .unitType("PIECE").plannedQty(30)
+                    .lineStatus(InboundLineStatus.PENDING.getValue()).build();
+            setField(pendingLine, "id", 12L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(inspectedLine);
+            lines.add(pendingLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.INSPECTING.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, true, false));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "INBOUND"));
+            when(inventoryService.existsDifferentProductAtLocation(200L, 100L)).thenReturn(false);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            InboundSlip result = inboundSlipService.store(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.PARTIAL_STORED.getValue());
+            assertThat(result.getLines().get(0).getLineStatus()).isEqualTo(InboundLineStatus.STORED.getValue());
+            assertThat(result.getLines().get(1).getLineStatus()).isEqualTo(InboundLineStatus.PENDING.getValue());
+        }
+
+        @Test
+        @DisplayName("INSPECTED以外の明細は格納できない（PENDING）")
+        void store_lineNotInspected_throws() {
+            setUpSecurityContext(10L);
+            InboundSlipLine pendingLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50)
+                    .lineStatus(InboundLineStatus.PENDING.getValue()).build();
+            setField(pendingLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(pendingLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.INSPECTING.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_INSPECTED");
+        }
+
+        @Test
+        @DisplayName("STORED明細は格納できない")
+        void store_lineAlreadyStored_throws() {
+            setUpSecurityContext(10L);
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_INSPECTED");
+        }
+
+        @Test
+        @DisplayName("検品数が0の明細は格納できない")
+        void store_inspectedQtyZero_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 0);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INSPECTED_QTY_ZERO");
+        }
+
+        @Test
+        @DisplayName("検品数がnullの明細は格納できない")
+        void store_inspectedQtyNull_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(null)
+                    .lineStatus(InboundLineStatus.INSPECTED.getValue()).build();
+            setField(line, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(line);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.INSPECTING.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INSPECTED_QTY_ZERO");
+        }
+
+        @Test
+        @DisplayName("ロケーションが存在しない場合ResourceNotFoundExceptionをスローする")
+        void store_locationNotFound_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(999L))
+                    .thenThrow(new ResourceNotFoundException("LOCATION_NOT_FOUND", "ロケーション が見つかりません (id=999)"));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(999L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("LOCATION_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("無効なロケーションには格納できない")
+        void store_locationInactive_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, false, false));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOCATION_INACTIVE");
+        }
+
+        @Test
+        @DisplayName("入荷エリア以外のロケーションには格納できない")
+        void store_areNotInbound_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, true, false));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "STOCK"));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("AREA_NOT_INBOUND");
+        }
+
+        @Test
+        @DisplayName("棚卸中のロケーションには格納できない")
+        void store_stocktakeLocked_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, true, true));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "INBOUND"));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOCATION_STOCKTAKE_LOCKED");
+        }
+
+        @Test
+        @DisplayName("同一ロケーションに異なる商品がある場合格納できない")
+        void store_differentProductAtLocation_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(200L)).thenReturn(createLocation(200L, 300L, true, false));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "INBOUND"));
+            when(inventoryService.existsDifferentProductAtLocation(200L, 100L)).thenReturn(true);
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("DIFFERENT_PRODUCT_AT_LOCATION");
+        }
+
+        @Test
+        @DisplayName("PLANNEDステータスでは格納できない")
+        void store_planned_throws() {
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.PLANNED.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("CONFIRMEDステータスでは格納できない")
+        void store_confirmed_throws() {
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.CONFIRMED.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("STOREDステータスでは格納できない")
+        void store_stored_throws() {
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.STORED.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("CANCELLEDステータスでは格納できない")
+        void store_cancelled_throws() {
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.CANCELLED.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("明細が見つからない場合ResourceNotFoundExceptionをスローする")
+        void store_lineNotFound_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(
+                    InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(999L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("伝票が存在しない場合ResourceNotFoundExceptionをスローする")
+        void store_slipNotFound_throws() {
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(999L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("正常系: PARTIAL_STOREDから残りを格納してSTOREDに遷移する")
+        void store_partialStoredToStored_success() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine storedLine = InboundSlipLine.builder()
+                    .lineNo(1).productId(100L).productCode("PRD-0001").productName("商品A")
+                    .unitType("CASE").plannedQty(50).inspectedQty(48)
+                    .putawayLocationId(200L).putawayLocationCode("LOC-A01")
+                    .lineStatus(InboundLineStatus.STORED.getValue()).build();
+            setField(storedLine, "id", 11L);
+
+            InboundSlipLine inspectedLine = InboundSlipLine.builder()
+                    .lineNo(2).productId(101L).productCode("PRD-0002").productName("商品B")
+                    .unitType("PIECE").plannedQty(30).inspectedQty(28)
+                    .lotNumber("LOT-002").expiryDate(java.time.LocalDate.of(2027, 6, 1))
+                    .lineStatus(InboundLineStatus.INSPECTED.getValue()).build();
+            setField(inspectedLine, "id", 12L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(storedLine);
+            lines.add(inspectedLine);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.PARTIAL_STORED.getValue())
+                    .warehouseId(1L).lines(lines).build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(locationService.findById(201L)).thenReturn(createLocation(201L, 300L, true, false));
+            when(areaService.findById(300L)).thenReturn(createArea(300L, "INBOUND"));
+            when(inventoryService.existsDifferentProductAtLocation(201L, 101L)).thenReturn(false);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(12L).locationId(201L)));
+
+            InboundSlip result = inboundSlipService.store(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.STORED.getValue());
+        }
+
+        private static void setField(Object obj, String fieldName, Object value) {
+            try {
+                java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+                field.setAccessible(true);
+                field.set(obj, value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+            while (clazz != null) {
+                try {
+                    return clazz.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException e) {
+                    clazz = clazz.getSuperclass();
+                }
+            }
+            throw new RuntimeException("Field not found: " + fieldName);
         }
     }
 }
