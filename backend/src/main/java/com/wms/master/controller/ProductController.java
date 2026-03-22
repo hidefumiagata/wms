@@ -10,6 +10,8 @@ import com.wms.generated.model.ToggleActiveRequest;
 import com.wms.generated.model.UpdateProductRequest;
 import com.wms.master.entity.Product;
 import com.wms.master.service.ProductService;
+import com.wms.shared.exception.RateLimitExceededException;
+import com.wms.shared.security.RateLimiterService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +55,7 @@ public class ProductController {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ProductService productService;
+    private final RateLimiterService rateLimiterService;
 
     /**
      * 商品一覧取得。all=true の場合はプルダウン用の全件リスト、
@@ -159,11 +162,15 @@ public class ProductController {
         return ResponseEntity.ok(toDetail(updated));
     }
 
-    // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkProductCodeExists(
             @RequestParam String productCode) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && !rateLimiterService.tryConsumeCodeExists(auth.getName())) {
+            throw new RateLimitExceededException();
+        }
         boolean exists = productService.existsByCode(productCode);
         return ResponseEntity.ok(new ExistsResponse().exists(exists));
     }

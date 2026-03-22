@@ -48,6 +48,16 @@ public class RateLimiterService {
         return bucket.tryConsume(1);
     }
 
+    /**
+     * コード存在確認エンドポイント用: 同一ユーザーから1分間に30回まで
+     */
+    public boolean tryConsumeCodeExists(String userIdentifier) {
+        Bucket bucket = buckets.computeIfAbsent(
+                "code-exists:user:" + userIdentifier,
+                k -> createBucket(30, Duration.ofMinutes(1)));
+        return bucket.tryConsume(1);
+    }
+
     private Bucket createBucket(long capacity, Duration refillDuration) {
         return Bucket.builder()
                 .addLimit(Bandwidth.builder()

@@ -5,6 +5,7 @@ import com.wms.master.entity.Partner;
 import com.wms.master.service.PartnerService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
+import com.wms.shared.security.RateLimiterService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,9 @@ class PartnerControllerAuthTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RateLimiterService rateLimiterService;
 
     private static final String BASE_URL = "/api/v1/master/partners";
 
