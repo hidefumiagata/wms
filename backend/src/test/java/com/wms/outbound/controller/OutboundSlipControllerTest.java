@@ -2,13 +2,17 @@ package com.wms.outbound.controller;
 
 import com.wms.generated.model.CancelOutboundRequest;
 import com.wms.generated.model.CreateOutboundSlipRequest;
+import com.wms.master.service.AreaService;
+import com.wms.master.service.WarehouseService;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.entity.OutboundSlipLine;
 import com.wms.outbound.service.OutboundSlipService;
+import com.wms.outbound.service.PickingService;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
+import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +52,18 @@ class OutboundSlipControllerTest {
 
     @MockitoBean
     private OutboundSlipService outboundSlipService;
+
+    @MockitoBean
+    private PickingService pickingService;
+
+    @MockitoBean
+    private WarehouseService warehouseService;
+
+    @MockitoBean
+    private AreaService areaService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;

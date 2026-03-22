@@ -92,4 +92,11 @@ public interface OutboundSlipRepository extends JpaRepository<OutboundSlip, Long
               AND l.lineStatus = 'ALLOCATED'
             """)
     long countAllocatedLinesBySlipId(@Param("slipId") Long slipId);
+
+    /**
+     * 出荷明細IDから親の出荷伝票をロード（明細含む）。
+     */
+    @EntityGraph(attributePaths = "lines")
+    @Query("SELECT s FROM OutboundSlip s JOIN s.lines l WHERE l.id = :slipLineId")
+    Optional<OutboundSlip> findBySlipLineId(@Param("slipLineId") Long slipLineId);
 }
