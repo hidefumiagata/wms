@@ -1470,7 +1470,7 @@ Content-Type: application/json
 <tr><td><code>EVT-MST021-004</code></td><td>倉庫コードリンククリック</td><td>MST-023（編集画面）に遷移</td><td>MST-023 倉庫編集</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-005</code></td><td>編集ボタンクリック</td><td>MST-023（編集画面）に遷移</td><td>MST-023 倉庫編集</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-006</code></td><td>無効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/deactivate</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><code>EVT-MST021-007</code></td><td>有効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/activate</code> を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-MST021-007</code></td><td>有効化ボタンクリック</td><td>確認ダイアログを表示。確認後 <code>PATCH /api/v1/master/warehouses/{id}/deactivate</code>（<code>isActive: true</code>）を呼び出し</td><td>同画面リロード（成功メッセージ表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-MST021-008</code></td><td>ページ番号クリック</td><td>指定ページを <code>GET /api/v1/master/warehouses?page={n}</code> で取得</td><td>同画面（ページ変更）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -1523,10 +1523,10 @@ Content-Type: application/json
 <table>
 <thead><tr><th>項目ID</th><th>項目名</th><th>種別</th><th>必須</th><th>初期値</th><th>バリデーション</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td>MST022-F01</td><td>倉庫コード</td><td>テキスト</td><td>○</td><td>空</td><td>必須、最大20文字、英数字・ハイフン、一意チェック</td><td>登録後変更不可</td></tr>
+<tr><td>MST022-F01</td><td>倉庫コード</td><td>テキスト</td><td>○</td><td>空</td><td>必須、英大文字4文字固定（<code>^[A-Z]{4}$</code>）、一意チェック</td><td>登録後変更不可</td></tr>
 <tr><td>MST022-F02</td><td>倉庫名</td><td>テキスト</td><td>○</td><td>空</td><td>必須、最大200文字</td><td></td></tr>
 <tr><td>MST022-F03</td><td>倉庫名カナ</td><td>テキスト</td><td>○</td><td>空</td><td>必須、最大200文字、全角カナ</td><td></td></tr>
-<tr><td>MST022-F04</td><td>住所</td><td>テキスト</td><td>—</td><td>空</td><td>最大200文字</td><td></td></tr>
+<tr><td>MST022-F04</td><td>住所</td><td>テキスト</td><td>—</td><td>空</td><td>最大500文字</td><td></td></tr>
 <tr><td>MST022-B01</td><td>キャンセルボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>MST-021へ戻る</td></tr>
 <tr><td>MST022-B02</td><td>登録ボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>バリデーション後 <code>POST /api/v1/master/warehouses</code></td></tr>
 <p></tbody><br></table></p>
@@ -1545,7 +1545,7 @@ Content-Type: application/json
 <thead><tr><th>メッセージID</th><th>種別</th><th>発生条件</th><th>メッセージ文（日本語）</th></tr></thead>
 <tbody>
 <tr><td><code>MSG-E-MST022-001</code></td><td>エラー</td><td>倉庫コード未入力</td><td>倉庫コードは必須です</td></tr>
-<tr><td><code>MSG-E-MST022-002</code></td><td>エラー</td><td>倉庫コード形式エラー</td><td>倉庫コードは英数字・ハイフンで入力してください</td></tr>
+<tr><td><code>MSG-E-MST022-002</code></td><td>エラー</td><td>倉庫コード形式エラー</td><td>倉庫コードは英大文字4文字で入力してください</td></tr>
 <tr><td><code>MSG-E-MST022-003</code></td><td>エラー</td><td>倉庫コード重複</td><td>このコードは既に登録されています</td></tr>
 <tr><td><code>MSG-E-MST022-004</code></td><td>エラー</td><td>倉庫名未入力</td><td>倉庫名は必須です</td></tr>
 <tr><td><code>MSG-E-MST022-005</code></td><td>エラー</td><td>倉庫名カナ未入力</td><td>倉庫名カナは必須です</td></tr>
@@ -1593,7 +1593,7 @@ Content-Type: application/json
 <tr><td>MST023-F01</td><td>倉庫コード</td><td>表示</td><td>—</td><td>取得値</td><td>—</td><td>変更不可（読み取り専用）</td></tr>
 <tr><td>MST023-F02</td><td>倉庫名</td><td>テキスト</td><td>○</td><td>取得値</td><td>必須、最大200文字</td><td></td></tr>
 <tr><td>MST023-F03</td><td>倉庫名カナ</td><td>テキスト</td><td>○</td><td>取得値</td><td>必須、最大200文字、全角カナ</td><td></td></tr>
-<tr><td>MST023-F04</td><td>住所</td><td>テキスト</td><td>—</td><td>取得値</td><td>最大200文字</td><td></td></tr>
+<tr><td>MST023-F04</td><td>住所</td><td>テキスト</td><td>—</td><td>取得値</td><td>最大500文字</td><td></td></tr>
 <tr><td>MST023-B01</td><td>キャンセルボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>MST-021へ戻る</td></tr>
 <tr><td>MST023-B02</td><td>更新ボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>バリデーション後 <code>PUT /api/v1/master/warehouses/{id}</code></td></tr>
 <p></tbody><br></table></p>
