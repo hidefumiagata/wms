@@ -39,6 +39,7 @@ public interface OutboundSlipRepository extends JpaRepository<OutboundSlip, Long
     Optional<OutboundSlip> findByIdWithLines(@Param("id") Long id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = "lines")
     @Query("SELECT s FROM OutboundSlip s WHERE s.id = :id")
     Optional<OutboundSlip> findByIdForUpdate(@Param("id") Long id);
 

@@ -17,7 +17,6 @@ import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
-import com.wms.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,10 +42,9 @@ import static com.wms.shared.util.LikeEscapeUtil.escape;
 public class OutboundSlipService {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    // 現時点ではORDEREDのみキャンセル可。PARTIAL_ALLOCATED/ALLOCATEDは引当解放ロジック実装後に拡張する
     private static final Set<String> CANCELLABLE_STATUSES = Set.of(
-            OutboundSlipStatus.ORDERED.getValue(),
-            OutboundSlipStatus.PARTIAL_ALLOCATED.getValue(),
-            OutboundSlipStatus.ALLOCATED.getValue()
+            OutboundSlipStatus.ORDERED.getValue()
     );
 
     private final OutboundSlipRepository outboundSlipRepository;
@@ -54,8 +52,6 @@ public class OutboundSlipService {
     private final PartnerService partnerService;
     private final ProductService productService;
     private final BusinessDateProvider businessDateProvider;
-    private final UserRepository userRepository;
-
     public Page<OutboundSlip> search(Long warehouseId, String slipNumber,
                                       List<String> statuses, LocalDate plannedDateFrom,
                                       LocalDate plannedDateTo, Long partnerId,
@@ -79,13 +75,6 @@ public class OutboundSlipService {
 
     public long countLinesBySlipId(Long slipId) {
         return outboundSlipRepository.countLinesBySlipId(slipId);
-    }
-
-    public String resolveUserName(Long userId) {
-        if (userId == null) return null;
-        return userRepository.findById(userId)
-                .map(u -> u.getFullName())
-                .orElse(null);
     }
 
     @Transactional
@@ -222,9 +211,6 @@ public class OutboundSlipService {
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
                     "キャンセル可能なステータスではありません (status=" + slip.getStatus() + ")");
         }
-
-        // TODO: PARTIAL_ALLOCATED/ALLOCATED の場合は引当解放が必要（allocation実装時に拡張）
-        // 現時点ではORDEREDのみキャンセル可能。PARTIAL_ALLOCATED/ALLOCATEDは引当実装後に対応
 
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
