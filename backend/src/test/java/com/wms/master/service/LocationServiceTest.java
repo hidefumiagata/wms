@@ -169,6 +169,36 @@ class LocationServiceTest {
         }
 
         @Test
+        @DisplayName("STOCKエリアで不正なコード形式の場合INVALID_LOCATION_CODE_FORMATをスロー")
+        void create_stockArea_invalidCodeFormat_throwsException() {
+            Area area = createArea(10L, "AREA-01", "STOCK");
+            Location location = new Location();
+            location.setAreaId(10L);
+            location.setLocationCode("INVALID-CODE");
+
+            when(areaRepository.findById(10L)).thenReturn(Optional.of(area));
+
+            assertThatThrownBy(() -> locationService.create(location))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("棟-フロア-エリア-棚-段-並び形式");
+        }
+
+        @Test
+        @DisplayName("STOCKエリアで小文字を含むコードはINVALID_LOCATION_CODE_FORMATをスロー")
+        void create_stockArea_lowercaseCode_throwsException() {
+            Area area = createArea(10L, "AREA-01", "STOCK");
+            Location location = new Location();
+            location.setAreaId(10L);
+            location.setLocationCode("a-01-A-01-01-01");
+
+            when(areaRepository.findById(10L)).thenReturn(Optional.of(area));
+
+            assertThatThrownBy(() -> locationService.create(location))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("棟-フロア-エリア-棚-段-並び形式");
+        }
+
+        @Test
         @DisplayName("INBOUNDエリアで1件制限内なら正常に登録できる")
         void create_inboundArea_withinLimit_success() {
             Area area = createArea(10L, "AREA-IN", "INBOUND");
@@ -225,10 +255,10 @@ class LocationServiceTest {
             Area area = createArea(10L, "AREA-STOCK", "STOCK");
             Location location = new Location();
             location.setAreaId(10L);
-            location.setLocationCode("STOCK-99");
+            location.setLocationCode("B-02-C-03-04-05");
 
             when(areaRepository.findById(10L)).thenReturn(Optional.of(area));
-            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "STOCK-99")).thenReturn(false);
+            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "B-02-C-03-04-05")).thenReturn(false);
             when(locationRepository.save(location)).thenReturn(location);
 
             locationService.create(location);
@@ -256,14 +286,14 @@ class LocationServiceTest {
             Area area = createArea(10L, "AREA-01", "STOCK");
             Location location = new Location();
             location.setAreaId(10L);
-            location.setLocationCode("DUPLICATE-01");
+            location.setLocationCode("A-01-B-01-01-01");
 
             when(areaRepository.findById(10L)).thenReturn(Optional.of(area));
-            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "DUPLICATE-01")).thenReturn(true);
+            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "A-01-B-01-01-01")).thenReturn(true);
 
             assertThatThrownBy(() -> locationService.create(location))
                     .isInstanceOf(DuplicateResourceException.class)
-                    .hasMessageContaining("DUPLICATE-01");
+                    .hasMessageContaining("A-01-B-01-01-01");
         }
 
         @Test
@@ -272,15 +302,15 @@ class LocationServiceTest {
             Area area = createArea(10L, "AREA-01", "STOCK");
             Location location = new Location();
             location.setAreaId(10L);
-            location.setLocationCode("TOCTOU-01");
+            location.setLocationCode("A-01-B-01-01-02");
 
             when(areaRepository.findById(10L)).thenReturn(Optional.of(area));
-            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "TOCTOU-01")).thenReturn(false);
+            when(locationRepository.existsByWarehouseIdAndLocationCode(100L, "A-01-B-01-01-02")).thenReturn(false);
             when(locationRepository.save(location)).thenThrow(new DataIntegrityViolationException("unique constraint"));
 
             assertThatThrownBy(() -> locationService.create(location))
                     .isInstanceOf(DuplicateResourceException.class)
-                    .hasMessageContaining("TOCTOU-01");
+                    .hasMessageContaining("A-01-B-01-01-02");
         }
     }
 
