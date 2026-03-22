@@ -232,8 +232,44 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
-    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す（isAuthenticated）")
-    void list_warehouseStaff_returns200() throws Exception {
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると403を返す")
+    void list_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET一覧すると403を返す")
+    void list_viewer_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL)
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET詳細すると403を返す")
+    void get_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET詳細すると403を返す")
+    void get_viewer_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがGET一覧すると200を返す")
+    void list_warehouseManager_returns200() throws Exception {
         when(warehouseService.search(any(), any(), any(), any()))
                 .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
 
@@ -243,9 +279,9 @@ class WarehouseControllerAuthTest {
     }
 
     @Test
-    @WithMockUser(roles = "WAREHOUSE_STAFF")
-    @DisplayName("WAREHOUSE_STAFFがGET詳細すると200を返す（isAuthenticated）")
-    void get_warehouseStaff_returns200() throws Exception {
+    @WithMockUser(roles = "SYSTEM_ADMIN")
+    @DisplayName("SYSTEM_ADMINがGET詳細すると200を返す")
+    void get_systemAdmin_returns200() throws Exception {
         Warehouse w = createWarehouse(1L, "TKYO", "東京倉庫");
         when(warehouseService.findById(1L)).thenReturn(w);
 

@@ -45,7 +45,7 @@ public class WarehouseController implements MasterWarehouseApi {
      * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト（WarehousePageResponseでラップ）、
      * それ以外はページング形式で返却する。
      */
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<ListWarehouses200Response> listWarehouses(
             String warehouseCode,
@@ -92,7 +92,7 @@ public class WarehouseController implements MasterWarehouseApi {
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<WarehouseDetail> getWarehouse(Long id) {
         Warehouse warehouse = warehouseService.findById(id);
@@ -123,7 +123,7 @@ public class WarehouseController implements MasterWarehouseApi {
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
             String warehouseCode) {
