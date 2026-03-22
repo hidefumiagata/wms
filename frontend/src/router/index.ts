@@ -111,6 +111,63 @@ const router = createRouter({
           component: () => import('@/pages/master/WarehouseFormPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
+        // 棟マスタ — SCR-02 (MST-031/032/033): SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'master/buildings',
+          name: 'building-list',
+          component: () => import('@/pages/master/BuildingListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/buildings/new',
+          name: 'building-new',
+          component: () => import('@/pages/master/BuildingFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/buildings/:id/edit',
+          name: 'building-edit',
+          component: () => import('@/pages/master/BuildingFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        // エリアマスタ — SCR-02 (MST-041/042/043): SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'master/areas',
+          name: 'area-list',
+          component: () => import('@/pages/master/AreaListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/areas/new',
+          name: 'area-new',
+          component: () => import('@/pages/master/AreaFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/areas/:id/edit',
+          name: 'area-edit',
+          component: () => import('@/pages/master/AreaFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        // ロケーションマスタ — SCR-02 (MST-051/052/053): SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'master/locations',
+          name: 'location-list',
+          component: () => import('@/pages/master/LocationListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/locations/new',
+          name: 'location-new',
+          component: () => import('@/pages/master/LocationFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        {
+          path: 'master/locations/:id/edit',
+          name: 'location-edit',
+          component: () => import('@/pages/master/LocationFormPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
       ],
     },
     // 404

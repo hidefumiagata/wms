@@ -31,6 +31,18 @@
         <el-icon><OfficeBuilding /></el-icon>
         <span>{{ t('nav.warehouse') }}</span>
       </el-menu-item>
+      <el-menu-item index="/master/buildings">
+        <el-icon><School /></el-icon>
+        <span>{{ t('nav.building') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/master/areas">
+        <el-icon><Place /></el-icon>
+        <span>{{ t('nav.area') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/master/locations">
+        <el-icon><Location /></el-icon>
+        <span>{{ t('nav.location') }}</span>
+      </el-menu-item>
     </el-sub-menu>
   </el-menu>
 </template>
@@ -38,7 +50,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
