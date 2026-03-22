@@ -7,6 +7,7 @@ import com.wms.inventory.repository.InventoryRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +41,27 @@ class InventoryServiceTest {
 
     @InjectMocks
     private InventoryService inventoryService;
+
+    static void setField(Object obj, String fieldName, Object value) {
+        try {
+            java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+            field.setAccessible(true);
+            field.set(obj, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new RuntimeException("Field not found: " + fieldName);
+    }
 
     @Nested
     @DisplayName("rollbackInboundStock")
@@ -57,6 +80,14 @@ class InventoryServiceTest {
         private static final Long REFERENCE_ID = 1L;
         private static final Long USER_ID = 10L;
         private static final OffsetDateTime EXECUTED_AT = OffsetDateTime.now();
+
+        private InventoryService.RollbackInboundCommand defaultCmd() {
+            return new InventoryService.RollbackInboundCommand(
+                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
+                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
+                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
+                    ROLLBACK_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+        }
 
         @Test
         @DisplayName("正常系: 在庫数量が減算され、INBOUND_CANCEL移動記録が作成される")
@@ -79,11 +110,7 @@ class InventoryServiceTest {
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
             when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            inventoryService.rollbackInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    ROLLBACK_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+            inventoryService.rollbackInboundStock(defaultCmd());
 
             assertThat(inventory.getQuantity()).isEqualTo(100); // 148 - 48
 
@@ -112,11 +139,7 @@ class InventoryServiceTest {
                     LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    ROLLBACK_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT))
+            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(defaultCmd()))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
         }
@@ -140,11 +163,7 @@ class InventoryServiceTest {
                     LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
                     .thenReturn(Optional.of(inventory));
 
-            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    ROLLBACK_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT))
+            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(defaultCmd()))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("INVENTORY_INSUFFICIENT");
         }
@@ -168,11 +187,12 @@ class InventoryServiceTest {
                     LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
                     .thenReturn(Optional.of(inventory));
 
-            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(
+            InventoryService.RollbackInboundCommand cmd = new InventoryService.RollbackInboundCommand(
                     WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
                     PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
                     UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    30, REFERENCE_ID, USER_ID, EXECUTED_AT)) // rollback 30: 50-30=20 < 25
+                    30, REFERENCE_ID, USER_ID, EXECUTED_AT); // rollback 30: 50-30=20 < 25
+            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(cmd))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("INVENTORY_ALLOCATED");
         }
@@ -190,23 +210,9 @@ class InventoryServiceTest {
             when(inventoryRepository.save(any(Inventory.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Inventory.class.getName(), 1L));
 
-            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    48, REFERENCE_ID, USER_ID, EXECUTED_AT))
+            assertThatThrownBy(() -> inventoryService.rollbackInboundStock(defaultCmd()))
                     .isInstanceOf(OptimisticLockConflictException.class)
                     .extracting("errorCode").isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
-        }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 
@@ -227,6 +233,14 @@ class InventoryServiceTest {
         private static final Long REFERENCE_ID = 1L;
         private static final Long USER_ID = 10L;
         private static final OffsetDateTime EXECUTED_AT = OffsetDateTime.now();
+
+        private InventoryService.StoreInboundCommand defaultCmd() {
+            return new InventoryService.StoreInboundCommand(
+                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
+                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
+                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
+                    STORE_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+        }
 
         @Test
         @DisplayName("正常系: 既存在庫に加算され、INBOUND移動記録が作成される")
@@ -249,11 +263,7 @@ class InventoryServiceTest {
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
             when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            inventoryService.storeInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    STORE_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+            inventoryService.storeInboundStock(defaultCmd());
 
             assertThat(inventory.getQuantity()).isEqualTo(148); // 100 + 48
 
@@ -284,11 +294,7 @@ class InventoryServiceTest {
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
             when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
-            inventoryService.storeInboundStock(
-                    WAREHOUSE_ID, LOCATION_ID, LOCATION_CODE,
-                    PRODUCT_ID, PRODUCT_CODE, PRODUCT_NAME,
-                    UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE,
-                    STORE_QTY, REFERENCE_ID, USER_ID, EXECUTED_AT);
+            inventoryService.storeInboundStock(defaultCmd());
 
             ArgumentCaptor<Inventory> inventoryCaptor = ArgumentCaptor.forClass(Inventory.class);
             verify(inventoryRepository).save(inventoryCaptor.capture());
@@ -311,6 +317,56 @@ class InventoryServiceTest {
         }
 
         @Test
+        @DisplayName("INSERT競合時にリトライしてUPDATEで成功する")
+        void storeInboundStock_insertCollision_retryAsUpdate() {
+            // First call: no existing inventory
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.of(Inventory.builder()
+                            .warehouseId(WAREHOUSE_ID).locationId(LOCATION_ID).productId(PRODUCT_ID)
+                            .unitType(UNIT_TYPE).lotNumber(LOT_NUMBER).expiryDate(EXPIRY_DATE)
+                            .quantity(48).allocatedQty(0).build()));
+
+            // First save throws DataIntegrityViolationException, second save succeeds
+            when(inventoryRepository.save(any(Inventory.class)))
+                    .thenThrow(new DataIntegrityViolationException("Duplicate key"))
+                    .thenAnswer(inv -> inv.getArgument(0));
+            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            inventoryService.storeInboundStock(defaultCmd());
+
+            // Verify save was called twice (first INSERT failed, then UPDATE succeeded)
+            verify(inventoryRepository, times(2)).save(any(Inventory.class));
+            // Verify findBy was called twice (initial lookup + retry lookup)
+            verify(inventoryRepository, times(2)).findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE);
+
+            ArgumentCaptor<InventoryMovement> movementCaptor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository).save(movementCaptor.capture());
+            InventoryMovement savedMovement = movementCaptor.getValue();
+            assertThat(savedMovement.getMovementType()).isEqualTo("INBOUND");
+            assertThat(savedMovement.getQuantity()).isEqualTo(48);
+            assertThat(savedMovement.getQuantityAfter()).isEqualTo(96); // 48 (existing) + 48 (store)
+        }
+
+        @Test
+        @DisplayName("INSERT競合リトライ時に在庫が見つからない場合ResourceNotFoundExceptionをスローする")
+        void storeInboundStock_insertCollision_retryNotFound_throws() {
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    LOCATION_ID, PRODUCT_ID, UNIT_TYPE, LOT_NUMBER, EXPIRY_DATE))
+                    .thenReturn(Optional.empty())
+                    .thenReturn(Optional.empty());
+
+            when(inventoryRepository.save(any(Inventory.class)))
+                    .thenThrow(new DataIntegrityViolationException("Duplicate key"));
+
+            assertThatThrownBy(() -> inventoryService.storeInboundStock(defaultCmd()))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+        }
+
+        @Test
         @DisplayName("楽観的ロック衝突時にOptimisticLockConflictExceptionをスローする")
         void storeInboundStock_optimisticLock_throws() {
             Inventory existing = Inventory.builder()
@@ -322,21 +378,12 @@ class InventoryServiceTest {
             when(inventoryRepository.save(any(Inventory.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Inventory.class.getName(), 1L));
 
-            assertThatThrownBy(() -> inventoryService.storeInboundStock(
+            InventoryService.StoreInboundCommand cmd = new InventoryService.StoreInboundCommand(
                     1L, 200L, "LOC-A01", 100L, "PRD-0001", "商品A",
-                    "CASE", null, null, 48, 1L, 10L, OffsetDateTime.now()))
+                    "CASE", null, null, 48, 1L, 10L, OffsetDateTime.now());
+            assertThatThrownBy(() -> inventoryService.storeInboundStock(cmd))
                     .isInstanceOf(OptimisticLockConflictException.class)
                     .extracting("errorCode").isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
-        }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 

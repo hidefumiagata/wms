@@ -59,7 +59,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -103,6 +102,36 @@ class InboundSlipServiceTest {
 
     @InjectMocks
     private InboundSlipService inboundSlipService;
+
+    static void setField(Object obj, String fieldName, Object value) {
+        try {
+            java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
+            field.setAccessible(true);
+            field.set(obj, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        throw new RuntimeException("Field not found: " + fieldName);
+    }
+
+    void setUpSecurityContext(Long userId) {
+        WmsUserDetails userDetails = new WmsUserDetails(
+                userId, "testuser", "password", "WH-001",
+                List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
 
     @Nested
     @DisplayName("search")
@@ -727,27 +756,6 @@ class InboundSlipServiceTest {
 
             assertThat(result.getLines().get(0).getExpiryDate()).isEqualTo(expiryDate);
         }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
-            while (clazz != null) {
-                try {
-                    return clazz.getDeclaredField(fieldName);
-                } catch (NoSuchFieldException e) {
-                    clazz = clazz.getSuperclass();
-                }
-            }
-            throw new RuntimeException("Field not found: " + fieldName);
-        }
     }
 
     @Nested
@@ -811,15 +819,6 @@ class InboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("INBOUND_INVALID_STATUS");
         }
 
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Nested
@@ -886,16 +885,6 @@ class InboundSlipServiceTest {
 
             verify(inboundSlipRepository, never()).save(any());
         }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Nested
@@ -905,15 +894,6 @@ class InboundSlipServiceTest {
         @AfterEach
         void clearSecurityContext() {
             SecurityContextHolder.clearContext();
-        }
-
-        private void setUpSecurityContext(Long userId) {
-            WmsUserDetails userDetails = new WmsUserDetails(
-                    userId, "testuser", "password", "WH-001",
-                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         @Test
@@ -1021,20 +1001,14 @@ class InboundSlipServiceTest {
             setField(slip, "id", 1L);
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
-            doNothing().when(inventoryService).rollbackInboundStock(
-                    any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                    anyInt(), any(), any(), any());
+            doNothing().when(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
 
             InboundSlip result = inboundSlipService.cancel(1L);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.CANCELLED.getValue());
 
-            verify(inventoryService).rollbackInboundStock(
-                    eq(1L), eq(200L), eq("LOC-A01"),
-                    eq(100L), eq("PRD-0001"), eq("商品A"),
-                    eq("CASE"), eq("LOT-001"), eq(LocalDate.of(2027, 3, 22)),
-                    eq(48), eq(1L), eq(10L), any());
+            verify(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
         }
 
         @Test
@@ -1071,9 +1045,7 @@ class InboundSlipServiceTest {
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
             doThrow(new ResourceNotFoundException("INVENTORY_NOT_FOUND", "在庫が見つかりません"))
-                    .when(inventoryService).rollbackInboundStock(
-                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                            anyInt(), any(), any(), any());
+                    .when(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -1103,9 +1075,7 @@ class InboundSlipServiceTest {
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
             doThrow(new BusinessRuleViolationException("INVENTORY_INSUFFICIENT", "在庫ロールバックで在庫数が負になります"))
-                    .when(inventoryService).rollbackInboundStock(
-                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                            anyInt(), any(), any(), any());
+                    .when(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -1135,9 +1105,7 @@ class InboundSlipServiceTest {
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
             doThrow(new BusinessRuleViolationException("INVENTORY_ALLOCATED", "引当済み数量が在庫ロールバック後の数量を超えます"))
-                    .when(inventoryService).rollbackInboundStock(
-                            any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                            anyInt(), any(), any(), any());
+                    .when(inventoryService).rollbackInboundStock(any(InventoryService.RollbackInboundCommand.class));
 
             assertThatThrownBy(() -> inboundSlipService.cancel(1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -1187,16 +1155,6 @@ class InboundSlipServiceTest {
 
             verify(inboundSlipRepository, never()).save(any());
         }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Nested
@@ -1206,15 +1164,6 @@ class InboundSlipServiceTest {
         @AfterEach
         void clearSecurityContext() {
             SecurityContextHolder.clearContext();
-        }
-
-        private void setUpSecurityContext(Long userId) {
-            WmsUserDetails userDetails = new WmsUserDetails(
-                    userId, "testuser", "password", "WH-001",
-                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         private InboundSlip createSlipWithLine(String headerStatus, String lineStatus, Long lineId) {
@@ -1451,15 +1400,6 @@ class InboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
         }
 
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Nested
@@ -1469,15 +1409,6 @@ class InboundSlipServiceTest {
         @AfterEach
         void clearSecurityContext() {
             SecurityContextHolder.clearContext();
-        }
-
-        private void setUpSecurityContext(Long userId) {
-            WmsUserDetails userDetails = new WmsUserDetails(
-                    userId, "testuser", "password", "WH-001",
-                    List.of(new SimpleGrantedAuthority("ROLE_WAREHOUSE_STAFF")));
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         private Location createLocation(Long id, Long areaId, boolean active, boolean stocktakeLocked) {
@@ -1558,11 +1489,7 @@ class InboundSlipServiceTest {
             assertThat(result.getLines().get(0).getStoredBy()).isEqualTo(10L);
             assertThat(result.getLines().get(0).getStoredAt()).isNotNull();
 
-            verify(inventoryService).storeInboundStock(
-                    eq(1L), eq(200L), eq("LOC-A01"),
-                    eq(100L), eq("PRD-0001"), eq("商品A"),
-                    eq("CASE"), eq("LOT-001"), eq(java.time.LocalDate.of(2027, 3, 22)),
-                    eq(48), eq(1L), eq(10L), any());
+            verify(inventoryService).storeInboundStock(any(InventoryService.StoreInboundCommand.class));
         }
 
         @Test
@@ -1980,27 +1907,6 @@ class InboundSlipServiceTest {
             assertThatThrownBy(() -> inboundSlipService.store(1L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("LOCATION_WAREHOUSE_MISMATCH");
-        }
-
-        private static void setField(Object obj, String fieldName, Object value) {
-            try {
-                java.lang.reflect.Field field = findField(obj.getClass(), fieldName);
-                field.setAccessible(true);
-                field.set(obj, value);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private static java.lang.reflect.Field findField(Class<?> clazz, String fieldName) {
-            while (clazz != null) {
-                try {
-                    return clazz.getDeclaredField(fieldName);
-                } catch (NoSuchFieldException e) {
-                    clazz = clazz.getSuperclass();
-                }
-            }
-            throw new RuntimeException("Field not found: " + fieldName);
         }
     }
 }

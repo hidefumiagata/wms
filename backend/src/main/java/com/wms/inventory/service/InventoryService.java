@@ -9,6 +9,7 @@ import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,18 @@ public class InventoryService {
     private final InventoryRepository inventoryRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
 
+    public record StoreInboundCommand(
+            Long warehouseId, Long locationId, String locationCode,
+            Long productId, String productCode, String productName,
+            String unitType, String lotNumber, LocalDate expiryDate,
+            int quantity, Long referenceId, Long userId, OffsetDateTime executedAt) {}
+
+    public record RollbackInboundCommand(
+            Long warehouseId, Long locationId, String locationCode,
+            Long productId, String productCode, String productName,
+            String unitType, String lotNumber, LocalDate expiryDate,
+            int quantity, Long referenceId, Long userId, OffsetDateTime executedAt) {}
+
     /**
      * 同一ロケーションに異なる商品の在庫が存在するかチェックする。
      */
@@ -36,63 +49,73 @@ public class InventoryService {
      * 入荷格納時に在庫をUPSERTし、INBOUND移動記録を作成する。
      */
     @Transactional
-    public void storeInboundStock(Long warehouseId, Long locationId, String locationCode,
-                                   Long productId, String productCode, String productName,
-                                   String unitType, String lotNumber, LocalDate expiryDate,
-                                   int storeQty, Long referenceId, Long userId,
-                                   OffsetDateTime executedAt) {
+    public void storeInboundStock(StoreInboundCommand cmd) {
         Inventory inventory = inventoryRepository
                 .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                        locationId, productId, unitType, lotNumber, expiryDate)
+                        cmd.locationId(), cmd.productId(), cmd.unitType(), cmd.lotNumber(), cmd.expiryDate())
                 .orElse(null);
 
         int newQty;
         try {
             if (inventory != null) {
-                newQty = inventory.getQuantity() + storeQty;
+                newQty = inventory.getQuantity() + cmd.quantity();
                 inventory.setQuantity(newQty);
                 inventoryRepository.save(inventory);
             } else {
-                newQty = storeQty;
-                inventory = Inventory.builder()
-                        .warehouseId(warehouseId)
-                        .locationId(locationId)
-                        .productId(productId)
-                        .unitType(unitType)
-                        .lotNumber(lotNumber)
-                        .expiryDate(expiryDate)
-                        .quantity(newQty)
-                        .allocatedQty(0)
-                        .build();
-                inventoryRepository.save(inventory);
+                try {
+                    newQty = cmd.quantity();
+                    inventory = Inventory.builder()
+                            .warehouseId(cmd.warehouseId())
+                            .locationId(cmd.locationId())
+                            .productId(cmd.productId())
+                            .unitType(cmd.unitType())
+                            .lotNumber(cmd.lotNumber())
+                            .expiryDate(cmd.expiryDate())
+                            .quantity(newQty)
+                            .allocatedQty(0)
+                            .build();
+                    inventoryRepository.save(inventory);
+                } catch (DataIntegrityViolationException e) {
+                    // Concurrent INSERT won the race — retry as UPDATE
+                    log.warn("Inventory INSERT collision, retrying as UPDATE: locationId={}, productId={}",
+                            cmd.locationId(), cmd.productId());
+                    inventory = inventoryRepository
+                            .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                                    cmd.locationId(), cmd.productId(), cmd.unitType(), cmd.lotNumber(), cmd.expiryDate())
+                            .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                                    "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")"));
+                    newQty = inventory.getQuantity() + cmd.quantity();
+                    inventory.setQuantity(newQty);
+                    inventoryRepository.save(inventory);
+                }
             }
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "在庫の並行更新が検出されました (locationId=" + locationId + ", productId=" + productId + ")");
+                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
         }
 
         InventoryMovement movement = InventoryMovement.builder()
-                .warehouseId(warehouseId)
-                .locationId(locationId)
-                .locationCode(locationCode)
-                .productId(productId)
-                .productCode(productCode)
-                .productName(productName)
-                .unitType(unitType)
-                .lotNumber(lotNumber)
-                .expiryDate(expiryDate)
+                .warehouseId(cmd.warehouseId())
+                .locationId(cmd.locationId())
+                .locationCode(cmd.locationCode())
+                .productId(cmd.productId())
+                .productCode(cmd.productCode())
+                .productName(cmd.productName())
+                .unitType(cmd.unitType())
+                .lotNumber(cmd.lotNumber())
+                .expiryDate(cmd.expiryDate())
                 .movementType("INBOUND")
-                .quantity(storeQty)
+                .quantity(cmd.quantity())
                 .quantityAfter(newQty)
-                .referenceId(referenceId)
+                .referenceId(cmd.referenceId())
                 .referenceType("INBOUND_SLIP")
-                .executedAt(executedAt)
-                .executedBy(userId)
+                .executedAt(cmd.executedAt())
+                .executedBy(cmd.userId())
                 .build();
         inventoryMovementRepository.save(movement);
 
         log.info("Inventory stored: locationId={}, productId={}, qty=+{}, after={}",
-                locationId, productId, storeQty, newQty);
+                cmd.locationId(), cmd.productId(), cmd.quantity(), newQty);
     }
 
     /**
@@ -100,23 +123,19 @@ public class InventoryService {
      * 在庫数量を減算し、INBOUND_CANCEL移動記録を作成する。
      */
     @Transactional
-    public void rollbackInboundStock(Long warehouseId, Long locationId, String locationCode,
-                                      Long productId, String productCode, String productName,
-                                      String unitType, String lotNumber, LocalDate expiryDate,
-                                      int rollbackQty, Long referenceId, Long userId,
-                                      OffsetDateTime executedAt) {
+    public void rollbackInboundStock(RollbackInboundCommand cmd) {
         Inventory inventory = inventoryRepository
                 .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                        locationId, productId, unitType, lotNumber, expiryDate)
+                        cmd.locationId(), cmd.productId(), cmd.unitType(), cmd.lotNumber(), cmd.expiryDate())
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "在庫が見つかりません (locationId=" + locationId + ", productId=" + productId + ")"));
+                        "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")"));
 
-        int newQty = inventory.getQuantity() - rollbackQty;
+        int newQty = inventory.getQuantity() - cmd.quantity();
         if (newQty < 0) {
             throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
                     "在庫ロールバックで在庫数が負になります (inventoryId=" + inventory.getId()
                             + ", quantity=" + inventory.getQuantity()
-                            + ", rollback=" + rollbackQty + ")");
+                            + ", rollback=" + cmd.quantity() + ")");
         }
         if (newQty < inventory.getAllocatedQty()) {
             throw new BusinessRuleViolationException("INVENTORY_ALLOCATED",
@@ -129,30 +148,30 @@ public class InventoryService {
             inventoryRepository.save(inventory);
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "在庫の並行更新が検出されました (locationId=" + locationId + ", productId=" + productId + ")");
+                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
         }
 
         InventoryMovement movement = InventoryMovement.builder()
-                .warehouseId(warehouseId)
-                .locationId(locationId)
-                .locationCode(locationCode)
-                .productId(productId)
-                .productCode(productCode)
-                .productName(productName)
-                .unitType(unitType)
-                .lotNumber(lotNumber)
-                .expiryDate(expiryDate)
+                .warehouseId(cmd.warehouseId())
+                .locationId(cmd.locationId())
+                .locationCode(cmd.locationCode())
+                .productId(cmd.productId())
+                .productCode(cmd.productCode())
+                .productName(cmd.productName())
+                .unitType(cmd.unitType())
+                .lotNumber(cmd.lotNumber())
+                .expiryDate(cmd.expiryDate())
                 .movementType("INBOUND_CANCEL")
-                .quantity(-rollbackQty)
+                .quantity(-cmd.quantity())
                 .quantityAfter(newQty)
-                .referenceId(referenceId)
+                .referenceId(cmd.referenceId())
                 .referenceType("INBOUND_SLIP")
-                .executedAt(executedAt)
-                .executedBy(userId)
+                .executedAt(cmd.executedAt())
+                .executedBy(cmd.userId())
                 .build();
         inventoryMovementRepository.save(movement);
 
         log.info("Inventory rollback: locationId={}, productId={}, qty=-{}, after={}",
-                locationId, productId, rollbackQty, newQty);
+                cmd.locationId(), cmd.productId(), cmd.quantity(), newQty);
     }
 }

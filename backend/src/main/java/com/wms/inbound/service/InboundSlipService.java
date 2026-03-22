@@ -425,12 +425,12 @@ public class InboundSlipService {
                         "同一ロケーションに異なる商品の在庫が存在します (locationId=" + location.getId() + ")");
             }
 
-            inventoryService.storeInboundStock(
+            inventoryService.storeInboundStock(new InventoryService.StoreInboundCommand(
                     slip.getWarehouseId(),
                     location.getId(), location.getLocationCode(),
                     line.getProductId(), line.getProductCode(), line.getProductName(),
                     line.getUnitType(), line.getLotNumber(), line.getExpiryDate(),
-                    line.getInspectedQty(), slip.getId(), currentUserId, now);
+                    line.getInspectedQty(), slip.getId(), currentUserId, now));
 
             line.setLineStatus(InboundLineStatus.STORED.getValue());
             line.setPutawayLocationId(location.getId());
@@ -453,12 +453,12 @@ public class InboundSlipService {
 
     private void rollbackLineInventory(InboundSlip slip, InboundSlipLine line,
                                         Long userId, OffsetDateTime now) {
-        inventoryService.rollbackInboundStock(
+        inventoryService.rollbackInboundStock(new InventoryService.RollbackInboundCommand(
                 slip.getWarehouseId(),
                 line.getPutawayLocationId(), line.getPutawayLocationCode(),
                 line.getProductId(), line.getProductCode(), line.getProductName(),
                 line.getUnitType(), line.getLotNumber(), line.getExpiryDate(),
-                line.getInspectedQty(), slip.getId(), userId, now);
+                line.getInspectedQty(), slip.getId(), userId, now));
     }
 
     private Long getCurrentUserId() {
