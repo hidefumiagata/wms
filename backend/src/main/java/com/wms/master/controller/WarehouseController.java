@@ -13,7 +13,6 @@ import com.wms.generated.model.WarehouseToggleResponse;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,7 +32,6 @@ import java.util.Set;
  */
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class WarehouseController implements MasterWarehouseApi {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
@@ -87,7 +85,6 @@ public class WarehouseController implements MasterWarehouseApi {
         warehouse.setAddress(createWarehouseRequest.getAddress());
 
         Warehouse created = warehouseService.create(warehouse);
-        log.info("Warehouse created: code={}", created.getWarehouseCode());
         URI location = URI.create("/api/v1/master/warehouses/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created));
     }
@@ -110,7 +107,6 @@ public class WarehouseController implements MasterWarehouseApi {
                 updateWarehouseRequest.getWarehouseNameKana(),
                 updateWarehouseRequest.getAddress(),
                 updateWarehouseRequest.getVersion());
-        log.info("Warehouse updated: id={}, name={}", id, updateWarehouseRequest.getWarehouseName());
         return ResponseEntity.ok(toDetail(updated));
     }
 
@@ -121,7 +117,6 @@ public class WarehouseController implements MasterWarehouseApi {
             ToggleActiveRequest toggleActiveRequest) {
         Warehouse updated = warehouseService.toggleActive(
                 id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
-        log.info("Warehouse toggled: id={}, isActive={}", id, toggleActiveRequest.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 

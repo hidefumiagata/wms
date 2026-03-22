@@ -18,7 +18,6 @@ import com.wms.master.service.AreaService;
 import com.wms.master.service.BuildingService;
 import com.wms.master.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -40,7 +39,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class AreaController implements MasterAreaApi {
 
     private final AreaService areaService;
@@ -98,7 +96,6 @@ public class AreaController implements MasterAreaApi {
         area.setAreaType(createAreaRequest.getAreaType().getValue());
 
         Area created = areaService.create(area);
-        log.info("Area created via API: id={}", created.getId());
 
         Building building = buildingService.findById(created.getBuildingId());
         Warehouse warehouse = warehouseService.findById(created.getWarehouseId());
@@ -122,7 +119,6 @@ public class AreaController implements MasterAreaApi {
             UpdateAreaRequest updateAreaRequest) {
         Area updated = areaService.update(
                 id, updateAreaRequest.getAreaName(), updateAreaRequest.getStorageCondition().getValue(), updateAreaRequest.getVersion());
-        log.info("Area updated via API: id={}", id);
         return ResponseEntity.ok(toUpdateResponse(updated));
     }
 
@@ -132,7 +128,6 @@ public class AreaController implements MasterAreaApi {
             Long id,
             ToggleActiveRequest toggleActiveRequest) {
         Area updated = areaService.toggleActive(id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
-        log.info("Area toggled via API: id={}, isActive={}", id, toggleActiveRequest.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 

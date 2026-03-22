@@ -22,7 +22,6 @@ import com.wms.master.service.BuildingService;
 import com.wms.master.service.LocationService;
 import com.wms.master.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class LocationController implements MasterLocationApi {
 
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
@@ -112,7 +110,6 @@ public class LocationController implements MasterLocationApi {
         location.setLocationName(createLocationRequest.getLocationName());
 
         Location created = locationService.create(location);
-        log.info("Location created via API: id={}", created.getId());
 
         Area area = areaService.findById(created.getAreaId());
         Warehouse warehouse = warehouseService.findById(created.getWarehouseId());
@@ -136,7 +133,6 @@ public class LocationController implements MasterLocationApi {
             Long id,
             UpdateLocationRequest updateLocationRequest) {
         Location updated = locationService.update(id, updateLocationRequest.getLocationName(), updateLocationRequest.getVersion());
-        log.info("Location updated via API: id={}", id);
         return ResponseEntity.ok(toUpdateResponse(updated));
     }
 
@@ -146,7 +142,6 @@ public class LocationController implements MasterLocationApi {
             Long id,
             ToggleActiveRequest toggleActiveRequest) {
         Location updated = locationService.toggleActive(id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
-        log.info("Location toggled via API: id={}, isActive={}", id, toggleActiveRequest.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 

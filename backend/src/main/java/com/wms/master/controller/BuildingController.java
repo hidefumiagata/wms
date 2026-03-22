@@ -13,7 +13,6 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.service.BuildingService;
 import com.wms.master.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -35,7 +34,6 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequiredArgsConstructor
-@Slf4j
 public class BuildingController implements MasterBuildingApi {
 
     private final BuildingService buildingService;
@@ -84,7 +82,6 @@ public class BuildingController implements MasterBuildingApi {
         building.setBuildingName(createBuildingRequest.getBuildingName());
 
         Building created = buildingService.create(building);
-        log.info("Building created via API: id={}", created.getId());
         URI location = URI.create("/api/v1/master/buildings/" + created.getId());
         return ResponseEntity.created(location).body(toDetail(created, warehouse));
     }
@@ -104,7 +101,6 @@ public class BuildingController implements MasterBuildingApi {
             UpdateBuildingRequest updateBuildingRequest) {
         Building updated = buildingService.update(id, updateBuildingRequest.getBuildingName(), updateBuildingRequest.getVersion());
         Warehouse warehouse = warehouseService.findById(updated.getWarehouseId());
-        log.info("Building updated via API: id={}", id);
         return ResponseEntity.ok(toDetail(updated, warehouse));
     }
 
@@ -114,7 +110,6 @@ public class BuildingController implements MasterBuildingApi {
             Long id,
             ToggleActiveRequest toggleActiveRequest) {
         Building updated = buildingService.toggleActive(id, toggleActiveRequest.getIsActive(), toggleActiveRequest.getVersion());
-        log.info("Building toggled via API: id={}, isActive={}", id, toggleActiveRequest.getIsActive());
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
