@@ -2428,7 +2428,7 @@ paths:
                     errorCode: INBOUND_LINE_NOT_FOUND
                     message: 指定された入荷明細が見つかりません
         '409':
-          description: ステータスエラー
+          description: ステータスエラーまたは入庫済み明細への検品試行
           content:
             application/json:
               schema:
@@ -2438,6 +2438,10 @@ paths:
                   value:
                     errorCode: INBOUND_INVALID_STATUS
                     message: 現在のステータスではこの操作は実行できません
+                lineAlreadyStored:
+                  value:
+                    errorCode: INBOUND_LINE_ALREADY_STORED
+                    message: 指定された明細はすでに入庫済みのため検品数を変更できません
         '422':
           description: 業務ルール違反
           content:
