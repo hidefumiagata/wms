@@ -1,8 +1,10 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 
@@ -10,7 +12,7 @@ import { toApiError } from '@/utils/apiError'
 const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
 const WAREHOUSE_CODE_REGEX = /^[A-Z]{4}$/
 
-export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) {
+export function useWarehouseForm() {
   const { t } = useI18n()
   const router = useRouter()
   const route = useRoute()
@@ -23,70 +25,75 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
   })
   const isEdit = computed(() => warehouseId.value !== null)
 
+  // --- Zod スキーマ ---
+  // t() は setup() コンテキスト内で実行されるため、初期化時に正しい翻訳が取得できる
+  const warehouseSchema = z.object({
+    warehouseCode: z
+      .string()
+      .min(1, t('master.warehouse.validation.codeRequired'))
+      .regex(WAREHOUSE_CODE_REGEX, t('master.warehouse.validation.codeFormat')),
+    warehouseName: z
+      .string()
+      .min(1, t('master.warehouse.validation.nameRequired'))
+      .max(200, t('master.warehouse.validation.nameMaxLength')),
+    warehouseNameKana: z
+      .string()
+      .min(1, t('master.warehouse.validation.kanaRequired'))
+      .max(200, t('master.warehouse.validation.kanaMaxLength'))
+      .regex(KATAKANA_REGEX, t('master.warehouse.validation.kanaFormat')),
+    address: z
+      .string()
+      .max(500, t('master.warehouse.validation.addressMaxLength')),
+  })
+
+  // --- VeeValidate ---
+  const {
+    errors,
+    handleSubmit: createSubmitHandler,
+    setFieldError,
+    setValues,
+    defineField,
+  } = useForm({
+    validationSchema: toTypedSchema(warehouseSchema),
+    initialValues: { warehouseCode: '', warehouseName: '', warehouseNameKana: '', address: '' },
+  })
+
+  // validateOnModelUpdate: false → 入力中（v-model 更新時）はバリデーションしない
+  // validateOnBlur: true     → フォーカスを外したタイミングでバリデーションを実行
+  const [warehouseCode, warehouseCodeAttrs] = defineField('warehouseCode', {
+    validateOnModelUpdate: false,
+    validateOnBlur: true,
+  })
+  const [warehouseName, warehouseNameAttrs] = defineField('warehouseName', {
+    validateOnModelUpdate: false,
+    validateOnBlur: true,
+  })
+  const [warehouseNameKana, warehouseNameKanaAttrs] = defineField('warehouseNameKana', {
+    validateOnModelUpdate: false,
+    validateOnBlur: true,
+  })
+  const [address, addressAttrs] = defineField('address', {
+    validateOnModelUpdate: false,
+    validateOnBlur: true,
+  })
+
   // --- 状態 ---
   const loading = ref(false)
   const initialLoading = ref(false)
   const version = ref(0)
-  const codeAlreadyExists = ref(false)
-
-  const form = reactive({
-    warehouseCode: '',
-    warehouseName: '',
-    warehouseNameKana: '',
-    address: '',
-  })
-
-  // --- バリデーションルール ---
-  const rules: FormRules = {
-    warehouseCode: [
-      { required: true, whitespace: true, message: t('master.warehouse.validation.codeRequired'), trigger: 'blur' },
-      {
-        pattern: WAREHOUSE_CODE_REGEX,
-        message: t('master.warehouse.validation.codeFormat'),
-        trigger: 'blur',
-      },
-      {
-        validator: (_rule, _value, callback) => {
-          if (codeAlreadyExists.value) {
-            callback(new Error(t('master.warehouse.validation.codeDuplicate')))
-          } else {
-            callback()
-          }
-        },
-        trigger: 'blur',
-      },
-    ],
-    warehouseName: [
-      { required: true, whitespace: true, message: t('master.warehouse.validation.nameRequired'), trigger: 'blur' },
-      { max: 200, message: t('master.warehouse.validation.nameMaxLength'), trigger: 'blur' },
-    ],
-    warehouseNameKana: [
-      { required: true, whitespace: true, message: t('master.warehouse.validation.kanaRequired'), trigger: 'blur' },
-      { max: 200, message: t('master.warehouse.validation.kanaMaxLength'), trigger: 'blur' },
-      {
-        pattern: KATAKANA_REGEX,
-        message: t('master.warehouse.validation.kanaFormat'),
-        trigger: 'blur',
-      },
-    ],
-    address: [
-      { max: 500, message: t('master.warehouse.validation.addressMaxLength'), trigger: 'blur' },
-    ],
-  }
 
   // --- API呼び出し ---
   async function checkCodeExists() {
     if (isEdit.value) return // 編集モードではコードチェック不要（変更不可）
-    codeAlreadyExists.value = false
-    if (!form.warehouseCode || !WAREHOUSE_CODE_REGEX.test(form.warehouseCode)) return
+    const code = warehouseCode.value
+    if (!code || !WAREHOUSE_CODE_REGEX.test(code)) return
 
     try {
       const res = await apiClient.get<{ exists: boolean }>('/master/warehouses/exists', {
-        params: { warehouseCode: form.warehouseCode },
+        params: { warehouseCode: code },
       })
-      codeAlreadyExists.value = res.data.exists
-      if (codeAlreadyExists.value) {
-        formRef.value?.validateField('warehouseCode')
+      if (res.data.exists) {
+        setFieldError('warehouseCode', t('master.warehouse.validation.codeDuplicate'))
       }
     } catch {
       // 確認失敗時はサーバー側バリデーションに委ねる
@@ -95,7 +102,6 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
 
   async function fetchWarehouse() {
     if (!warehouseId.value) {
-      // 不正な ID の場合は一覧に戻す
       router.push({ name: 'warehouse-list' })
       return
     }
@@ -108,10 +114,12 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
         address: string | null
         version: number
       }>(`/master/warehouses/${warehouseId.value}`)
-      form.warehouseCode = res.data.warehouseCode
-      form.warehouseName = res.data.warehouseName
-      form.warehouseNameKana = res.data.warehouseNameKana ?? ''
-      form.address = res.data.address ?? ''
+      setValues({
+        warehouseCode: res.data.warehouseCode,
+        warehouseName: res.data.warehouseName,
+        warehouseNameKana: res.data.warehouseNameKana ?? '',
+        address: res.data.address ?? '',
+      })
       version.value = res.data.version
     } catch (err: unknown) {
       const error = toApiError(err)
@@ -127,26 +135,23 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
     }
   }
 
-  async function handleSubmit() {
-    const valid = await formRef.value?.validate().catch(() => false)
-    if (!valid) return
-
+  const handleSubmit = createSubmitHandler(async (values) => {
     loading.value = true
     try {
       if (isEdit.value) {
         await apiClient.put(`/master/warehouses/${warehouseId.value}`, {
-          warehouseName: form.warehouseName,
-          warehouseNameKana: form.warehouseNameKana,
-          address: form.address,
+          warehouseName: values.warehouseName,
+          warehouseNameKana: values.warehouseNameKana,
+          address: values.address,
           version: version.value,
         })
         ElMessage.success(t('master.warehouse.updateSuccess'))
       } else {
         await apiClient.post('/master/warehouses', {
-          warehouseCode: form.warehouseCode,
-          warehouseName: form.warehouseName,
-          warehouseNameKana: form.warehouseNameKana,
-          address: form.address,
+          warehouseCode: values.warehouseCode,
+          warehouseName: values.warehouseName,
+          warehouseNameKana: values.warehouseNameKana,
+          address: values.address,
         })
         ElMessage.success(t('master.warehouse.createSuccess'))
       }
@@ -158,8 +163,7 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
       } else if (error.response.status === 409) {
         if (error.response.data?.errorCode === 'DUPLICATE_CODE') {
           // 倉庫コード重複（サーバー側で検出）
-          codeAlreadyExists.value = true
-          formRef.value?.validateField('warehouseCode')
+          setFieldError('warehouseCode', t('master.warehouse.validation.codeDuplicate'))
         } else {
           // 楽観的ロック競合
           ElMessage.error(t('error.optimisticLock'))
@@ -169,18 +173,29 @@ export function useWarehouseForm(formRef: ReturnType<typeof ref<FormInstance>>) 
     } finally {
       loading.value = false
     }
-  }
+  })
 
   function handleCancel() {
     router.push({ name: 'warehouse-list' })
   }
 
   return {
-    form,
-    rules,
+    // フィールド（v-model バインディング用）
+    warehouseCode,
+    warehouseCodeAttrs,
+    warehouseName,
+    warehouseNameAttrs,
+    warehouseNameKana,
+    warehouseNameKanaAttrs,
+    address,
+    addressAttrs,
+    // バリデーションエラー
+    errors,
+    // 状態
     loading,
     initialLoading,
     isEdit,
+    // 操作
     fetchWarehouse,
     handleSubmit,
     handleCancel,

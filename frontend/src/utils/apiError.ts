@@ -15,7 +15,7 @@ export function toApiError(err: unknown): ApiError {
     return {
       response: {
         status: err.response?.status,
-        data: err.response?.data as ApiError['response']['data'],
+        data: err.response?.data as NonNullable<ApiError['response']>['data'],
       },
     }
   }
