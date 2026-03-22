@@ -1,16 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import type { UserRole } from '@/stores/auth'
-
-// ルートメタの型定義
-declare module 'vue-router' {
-  interface RouteMeta {
-    requiresAuth?: boolean
-    // roles が指定されている場合、ユーザーのロールが含まれていなければ forbidden へリダイレクト
-    // 未指定の場合はロールチェックをスキップ（認証のみで到達可能）
-    roles?: UserRole[]
-  }
-}
+// RouteMeta 型拡張は types/router.d.ts で定義
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,13 +36,6 @@ const router = createRouter({
           component: () => import('@/pages/auth/PasswordResetConfirmPage.vue'),
           meta: { requiresAuth: false },
         },
-        // 403 Forbidden（認証済みでも権限なし）
-        {
-          path: 'forbidden',
-          name: 'forbidden',
-          component: () => import('@/pages/ForbiddenPage.vue'),
-          meta: { requiresAuth: true },
-        },
       ],
     },
     // メインレイアウト（認証済みページ）
@@ -64,6 +47,12 @@ const router = createRouter({
         {
           path: '',
           redirect: '/master/warehouses',
+        },
+        // 403 Forbidden（認証済みでも権限なし）—— DefaultLayout 下でナビゲーションを維持
+        {
+          path: 'forbidden',
+          name: 'forbidden',
+          component: () => import('@/pages/ForbiddenPage.vue'),
         },
         // 倉庫マスタ — SCR-04: SYSTEM_ADMIN, WAREHOUSE_MANAGER
         {

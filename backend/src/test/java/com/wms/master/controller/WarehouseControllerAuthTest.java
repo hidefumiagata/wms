@@ -290,6 +290,30 @@ class WarehouseControllerAuthTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがGET存在確認すると200を返す")
+    void exists_warehouseManager_returns200() throws Exception {
+        when(rateLimiterService.tryConsumeCodeExists(any())).thenReturn(true);
+        when(warehouseService.existsByCode("TKYO")).thenReturn(false);
+
+        mockMvc.perform(get(BASE_URL + "/exists")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .param("warehouseCode", "TKYO"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.exists").value(false));
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_STAFF")
+    @DisplayName("WAREHOUSE_STAFFがGET存在確認すると403を返す")
+    void exists_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/exists")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .param("warehouseCode", "TKYO"))
+                .andExpect(status().isForbidden());
+    }
+
     // --- Test Config ---
 
     /**
