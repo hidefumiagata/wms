@@ -1417,6 +1417,24 @@ class InboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
         }
 
+        @Test
+        @DisplayName("重複lineIdがある場合BusinessRuleViolationExceptionをスローする")
+        void inspect_duplicateLineId_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithLine(InboundSlipStatus.CONFIRMED.getValue(),
+                    InboundLineStatus.PENDING.getValue(), 11L);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(
+                            new InspectLineRequest().lineId(11L).inspectedQty(48),
+                            new InspectLineRequest().lineId(11L).inspectedQty(50)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("DUPLICATE_LINE_IN_REQUEST");
+        }
+
         private static void setField(Object obj, String fieldName, Object value) {
             try {
                 java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
@@ -1905,6 +1923,47 @@ class InboundSlipServiceTest {
             InboundSlip result = inboundSlipService.store(1L, request);
 
             assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.STORED.getValue());
+        }
+
+        @Test
+        @DisplayName("重複lineIdがある場合BusinessRuleViolationExceptionをスローする")
+        void store_duplicateLineId_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(
+                            new StoreLineRequest().lineId(11L).locationId(200L),
+                            new StoreLineRequest().lineId(11L).locationId(201L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("DUPLICATE_LINE_IN_REQUEST");
+        }
+
+        @Test
+        @DisplayName("ロケーションの倉庫IDが伝票と異なる場合BusinessRuleViolationExceptionをスローする")
+        void store_locationWarehouseMismatch_throws() {
+            setUpSecurityContext(10L);
+            InboundSlip slip = createSlipWithInspectedLine(InboundSlipStatus.INSPECTING.getValue(), 11L, 48);
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+
+            // Location belongs to warehouse 2, but slip is warehouse 1
+            Location wrongWhLocation = new Location();
+            wrongWhLocation.setWarehouseId(2L);
+            wrongWhLocation.setAreaId(300L);
+            wrongWhLocation.setLocationCode("LOC-B01");
+            setField(wrongWhLocation, "id", 200L);
+            setField(wrongWhLocation, "isActive", true);
+            when(locationService.findById(200L)).thenReturn(wrongWhLocation);
+
+            StoreInboundRequest request = new StoreInboundRequest()
+                    .lines(List.of(new StoreLineRequest().lineId(11L).locationId(200L)));
+
+            assertThatThrownBy(() -> inboundSlipService.store(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOCATION_WAREHOUSE_MISMATCH");
         }
 
         private static void setField(Object obj, String fieldName, Object value) {

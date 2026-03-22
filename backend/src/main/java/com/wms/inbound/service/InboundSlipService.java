@@ -308,6 +308,15 @@ public class InboundSlipService {
                     "検品可能なステータスではありません (status=" + status + ")");
         }
 
+        // Duplicate lineId check
+        Set<Long> inspectLineIds = new HashSet<>();
+        for (InspectLineRequest lineReq : request.getLines()) {
+            if (!inspectLineIds.add(lineReq.getLineId())) {
+                throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
+                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+            }
+        }
+
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -350,6 +359,15 @@ public class InboundSlipService {
                     "格納可能なステータスではありません (status=" + status + ")");
         }
 
+        // Duplicate lineId check
+        Set<Long> storeLineIds = new HashSet<>();
+        for (StoreLineRequest lineReq : request.getLines()) {
+            if (!storeLineIds.add(lineReq.getLineId())) {
+                throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
+                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+            }
+        }
+
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -371,6 +389,13 @@ public class InboundSlipService {
             }
 
             Location location = locationService.findById(lineReq.getLocationId());
+
+            if (!location.getWarehouseId().equals(slip.getWarehouseId())) {
+                throw new BusinessRuleViolationException("LOCATION_WAREHOUSE_MISMATCH",
+                        "ロケーションが入荷伝票の倉庫に属していません (locationId=" + location.getId()
+                                + ", locationWarehouseId=" + location.getWarehouseId()
+                                + ", slipWarehouseId=" + slip.getWarehouseId() + ")");
+            }
 
             if (!Boolean.TRUE.equals(location.getIsActive())) {
                 throw new BusinessRuleViolationException("LOCATION_INACTIVE",
