@@ -42,7 +42,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -98,7 +98,7 @@ public class InboundSlipService {
         LocalDate toDate = storedDateTo != null ? storedDateTo : today;
 
         OffsetDateTime fromDateTime = fromDate.atStartOfDay(JST).toOffsetDateTime();
-        OffsetDateTime toDateTime = toDate.atTime(LocalTime.MAX).atZone(JST).toOffsetDateTime();
+        OffsetDateTime toDateTime = toDate.plusDays(1).atStartOfDay(JST).toOffsetDateTime();
 
         String escapedSlipNumber = slipNumber != null ? escape(slipNumber) : null;
         String escapedProductCode = productCode != null ? escape(productCode) : null;

@@ -18,7 +18,7 @@ public interface InboundSlipLineRepository extends JpaRepository<InboundSlipLine
             WHERE s.warehouseId = :warehouseId
               AND l.lineStatus = 'STORED'
               AND l.storedAt >= :storedDateFrom
-              AND l.storedAt <= :storedDateTo
+              AND l.storedAt < :storedDateTo
               AND (:partnerId IS NULL OR s.partnerId = :partnerId)
               AND (:slipNumber IS NULL OR s.slipNumber LIKE CONCAT(:slipNumber, '%') ESCAPE '\\')
               AND (:productCode IS NULL OR l.productCode LIKE CONCAT(:productCode, '%') ESCAPE '\\')
@@ -28,7 +28,7 @@ public interface InboundSlipLineRepository extends JpaRepository<InboundSlipLine
             WHERE s.warehouseId = :warehouseId
               AND l.lineStatus = 'STORED'
               AND l.storedAt >= :storedDateFrom
-              AND l.storedAt <= :storedDateTo
+              AND l.storedAt < :storedDateTo
               AND (:partnerId IS NULL OR s.partnerId = :partnerId)
               AND (:slipNumber IS NULL OR s.slipNumber LIKE CONCAT(:slipNumber, '%') ESCAPE '\\')
               AND (:productCode IS NULL OR l.productCode LIKE CONCAT(:productCode, '%') ESCAPE '\\')

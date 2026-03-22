@@ -29,7 +29,7 @@ public class InboundSlipController implements InboundApi {
             "plannedDate", "slipNumber", "status", "createdAt");
 
     private static final Set<String> ALLOWED_RESULT_SORT_PROPERTIES = Set.of(
-            "storedAt", "slipNumber", "productCode");
+            "storedAt", "inboundSlip.slipNumber", "productCode");
 
     private final InboundSlipService inboundSlipService;
 
@@ -44,7 +44,7 @@ public class InboundSlipController implements InboundApi {
                 ? status.stream().map(InboundSlipStatus::getValue).toList()
                 : null;
 
-        Sort sortObj = parseSort(sort, "plannedDate");
+        Sort sortObj = parseSort(sort, "plannedDate", ALLOWED_SORT_PROPERTIES);
         Page<InboundSlip> resultPage = inboundSlipService.search(
                 warehouseId, slipNumber, statuses,
                 plannedDateFrom, plannedDateTo, partnerId,
@@ -118,7 +118,7 @@ public class InboundSlipController implements InboundApi {
             Long partnerId, String slipNumber, String productCode,
             Integer page, Integer size, String sort) {
 
-        Sort sortObj = parseResultSort(sort, "storedAt");
+        Sort sortObj = parseSort(sort, "storedAt", ALLOWED_RESULT_SORT_PROPERTIES);
         Page<InboundSlipLine> resultPage = inboundSlipService.findResults(
                 warehouseId, storedDateFrom, storedDateTo, partnerId,
                 slipNumber, productCode,
@@ -227,7 +227,9 @@ public class InboundSlipController implements InboundApi {
 
     private InboundResultItem toResultItem(InboundSlipLine line) {
         InboundSlip slip = line.getInboundSlip();
-        Integer diffQty = line.getInspectedQty() - line.getPlannedQty();
+        Integer diffQty = line.getInspectedQty() != null
+                ? line.getInspectedQty() - line.getPlannedQty()
+                : null;
         String storedByName = inboundSlipService.resolveUserName(line.getStoredBy());
 
         return new InboundResultItem()
@@ -252,18 +254,9 @@ public class InboundSlipController implements InboundApi {
     }
 
     // sort parameter always has a default value from OpenAPI generated interface
-    private Sort parseSort(String sort, String defaultProperty) {
+    private Sort parseSort(String sort, String defaultProperty, Set<String> allowedProperties) {
         String[] parts = sort.split(",");
-        String property = ALLOWED_SORT_PROPERTIES.contains(parts[0])
-                ? parts[0] : defaultProperty;
-        Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-        return Sort.by(direction, property);
-    }
-
-    private Sort parseResultSort(String sort, String defaultProperty) {
-        String[] parts = sort.split(",");
-        String property = ALLOWED_RESULT_SORT_PROPERTIES.contains(parts[0])
+        String property = allowedProperties.contains(parts[0])
                 ? parts[0] : defaultProperty;
         Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
                 ? Sort.Direction.DESC : Sort.Direction.ASC;

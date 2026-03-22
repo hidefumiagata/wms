@@ -823,6 +823,24 @@ class InboundSlipControllerTest {
         }
 
         @Test
+        @DisplayName("inspectedQtyがnullの場合diffQtyもnull")
+        void results_nullInspectedQty_returns200() throws Exception {
+            InboundSlip slip = createSlip(1L, "INB-20260320-0001", "STORED");
+            InboundSlipLine line = createResultLine(11L, slip);
+            line.setInspectedQty(null);
+
+            when(inboundSlipService.findResults(
+                    eq(1L), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(new PageImpl<>(List.of(line)));
+            when(inboundSlipService.resolveUserName(any())).thenReturn(null);
+
+            mockMvc.perform(get(RESULTS_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].inspectedQty").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].diffQty").doesNotExist());
+        }
+
+        @Test
         @DisplayName("倉庫が存在しない場合404を返す")
         void results_warehouseNotFound_returns404() throws Exception {
             when(inboundSlipService.findResults(
