@@ -5,6 +5,7 @@
  * - 55分無操作で警告ダイアログ表示
  * - 60分無操作で強制ログアウト
  * - Axiosレスポンス成功時・DOM操作時にタイマーリセット
+ * - BroadcastChannel によるマルチタブ間ログアウト同期
  */
 import { ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
@@ -22,16 +23,72 @@ let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 let warningShown = false
 let isLoggingOut = false
 
+// --- マルチタブ同期 ---
+// BroadcastChannel: 同一オリジンの複数タブ間でメッセージを送受信する Web API。
+// 1タブでログアウトが発生した際、他タブにも即座に伝播させる。
+// 非対応ブラウザ（IE等）では機能をスキップし、単タブ動作にフォールバックする。
+// BroadcastChannel は DefaultLayout のライフサイクルではなくモジュールレベルで保持する。
+// SPA のルート遷移で DefaultLayout が再マウントされてもチャンネルを維持するため。
+const bc: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+
+// --- nonce 管理 ---
+// localStorage を通じてタブ間で nonce を共有し、nonce を知らない外部スクリプト
+// （ブラウザ拡張機能等）からの強制ログアウト注入（ポイズニング）を阻止する。
+// XSS が成立した場合は localStorage も読めるため完全な防御ではないが、
+// チャンネル名だけを知る単純な注入攻撃を防ぐ多層防御として有効。
+const BC_NONCE_KEY = 'wms_bc_nonce'
+
+function getSessionNonce(): string {
+  let nonce = localStorage.getItem(BC_NONCE_KEY)
+  if (!nonce) {
+    nonce = crypto.randomUUID()
+    localStorage.setItem(BC_NONCE_KEY, nonce)
+  }
+  return nonce
+}
+
+// メッセージの実行時型ガード
+// TypeScript の型注釈はコンパイル時のみ有効なため、
+// 外部から届いた payload の構造を実行時に検証する
+function isLogoutMessage(data: unknown): data is { type: 'logout'; nonce: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (data as Record<string, unknown>)['type'] === 'logout' &&
+    typeof (data as Record<string, unknown>)['nonce'] === 'string'
+  )
+}
+
+if (bc) {
+  bc.onmessage = (event: MessageEvent<unknown>) => {
+    // 型ガード + nonce 検証の両方を通過したメッセージのみ処理する
+    if (isLogoutMessage(event.data) && event.data.nonce === getSessionNonce()) {
+      // 他タブからのログアウト通知を受信 → このタブもログアウト
+      // broadcast: false で再ブロードキャストを防ぎ無限ループを回避
+      doLogout({ broadcast: false })
+    }
+  }
+}
+
+// --- タイマー管理 ---
 function clearTimers() {
   if (warningTimer !== null) { clearTimeout(warningTimer); warningTimer = null }
   if (timeoutTimer !== null) { clearTimeout(timeoutTimer); timeoutTimer = null }
 }
 
-async function doLogout() {
+async function doLogout(options?: { broadcast?: boolean }) {
   if (isLoggingOut) return
   isLoggingOut = true
   clearTimers()
   ElMessageBox.close()
+
+  // 他タブにログアウトを通知（受信側は再ブロードキャストしない）
+  // nonce を含めることで、チャンネル名だけを知る外部スクリプトの注入を防ぐ
+  if (options?.broadcast !== false && bc) {
+    bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
+  }
+
   try {
     await useAuthStore().logout()
   } catch {
