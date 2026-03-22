@@ -4,6 +4,7 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
+import com.wms.shared.security.RateLimiterService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,9 @@ class WarehouseControllerAuthTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RateLimiterService rateLimiterService;
 
     private static final String BASE_URL = "/api/v1/master/warehouses";
 

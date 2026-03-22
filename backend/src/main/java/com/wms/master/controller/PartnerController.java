@@ -10,6 +10,8 @@ import com.wms.generated.model.ToggleActiveRequest;
 import com.wms.generated.model.UpdatePartnerRequest;
 import com.wms.master.entity.Partner;
 import com.wms.master.service.PartnerService;
+import com.wms.shared.exception.RateLimitExceededException;
+import com.wms.shared.security.RateLimiterService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +54,7 @@ public class PartnerController {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final PartnerService partnerService;
+    private final RateLimiterService rateLimiterService;
 
     /**
      * 取引先一覧取得。all=true の場合はプルダウン用の全件リスト、
@@ -145,10 +148,14 @@ public class PartnerController {
         return ResponseEntity.ok(toDetail(updated));
     }
 
-    // TODO: #74 列挙攻撃対策として RateLimiterService の適用を検討
     @GetMapping("/exists")
     public ResponseEntity<ExistsResponse> checkPartnerCodeExists(
             @RequestParam String partnerCode) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && !rateLimiterService.tryConsumeCodeExists(auth.getName())) {
+            throw new RateLimitExceededException();
+        }
         boolean exists = partnerService.existsByCode(partnerCode);
         return ResponseEntity.ok(new ExistsResponse().exists(exists));
     }

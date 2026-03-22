@@ -12,6 +12,8 @@ import com.wms.generated.model.WarehousePageResponse;
 import com.wms.generated.model.WarehouseToggleResponse;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
+import com.wms.shared.exception.RateLimitExceededException;
+import com.wms.shared.security.RateLimiterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ public class WarehouseController implements MasterWarehouseApi {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "warehouseCode", "warehouseName", "createdAt", "updatedAt");
     private final WarehouseService warehouseService;
+    private final RateLimiterService rateLimiterService;
 
     /**
      * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト（WarehousePageResponseでラップ）、
@@ -120,11 +123,15 @@ public class WarehouseController implements MasterWarehouseApi {
         return ResponseEntity.ok(toToggleResponse(updated));
     }
 
-    // TODO: #74 パターン — 列挙攻撃対策として RateLimiterService の適用を検討
     @PreAuthorize("isAuthenticated()")
     @Override
     public ResponseEntity<ExistsResponse> checkWarehouseCodeExists(
             String warehouseCode) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && !rateLimiterService.tryConsumeCodeExists(auth.getName())) {
+            throw new RateLimitExceededException();
+        }
         boolean exists = warehouseService.existsByCode(warehouseCode);
         return ResponseEntity.ok(new ExistsResponse().exists(exists));
     }

@@ -12,6 +12,7 @@ import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
+import com.wms.shared.security.RateLimiterService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,9 @@ class PartnerControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private RateLimiterService rateLimiterService;
 
     private static final String BASE_URL = "/api/v1/master/partners";
 
