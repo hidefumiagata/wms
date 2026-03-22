@@ -163,8 +163,14 @@ function onActivity() {
 export async function startSessionTimer() {
   try {
     const { data } = await apiClient.get('/system/session-config')
-    TIMEOUT_MS = (data.timeoutMinutes ?? 60) * 60 * 1000
-    WARNING_THRESHOLD_MS = (data.warningMinutes ?? 55) * 60 * 1000
+    const timeout = data?.timeoutMinutes
+    const warning = data?.warningMinutes
+    if (typeof timeout === 'number' && timeout > 0) {
+      TIMEOUT_MS = timeout * 60 * 1000
+    }
+    if (typeof warning === 'number' && warning >= 0) {
+      WARNING_THRESHOLD_MS = warning * 60 * 1000
+    }
   } catch {
     // API取得失敗時はデフォルト値を維持
   }
