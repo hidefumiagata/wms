@@ -331,7 +331,7 @@ class InboundSlipServiceTest {
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 1L);
@@ -359,7 +359,7 @@ class InboundSlipServiceTest {
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(5L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(5);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 6L);
@@ -415,7 +415,7 @@ class InboundSlipServiceTest {
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.BOTH));
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 1L);
@@ -446,7 +446,6 @@ class InboundSlipServiceTest {
             when(businessDateProvider.today()).thenReturn(TODAY);
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
             when(productService.findById(10L))
                     .thenThrow(new ResourceNotFoundException("PRODUCT_NOT_FOUND", "商品が見つかりません"));
 
@@ -461,7 +460,6 @@ class InboundSlipServiceTest {
             when(businessDateProvider.today()).thenReturn(TODAY);
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", false, false, false));
 
             assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
@@ -475,7 +473,6 @@ class InboundSlipServiceTest {
             when(businessDateProvider.today()).thenReturn(TODAY);
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
 
             assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
@@ -489,7 +486,6 @@ class InboundSlipServiceTest {
             when(businessDateProvider.today()).thenReturn(TODAY);
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, true));
 
             assertThatThrownBy(() -> inboundSlipService.create(buildRequest()))
@@ -519,7 +515,7 @@ class InboundSlipServiceTest {
             when(businessDateProvider.today()).thenReturn(TODAY);
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 1L);
@@ -546,6 +542,60 @@ class InboundSlipServiceTest {
         }
 
         @Test
+        @DisplayName("WAREHOUSE_TRANSFERでpartnerIdを指定した場合も成功する")
+        void create_warehouseTransferWithPartner_success() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, false));
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
+                InboundSlip s = inv.getArgument(0);
+                setField(s, "id", 1L);
+                return s;
+            });
+
+            CreateInboundSlipRequest request = new CreateInboundSlipRequest()
+                    .warehouseId(1L)
+                    .partnerId(5L)
+                    .plannedDate(TODAY)
+                    .slipType(InboundSlipType.WAREHOUSE_TRANSFER)
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                    ));
+
+            InboundSlip result = inboundSlipService.create(request);
+
+            assertThat(result.getSlipType()).isEqualTo("WAREHOUSE_TRANSFER");
+            assertThat(result.getPartnerId()).isEqualTo(5L);
+        }
+
+        @Test
+        @DisplayName("ロット管理商品でロット番号が空白の場合LOT_NUMBER_REQUIREDをスローする")
+        void create_lotManageWithBlankLotNumber_throws() {
+            when(businessDateProvider.today()).thenReturn(TODAY);
+            when(warehouseService.findById(1L)).thenReturn(createWarehouse());
+            when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
+            when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
+
+            CreateInboundSlipRequest request = buildRequest()
+                    .lines(List.of(
+                            new CreateInboundLineRequest()
+                                    .productId(10L)
+                                    .unitType(UnitType.CASE)
+                                    .plannedQty(100)
+                                    .lotNumber("   ")
+                    ));
+
+            assertThatThrownBy(() -> inboundSlipService.create(request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("LOT_NUMBER_REQUIRED");
+        }
+
+        @Test
         @DisplayName("NORMAL入荷でpartnerIdがnullの場合BusinessRuleViolationExceptionをスローする")
         void create_normalWithoutPartner_throws() {
             when(businessDateProvider.today()).thenReturn(TODAY);
@@ -565,7 +615,7 @@ class InboundSlipServiceTest {
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, true, false));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 1L);
@@ -597,7 +647,7 @@ class InboundSlipServiceTest {
             when(warehouseService.findById(1L)).thenReturn(createWarehouse());
             when(partnerService.findById(5L)).thenReturn(createPartner(PartnerType.SUPPLIER));
             when(productService.findById(10L)).thenReturn(createProduct(10L, "PRD-0001", true, false, true));
-            when(inboundSlipRepository.countBySlipDate("20260322")).thenReturn(0L);
+            when(inboundSlipRepository.findMaxSequenceByDate("20260322")).thenReturn(0);
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> {
                 InboundSlip s = inv.getArgument(0);
                 setField(s, "id", 1L);
@@ -657,18 +707,17 @@ class InboundSlipServiceTest {
                     .status("PLANNED")
                     .build();
             setField(slip, "id", 1L);
-            when(inboundSlipRepository.findById(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
 
             inboundSlipService.delete(1L);
 
-            verify(inboundSlipLineRepository).deleteByInboundSlipId(1L);
             verify(inboundSlipRepository).delete(slip);
         }
 
         @Test
         @DisplayName("存在しないIDで削除するとResourceNotFoundExceptionをスローする")
         void delete_notFound_throws() {
-            when(inboundSlipRepository.findById(999L)).thenReturn(Optional.empty());
+            when(inboundSlipRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inboundSlipService.delete(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -683,7 +732,7 @@ class InboundSlipServiceTest {
                     .status("CONFIRMED")
                     .build();
             setField(slip, "id", 1L);
-            when(inboundSlipRepository.findById(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
 
             assertThatThrownBy(() -> inboundSlipService.delete(1L))
                     .isInstanceOf(InvalidStateTransitionException.class)
@@ -700,7 +749,7 @@ class InboundSlipServiceTest {
                     .status("INSPECTING")
                     .build();
             setField(slip, "id", 1L);
-            when(inboundSlipRepository.findById(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
 
             assertThatThrownBy(() -> inboundSlipService.delete(1L))
                     .isInstanceOf(InvalidStateTransitionException.class)

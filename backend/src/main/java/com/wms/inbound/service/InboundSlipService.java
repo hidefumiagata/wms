@@ -18,10 +18,13 @@ import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import com.wms.generated.model.InboundLineStatus;
+import com.wms.generated.model.InboundSlipStatus;
 import com.wms.shared.util.BusinessDateProvider;
 import com.wms.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -131,29 +134,8 @@ public class InboundSlipService {
             partner = partnerService.findById(request.getPartnerId());
         }
 
-        // Generate slip number
-        String dateStr = today.format(DATE_FORMAT);
-        long count = inboundSlipRepository.countBySlipDate(dateStr);
-        String slipNumber = String.format("INB-%s-%04d", dateStr, count + 1);
-
-        // Build header
-        InboundSlip slip = InboundSlip.builder()
-                .slipNumber(slipNumber)
-                .slipType(request.getSlipType().getValue())
-                .warehouseId(warehouse.getId())
-                .warehouseCode(warehouse.getWarehouseCode())
-                .warehouseName(warehouse.getWarehouseName())
-                .partnerId(partner != null ? partner.getId() : null)
-                .partnerCode(partner != null ? partner.getPartnerCode() : null)
-                .partnerName(partner != null ? partner.getPartnerName() : null)
-                .plannedDate(request.getPlannedDate())
-                .status("PLANNED")
-                .note(request.getNote())
-                .build();
-
-        // Build lines
-        int lineNo = 1;
-        for (CreateInboundLineRequest lineReq : request.getLines()) {
+        // Validate each line's product
+        List<ProductLineInfo> lineInfos = request.getLines().stream().map(lineReq -> {
             Product product = productService.findById(lineReq.getProductId());
 
             if (!Boolean.TRUE.equals(product.getIsActive())) {
@@ -172,37 +154,106 @@ public class InboundSlipService {
                         "期限管理対象商品には賞味/使用期限日が必須です (productId=" + product.getId() + ")");
             }
 
+            return new ProductLineInfo(product, lineReq);
+        }).toList();
+
+        // Generate slip number (MAX-based to handle gaps from deleted slips)
+        String dateStr = today.format(DATE_FORMAT);
+        String slipNumber = generateSlipNumber(dateStr);
+
+        // Build header
+        InboundSlip slip = InboundSlip.builder()
+                .slipNumber(slipNumber)
+                .slipType(request.getSlipType().getValue())
+                .warehouseId(warehouse.getId())
+                .warehouseCode(warehouse.getWarehouseCode())
+                .warehouseName(warehouse.getWarehouseName())
+                .partnerId(partner != null ? partner.getId() : null)
+                .partnerCode(partner != null ? partner.getPartnerCode() : null)
+                .partnerName(partner != null ? partner.getPartnerName() : null)
+                .plannedDate(request.getPlannedDate())
+                .status(InboundSlipStatus.PLANNED.getValue())
+                .note(request.getNote())
+                .build();
+
+        // Build lines
+        int lineNo = 1;
+        for (ProductLineInfo info : lineInfos) {
             InboundSlipLine line = InboundSlipLine.builder()
                     .lineNo(lineNo++)
-                    .productId(product.getId())
-                    .productCode(product.getProductCode())
-                    .productName(product.getProductName())
-                    .unitType(lineReq.getUnitType().getValue())
-                    .plannedQty(lineReq.getPlannedQty())
-                    .lotNumber(lineReq.getLotNumber())
-                    .expiryDate(lineReq.getExpiryDate())
-                    .lineStatus("PENDING")
+                    .productId(info.product.getId())
+                    .productCode(info.product.getProductCode())
+                    .productName(info.product.getProductName())
+                    .unitType(info.lineReq.getUnitType().getValue())
+                    .plannedQty(info.lineReq.getPlannedQty())
+                    .lotNumber(info.lineReq.getLotNumber())
+                    .expiryDate(info.lineReq.getExpiryDate())
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
                     .build();
             slip.addLine(line);
         }
 
-        InboundSlip saved = inboundSlipRepository.save(slip);
-        log.info("InboundSlip created: slipNumber={}, warehouseId={}, lineCount={}",
-                saved.getSlipNumber(), saved.getWarehouseId(), saved.getLines().size());
-        return saved;
+        try {
+            InboundSlip saved = inboundSlipRepository.save(slip);
+            log.info("InboundSlip created: slipNumber={}, warehouseId={}, lineCount={}",
+                    saved.getSlipNumber(), saved.getWarehouseId(), saved.getLines().size());
+            return saved;
+        } catch (DataIntegrityViolationException e) {
+            // Slip number collision (race condition) — retry with fresh sequence
+            log.warn("Slip number collision detected, retrying: {}", slipNumber);
+            String retrySlipNumber = generateSlipNumber(dateStr);
+            slip = InboundSlip.builder()
+                    .slipNumber(retrySlipNumber)
+                    .slipType(slip.getSlipType())
+                    .warehouseId(slip.getWarehouseId())
+                    .warehouseCode(slip.getWarehouseCode())
+                    .warehouseName(slip.getWarehouseName())
+                    .partnerId(slip.getPartnerId())
+                    .partnerCode(slip.getPartnerCode())
+                    .partnerName(slip.getPartnerName())
+                    .plannedDate(slip.getPlannedDate())
+                    .status(slip.getStatus())
+                    .note(slip.getNote())
+                    .build();
+            for (int i = 0; i < lineInfos.size(); i++) {
+                ProductLineInfo info = lineInfos.get(i);
+                InboundSlipLine line = InboundSlipLine.builder()
+                        .lineNo(i + 1)
+                        .productId(info.product.getId())
+                        .productCode(info.product.getProductCode())
+                        .productName(info.product.getProductName())
+                        .unitType(info.lineReq.getUnitType().getValue())
+                        .plannedQty(info.lineReq.getPlannedQty())
+                        .lotNumber(info.lineReq.getLotNumber())
+                        .expiryDate(info.lineReq.getExpiryDate())
+                        .lineStatus(InboundLineStatus.PENDING.getValue())
+                        .build();
+                slip.addLine(line);
+            }
+            InboundSlip saved = inboundSlipRepository.save(slip);
+            log.info("InboundSlip created (retry): slipNumber={}", saved.getSlipNumber());
+            return saved;
+        }
     }
 
     @Transactional
     public void delete(Long id) {
-        InboundSlip slip = findById(id);
+        InboundSlip slip = findByIdWithLines(id);
 
-        if (!"PLANNED".equals(slip.getStatus())) {
+        if (!InboundSlipStatus.PLANNED.getValue().equals(slip.getStatus())) {
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
                     "PLANNED以外のステータスの入荷伝票は削除できません (status=" + slip.getStatus() + ")");
         }
 
-        inboundSlipLineRepository.deleteByInboundSlipId(id);
+        // CascadeType.ALL + orphanRemoval handles line deletion
         inboundSlipRepository.delete(slip);
         log.info("InboundSlip deleted: id={}, slipNumber={}", id, slip.getSlipNumber());
     }
+
+    private String generateSlipNumber(String dateStr) {
+        int maxSeq = inboundSlipRepository.findMaxSequenceByDate(dateStr);
+        return String.format("INB-%s-%04d", dateStr, maxSeq + 1);
+    }
+
+    private record ProductLineInfo(Product product, CreateInboundLineRequest lineReq) {}
 }

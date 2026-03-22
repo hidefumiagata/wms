@@ -62,6 +62,7 @@ public class InboundSlipController implements InboundApi {
     public ResponseEntity<InboundSlipDetail> createInboundSlip(
             CreateInboundSlipRequest createInboundSlipRequest) {
         InboundSlip created = inboundSlipService.create(createInboundSlipRequest);
+        // Re-fetch with lines to ensure audit fields (createdAt etc.) are populated after commit
         InboundSlip withLines = inboundSlipService.findByIdWithLines(created.getId());
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
