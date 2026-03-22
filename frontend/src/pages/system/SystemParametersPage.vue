@@ -40,7 +40,7 @@
           <el-table-column :label="t('system.parameters.currentValue')" width="200">
             <template #default="{ row }">
               <el-input-number
-                v-if="row.original.valueType === 'INTEGER'"
+                v-if="row.original.valueType === SystemParameterValueType.Integer"
                 v-model="row.editValue"
                 :min="0"
                 :controls="false"
@@ -101,6 +101,7 @@ import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowRight, ArrowDown } from '@element-plus/icons-vue'
 import { useSystemParameters } from '@/composables/system/useSystemParameters'
+import { SystemParameterValueType } from '@/api/generated/models/system-parameter-value-type'
 
 const { t } = useI18n()
 

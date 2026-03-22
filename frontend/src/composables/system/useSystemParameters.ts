@@ -5,6 +5,8 @@ import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { SystemParameterDetail } from '@/api/generated/models/system-parameter-detail'
+import { SystemParameterValueType } from '@/api/generated/models/system-parameter-value-type'
+import { SystemParameterCategory } from '@/api/generated/models/system-parameter-category'
 
 /** カテゴリごとにグルーピングされたパラメータ */
 export interface ParameterGroup {
@@ -71,7 +73,7 @@ export function useSystemParameters() {
         ElMessage.error(t('system.parameters.fetchError'))
       }
     } finally {
-      if (!abortController?.signal.aborted) {
+      if (!signal.aborted) {
         loading.value = false
       }
     }
@@ -89,11 +91,11 @@ export function useSystemParameters() {
 
     if (!val) return t('system.parameters.validation.required')
 
-    if (valueType === 'INTEGER') {
+    if (valueType === SystemParameterValueType.Integer) {
       if (!/^(0|[1-9][0-9]*)$/.test(val)) {
         return t('system.parameters.validation.integerFormat')
       }
-    } else if (valueType === 'STRING') {
+    } else if (valueType === SystemParameterValueType.String) {
       if (val.length > 500) {
         return t('system.parameters.validation.stringMaxLength')
       }
@@ -155,11 +157,11 @@ export function useSystemParameters() {
   /** カテゴリラベル */
   const categoryLabels = computed(() => {
     const map: Record<string, string> = {
-      INVENTORY: t('system.parameters.categoryInventory'),
-      OUTBOUND: t('system.parameters.categoryOutbound'),
-      INBOUND: t('system.parameters.categoryInbound'),
-      SYSTEM: t('system.parameters.categorySystem'),
-      SECURITY: t('system.parameters.categorySecurity'),
+      [SystemParameterCategory.Inventory]: t('system.parameters.categoryInventory'),
+      [SystemParameterCategory.Outbound]: t('system.parameters.categoryOutbound'),
+      [SystemParameterCategory.Inbound]: t('system.parameters.categoryInbound'),
+      [SystemParameterCategory.System]: t('system.parameters.categorySystem'),
+      [SystemParameterCategory.Security]: t('system.parameters.categorySecurity'),
     }
     return map
   })
