@@ -48,6 +48,9 @@ public class BuildingController implements MasterBuildingApi {
             Integer page,
             Integer size) {
 
+        // 倉庫の存在確認（404 WAREHOUSE_NOT_FOUND）
+        warehouseService.findById(warehouseId);
+
         Sort sortObj = Sort.by(Sort.Direction.ASC, "buildingCode");
         Page<Building> resultPage = buildingService.search(
                 warehouseId, buildingCode, null, isActive,
