@@ -45,8 +45,6 @@ public class AllocationService {
 
     private static final Set<String> ALLOCATABLE_STATUSES = Set.of("ORDERED", "PARTIAL_ALLOCATED");
     private static final Set<String> RELEASABLE_STATUSES = Set.of("ALLOCATED", "PARTIAL_ALLOCATED");
-    private static final Set<String> ALLOCATED_STATUSES_LIST = Set.of("ALLOCATED", "PARTIAL_ALLOCATED");
-
     private final OutboundSlipRepository outboundSlipRepository;
     private final InventoryRepository inventoryRepository;
     private final InventoryMovementRepository inventoryMovementRepository;
@@ -89,6 +87,14 @@ public class AllocationService {
         return unpackInstructionRepository.search(outboundSlipId, status, pageable);
     }
 
+    public long countLinesBySlipId(Long slipId) {
+        return outboundSlipRepository.countLinesBySlipId(slipId);
+    }
+
+    public long countAllocatedLinesBySlipId(Long slipId) {
+        return outboundSlipRepository.countAllocatedLinesBySlipId(slipId);
+    }
+
     // --- 引当実行 ---
 
     @Transactional
@@ -122,6 +128,18 @@ public class AllocationService {
                 }
 
                 Product product = productService.findById(line.getProductId());
+
+                // 出荷禁止商品チェック
+                if (Boolean.TRUE.equals(product.getShipmentStopFlag())) {
+                    log.warn("Skipping allocation for shipment-stopped product: productId={}", product.getId());
+                    allLinesAllocated = false;
+                    unallocatedLines.add(new UnallocatedLineInfo(
+                            slip.getId(), slip.getSlipNumber(),
+                            line.getLineNo(), line.getProductCode(), line.getProductName(),
+                            line.getOrderedQty()));
+                    continue;
+                }
+
                 int neededQty = line.getOrderedQty();
                 String requestedUnitType = line.getUnitType();
 
@@ -344,11 +362,11 @@ public class AllocationService {
     public UnpackCompletionInfo completeUnpackInstruction(Long id) {
         UnpackInstruction unpack = unpackInstructionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "UNPACK_INSTRUCTION_NOT_FOUND",
+                        "BREAKDOWN_INSTRUCTION_NOT_FOUND",
                         "ばらし指示が見つかりません (id=" + id + ")"));
 
         if (!"INSTRUCTED".equals(unpack.getStatus())) {
-            throw new InvalidStateTransitionException("UNPACK_ALREADY_COMPLETED",
+            throw new InvalidStateTransitionException("ALREADY_COMPLETED",
                     "既に完了済みのばらし指示です (id=" + id + ", status=" + unpack.getStatus() + ")");
         }
 
@@ -506,7 +524,7 @@ public class AllocationService {
                             "出荷伝票が見つかりません (id=" + slipId + ")"));
 
             if (!RELEASABLE_STATUSES.contains(slip.getStatus())) {
-                throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
+                throw new InvalidStateTransitionException("RELEASE_NOT_ALLOWED",
                         "引当解放可能なステータスではありません (id=" + slipId + ", status=" + slip.getStatus() + ")");
             }
 

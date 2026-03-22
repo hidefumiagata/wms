@@ -4,7 +4,6 @@ import com.wms.allocation.entity.UnpackInstruction;
 import com.wms.allocation.service.AllocationService;
 import com.wms.allocation.service.AllocationService.*;
 import com.wms.outbound.entity.OutboundSlip;
-import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.JwtAuthenticationFilter;
@@ -44,9 +43,6 @@ class AllocationControllerTest {
 
     @MockitoBean
     private AllocationService allocationService;
-
-    @MockitoBean
-    private OutboundSlipRepository outboundSlipRepository;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -111,7 +107,7 @@ class AllocationControllerTest {
             when(allocationService.searchOrders(
                     eq(1L), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(slip)));
-            when(outboundSlipRepository.countLinesBySlipId(1L)).thenReturn(3L);
+            when(allocationService.countLinesBySlipId(1L)).thenReturn(3L);
 
             mockMvc.perform(get("/api/v1/allocation/orders")
                             .param("warehouseId", "1"))
@@ -138,8 +134,8 @@ class AllocationControllerTest {
 
             when(allocationService.searchAllocatedOrders(any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(slip)));
-            when(outboundSlipRepository.countLinesBySlipId(1L)).thenReturn(2L);
-            when(outboundSlipRepository.countAllocatedLinesBySlipId(1L)).thenReturn(2L);
+            when(allocationService.countLinesBySlipId(1L)).thenReturn(2L);
+            when(allocationService.countAllocatedLinesBySlipId(1L)).thenReturn(2L);
 
             mockMvc.perform(get("/api/v1/allocation/allocated-orders"))
                     .andExpect(status().isOk())

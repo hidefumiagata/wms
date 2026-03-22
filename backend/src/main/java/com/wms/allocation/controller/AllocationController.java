@@ -6,7 +6,6 @@ import com.wms.allocation.service.AllocationService.*;
 import com.wms.generated.api.AllocationApi;
 import com.wms.generated.model.*;
 import com.wms.outbound.entity.OutboundSlip;
-import com.wms.outbound.repository.OutboundSlipRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,7 +28,6 @@ public class AllocationController implements AllocationApi {
             "plannedDate", "slipNumber", "status", "createdAt");
 
     private final AllocationService allocationService;
-    private final OutboundSlipRepository outboundSlipRepository;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
@@ -112,7 +110,7 @@ public class AllocationController implements AllocationApi {
     }
 
     private AllocationOrderSummary toAllocationOrderSummary(OutboundSlip s) {
-        long lineCount = outboundSlipRepository.countLinesBySlipId(s.getId());
+        long lineCount = allocationService.countLinesBySlipId(s.getId());
         return new AllocationOrderSummary()
                 .id(s.getId())
                 .slipNumber(s.getSlipNumber())
@@ -135,8 +133,8 @@ public class AllocationController implements AllocationApi {
     }
 
     private AllocatedOrderSummary toAllocatedOrderSummary(OutboundSlip s) {
-        long lineCount = outboundSlipRepository.countLinesBySlipId(s.getId());
-        long allocatedLineCount = outboundSlipRepository.countAllocatedLinesBySlipId(s.getId());
+        long lineCount = allocationService.countLinesBySlipId(s.getId());
+        long allocatedLineCount = allocationService.countAllocatedLinesBySlipId(s.getId());
         return new AllocatedOrderSummary()
                 .id(s.getId())
                 .slipNumber(s.getSlipNumber())
