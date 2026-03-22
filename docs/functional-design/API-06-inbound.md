@@ -759,7 +759,9 @@ flowchart TD
     CHECK_STATUS -->|NO| ERR409[409 INBOUND_INVALID_STATUS]
     CHECK_STATUS -->|YES| VALIDATE[inspectedQty ≥ 0 チェック]
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
-    VALIDATE -->|OK| LINE_LOOP[明細ループ]
+    VALIDATE -->|OK| CHECK_DUP{リクエスト内に\n重複 lineId あり?}
+    CHECK_DUP -->|YES| ERR_DUP[400 DUPLICATE_LINE_IN_REQUEST]
+    CHECK_DUP -->|NO| LINE_LOOP[明細ループ]
     LINE_LOOP --> CHECK_LINE{lineId が当該伝票の\n明細IDか?}
     CHECK_LINE -->|NO| ERR_LINE[404 INBOUND_LINE_NOT_FOUND]
     CHECK_LINE -->|YES| CHECK_STORED{line_status = STORED?}
@@ -784,10 +786,11 @@ flowchart TD
 | 2 | `inspectedQty = 0` は「全量不着」を意味する合法な値として許容する | — |
 | 3 | `CONFIRMED` からの初回呼び出しでヘッダーステータスを `CONFIRMED → INSPECTING` に遷移させる | — |
 | 4 | すでに `INSPECTING` の場合、繰り返し呼び出して検品数を上書き更新できる（再検品可） | — |
-| 5 | `PARTIAL_STORED` の場合、ヘッダーステータスは変更しない。入庫済み明細（`STORED`）は検品対象外とし、残明細（`PENDING` / `INSPECTED`）のみ検品可能 | `INBOUND_LINE_ALREADY_STORED` |
+| 5 | `PARTIAL_STORED` の場合、ヘッダーステータスは変更しない。残明細（`PENDING` / `INSPECTED`）のみ検品可能（入庫済み明細への操作はルール8が禁止） | — |
 | 6 | リクエストに含まれない明細の `inspected_qty` は変更しない（部分更新） | — |
 | 7 | `lineId` は当該伝票（`inbound_slip_id = id`）に属する明細IDでなければならない | `INBOUND_LINE_NOT_FOUND` |
 | 8 | 既に `line_status = STORED` の明細は検品数上書き不可 | `INBOUND_LINE_ALREADY_STORED` |
+| 9 | リクエスト内に同一 `lineId` が重複して含まれる場合はエラー | `DUPLICATE_LINE_IN_REQUEST` |
 
 ---
 
