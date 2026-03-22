@@ -13,8 +13,9 @@ import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import i18n from '@/i18n'
 
-const WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分
-const TIMEOUT_MS = 60 * 60 * 1000 // 60分
+// デフォルト値（API取得前 or 取得失敗時のフォールバック）
+let WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分
+let TIMEOUT_MS = 60 * 60 * 1000 // 60分
 
 const ACTIVITY_EVENTS = ['mousemove', 'click', 'keydown', 'touchstart'] as const
 
@@ -157,8 +158,22 @@ function onActivity() {
 
 /**
  * セッションタイマーを開始する。DefaultLayout の onMounted から呼び出す。
+ * バックエンドからセッション設定を取得し、タイムアウト値を更新する。
  */
-export function startSessionTimer() {
+export async function startSessionTimer() {
+  try {
+    const { data } = await apiClient.get('/system/session-config')
+    const timeout = data?.timeoutMinutes
+    const warning = data?.warningMinutes
+    if (typeof timeout === 'number' && timeout > 0) {
+      TIMEOUT_MS = timeout * 60 * 1000
+    }
+    if (typeof warning === 'number' && warning >= 0) {
+      WARNING_THRESHOLD_MS = warning * 60 * 1000
+    }
+  } catch {
+    // API取得失敗時はデフォルト値を維持
+  }
   ACTIVITY_EVENTS.forEach((event) =>
     window.addEventListener(event, onActivity, { passive: true })
   )
