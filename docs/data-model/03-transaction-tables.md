@@ -51,7 +51,7 @@
 | `expiry_date` | date | NULL | — | 賞味/使用期限日（expiry_manage_flag=true の商品の入荷時に必須） |
 | `putaway_location_id` | bigint | NULL | — | FK → locations.id（入庫確定後にセット） |
 | `putaway_location_code` | varchar(50) | NULL | — | 入庫先ロケーションコード（入庫確定時コピー） |
-| `line_status` | varchar(20) | NOT NULL | `PENDING` | 明細ステータス: `PENDING`(未処理) / `INSPECTED`(検品済) / `STORED`(入庫済) |
+| `line_status` | varchar(20) | NOT NULL | `PENDING` | 明細ステータス: `PENDING`(未処理) / `INSPECTED`(検品済) / `STORED`(入庫済) / `CANCELLED`(キャンセル済) |
 | `inspected_at` | timestamptz | NULL | — | 検品日時 |
 | `inspected_by` | bigint | NULL | — | 検品者（FK → users.id） |
 | `stored_at` | timestamptz | NULL | — | 入庫確定日時 |

@@ -416,7 +416,8 @@
 | # | 検証対象テーブル | 検証内容 |
 |:-:|---------------|---------|
 | 1 | inbound_slips | `status='CANCELLED'`、`cancelled_at` と `cancelled_by` が設定されている |
-| 2 | inventories | 在庫テーブルに変動なし |
+| 2 | inbound_slip_lines | 全明細の `line_status='CANCELLED'` |
+| 3 | inventories | 在庫テーブルに変動なし |
 
 ---
 
@@ -441,8 +442,9 @@
 | # | 検証対象テーブル | 検証内容 |
 |:-:|---------------|---------|
 | 1 | inbound_slips | `status='CANCELLED'`、`cancelled_at` と `cancelled_by` が設定されている |
-| 2 | inventories | 在庫テーブルに変動なし（INSPECTINGからのキャンセルは在庫影響なし） |
-| 3 | inventory_movements | 新規レコード追加なし |
+| 2 | inbound_slip_lines | 全明細の `line_status='CANCELLED'` |
+| 3 | inventories | 在庫テーブルに変動なし（INSPECTINGからのキャンセルは在庫影響なし） |
+| 4 | inventory_movements | 新規レコード追加なし |
 
 ---
 
@@ -468,9 +470,10 @@
 | # | 検証対象テーブル | 検証内容 |
 |:-:|---------------|---------|
 | 1 | inbound_slips | `status='CANCELLED'` |
-| 2 | inventories | A-01-01のPRD-0001の在庫数量が入庫前の値に戻っている（100が減算されている） |
-| 3 | inventory_movements | `movement_type='INBOUND_CANCEL'` のレコードが1件追加。`quantity` が負の値（入庫数量分の減算）。`reference_type='INBOUND_LINE'` |
-| 4 | inventory_movements | `quantity_after` がロールバック後の在庫数量と一致 |
+| 2 | inbound_slip_lines | 全明細の `line_status='CANCELLED'`（STORED明細・未入庫明細ともに） |
+| 3 | inventories | A-01-01のPRD-0001の在庫数量が入庫前の値に戻っている（100が減算されている） |
+| 4 | inventory_movements | `movement_type='INBOUND_CANCEL'` のレコードが1件追加。`quantity` が負の値（入庫数量分の減算）。`reference_type='INBOUND_LINE'` |
+| 5 | inventory_movements | `quantity_after` がロールバック後の在庫数量と一致 |
 
 ---
 

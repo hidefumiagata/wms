@@ -6511,7 +6511,7 @@ components:
 
     InboundLineStatus:
       type: string
-      enum: [PENDING, INSPECTED, STORED]
+      enum: [PENDING, INSPECTED, STORED, CANCELLED]
       description: 入荷明細ステータス
 
     InboundSlipType:
