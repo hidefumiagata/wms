@@ -67,6 +67,11 @@ public class WarehouseService {
     public Warehouse update(Long id, String warehouseName, String warehouseNameKana,
                             String address, Integer version) {
         Warehouse warehouse = findById(id);
+        if (!warehouse.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        }
         warehouse.setWarehouseName(warehouseName);
         warehouse.setWarehouseNameKana(warehouseNameKana);
         warehouse.setAddress(address);
@@ -85,7 +90,16 @@ public class WarehouseService {
     @Transactional
     public Warehouse toggleActive(Long id, boolean isActive, Integer version) {
         Warehouse warehouse = findById(id);
+        if (!warehouse.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        }
         // TODO: 在庫テーブル実装後に在庫存在チェックを追加（無効化時）
+        if (warehouse.getIsActive().equals(isActive)) {
+            log.info("Warehouse toggleActive no-op: id={}, isActive={}", id, isActive);
+            return warehouse;
+        }
         if (isActive) {
             warehouse.activate();
         } else {
