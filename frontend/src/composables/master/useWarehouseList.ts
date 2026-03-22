@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
@@ -43,6 +43,12 @@ export function useWarehouseList() {
   // 新しいリクエストが来たら前のリクエストをキャンセルし、
   // 古いレスポンスで画面が上書きされる Race Condition を防ぐ
   let abortController: AbortController | null = null
+
+  // コンポーネントのアンマウント時に進行中のリクエストをキャンセルし、
+  // アンマウント後のステート更新（メモリリーク）を防ぐ
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // --- API呼び出し ---
   async function fetchList() {
