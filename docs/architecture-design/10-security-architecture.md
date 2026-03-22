@@ -893,7 +893,7 @@ public class AuthEventLogger {
     }
 
     public void passwordResetRequested(String identifier) {
-        // identifier はマスク済み（PiiMaskingFilter が適用される）
+        // identifier はマスク済み（PiiMasker がログ出力時に自動適用される）
         log.info("PASSWORD_RESET_REQUESTED identifier={}", identifier);
     }
 

@@ -1602,47 +1602,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
 ### 9.4 logback-spring.xml
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <!-- 開発環境（ローカル開発含む）: テキスト形式 -->
-    <springProfile name="dev">
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}
-                    [%X{traceId}] [%X{userId}] - %msg%n</pattern>
-            </encoder>
-        </appender>
-        <root level="DEBUG">
-            <appender-ref ref="CONSOLE" />
-        </root>
-    </springProfile>
+> logback 設定の詳細（PIIマスキングを含む完全な設定）は [08-common-infrastructure.md § 4.2](08-common-infrastructure.md#42-バックエンド--logback-json設定) を参照。
 
-    <!-- 本番: JSON形式 -->
-    <springProfile name="prd">
-        <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <includeMdcKeyName>traceId</includeMdcKeyName>
-                <includeMdcKeyName>userId</includeMdcKeyName>
-                <includeMdcKeyName>module</includeMdcKeyName>
-                <fieldNames>
-                    <timestamp>timestamp</timestamp>
-                    <message>message</message>
-                    <logger>logger</logger>
-                    <level>level</level>
-                </fieldNames>
-            </encoder>
-        </appender>
-        <root level="INFO">
-            <appender-ref ref="JSON" />
-        </root>
-    </springProfile>
-
-    <!-- SQL ログ抑制 -->
-    <logger name="org.hibernate.SQL" level="WARN" />
-    <logger name="org.hibernate.type.descriptor.sql" level="WARN" />
-</configuration>
-```
+- **dev プロファイル**: `PiiMaskingPatternLayoutEncoder` によるテキスト形式 + PIIマスキング
+- **prd プロファイル**: `PiiMaskingMessageJsonProvider` / `PiiMaskingStackTraceJsonProvider` による JSON 形式 + PIIマスキング
 
 ### 9.5 PII マスキング
 

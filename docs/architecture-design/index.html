@@ -307,8 +307,14 @@
     ├── entity/
     │   └── BaseEntity.java          # 共通カラム（id, created_at等）
     ├── logging/
+    │   ├── TraceIdFilter.java
+    │   ├── TraceContext.java
     │   ├── RequestLoggingFilter.java
-    │   └── PiiMaskingFilter.java
+    │   ├── PiiMasker.java
+    │   ├── PiiMaskingPatternLayoutEncoder.java
+    │   ├── PiiMaskingMessageJsonProvider.java
+    │   ├── PiiMaskingStackTraceJsonProvider.java
+    │   └── ServiceLoggingAspect.java
     └── util/
         └── BusinessDateService.java    # 営業日取得ユーティリティ</code></pre>
 <h3>3.2 Entity基底クラスの設計</h3>
@@ -2731,6 +2737,41 @@ apiClient.interceptors.response.use((response) =&gt; {
   resetSessionTimer()
   return response
 })</code></pre>
+<h3>7.4 マルチタブ間ログアウト同期</h3>
+<p>複数タブでアプリを開いている場合、1タブでログアウトが発生した際に他タブも即座にログアウトする。<code>BroadcastChannel</code> API を使用してタブ間でログアウトイベントを伝播させる。</p>
+<h4>設計方針</h4>
+<ul><li style="margin-left:0px"><strong><code>BroadcastChannel('wms_session')</code></strong> をモジュールロード時に初期化（<code>session-timer.ts</code> 内）</li><li style="margin-left:0px">セッションタイムアウト・手動ログアウトの両方で <code>{ type: 'logout' }</code> メッセージを送信</li><li style="margin-left:0px">受信側は <code>broadcast: false</code> で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）</li><li style="margin-left:0px"><code>BroadcastChannel</code> 非対応ブラウザ（IE等）は <code>typeof BroadcastChannel !== 'undefined'</code> で検出し、単タブ動作にフォールバック</li></ul>
+<pre><code class="lang-typescript">// BroadcastChannel 初期化（モジュールレベル）
+const bc: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+
+// 他タブからの受信
+if (bc) {
+  bc.onmessage = (event) =&gt; {
+    if (event.data?.type === 'logout') {
+      doLogout({ broadcast: false })  // 再ブロードキャストしない
+    }
+  }
+}
+
+// ログアウト時に送信
+async function doLogout(options?: { broadcast?: boolean }) {
+  if (isLoggingOut) return
+  isLoggingOut = true
+  if (options?.broadcast !== false &amp;&amp; bc) {
+    bc.postMessage({ type: 'logout' })
+  }
+  // ... ログアウト処理
+}</code></pre>
+<h4>同期対象</h4>
+<table>
+<thead><tr><th>イベント</th><th>同期</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>セッションタイムアウト（60分）</td><td>✅</td><td><code>doLogout()</code> 経由で送信</td></tr>
+<tr><td>警告ダイアログでログアウト選択</td><td>✅</td><td><code>doLogout()</code> 経由で送信</td></tr>
+<tr><td>手動ログアウト（ヘッダーボタン）</td><td>✅</td><td><code>doLogout()</code> 経由で送信</td></tr>
+<tr><td>セッション延長（リフレッシュ）</td><td>❌</td><td>各タブが独立したタイマーで動作（許容）</td></tr>
+<p></tbody><br></table></p>
 <hr>
 <h2>8. 共通コンポーネント設計</h2>
 <h3>8.1 WmsTable（一覧テーブル統合コンポーネント）</h3>
@@ -3296,9 +3337,14 @@ export function useUnsavedChangesGuard(isDirty: () =&gt; boolean) {
 │   ├── JwtAuthenticationFilter.java # Servlet Filter
 │   └── WmsUserDetails.java      # UserDetails 実装
 ├── logging/             # ロギング
-│   ├── RequestLoggingFilter.java   # リクエストログ
-│   ├── PiiMaskingConverter.java    # PIIマスキング
-│   └── TraceIdFilter.java             # traceId・userId のMDC設定
+│   ├── RequestLoggingFilter.java          # リクエストログ
+│   ├── PiiMasker.java                     # PIIマスキングロジック（メール・電話・JWT・パスワード）
+│   ├── PiiMaskingMessageJsonProvider.java # 本番: LogstashEncoder の message フィールドマスキング
+│   ├── PiiMaskingStackTraceJsonProvider.java # 本番: スタックトレースのマスキング
+│   ├── PiiMaskingPatternLayoutEncoder.java  # 開発: テキストログのマスキング
+│   ├── TraceIdFilter.java                 # traceId・userId のMDC設定
+│   ├── TraceContext.java                  # MDC キー定数
+│   └── ServiceLoggingAspect.java          # 業務操作AOPログ
 ├── entity/              # 共通Entityクラス
 │   ├── BaseEntity.java             # 監査カラム基底クラス
 │   └── AuditorAwareImpl.java       # 監査ユーザー取得
@@ -4527,60 +4573,19 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     }
 }</code></pre>
 <h3>9.4 logback-spring.xml</h3>
-<pre><code class="lang-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;configuration&gt;
-    &lt;!-- 開発環境（ローカル開発含む）: テキスト形式 --&gt;
-    &lt;springProfile name=&quot;dev&quot;&gt;
-        &lt;appender name=&quot;CONSOLE&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
-            &lt;encoder&gt;
-                &lt;pattern&gt;%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}
-                    [%X{traceId}] [%X{userId}] - %msg%n&lt;/pattern&gt;
-            &lt;/encoder&gt;
-        &lt;/appender&gt;
-        &lt;root level=&quot;DEBUG&quot;&gt;
-            &lt;appender-ref ref=&quot;CONSOLE&quot; /&gt;
-        &lt;/root&gt;
-    &lt;/springProfile&gt;
-
-    &lt;!-- 本番: JSON形式 --&gt;
-    &lt;springProfile name=&quot;prd&quot;&gt;
-        &lt;appender name=&quot;JSON&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
-            &lt;encoder class=&quot;net.logstash.logback.encoder.LogstashEncoder&quot;&gt;
-                &lt;includeMdcKeyName&gt;traceId&lt;/includeMdcKeyName&gt;
-                &lt;includeMdcKeyName&gt;userId&lt;/includeMdcKeyName&gt;
-                &lt;includeMdcKeyName&gt;module&lt;/includeMdcKeyName&gt;
-                &lt;fieldNames&gt;
-                    &lt;timestamp&gt;timestamp&lt;/timestamp&gt;
-                    &lt;message&gt;message&lt;/message&gt;
-                    &lt;logger&gt;logger&lt;/logger&gt;
-                    &lt;level&gt;level&lt;/level&gt;
-                &lt;/fieldNames&gt;
-            &lt;/encoder&gt;
-        &lt;/appender&gt;
-        &lt;root level=&quot;INFO&quot;&gt;
-            &lt;appender-ref ref=&quot;JSON&quot; /&gt;
-        &lt;/root&gt;
-    &lt;/springProfile&gt;
-
-    &lt;!-- SQL ログ抑制 --&gt;
-    &lt;logger name=&quot;org.hibernate.SQL&quot; level=&quot;WARN&quot; /&gt;
-    &lt;logger name=&quot;org.hibernate.type.descriptor.sql&quot; level=&quot;WARN&quot; /&gt;
-&lt;/configuration&gt;</code></pre>
+<blockquote>logback 設定の詳細（PIIマスキングを含む完全な設定）は <a href="08-common-infrastructure.md#42-バックエンド--logback-json設定" target="_blank">08-common-infrastructure.md § 4.2</a> を参照。</blockquote>
+<ul><li style="margin-left:0px"><strong>dev プロファイル</strong>: <code>PiiMaskingPatternLayoutEncoder</code> によるテキスト形式 + PIIマスキング</li><li style="margin-left:0px"><strong>prd プロファイル</strong>: <code>PiiMaskingMessageJsonProvider</code> / <code>PiiMaskingStackTraceJsonProvider</code> による JSON 形式 + PIIマスキング</li></ul>
 <h3>9.5 PII マスキング</h3>
-<pre><code class="lang-java">public class PiiMaskingConverter extends CompositeConverter&lt;ILoggingEvent&gt; {
-
-    private static final Pattern EMAIL_PATTERN =
-            Pattern.compile(&quot;[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}&quot;);
-    private static final Pattern PHONE_PATTERN =
-            Pattern.compile(&quot;\\d{2,4}-\\d{2,4}-\\d{4}&quot;);
-
-    @Override
-    protected String transform(ILoggingEvent event, String message) {
-        String masked = EMAIL_PATTERN.matcher(message).replaceAll(&quot;**@**.***&quot;);
-        masked = PHONE_PATTERN.matcher(masked).replaceAll(&quot;***-****-****&quot;);
-        return masked;
-    }
-}</code></pre>
+<blockquote>詳細設計・コードサンプルは <a href="08-common-infrastructure.md#44-バックエンド--pii-マスキング" target="_blank">architecture-design/08-common-infrastructure.md § 4.4</a> を参照。</blockquote>
+<p>PII マスキングは <code>PiiMasker.java</code>（ロジック）と環境別の Logback 拡張クラスに分離されている。</p>
+<table>
+<thead><tr><th>クラス</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>PiiMasker</code></td><td>メール・電話・JWT・パスワードのマスキングロジック（ユーティリティ）</td></tr>
+<tr><td><code>PiiMaskingPatternLayoutEncoder</code></td><td>開発環境（dev）: テキストフォーマットログに適用</td></tr>
+<tr><td><code>PiiMaskingMessageJsonProvider</code></td><td>本番環境（prd）: LogstashEncoder の message フィールドに適用</td></tr>
+<tr><td><code>PiiMaskingStackTraceJsonProvider</code></td><td>本番環境（prd）: LogstashEncoder のスタックトレースに適用</td></tr>
+<p></tbody><br></table></p>
 <h3>9.6 業務操作ログ</h3>
 <p>主要な業務操作にはINFOレベルのログを出力する。</p>
 <table>
@@ -10039,32 +10044,47 @@ public final class TraceContext {
     }
 }</code></pre>
 <h3>4.2 バックエンド — Logback JSON設定</h3>
+<p>プロファイルごとに異なるエンコーダーを使用し、両環境でPIIマスキングを適用する。</p>
 <pre><code class="lang-xml">&lt;!-- src/main/resources/logback-spring.xml --&gt;
 &lt;configuration&gt;
-  &lt;springProfile name=&quot;default,dev&quot;&gt;
-    &lt;appender name=&quot;CONSOLE&quot;
-        class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
-      &lt;encoder class=
-          &quot;net.logstash.logback.encoder.LogstashEncoder&quot;&gt;
+  &lt;!-- 開発環境: テキスト形式 + PIIマスキング --&gt;
+  &lt;springProfile name=&quot;dev&quot;&gt;
+    &lt;appender name=&quot;CONSOLE&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
+      &lt;encoder class=&quot;com.wms.shared.logging.PiiMaskingPatternLayoutEncoder&quot;&gt;
+        &lt;pattern&gt;%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] [%X{userId}] - %msg%n&lt;/pattern&gt;
+      &lt;/encoder&gt;
+    &lt;/appender&gt;
+    &lt;root level=&quot;DEBUG&quot;&gt;
+      &lt;appender-ref ref=&quot;CONSOLE&quot; /&gt;
+    &lt;/root&gt;
+  &lt;/springProfile&gt;
+
+  &lt;!-- 本番環境: JSON形式 + PIIマスキング --&gt;
+  &lt;springProfile name=&quot;prd&quot;&gt;
+    &lt;appender name=&quot;JSON&quot; class=&quot;ch.qos.logback.core.ConsoleAppender&quot;&gt;
+      &lt;encoder class=&quot;net.logstash.logback.encoder.LogstashEncoder&quot;&gt;
         &lt;includeMdcKeyName&gt;traceId&lt;/includeMdcKeyName&gt;
         &lt;includeMdcKeyName&gt;userId&lt;/includeMdcKeyName&gt;
         &lt;includeMdcKeyName&gt;module&lt;/includeMdcKeyName&gt;
+        &lt;!-- デフォルトの message/stackTrace を PIIマスキング版で置換 --&gt;
+        &lt;provider class=&quot;com.wms.shared.logging.PiiMaskingMessageJsonProvider&quot;&gt;
+          &lt;fieldName&gt;message&lt;/fieldName&gt;
+        &lt;/provider&gt;
+        &lt;provider class=&quot;com.wms.shared.logging.PiiMaskingStackTraceJsonProvider&quot;&gt;
+          &lt;fieldName&gt;stack_trace&lt;/fieldName&gt;
+        &lt;/provider&gt;
         &lt;fieldNames&gt;
           &lt;timestamp&gt;timestamp&lt;/timestamp&gt;
-          &lt;version&gt;[ignore]&lt;/version&gt;
-          &lt;levelValue&gt;[ignore]&lt;/levelValue&gt;
+          &lt;message&gt;[ignore]&lt;/message&gt;
+          &lt;stackTrace&gt;[ignore]&lt;/stackTrace&gt;
+          &lt;logger&gt;logger&lt;/logger&gt;
+          &lt;level&gt;level&lt;/level&gt;
         &lt;/fieldNames&gt;
       &lt;/encoder&gt;
     &lt;/appender&gt;
-
     &lt;root level=&quot;INFO&quot;&gt;
-      &lt;appender-ref ref=&quot;CONSOLE&quot; /&gt;
+      &lt;appender-ref ref=&quot;JSON&quot; /&gt;
     &lt;/root&gt;
-
-    &lt;!-- 開発環境のみDEBUG --&gt;
-    &lt;springProfile name=&quot;dev&quot;&gt;
-      &lt;logger name=&quot;com.wms&quot; level=&quot;DEBUG&quot; /&gt;
-    &lt;/springProfile&gt;
   &lt;/springProfile&gt;
 &lt;/configuration&gt;</code></pre>
 <h3>4.3 バックエンド — 操作ログAOP</h3>
@@ -10127,38 +10147,60 @@ public class ServiceLoggingAspect {
     }
 }</code></pre>
 <h3>4.4 バックエンド — PII マスキング</h3>
+<p>PIIマスキングはロジック（<code>PiiMasker</code>）と環境別の Logback 拡張クラスに分離している。</p>
+<table>
+<thead><tr><th>クラス</th><th>役割</th></tr></thead>
+<tbody>
+<tr><td><code>PiiMasker</code></td><td>マスキングロジック本体（メール・電話・JWT・パスワード系）</td></tr>
+<tr><td><code>PiiMaskingPatternLayoutEncoder</code></td><td>dev プロファイル: テキストフォーマットログのマスキング</td></tr>
+<tr><td><code>PiiMaskingMessageJsonProvider</code></td><td>prd プロファイル: LogstashEncoder の <code>message</code> フィールドへの適用</td></tr>
+<tr><td><code>PiiMaskingStackTraceJsonProvider</code></td><td>prd プロファイル: LogstashEncoder のスタックトレースへの適用</td></tr>
+<p></tbody><br></table></p>
 <pre><code class="lang-java">package com.wms.shared.logging;
-
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.filter.Filter;
-import ch.qos.logback.core.spi.FilterReply;
 
 import java.util.regex.Pattern;
 
 /**
- * ログメッセージ中のメールアドレス・電話番号をマスクする
- * Logback カスタムフィルターではなく、
- * LogstashEncoder の MessageJsonProvider をカスタマイズして
- * マスキングを適用する方式を採用する。
+ * ログメッセージ中のPII（個人情報）・機密情報をマスクするユーティリティ。
+ * LogstashEncoder の MessageJsonProvider カスタマイズで自動適用される。
  */
 public final class PiiMasker {
 
     private PiiMasker() {}
 
+    // ReDoS対策: possessive quantifier(++) 使用
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile(
-            &quot;[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}&quot;);
+            &quot;[a-zA-Z0-9._%+\\-]++@[a-zA-Z0-9\\-]++(?:\\.[a-zA-Z0-9\\-]++)*\\.[a-zA-Z]{2,}&quot;);
 
+    // 先頭セグメント2桁以上に制限、ワードバウンダリ付き
     private static final Pattern PHONE_PATTERN =
+        Pattern.compile(&quot;\\b0[0-9]{1,3}-[0-9]{1,4}-[0-9]{3,4}\\b&quot;);
+
+    // JWE(5パート)対応、Base64URLパディング(=)対応
+    private static final Pattern JWT_PATTERN =
         Pattern.compile(
-            &quot;0\\d{1,4}[-\\s]?\\d{1,4}[-\\s]?\\d{2,5}&quot;);
+            &quot;eyJ[a-zA-Z0-9_=-]+\\.[a-zA-Z0-9_=-]+\\.[a-zA-Z0-9_=-]+(?:\\.[a-zA-Z0-9_=-]+)*&quot;);
+
+    // KV形式（key=value / key:value）、token キーワード含む
+    // (?!\[JWT): JWT-REDACTED済みの値を再マスキングしない
+    private static final Pattern PASSWORD_KV_PATTERN =
+        Pattern.compile(
+            &quot;(?i)(password|passwd|pwd|secret|token)(\\s*[=:]\\s*)(?!\\[JWT)\\S+&quot;);
+
+    // JSON形式（&quot;key&quot;: &quot;value&quot;）
+    private static final Pattern PASSWORD_JSON_PATTERN =
+        Pattern.compile(
+            &quot;(?i)(password|passwd|pwd|secret|token)(\&quot;\\s*:\\s*\&quot;)([^\&quot;]*)\&quot;&quot;);
 
     public static String mask(String message) {
         if (message == null) return null;
-        String masked = EMAIL_PATTERN.matcher(message)
-            .replaceAll(&quot;***@***.***&quot;);
-        masked = PHONE_PATTERN.matcher(masked)
-            .replaceAll(&quot;***-****-****&quot;);
+        if (!mayContainSensitiveData(message)) return message; // fast-path
+        String masked = EMAIL_PATTERN.matcher(message).replaceAll(&quot;***@***.***&quot;);
+        masked = PHONE_PATTERN.matcher(masked).replaceAll(&quot;***-****-****&quot;);
+        masked = JWT_PATTERN.matcher(masked).replaceAll(&quot;[JWT-REDACTED]&quot;);
+        masked = PASSWORD_JSON_PATTERN.matcher(masked).replaceAll(&quot;$1$2*****\&quot;&quot;);
+        masked = PASSWORD_KV_PATTERN.matcher(masked).replaceAll(&quot;$1$2*****&quot;);
         return masked;
     }
 }</code></pre>
@@ -11238,7 +11280,11 @@ public class SystemParameterService {
 ├── logging/          # ログ関連
 │   ├── TraceIdFilter.java
 │   ├── TraceContext.java
+│   ├── RequestLoggingFilter.java
 │   ├── PiiMasker.java
+│   ├── PiiMaskingPatternLayoutEncoder.java
+│   ├── PiiMaskingMessageJsonProvider.java
+│   ├── PiiMaskingStackTraceJsonProvider.java
 │   └── ServiceLoggingAspect.java
 ├── security/         # JWT 認証
 │   └── ...（認証設計書で定義）
@@ -12345,25 +12391,31 @@ passwordResetTokenRepository.save(new PasswordResetToken(userId, tokenHash, expi
 <h3>ログのPIIマスキング</h3>
 <blockquote>ロギング基盤の詳細は <a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照</blockquote>
 <pre><code class="lang-java">/**
- * Logback カスタムフィルターによる PII マスキング。
- * ログ出力前にメールアドレス・電話番号を自動マスクする。
+ * ログメッセージ中のPII（個人情報）・機密情報をマスクするユーティリティ。
+ * メールアドレス・電話番号に加え、JWT・パスワード系キーワードもマスク対象。
+ * 環境別の Logback 拡張（PiiMaskingPatternLayoutEncoder / PiiMaskingMessageJsonProvider）
+ * から呼び出される。
  */
-public class PiiMaskingFilter extends AbstractMatcherFilter&lt;ILoggingEvent&gt; {
+public final class PiiMasker {
 
-    // メールアドレスパターン
-    private static final Pattern EMAIL_PATTERN =
-        Pattern.compile(&quot;[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}&quot;);
+    // メールアドレス（ReDoS対策: possessive quantifier 使用）
+    private static final Pattern EMAIL_PATTERN = ...;
 
-    // 電話番号パターン（日本の形式）
-    private static final Pattern PHONE_PATTERN =
-        Pattern.compile(&quot;0\\d{1,4}-?\\d{1,4}-?\\d{3,4}&quot;);
+    // 電話番号（日本形式: 先頭セグメント2桁以上、ワードバウンダリ付き）
+    private static final Pattern PHONE_PATTERN = ...;
 
-    public String mask(String message) {
-        String masked = EMAIL_PATTERN.matcher(message).replaceAll(&quot;**@**.***&quot;);
-        masked = PHONE_PATTERN.matcher(masked).replaceAll(&quot;***-****-****&quot;);
-        return masked;
-    }
+    // JWT トークン（JWE 5パート対応）
+    private static final Pattern JWT_PATTERN = ...;
+
+    // パスワード・シークレット系 KV 形式（key=value / key:value）
+    private static final Pattern PASSWORD_KV_PATTERN = ...;
+
+    // パスワード・シークレット系 JSON 形式（&quot;key&quot;: &quot;value&quot;）
+    private static final Pattern PASSWORD_JSON_PATTERN = ...;
+
+    public static String mask(String message) { ... }
 }</code></pre>
+<blockquote>コード全文は <a href="08-common-infrastructure.md#44-バックエンド--pii-マスキング" target="_blank">08-common-infrastructure.md § 4.4</a> を参照。</blockquote>
 <h3>DB接続情報の保護</h3>
 <pre><code class="lang-yaml"># application.yml — 環境変数から注入（値はハードコードしない）
 spring:
@@ -12691,7 +12743,7 @@ public class AuthEventLogger {
     }
 
     public void passwordResetRequested(String identifier) {
-        // identifier はマスク済み（PiiMaskingFilter が適用される）
+        // identifier はマスク済み（PiiMasker がログ出力時に自動適用される）
         log.info(&quot;PASSWORD_RESET_REQUESTED identifier={}&quot;, identifier);
     }
 
