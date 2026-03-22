@@ -332,6 +332,24 @@ paths:
                     errorCode: INTERNAL_SERVER_ERROR
                     message: システムエラーが発生しました
 
+  /api/v1/system/session-config:
+    get:
+      operationId: getSessionConfig
+      summary: セッション設定取得
+      description: セッションタイムアウト時間等のクライアント側設定を取得する
+      tags: [system]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: セッション設定取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionConfigResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   # ============================================================
   # MASTER-FACILITY - 施設マスタ
   # ============================================================
@@ -5281,6 +5299,19 @@ components:
           format: date
           description: 現在の営業日（yyyy-MM-dd形式）
           example: '2026-03-13'
+
+    SessionConfigResponse:
+      type: object
+      required: [timeoutMinutes, warningMinutes]
+      properties:
+        timeoutMinutes:
+          type: integer
+          description: セッションタイムアウト時間（分）
+          example: 60
+        warningMinutes:
+          type: integer
+          description: タイムアウト警告表示開始時間（分）。タイムアウトの5分前
+          example: 55
 
     # --- Common ---
 
