@@ -187,6 +187,13 @@ const router = createRouter({
           component: () => import('@/pages/master/UserFormPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN'] },
         },
+        // システムパラメータ管理 — SCR-12 (SYS-001): SYSTEM_ADMIN のみ
+        {
+          path: 'system/parameters',
+          name: 'system-parameters',
+          component: () => import('@/pages/system/SystemParametersPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN'] },
+        },
       ],
     },
     // 404
