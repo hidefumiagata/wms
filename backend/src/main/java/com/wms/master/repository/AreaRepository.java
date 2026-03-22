@@ -16,7 +16,6 @@ public interface AreaRepository extends JpaRepository<Area, Long> {
     long countByBuildingId(Long buildingId);
 
 
-    // TODO: #72 パターン — LIKE 検索のワイルドカード（%/_）エスケープ対応を検討
     @Query("SELECT a FROM Area a WHERE "
             + "(:warehouseId IS NULL OR a.warehouseId = :warehouseId) "
             + "AND (:buildingId IS NULL OR a.buildingId = :buildingId) "

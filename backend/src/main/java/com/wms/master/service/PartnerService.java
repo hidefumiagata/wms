@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Partner;
+import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.shared.exception.DuplicateResourceException;
@@ -27,7 +28,7 @@ public class PartnerService {
 
     public Page<Partner> search(String partnerCode, String partnerName,
                                 String partnerType, Boolean isActive, Pageable pageable) {
-        return partnerRepository.search(partnerCode, partnerName, partnerType, isActive, pageable);
+        return partnerRepository.search(escape(partnerCode), escape(partnerName), partnerType, isActive, pageable);
     }
 
     private static final int FIND_ALL_SIMPLE_LIMIT = 1000;

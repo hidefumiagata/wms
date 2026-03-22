@@ -16,11 +16,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /**
      * 商品一覧検索。productName はカナ名も対象にした部分一致。
      */
-    // TODO: #72 パターン — productCode / productName の LIKE 検索で % / _ がエスケープされていない
     @Query("SELECT p FROM Product p WHERE "
-            + "(:productCode IS NULL OR p.productCode LIKE CONCAT(:productCode, '%')) "
-            + "AND (:productName IS NULL OR p.productName LIKE CONCAT('%', :productName, '%') "
-            + "     OR p.productNameKana LIKE CONCAT('%', :productName, '%')) "
+            + "(:productCode IS NULL OR p.productCode LIKE CONCAT(:productCode, '%') ESCAPE '\\') "
+            + "AND (:productName IS NULL OR p.productName LIKE CONCAT('%', :productName, '%') ESCAPE '\\' "
+            + "     OR p.productNameKana LIKE CONCAT('%', :productName, '%') ESCAPE '\\') "
             + "AND (:storageCondition IS NULL OR p.storageCondition = :storageCondition) "
             + "AND (:isActive IS NULL OR p.isActive = :isActive) "
             + "AND (:shipmentStopFlag IS NULL OR p.shipmentStopFlag = :shipmentStopFlag)")

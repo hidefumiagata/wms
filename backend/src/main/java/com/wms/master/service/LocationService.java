@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Location;
+import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.AreaRepository;
 import com.wms.master.repository.LocationRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
@@ -39,7 +40,7 @@ public class LocationService {
 
     public Page<Location> search(Long warehouseId, Long areaId,
                                   String codePrefix, Boolean isActive, Pageable pageable) {
-        return locationRepository.search(warehouseId, areaId, codePrefix, isActive, pageable);
+        return locationRepository.search(warehouseId, areaId, escape(codePrefix), isActive, pageable);
     }
 
     public long count(Long warehouseId, Long buildingId, Long areaId, Boolean isActive) {
