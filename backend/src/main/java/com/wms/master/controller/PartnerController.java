@@ -102,7 +102,7 @@ public class PartnerController {
         partner.setPartnerCode(request.getPartnerCode());
         partner.setPartnerName(request.getPartnerName());
         partner.setPartnerNameKana(request.getPartnerNameKana());
-        partner.setPartnerType(request.getPartnerType().getValue());
+        partner.setPartnerType(com.wms.master.entity.PartnerType.valueOf(request.getPartnerType().getValue()));
         partner.setAddress(request.getAddress());
         partner.setPhone(request.getPhone());
         partner.setContactPerson(request.getContactPerson());
@@ -128,7 +128,7 @@ public class PartnerController {
                 id,
                 request.getPartnerName(),
                 request.getPartnerNameKana(),
-                request.getPartnerType().getValue(),
+                com.wms.master.entity.PartnerType.valueOf(request.getPartnerType().getValue()),
                 request.getAddress(),
                 request.getPhone(),
                 request.getContactPerson(),
@@ -170,7 +170,7 @@ public class PartnerController {
                 .partnerCode(p.getPartnerCode())
                 .partnerName(p.getPartnerName())
                 .partnerNameKana(p.getPartnerNameKana())
-                .partnerType(PartnerType.fromValue(p.getPartnerType()))
+                .partnerType(PartnerType.fromValue(p.getPartnerType().name()))
                 .isActive(p.getIsActive())
                 .version(p.getVersion());
     }
@@ -181,7 +181,7 @@ public class PartnerController {
                 .partnerCode(p.getPartnerCode())
                 .partnerName(p.getPartnerName())
                 .partnerNameKana(p.getPartnerNameKana())
-                .partnerType(PartnerType.fromValue(p.getPartnerType()))
+                .partnerType(PartnerType.fromValue(p.getPartnerType().name()))
                 .address(p.getAddress())
                 .phone(p.getPhone())
                 .contactPerson(p.getContactPerson())
