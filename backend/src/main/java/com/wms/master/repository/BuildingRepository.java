@@ -10,12 +10,10 @@ import org.springframework.data.repository.query.Param;
 public interface BuildingRepository extends JpaRepository<Building, Long> {
 
     boolean existsByWarehouseIdAndBuildingCode(Long warehouseId, String buildingCode);
-
-    // TODO: #72 パターン — LIKE 検索のワイルドカード（%/_）エスケープ対応を検討
     @Query("SELECT b FROM Building b WHERE "
             + "(:warehouseId IS NULL OR b.warehouseId = :warehouseId) "
-            + "AND (:buildingCode IS NULL OR b.buildingCode LIKE CONCAT(:buildingCode, '%')) "
-            + "AND (:buildingName IS NULL OR b.buildingName LIKE CONCAT('%', :buildingName, '%')) "
+            + "AND (:buildingCode IS NULL OR b.buildingCode LIKE CONCAT(:buildingCode, '%') ESCAPE '\\') "
+            + "AND (:buildingName IS NULL OR b.buildingName LIKE CONCAT('%', :buildingName, '%') ESCAPE '\\') "
             + "AND (:isActive IS NULL OR b.isActive = :isActive)")
     Page<Building> search(
             @Param("warehouseId") Long warehouseId,

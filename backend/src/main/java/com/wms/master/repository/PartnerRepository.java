@@ -20,11 +20,10 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
      * - BOTH 指定時: BOTH のみを対象
      * - null の場合: 全種別対象
      */
-    // TODO: #72 partnerCode / partnerName の LIKE 検索で % / _ がエスケープされていない
     @Query("SELECT p FROM Partner p WHERE "
-            + "(:partnerCode IS NULL OR p.partnerCode LIKE CONCAT(:partnerCode, '%')) "
-            + "AND (:partnerName IS NULL OR p.partnerName LIKE CONCAT('%', :partnerName, '%') "
-            + "     OR p.partnerNameKana LIKE CONCAT('%', :partnerName, '%')) "
+            + "(:partnerCode IS NULL OR p.partnerCode LIKE CONCAT(:partnerCode, '%') ESCAPE '\\') "
+            + "AND (:partnerName IS NULL OR p.partnerName LIKE CONCAT('%', :partnerName, '%') ESCAPE '\\' "
+            + "     OR p.partnerNameKana LIKE CONCAT('%', :partnerName, '%') ESCAPE '\\') "
             + "AND (:partnerType IS NULL "
             + "     OR (:partnerType = 'SUPPLIER' AND p.partnerType IN ('SUPPLIER', 'BOTH')) "
             + "     OR (:partnerType = 'CUSTOMER' AND p.partnerType IN ('CUSTOMER', 'BOTH')) "

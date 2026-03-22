@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Building;
+import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.AreaRepository;
 import com.wms.master.repository.BuildingRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
@@ -31,7 +32,7 @@ public class BuildingService {
 
     public Page<Building> search(Long warehouseId, String buildingCode,
                                   String buildingName, Boolean isActive, Pageable pageable) {
-        return buildingRepository.search(warehouseId, buildingCode, buildingName, isActive, pageable);
+        return buildingRepository.search(warehouseId, escape(buildingCode), escape(buildingName), isActive, pageable);
     }
 
     public Building findById(Long id) {

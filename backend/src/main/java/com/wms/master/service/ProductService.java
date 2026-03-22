@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Product;
+import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.ProductRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
@@ -27,7 +28,7 @@ public class ProductService {
     public Page<Product> search(String productCode, String productName,
                                 String storageCondition, Boolean isActive,
                                 Boolean shipmentStopFlag, Pageable pageable) {
-        return productRepository.search(productCode, productName, storageCondition,
+        return productRepository.search(escape(productCode), escape(productName), storageCondition,
                 isActive, shipmentStopFlag, pageable);
     }
 

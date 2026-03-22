@@ -1,6 +1,7 @@
 package com.wms.master.service;
 
 import com.wms.master.entity.Warehouse;
+import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
@@ -29,7 +30,7 @@ public class WarehouseService {
 
     public Page<Warehouse> search(String warehouseCode, String warehouseName,
                                   Boolean isActive, Pageable pageable) {
-        return warehouseRepository.search(warehouseCode, warehouseName, isActive, pageable);
+        return warehouseRepository.search(escape(warehouseCode), escape(warehouseName), isActive, pageable);
     }
 
     private static final int FIND_ALL_SIMPLE_LIMIT = 1000;

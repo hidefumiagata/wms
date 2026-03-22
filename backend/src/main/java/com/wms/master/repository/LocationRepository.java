@@ -15,12 +15,10 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     long countByAreaId(Long areaId);
 
     long countByAreaIdAndIsActiveTrue(Long areaId);
-
-    // TODO: #72 パターン — LIKE 検索のワイルドカード（%/_）エスケープ対応を検討
     @Query("SELECT l FROM Location l WHERE "
             + "(:warehouseId IS NULL OR l.warehouseId = :warehouseId) "
             + "AND (:areaId IS NULL OR l.areaId = :areaId) "
-            + "AND (:codePrefix IS NULL OR l.locationCode LIKE CONCAT(:codePrefix, '%')) "
+            + "AND (:codePrefix IS NULL OR l.locationCode LIKE CONCAT(:codePrefix, '%') ESCAPE '\\') "
             + "AND (:isActive IS NULL OR l.isActive = :isActive)")
     Page<Location> search(
             @Param("warehouseId") Long warehouseId,
