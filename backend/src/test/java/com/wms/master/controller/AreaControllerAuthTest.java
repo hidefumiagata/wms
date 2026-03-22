@@ -254,7 +254,7 @@ class AreaControllerAuthTest {
      * CSRF無効・認証必須・メソッドセキュリティ有効の最小構成。
      */
     @TestConfiguration
-    @EnableMethodSecurity
+    @EnableMethodSecurity(proxyTargetClass = true)
     static class TestSecurityConfig {
 
         @Bean

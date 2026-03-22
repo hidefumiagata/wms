@@ -109,15 +109,17 @@ class WarehouseControllerTest {
         }
 
         @Test
-        @DisplayName("all=trueでシンプルリストを返す")
-        void list_all_returnsSimpleList() throws Exception {
+        @DisplayName("all=trueでWarehousePageResponse形式のリストを返す")
+        void list_all_returnsWrappedList() throws Exception {
             Warehouse w = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseService.findAllSimple(true)).thenReturn(List.of(w));
 
             mockMvc.perform(get(BASE_URL).param("all", "true").param("isActive", "true"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(1)))
-                    .andExpect(jsonPath("$[0].warehouseCode").value("WARA"));
+                    .andExpect(jsonPath("$.content", hasSize(1)))
+                    .andExpect(jsonPath("$.content[0].warehouseCode").value("WARA"))
+                    .andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.totalPages").value(1));
         }
 
         @Test
@@ -136,17 +138,10 @@ class WarehouseControllerTest {
         }
 
         @Test
-        @DisplayName("ページサイズが上限100に制限される")
-        void list_paged_sizeIsCappedAt100() throws Exception {
-            var page = new PageImpl<Warehouse>(List.of(), PageRequest.of(0, 100), 0);
-            when(warehouseService.search(any(), any(), any(), any())).thenReturn(page);
-
-            mockMvc.perform(get(BASE_URL).param("size", "9999"))
-                    .andExpect(status().isOk());
-
-            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-            verify(warehouseService).search(any(), any(), any(), pageableCaptor.capture());
-            assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(100);
+        @DisplayName("ページサイズが上限100を超える場合は400を返す（Bean Validation @Max(100)）")
+        void list_paged_sizeExceeding100_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL).param("size", "101"))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test

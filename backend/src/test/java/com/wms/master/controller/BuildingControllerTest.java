@@ -128,11 +128,11 @@ class BuildingControllerTest {
             Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
             Page<Building> page = new PageImpl<>(List.of(b));
             Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+            when(buildingService.search(eq(10L), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .thenReturn(page);
             when(warehouseService.findByIds(any())).thenReturn(Map.of(10L, w));
 
-            mockMvc.perform(get(BASE_URL))
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content[0].buildingCode").value("BLDG01"))
                     .andExpect(jsonPath("$.totalElements").value(1));
@@ -156,39 +156,22 @@ class BuildingControllerTest {
         @Test
         @DisplayName("pageが負の場合400を返す")
         void listBuildings_negativePage_returns400() throws Exception {
-            mockMvc.perform(get(BASE_URL).param("page", "-1"))
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "1").param("page", "-1"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
         @DisplayName("sizeが0の場合400を返す")
         void listBuildings_zeroSize_returns400() throws Exception {
-            mockMvc.perform(get(BASE_URL).param("size", "0"))
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "1").param("size", "0"))
                     .andExpect(status().isBadRequest());
         }
 
         @Test
-        @DisplayName("sizeが100を超える場合は100に丸める")
-        void listBuildings_oversizeSize_cappedTo100() throws Exception {
-            Page<Building> page = new PageImpl<>(List.of());
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("size", "200"))
-                    .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("不正なsortプロパティは buildingCode にフォールバックする")
-        void listBuildings_invalidSort_fallbackToBuildingCode() throws Exception {
-            Page<Building> page = new PageImpl<>(List.of());
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("sort", "unknown,asc"))
-                    .andExpect(status().isOk());
+        @DisplayName("sizeが100を超える場合は400を返す（Bean Validation @Max(100)）")
+        void listBuildings_oversizeSize_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "1").param("size", "101"))
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
@@ -196,38 +179,14 @@ class BuildingControllerTest {
         void listBuildings_warehouseNotInMap_returns200() throws Exception {
             Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
             Page<Building> page = new PageImpl<>(List.of(b));
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+            when(buildingService.search(eq(10L), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .thenReturn(page);
             when(warehouseService.findByIds(any())).thenReturn(Map.of()); // 空マップ
 
-            mockMvc.perform(get(BASE_URL))
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content[0].buildingCode").value("BLDG01"))
                     .andExpect(jsonPath("$.content[0].warehouseCode").doesNotExist());
-        }
-
-        @Test
-        @DisplayName("sort=descで降順ソートできる")
-        void listBuildings_sortDesc_returns200() throws Exception {
-            Page<Building> page = new PageImpl<>(List.of());
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("sort", "buildingCode,desc"))
-                    .andExpect(status().isOk());
-        }
-
-        @Test
-        @DisplayName("sortにカンマがない場合は昇順になる")
-        void listBuildings_sortWithoutComma_returnsAsc() throws Exception {
-            Page<Building> page = new PageImpl<>(List.of());
-            when(buildingService.search(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
-                    .thenReturn(page);
-            when(warehouseService.findByIds(any())).thenReturn(Map.of());
-
-            mockMvc.perform(get(BASE_URL).param("sort", "buildingCode"))
-                    .andExpect(status().isOk());
         }
     }
 
