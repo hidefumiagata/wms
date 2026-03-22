@@ -128,6 +128,7 @@ class BuildingControllerTest {
             Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
             Page<Building> page = new PageImpl<>(List.of(b));
             Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
+            when(warehouseService.findById(10L)).thenReturn(w);
             when(buildingService.search(eq(10L), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .thenReturn(page);
             when(warehouseService.findByIds(any())).thenReturn(Map.of(10L, w));
@@ -144,6 +145,7 @@ class BuildingControllerTest {
             Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
             Page<Building> page = new PageImpl<>(List.of(b));
             Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
+            when(warehouseService.findById(10L)).thenReturn(w);
             when(buildingService.search(eq(10L), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .thenReturn(page);
             when(warehouseService.findByIds(any())).thenReturn(Map.of(10L, w));
@@ -175,10 +177,30 @@ class BuildingControllerTest {
         }
 
         @Test
+        @DisplayName("warehouseId未指定で400を返す")
+        void listBuildings_missingWarehouseId_returns400() throws Exception {
+            mockMvc.perform(get(BASE_URL))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("存在しないwarehouseIdで404を返す")
+        void listBuildings_warehouseNotFound_returns404() throws Exception {
+            when(warehouseService.findById(999L))
+                    .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
+                            "WAREHOUSE_NOT_FOUND", "倉庫", 999L));
+
+            mockMvc.perform(get(BASE_URL).param("warehouseId", "999"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
         @DisplayName("倉庫マップにwarehouseが存在しない場合もnullフォールバックで200を返す")
         void listBuildings_warehouseNotInMap_returns200() throws Exception {
             Building b = createBuilding(1L, 10L, "BLDG01", "棟A");
             Page<Building> page = new PageImpl<>(List.of(b));
+            Warehouse w = createWarehouse(10L, "WH001", "倉庫A");
+            when(warehouseService.findById(10L)).thenReturn(w);
             when(buildingService.search(eq(10L), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .thenReturn(page);
             when(warehouseService.findByIds(any())).thenReturn(Map.of()); // 空マップ
