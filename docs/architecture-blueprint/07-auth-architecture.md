@@ -7,7 +7,7 @@
 | **方式** | JWT（JSON Web Token）+ httpOnly Cookie |
 | **実装** | Spring Security + jjwt |
 | **トークン保存** | httpOnly Cookie（XSS対策） |
-| **CSRF対策** | SameSite=Lax（httpOnly Cookie の SameSite 属性による CSRF 対策。CSRFトークンは不要。Lax はトップレベルナビゲーション（リンク遷移）ではCookieを送信するため、ブックマークやメール内リンクからのアクセスで再ログインを強制されない） |
+| **CSRF対策** | SameSite=Lax + `X-Requested-With` カスタムヘッダー検証（二重防御）。SameSite=Lax でクロスサイトからの Cookie 送信をブロックし、`CsrfCustomHeaderFilter` でカスタムヘッダーの存在を検証。CSRFトークンは不要。詳細は [architecture-design/10-security-architecture.md §3](../architecture-design/10-security-architecture.md#3-csrf対策設計) を参照 |
 | **トークン有効期限** | アクセストークン：1時間、リフレッシュトークン：スライディング方式（最終アクセスから24時間で失効） |
 
 ## 認証フロー

@@ -8,6 +8,9 @@ const apiClient = axios.create({
   withCredentials: true, // httpOnly Cookie を送受信（SameSite=Lax による CSRF 対策）
   headers: {
     'Content-Type': 'application/json',
+    // 二重CSRF防御: CsrfCustomHeaderFilter が POST/PUT/PATCH/DELETE に対してこのヘッダーの存在を要求する
+    // ブラウザはクロスオリジンリクエストにカスタムヘッダーを自動付与できないため CSRF 攻撃を防ぐ
+    'X-Requested-With': 'XMLHttpRequest',
   },
 })
 

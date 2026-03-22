@@ -335,8 +335,8 @@ public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
         if (STATE_CHANGING_METHODS.contains(request.getMethod())) {
             String headerValue = request.getHeader(CUSTOM_HEADER);
             if (headerValue == null || headerValue.isBlank()) {
-                log.warn("CSRF protection: missing X-Requested-With header. method={}, uri={}",
-                        request.getMethod(), request.getRequestURI());
+                log.warn("CSRF protection: missing X-Requested-With header. method={}, uri={}, remoteAddr={}",
+                        request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
                 // 403 + CSRF_HEADER_MISSING エラーコードを返却
                 response.setStatus(HttpStatus.FORBIDDEN.value());
                 // ... ErrorResponse を JSON で返却

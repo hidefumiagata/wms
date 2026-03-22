@@ -7720,7 +7720,7 @@ terraform apply
 <tr><td><strong>認証方式</strong></td><td>JWT（JSON Web Token）+ httpOnly Cookie</td></tr>
 <tr><td><strong>認可方式</strong></td><td>RBAC（ロールベースアクセス制御）</td></tr>
 <tr><td><strong>セッション管理</strong></td><td>ステートレス（サーバー側セッション不使用）</td></tr>
-<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax（CSRFトークン不要）</td></tr>
+<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax + <code>X-Requested-With</code> カスタムヘッダー検証（二重防御。詳細は <a href="10-security-architecture.md#3-csrf対策設計" target="_blank">10-security-architecture.md §3</a>）</td></tr>
 <tr><td><strong>XSS対策</strong></td><td>httpOnly Cookie（JavaScriptからトークンにアクセス不可）</td></tr>
 <tr><td><strong>フレームワーク</strong></td><td>Spring Security 6.x</td></tr>
 <tr><td><strong>JWTライブラリ</strong></td><td>jjwt（io.jsonwebtoken）</td></tr>
@@ -9165,7 +9165,7 @@ export function useSessionTimeout() {
 <thead><tr><th>対策</th><th>実装</th></tr></thead>
 <tbody>
 <tr><td><strong>XSS対策</strong></td><td>httpOnly Cookie（JavaScript からトークンにアクセス不可）</td></tr>
-<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax Cookie（CSRFトークン不要）</td></tr>
+<tr><td><strong>CSRF対策</strong></td><td>SameSite=Lax Cookie + <code>X-Requested-With</code> カスタムヘッダー検証（二重防御）</td></tr>
 <tr><td><strong>タイミング攻撃対策</strong></td><td>ユーザー不存在時のBCryptダミー照合、パスワードリセット時の統一レスポンス</td></tr>
 <tr><td><strong>ユーザー列挙対策</strong></td><td>ログイン失敗・パスワードリセットで同一エラーメッセージ</td></tr>
 <tr><td><strong>リプレイ攻撃対策</strong></td><td>リフレッシュトークンローテーション</td></tr>
@@ -12269,8 +12269,8 @@ public class CsrfCustomHeaderFilter extends OncePerRequestFilter {
         if (STATE_CHANGING_METHODS.contains(request.getMethod())) {
             String headerValue = request.getHeader(CUSTOM_HEADER);
             if (headerValue == null || headerValue.isBlank()) {
-                log.warn(&quot;CSRF protection: missing X-Requested-With header. method={}, uri={}&quot;,
-                        request.getMethod(), request.getRequestURI());
+                log.warn(&quot;CSRF protection: missing X-Requested-With header. method={}, uri={}, remoteAddr={}&quot;,
+                        request.getMethod(), request.getRequestURI(), request.getRemoteAddr());
                 // 403 + CSRF_HEADER_MISSING エラーコードを返却
                 response.setStatus(HttpStatus.FORBIDDEN.value());
                 // ... ErrorResponse を JSON で返却
