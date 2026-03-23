@@ -87,6 +87,8 @@
         </div>
       </template>
 
+      <!-- TODO: RPT-03 入荷予定レポートボタン（レポート機能実装後に追加） -->
+
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
         <el-table-column prop="slipNumber" :label="t('inbound.slip.slipNumber')" width="180">
           <template #default="{ row }">
@@ -145,8 +147,8 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { useInboundSlipList } from '@/composables/inbound/useInboundSlipList'
-import { InboundSlipStatus } from '@/api/generated/models/inbound-slip-status'
 import { useAuthStore } from '@/stores/auth'
+import { inboundStatusLabel, inboundStatusTagType, formatDateTime } from '@/utils/inboundFormatters'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -171,33 +173,11 @@ const {
 } = useInboundSlipList()
 
 function statusLabel(status: string): string {
-  switch (status) {
-    case InboundSlipStatus.Planned: return t('inbound.slip.statusPlanned')
-    case InboundSlipStatus.Confirmed: return t('inbound.slip.statusConfirmed')
-    case InboundSlipStatus.Inspecting: return t('inbound.slip.statusInspecting')
-    case InboundSlipStatus.PartialStored: return t('inbound.slip.statusPartialStored')
-    case InboundSlipStatus.Stored: return t('inbound.slip.statusStored')
-    case InboundSlipStatus.Cancelled: return t('inbound.slip.statusCancelled')
-    default: return status
-  }
+  return inboundStatusLabel(status, t)
 }
 
 function statusTagType(status: string): '' | 'success' | 'warning' | 'danger' | 'info' {
-  switch (status) {
-    case InboundSlipStatus.Planned: return 'info'
-    case InboundSlipStatus.Confirmed: return ''
-    case InboundSlipStatus.Inspecting: return 'warning'
-    case InboundSlipStatus.PartialStored: return 'warning'
-    case InboundSlipStatus.Stored: return 'success'
-    case InboundSlipStatus.Cancelled: return 'danger'
-    default: return 'info'
-  }
-}
-
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return inboundStatusTagType(status)
 }
 
 onMounted(() => {

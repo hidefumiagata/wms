@@ -23,7 +23,8 @@
             {{ slip.plannedDate }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('inbound.slip.partner')">
-            {{ slip.partnerName ?? '—' }}
+            <span v-if="slip.partnerCode">{{ slip.partnerCode }} — {{ slip.partnerName }}</span>
+            <span v-else>—</span>
           </el-descriptions-item>
           <el-descriptions-item :label="t('inbound.slip.note')" :span="2">
             {{ slip.note ?? '—' }}
@@ -77,6 +78,8 @@
         </el-table>
       </el-card>
 
+      <!-- TODO: RPT-01 検品レポートボタン（レポート機能実装後に追加） -->
+
       <!-- 操作ボタン -->
       <div class="action-bar">
         <el-button @click="goBack">
@@ -124,7 +127,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useInboundSlipDetail } from '@/composables/inbound/useInboundSlipDetail'
-import { InboundSlipStatus } from '@/api/generated/models/inbound-slip-status'
+import { inboundStatusLabel, inboundStatusTagType, formatDateTime } from '@/utils/inboundFormatters'
 
 const { t } = useI18n()
 
@@ -145,33 +148,11 @@ const {
 } = useInboundSlipDetail()
 
 function statusLabel(status: string): string {
-  switch (status) {
-    case InboundSlipStatus.Planned: return t('inbound.slip.statusPlanned')
-    case InboundSlipStatus.Confirmed: return t('inbound.slip.statusConfirmed')
-    case InboundSlipStatus.Inspecting: return t('inbound.slip.statusInspecting')
-    case InboundSlipStatus.PartialStored: return t('inbound.slip.statusPartialStored')
-    case InboundSlipStatus.Stored: return t('inbound.slip.statusStored')
-    case InboundSlipStatus.Cancelled: return t('inbound.slip.statusCancelled')
-    default: return status
-  }
+  return inboundStatusLabel(status, t)
 }
 
 function statusTagType(status: string): '' | 'success' | 'warning' | 'danger' | 'info' {
-  switch (status) {
-    case InboundSlipStatus.Planned: return 'info'
-    case InboundSlipStatus.Confirmed: return ''
-    case InboundSlipStatus.Inspecting: return 'warning'
-    case InboundSlipStatus.PartialStored: return 'warning'
-    case InboundSlipStatus.Stored: return 'success'
-    case InboundSlipStatus.Cancelled: return 'danger'
-    default: return 'info'
-  }
-}
-
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return inboundStatusTagType(status)
 }
 
 onMounted(() => fetchDetail())

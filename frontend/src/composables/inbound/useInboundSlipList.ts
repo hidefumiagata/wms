@@ -20,10 +20,20 @@ export function useInboundSlipList() {
   const page = ref(1)
   const pageSize = ref(20)
 
+  // SCR-07 INB001-F02/F03: 初期値は営業日-7日〜+30日
+  function formatDate(d: Date): string {
+    return d.toISOString().slice(0, 10)
+  }
+  const today = new Date()
+  const defaultFrom = new Date(today)
+  defaultFrom.setDate(defaultFrom.getDate() - 7)
+  const defaultTo = new Date(today)
+  defaultTo.setDate(defaultTo.getDate() + 30)
+
   const searchForm = reactive({
     slipNumber: '',
-    plannedDateFrom: null as string | null,
-    plannedDateTo: null as string | null,
+    plannedDateFrom: formatDate(defaultFrom) as string | null,
+    plannedDateTo: formatDate(defaultTo) as string | null,
     partnerId: null as number | null,
     status: null as InboundSlipStatus | null,
   })
@@ -33,22 +43,19 @@ export function useInboundSlipList() {
 
   async function fetchPartnerOptions() {
     try {
-      const res = await apiClient.get('/master/partners', {
-        params: { page: 0, size: 1000, isActive: true, partnerType: 'SUPPLIER', sort: 'partnerName,asc' },
-      })
-      partnerOptions.value = res.data.content.map((p: { id: number; partnerName: string; partnerType: string }) => ({
-        id: p.id,
-        partnerName: p.partnerName,
-      }))
-      // BOTH タイプも追加
-      const resBoth = await apiClient.get('/master/partners', {
-        params: { page: 0, size: 1000, isActive: true, partnerType: 'BOTH', sort: 'partnerName,asc' },
-      })
-      const bothPartners = resBoth.data.content.map((p: { id: number; partnerName: string }) => ({
-        id: p.id,
-        partnerName: p.partnerName,
-      }))
-      partnerOptions.value = [...partnerOptions.value, ...bothPartners]
+      const [resSupplier, resBoth] = await Promise.all([
+        apiClient.get('/master/partners', {
+          params: { page: 0, size: 1000, isActive: true, partnerType: 'SUPPLIER', sort: 'partnerName,asc' },
+        }),
+        apiClient.get('/master/partners', {
+          params: { page: 0, size: 1000, isActive: true, partnerType: 'BOTH', sort: 'partnerName,asc' },
+        }),
+      ])
+      const toOption = (p: { id: number; partnerName: string }) => ({ id: p.id, partnerName: p.partnerName })
+      partnerOptions.value = [
+        ...resSupplier.data.content.map(toOption),
+        ...resBoth.data.content.map(toOption),
+      ]
     } catch {
       // エラーは無視（プルダウンが空になるだけ）
     }
@@ -111,9 +118,14 @@ export function useInboundSlipList() {
   }
 
   function handleReset() {
+    const now = new Date()
+    const from = new Date(now)
+    from.setDate(from.getDate() - 7)
+    const to = new Date(now)
+    to.setDate(to.getDate() + 30)
     searchForm.slipNumber = ''
-    searchForm.plannedDateFrom = null
-    searchForm.plannedDateTo = null
+    searchForm.plannedDateFrom = formatDate(from)
+    searchForm.plannedDateTo = formatDate(to)
     searchForm.partnerId = null
     searchForm.status = null
     page.value = 1

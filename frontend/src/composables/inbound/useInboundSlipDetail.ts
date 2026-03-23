@@ -64,6 +64,7 @@ export function useInboundSlipDetail() {
         ElMessage.error(t('inbound.slip.notFound'))
         router.push({ name: 'inbound-slip-list' })
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }
@@ -91,7 +92,10 @@ export function useInboundSlipDetail() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 409) {
         ElMessage.error(t('error.optimisticLock'))
+      } else if (error.response.status === 422) {
+        ElMessage.error(error.response.data?.message ?? t('error.server'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       actionLoading.value = false
     }
