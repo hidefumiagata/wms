@@ -59,6 +59,23 @@
 3. **レビューで矛盾を見つけた時**: SSOT側を正とし、複製側を参照リンクに置き換える
 4. **例外**: 画面設計書のイベント一覧にはAPIエンドポイントパス（`POST /api/v1/xxx`）を記載してよい（開発時の利便性のため）。ただしリクエスト/レスポンスの詳細は複製しない
 
+## アーキテクチャルール（実装時の必読事項）
+
+実装作業を開始する前に必ず **[docs/ARCHITECTURE-RULES.md](docs/ARCHITECTURE-RULES.md)** を読み込むこと。
+
+このファイルには以下のルールが `[RULE-XXX-NNN]` 形式で蒸留されている：
+- **[RULE-API-*]** API設計（OpenAPIインターフェースのimplements、ページネーション、HTTPステータス）
+- **[RULE-DTO-*]** DTO規約（手書きDTO禁止、OpenAPI生成モデル使用、Entity直接返却禁止）
+- **[RULE-ERR-*]** 例外・エラーハンドリング（GlobalExceptionHandler、カスタム例外クラス）
+- **[RULE-SVC-*]** Service層規約（@Transactional配置、モジュール間依存ルール）
+- **[RULE-LOG-*]** ロギング規約（JSON構造化ログ、traceId、PIIマスク）
+- **[RULE-TEST-*]** テスト規約（C0/C1カバレッジ100%、Mock方針）
+- **[RULE-DB-*]** DB設計ルール（削除方式、ロック、監査カラム、Flyway）
+- **[RULE-FE-*]** フロントエンド規約（Composable設計、エラーハンドリング、Pinia）
+- **[RULE-SEC-*]** セキュリティ（JWT + httpOnly Cookie、CSRF対策、RBAC）
+- **[RULE-DOC-*]** ドキュメント・SSOT管理（ID登録、SSOT遵守）
+- **[RULE-CMN-*]** 共通規約（タイムゾーン、文字コード、ブランチ命名）
+
 ## 過去の学び
 詳細は [CLAUDE-LESSONS-LEARNED.md](CLAUDE-LESSONS-LEARNED.md) を参照。新しいセッション開始時に必ず読み込むこと。
 
