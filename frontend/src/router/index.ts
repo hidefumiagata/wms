@@ -187,6 +187,48 @@ const router = createRouter({
           component: () => import('@/pages/master/UserFormPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN'] },
         },
+        // 入荷予定一覧 — INB-001: WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER
+        {
+          path: 'inbound/slips',
+          name: 'inbound-slip-list',
+          component: () => import('@/pages/inbound/InboundSlipListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
+        // 入荷予定登録 — INB-002: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inbound/slips/new',
+          name: 'inbound-slip-new',
+          component: () => import('@/pages/inbound/InboundSlipNewPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 入荷予定詳細 — INB-003: WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER
+        {
+          path: 'inbound/slips/:id',
+          name: 'inbound-slip-detail',
+          component: () => import('@/pages/inbound/InboundSlipDetailPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
+        // 入荷検品 — INB-004: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inbound/slips/:id/inspect',
+          name: 'inbound-slip-inspect',
+          component: () => import('@/pages/inbound/InboundSlipInspectPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 入庫指示・確定 — INB-005: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inbound/slips/:id/store',
+          name: 'inbound-slip-store',
+          component: () => import('@/pages/inbound/InboundSlipStorePage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 入荷実績照会 — INB-006: WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER
+        {
+          path: 'inbound/results',
+          name: 'inbound-results',
+          component: () => import('@/pages/inbound/InboundResultsPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
         // システムパラメータ管理 — SCR-12 (SYS-001): SYSTEM_ADMIN のみ
         {
           path: 'system/parameters',
