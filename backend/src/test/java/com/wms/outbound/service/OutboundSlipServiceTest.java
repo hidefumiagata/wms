@@ -1,12 +1,21 @@
 package com.wms.outbound.service;
 
+import com.wms.allocation.entity.AllocationDetail;
+import com.wms.allocation.repository.AllocationDetailRepository;
 import com.wms.generated.model.CancelOutboundRequest;
 import com.wms.generated.model.CreateOutboundLineRequest;
 import com.wms.generated.model.CreateOutboundSlipRequest;
+import com.wms.generated.model.InspectOutboundLineRequest;
+import com.wms.generated.model.InspectOutboundRequest;
 import com.wms.generated.model.OutboundLineStatus;
 import com.wms.generated.model.OutboundSlipStatus;
 import com.wms.generated.model.OutboundSlipType;
+import com.wms.generated.model.ShipOutboundRequest;
 import com.wms.generated.model.UnitType;
+import com.wms.inventory.entity.Inventory;
+import com.wms.inventory.entity.InventoryMovement;
+import com.wms.inventory.repository.InventoryMovementRepository;
+import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -16,7 +25,9 @@ import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.entity.OutboundSlipLine;
+import com.wms.outbound.entity.PickingInstructionLine;
 import com.wms.outbound.repository.OutboundSlipRepository;
+import com.wms.outbound.repository.PickingInstructionLineRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.InvalidStateTransitionException;
@@ -61,6 +72,18 @@ class OutboundSlipServiceTest {
 
     @Mock
     private OutboundSlipRepository outboundSlipRepository;
+
+    @Mock
+    private PickingInstructionLineRepository pickingInstructionLineRepository;
+
+    @Mock
+    private AllocationDetailRepository allocationDetailRepository;
+
+    @Mock
+    private InventoryRepository inventoryRepository;
+
+    @Mock
+    private InventoryMovementRepository inventoryMovementRepository;
 
     @Mock
     private WarehouseService warehouseService;
@@ -456,6 +479,445 @@ class OutboundSlipServiceTest {
                     .extracting("errorCode").isEqualTo("OUTBOUND_INVALID_STATUS");
 
             verify(outboundSlipRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("inspect")
+    class InspectTests {
+
+        private OutboundSlip createPickingCompletedSlip() {
+            OutboundSlipLine line1 = OutboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .orderedQty(10)
+                    .shippedQty(0)
+                    .lineStatus(OutboundLineStatus.PICKING_COMPLETED.getValue())
+                    .build();
+            setField(line1, "id", 11L);
+
+            OutboundSlipLine line2 = OutboundSlipLine.builder()
+                    .lineNo(2)
+                    .productId(200L)
+                    .productCode("PRD-0002")
+                    .productName("商品B")
+                    .unitType("PIECE")
+                    .orderedQty(20)
+                    .shippedQty(0)
+                    .lineStatus(OutboundLineStatus.PICKING_COMPLETED.getValue())
+                    .build();
+            setField(line2, "id", 12L);
+
+            List<OutboundSlipLine> lines = new ArrayList<>();
+            lines.add(line1);
+            lines.add(line2);
+
+            OutboundSlip slip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260322-0001")
+                    .status(OutboundSlipStatus.PICKING_COMPLETED.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+            return slip;
+        }
+
+        @Test
+        @DisplayName("正常系: PICKING_COMPLETED の伝票に検品数量を登録できる")
+        void inspect_pickingCompleted_success() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10),
+                    new InspectOutboundLineRequest(12L, 18)
+            ));
+
+            OutboundSlip result = outboundSlipService.inspect(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(OutboundSlipStatus.INSPECTING.getValue());
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(10);
+            assertThat(result.getLines().get(1).getInspectedQty()).isEqualTo(18);
+            verify(outboundSlipRepository).save(slip);
+        }
+
+        @Test
+        @DisplayName("INSPECTING ステータスでも再入力可能（上書き）")
+        void inspect_inspecting_overwrite_success() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            slip.setStatus(OutboundSlipStatus.INSPECTING.getValue());
+            slip.getLines().get(0).setInspectedQty(5); // 前回の値
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 8)
+            ));
+
+            OutboundSlip result = outboundSlipService.inspect(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(OutboundSlipStatus.INSPECTING.getValue());
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(8);
+        }
+
+        @Test
+        @DisplayName("部分的な検品数量入力が可能（未指定明細は更新しない）")
+        void inspect_partialLines_success() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10)
+            ));
+
+            OutboundSlip result = outboundSlipService.inspect(1L, request);
+
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(10);
+            assertThat(result.getLines().get(1).getInspectedQty()).isNull();
+        }
+
+        @Test
+        @DisplayName("伝票が存在しない場合ResourceNotFoundExceptionをスローする")
+        void inspect_notFound_throws() {
+            when(outboundSlipRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10)
+            ));
+
+            assertThatThrownBy(() -> outboundSlipService.inspect(999L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("ORDERED ステータスでは検品不可")
+        void inspect_orderedStatus_throws() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            slip.setStatus(OutboundSlipStatus.ORDERED.getValue());
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10)
+            ));
+
+            assertThatThrownBy(() -> outboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("SHIPPED ステータスでは検品不可")
+        void inspect_shippedStatus_throws() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            slip.setStatus(OutboundSlipStatus.SHIPPED.getValue());
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10)
+            ));
+
+            assertThatThrownBy(() -> outboundSlipService.inspect(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("重複lineIdの場合BusinessRuleViolationExceptionをスローする")
+        void inspect_duplicateLineId_throws() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(11L, 10),
+                    new InspectOutboundLineRequest(11L, 5)
+            ));
+
+            assertThatThrownBy(() -> outboundSlipService.inspect(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("当該伝票に属さないlineIdの場合BusinessRuleViolationExceptionをスローする")
+        void inspect_invalidLineId_throws() {
+            OutboundSlip slip = createPickingCompletedSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            InspectOutboundRequest request = new InspectOutboundRequest(List.of(
+                    new InspectOutboundLineRequest(999L, 10)
+            ));
+
+            assertThatThrownBy(() -> outboundSlipService.inspect(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+    }
+
+    @Nested
+    @DisplayName("ship")
+    class ShipTests {
+
+        @AfterEach
+        void clearSecurityContext() {
+            SecurityContextHolder.clearContext();
+        }
+
+        private OutboundSlip createInspectingSlip() {
+            OutboundSlipLine line1 = OutboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .orderedQty(10)
+                    .inspectedQty(10)
+                    .shippedQty(0)
+                    .lineStatus(OutboundLineStatus.PICKING_COMPLETED.getValue())
+                    .build();
+            setField(line1, "id", 11L);
+
+            OutboundSlipLine line2 = OutboundSlipLine.builder()
+                    .lineNo(2)
+                    .productId(200L)
+                    .productCode("PRD-0002")
+                    .productName("商品B")
+                    .unitType("PIECE")
+                    .orderedQty(20)
+                    .inspectedQty(18)
+                    .shippedQty(0)
+                    .lineStatus(OutboundLineStatus.PICKING_COMPLETED.getValue())
+                    .build();
+            setField(line2, "id", 12L);
+
+            List<OutboundSlipLine> lines = new ArrayList<>();
+            lines.add(line1);
+            lines.add(line2);
+
+            OutboundSlip slip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260322-0001")
+                    .status(OutboundSlipStatus.INSPECTING.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+            return slip;
+        }
+
+        private AllocationDetail createAllocationDetail(Long id, Long slipLineId,
+                Long inventoryId, Long locationId, Long productId,
+                String unitType, String lotNumber, int allocatedQty) {
+            AllocationDetail detail = AllocationDetail.builder()
+                    .outboundSlipId(1L)
+                    .outboundSlipLineId(slipLineId)
+                    .inventoryId(inventoryId)
+                    .locationId(locationId)
+                    .productId(productId)
+                    .unitType(unitType)
+                    .lotNumber(lotNumber)
+                    .allocatedQty(allocatedQty)
+                    .warehouseId(1L)
+                    .build();
+            setField(detail, "id", id);
+            return detail;
+        }
+
+        private Inventory createInventory(Long id, Long locationId, Long productId,
+                int quantity, int allocatedQty) {
+            Inventory inv = Inventory.builder()
+                    .warehouseId(1L)
+                    .locationId(locationId)
+                    .productId(productId)
+                    .unitType("CASE")
+                    .quantity(quantity)
+                    .allocatedQty(allocatedQty)
+                    .build();
+            setField(inv, "id", id);
+            return inv;
+        }
+
+        private PickingInstructionLine createPickingLine(Long locationId, Long productId,
+                String locationCode) {
+            return PickingInstructionLine.builder()
+                    .outboundSlipLineId(11L)
+                    .locationId(locationId)
+                    .locationCode(locationCode)
+                    .productId(productId)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .qtyToPick(10)
+                    .qtyPicked(10)
+                    .lineNo(1)
+                    .lineStatus("COMPLETED")
+                    .build();
+        }
+
+        @Test
+        @DisplayName("正常系: INSPECTING の伝票を出荷完了できる")
+        void ship_success() {
+            setUpSecurityContext(10L);
+            OutboundSlip slip = createInspectingSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            // allocation_details
+            List<AllocationDetail> allocations = List.of(
+                    createAllocationDetail(1L, 11L, 501L, 301L, 100L, "CASE", "LOT-001", 10),
+                    createAllocationDetail(2L, 12L, 502L, 302L, 200L, "PIECE", "LOT-002", 18)
+            );
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(allocations);
+
+            // picking lines
+            PickingInstructionLine pickLine = createPickingLine(301L, 100L, "A-01-01");
+            PickingInstructionLine pickLine2 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(12L)
+                    .locationId(302L)
+                    .locationCode("A-02-01")
+                    .productId(200L)
+                    .productCode("PRD-0002")
+                    .productName("商品B")
+                    .unitType("PIECE")
+                    .qtyToPick(18)
+                    .qtyPicked(18)
+                    .lineNo(2)
+                    .lineStatus("COMPLETED")
+                    .build();
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(11L, 12L)))
+                    .thenReturn(List.of(pickLine, pickLine2));
+
+            // inventories
+            Inventory inv1 = createInventory(501L, 301L, 100L, 50, 10);
+            Inventory inv2 = createInventory(502L, 302L, 200L, 30, 18);
+            when(inventoryRepository.findByIdForUpdate(501L)).thenReturn(Optional.of(inv1));
+            when(inventoryRepository.findByIdForUpdate(502L)).thenReturn(Optional.of(inv2));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22))
+                    .carrier("ヤマト運輸")
+                    .trackingNumber("123456789012")
+                    .note("配送メモ");
+
+            OutboundSlip result = outboundSlipService.ship(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(OutboundSlipStatus.SHIPPED.getValue());
+            assertThat(result.getCarrier()).isEqualTo("ヤマト運輸");
+            assertThat(result.getTrackingNumber()).isEqualTo("123456789012");
+            assertThat(result.getNote()).isEqualTo("配送メモ");
+            assertThat(result.getShippedAt()).isNotNull();
+            assertThat(result.getShippedBy()).isEqualTo(10L);
+            assertThat(result.getLines()).allSatisfy(line -> {
+                assertThat(line.getLineStatus()).isEqualTo(OutboundLineStatus.SHIPPED.getValue());
+            });
+            assertThat(result.getLines().get(0).getShippedQty()).isEqualTo(10);
+            assertThat(result.getLines().get(1).getShippedQty()).isEqualTo(18);
+
+            // 在庫が減算されていることを検証
+            assertThat(inv1.getQuantity()).isEqualTo(40);
+            assertThat(inv1.getAllocatedQty()).isEqualTo(0);
+            assertThat(inv2.getQuantity()).isEqualTo(12);
+            assertThat(inv2.getAllocatedQty()).isEqualTo(0);
+
+            verify(inventoryMovementRepository, org.mockito.Mockito.times(2)).save(any(InventoryMovement.class));
+        }
+
+        @Test
+        @DisplayName("伝票が存在しない場合ResourceNotFoundExceptionをスローする")
+        void ship_notFound_throws() {
+            setUpSecurityContext(10L);
+            when(outboundSlipRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22));
+
+            assertThatThrownBy(() -> outboundSlipService.ship(999L, request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("ORDERED ステータスでは出荷完了不可")
+        void ship_orderedStatus_throws() {
+            setUpSecurityContext(10L);
+            OutboundSlip slip = createInspectingSlip();
+            slip.setStatus(OutboundSlipStatus.ORDERED.getValue());
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22));
+
+            assertThatThrownBy(() -> outboundSlipService.ship(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("PICKING_COMPLETED ステータスでは出荷完了不可")
+        void ship_pickingCompletedStatus_throws() {
+            setUpSecurityContext(10L);
+            OutboundSlip slip = createInspectingSlip();
+            slip.setStatus(OutboundSlipStatus.PICKING_COMPLETED.getValue());
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22));
+
+            assertThatThrownBy(() -> outboundSlipService.ship(1L, request))
+                    .isInstanceOf(InvalidStateTransitionException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("在庫不足の場合BusinessRuleViolationExceptionをスローする")
+        void ship_insufficientInventory_throws() {
+            setUpSecurityContext(10L);
+            OutboundSlip slip = createInspectingSlip();
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            List<AllocationDetail> allocations = List.of(
+                    createAllocationDetail(1L, 11L, 501L, 301L, 100L, "CASE", "LOT-001", 10)
+            );
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(allocations);
+
+            PickingInstructionLine pickLine = createPickingLine(301L, 100L, "A-01-01");
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(11L, 12L)))
+                    .thenReturn(List.of(pickLine));
+
+            // 在庫不足: quantity=5 < required=10
+            Inventory inv = createInventory(501L, 301L, 100L, 5, 10);
+            when(inventoryRepository.findByIdForUpdate(501L)).thenReturn(Optional.of(inv));
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22));
+
+            assertThatThrownBy(() -> outboundSlipService.ship(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_INSUFFICIENT");
+        }
+
+        @Test
+        @DisplayName("carrier/trackingNumber/noteがnullでも出荷完了できる")
+        void ship_optionalFieldsNull_success() {
+            setUpSecurityContext(10L);
+            OutboundSlip slip = createInspectingSlip();
+            slip.setNote("元の備考");
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of());
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(11L, 12L)))
+                    .thenReturn(List.of());
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            ShipOutboundRequest request = new ShipOutboundRequest(LocalDate.of(2026, 3, 22));
+
+            OutboundSlip result = outboundSlipService.ship(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(OutboundSlipStatus.SHIPPED.getValue());
+            assertThat(result.getCarrier()).isNull();
+            assertThat(result.getTrackingNumber()).isNull();
+            assertThat(result.getNote()).isEqualTo("元の備考"); // noteがnullなら元の値を保持
         }
     }
 }

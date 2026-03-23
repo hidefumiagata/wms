@@ -1,6 +1,12 @@
 package com.wms.outbound.service;
 
+import com.wms.allocation.entity.AllocationDetail;
+import com.wms.allocation.repository.AllocationDetailRepository;
 import com.wms.generated.model.*;
+import com.wms.inventory.entity.Inventory;
+import com.wms.inventory.entity.InventoryMovement;
+import com.wms.inventory.repository.InventoryMovementRepository;
+import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -10,7 +16,9 @@ import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.entity.OutboundSlipLine;
+import com.wms.outbound.entity.PickingInstructionLine;
 import com.wms.outbound.repository.OutboundSlipRepository;
+import com.wms.outbound.repository.PickingInstructionLineRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.InvalidStateTransitionException;
@@ -29,9 +37,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 
@@ -48,6 +55,10 @@ public class OutboundSlipService {
     );
 
     private final OutboundSlipRepository outboundSlipRepository;
+    private final PickingInstructionLineRepository pickingInstructionLineRepository;
+    private final AllocationDetailRepository allocationDetailRepository;
+    private final InventoryRepository inventoryRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
     private final WarehouseService warehouseService;
     private final PartnerService partnerService;
     private final ProductService productService;
@@ -234,6 +245,180 @@ public class OutboundSlipService {
 
         OutboundSlip saved = outboundSlipRepository.save(slip);
         log.info("OutboundSlip cancelled: id={}, slipNumber={}", id, saved.getSlipNumber());
+        return saved;
+    }
+
+    @Transactional
+    public OutboundSlip inspect(Long id, InspectOutboundRequest request) {
+        OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "OUTBOUND_SLIP_NOT_FOUND",
+                        "出荷伝票が見つかりません (id=" + id + ")"));
+
+        // ステータスチェック: PICKING_COMPLETED または INSPECTING のみ検品可
+        if (!OutboundSlipStatus.PICKING_COMPLETED.getValue().equals(slip.getStatus())
+                && !OutboundSlipStatus.INSPECTING.getValue().equals(slip.getStatus())) {
+            throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
+                    "検品登録可能なステータスではありません (status=" + slip.getStatus() + ")");
+        }
+
+        // 明細IDのマップを構築
+        Map<Long, OutboundSlipLine> lineMap = slip.getLines().stream()
+                .collect(Collectors.toMap(OutboundSlipLine::getId, l -> l));
+
+        // 重複lineIdチェック
+        Set<Long> requestLineIds = new HashSet<>();
+        for (InspectOutboundLineRequest lineReq : request.getLines()) {
+            if (!requestLineIds.add(lineReq.getLineId())) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "同一明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+            }
+        }
+
+        // 各明細に対して inspectedQty をセット
+        for (InspectOutboundLineRequest lineReq : request.getLines()) {
+            OutboundSlipLine line = lineMap.get(lineReq.getLineId());
+            if (line == null) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "指定された明細IDは当該伝票に属していません (lineId=" + lineReq.getLineId() + ")");
+            }
+            line.setInspectedQty(lineReq.getInspectedQty());
+        }
+
+        // 伝票ステータスを INSPECTING に更新
+        slip.setStatus(OutboundSlipStatus.INSPECTING.getValue());
+
+        OutboundSlip saved = outboundSlipRepository.save(slip);
+        log.info("OutboundSlip inspected: id={}, slipNumber={}, lineCount={}",
+                id, saved.getSlipNumber(), request.getLines().size());
+        return saved;
+    }
+
+    @Transactional
+    public OutboundSlip ship(Long id, ShipOutboundRequest request) {
+        OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "OUTBOUND_SLIP_NOT_FOUND",
+                        "出荷伝票が見つかりません (id=" + id + ")"));
+
+        // ステータスチェック: INSPECTING のみ出荷完了可
+        if (!OutboundSlipStatus.INSPECTING.getValue().equals(slip.getStatus())) {
+            throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
+                    "出荷完了可能なステータスではありません (status=" + slip.getStatus() + ")");
+        }
+
+        Long currentUserId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        // 在庫減算: allocation_details を参照して引当元在庫から減算
+        // 明細IDリストを収集
+        List<Long> slipLineIds = slip.getLines().stream()
+                .map(OutboundSlipLine::getId)
+                .toList();
+
+        // ピッキング指示明細を取得（引当情報を含む）
+        List<PickingInstructionLine> pickingLines =
+                pickingInstructionLineRepository.findByOutboundSlipLineIdIn(slipLineIds);
+
+        // 在庫減算のための集約: inventoryをロケーション+商品+ロット+期限で特定
+        // デッドロック防止のため inventory_id 昇順で処理
+        // allocation_details からロケーション・ロット情報を取得
+        List<AllocationDetail> allocationDetails = allocationDetailRepository.findByOutboundSlipId(slip.getId());
+
+        // inventory_id でグループ化して減算量を集約
+        Map<Long, Integer> deductionByInventoryId = new TreeMap<>(); // TreeMap for sorted order
+        Map<Long, AllocationDetail> detailByInventoryId = new HashMap<>();
+        for (AllocationDetail detail : allocationDetails) {
+            deductionByInventoryId.merge(detail.getInventoryId(), detail.getAllocatedQty(), Integer::sum);
+            detailByInventoryId.putIfAbsent(detail.getInventoryId(), detail);
+        }
+
+        // inventory_id 昇順でロックして在庫減算
+        for (Map.Entry<Long, Integer> entry : deductionByInventoryId.entrySet()) {
+            Long inventoryId = entry.getKey();
+            int deductQty = entry.getValue();
+
+            Inventory inventory = inventoryRepository.findByIdForUpdate(inventoryId)
+                    .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                            "在庫が見つかりません (inventoryId=" + inventoryId + ")"));
+
+            if (inventory.getQuantity() < deductQty) {
+                throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
+                        "在庫が不足しています (inventoryId=" + inventoryId
+                                + ", quantity=" + inventory.getQuantity()
+                                + ", required=" + deductQty + ")");
+            }
+
+            int newQty = inventory.getQuantity() - deductQty;
+            int newAllocatedQty = inventory.getAllocatedQty() - deductQty;
+            inventory.setQuantity(newQty);
+            inventory.setAllocatedQty(Math.max(0, newAllocatedQty));
+            inventoryRepository.save(inventory);
+
+            // inventory_movements に OUTBOUND 記録
+            AllocationDetail detail = detailByInventoryId.get(inventoryId);
+            // ピッキング指示明細からロケーション情報を取得
+            String locationCode = pickingLines.stream()
+                    .filter(pl -> pl.getLocationId().equals(detail.getLocationId())
+                            && pl.getProductId().equals(detail.getProductId()))
+                    .map(PickingInstructionLine::getLocationCode)
+                    .findFirst()
+                    .orElse("");
+
+            // 商品名を取得
+            String productCode = slip.getLines().stream()
+                    .filter(l -> l.getProductId().equals(detail.getProductId()))
+                    .map(OutboundSlipLine::getProductCode)
+                    .findFirst()
+                    .orElse("");
+            String productName = slip.getLines().stream()
+                    .filter(l -> l.getProductId().equals(detail.getProductId()))
+                    .map(OutboundSlipLine::getProductName)
+                    .findFirst()
+                    .orElse("");
+
+            InventoryMovement movement = InventoryMovement.builder()
+                    .warehouseId(slip.getWarehouseId())
+                    .locationId(detail.getLocationId())
+                    .locationCode(locationCode)
+                    .productId(detail.getProductId())
+                    .productCode(productCode)
+                    .productName(productName)
+                    .unitType(detail.getUnitType())
+                    .lotNumber(detail.getLotNumber())
+                    .expiryDate(detail.getExpiryDate())
+                    .movementType("OUTBOUND")
+                    .quantity(-deductQty)
+                    .quantityAfter(newQty)
+                    .referenceId(slip.getId())
+                    .referenceType("OUTBOUND_SLIP")
+                    .executedAt(now)
+                    .executedBy(currentUserId)
+                    .build();
+            inventoryMovementRepository.save(movement);
+
+            log.info("Inventory deducted for outbound: inventoryId={}, qty=-{}, after={}",
+                    inventoryId, deductQty, newQty);
+        }
+
+        // 各明細の shippedQty = inspectedQty、lineStatus = SHIPPED
+        for (OutboundSlipLine line : slip.getLines()) {
+            line.setShippedQty(line.getInspectedQty() != null ? line.getInspectedQty() : 0);
+            line.setLineStatus(OutboundLineStatus.SHIPPED.getValue());
+        }
+
+        // 伝票ヘッダー更新
+        slip.setStatus(OutboundSlipStatus.SHIPPED.getValue());
+        slip.setCarrier(request.getCarrier());
+        slip.setTrackingNumber(request.getTrackingNumber());
+        if (request.getNote() != null) {
+            slip.setNote(request.getNote());
+        }
+        slip.setShippedAt(now);
+        slip.setShippedBy(currentUserId);
+
+        OutboundSlip saved = outboundSlipRepository.save(slip);
+        log.info("OutboundSlip shipped: id={}, slipNumber={}", id, saved.getSlipNumber());
         return saved;
     }
 

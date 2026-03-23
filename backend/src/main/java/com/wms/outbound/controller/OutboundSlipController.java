@@ -157,18 +157,24 @@ public class OutboundSlipController implements OutboundApi {
         return ResponseEntity.ok(toPickingDetail(withLines));
     }
 
-    // --- Stub implementations for inspect/ship (to be implemented in subsequent PRs) ---
+    // ==================== Inspect / Ship APIs ====================
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<OutboundSlipDetail> inspectOutboundSlip(
             Long id, InspectOutboundRequest inspectOutboundRequest) {
-        throw new UnsupportedOperationException("出荷検品は後続PRで実装予定");
+        OutboundSlip inspected = outboundSlipService.inspect(id, inspectOutboundRequest);
+        OutboundSlip withLines = outboundSlipService.findByIdWithLines(inspected.getId());
+        return ResponseEntity.ok(toDetail(withLines));
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<OutboundSlipDetail> shipOutboundSlip(
             Long id, ShipOutboundRequest shipOutboundRequest) {
-        throw new UnsupportedOperationException("出荷完了は後続PRで実装予定");
+        OutboundSlip shipped = outboundSlipService.ship(id, shipOutboundRequest);
+        OutboundSlip withLines = outboundSlipService.findByIdWithLines(shipped.getId());
+        return ResponseEntity.ok(toDetail(withLines));
     }
 
     // ==================== Outbound Slip Converters ====================

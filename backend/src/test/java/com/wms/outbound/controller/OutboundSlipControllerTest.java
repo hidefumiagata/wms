@@ -2,6 +2,9 @@ package com.wms.outbound.controller;
 
 import com.wms.generated.model.CancelOutboundRequest;
 import com.wms.generated.model.CreateOutboundSlipRequest;
+import com.wms.generated.model.InspectOutboundRequest;
+import com.wms.generated.model.ShipOutboundRequest;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.master.service.AreaService;
 import com.wms.master.service.WarehouseService;
 import com.wms.outbound.entity.OutboundSlip;
@@ -342,6 +345,187 @@ class OutboundSlipControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"reason\": \"テスト\"}"))
                     .andExpect(status().isConflict());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/outbound/slips/{id}/inspect")
+    class InspectTests {
+
+        private static final String INSPECT_REQUEST_JSON = """
+                {
+                    "lines": [
+                        { "lineId": 11, "inspectedQty": 10 },
+                        { "lineId": 12, "inspectedQty": 18 }
+                    ]
+                }
+                """;
+
+        @Test
+        @DisplayName("正常に200を返す")
+        void inspect_returns200() throws Exception {
+            OutboundSlip inspected = createSlip(1L, "OUT-20260320-0001", "INSPECTING");
+            OutboundSlipLine line = createLine(11L, inspected, 1, "PRD-0001", 10);
+            setField(line, "inspectedQty", 10);
+            inspected.getLines().add(line);
+
+            when(outboundSlipService.inspect(eq(1L), any(InspectOutboundRequest.class))).thenReturn(inspected);
+            when(outboundSlipService.findByIdWithLines(1L)).thenReturn(inspected);
+
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(INSPECT_REQUEST_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.slipNumber").value("OUT-20260320-0001"))
+                    .andExpect(jsonPath("$.status").value("INSPECTING"))
+                    .andExpect(jsonPath("$.lines", hasSize(1)))
+                    .andExpect(jsonPath("$.lines[0].inspectedQty").value(10));
+
+            verify(outboundSlipService).inspect(eq(1L), any(InspectOutboundRequest.class));
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void inspect_notFound_returns404() throws Exception {
+            when(outboundSlipService.inspect(eq(999L), any(InspectOutboundRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(INSPECT_REQUEST_JSON))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("ステータスエラーで409を返す")
+        void inspect_invalidStatus_returns409() throws Exception {
+            when(outboundSlipService.inspect(eq(1L), any(InspectOutboundRequest.class)))
+                    .thenThrow(new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
+                            "検品登録可能なステータスではありません"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(INSPECT_REQUEST_JSON))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("明細が空の場合400を返す")
+        void inspect_emptyLines_returns400() throws Exception {
+            String json = """
+                    {
+                        "lines": []
+                    }
+                    """;
+
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/outbound/slips/{id}/ship")
+    class ShipTests {
+
+        private static final String SHIP_REQUEST_JSON = """
+                {
+                    "carrier": "ヤマト運輸",
+                    "trackingNumber": "123456789012",
+                    "shippedDate": "2026-03-22",
+                    "note": "配送メモ"
+                }
+                """;
+
+        @Test
+        @DisplayName("正常に200を返す")
+        void ship_returns200() throws Exception {
+            OutboundSlip shipped = createSlip(1L, "OUT-20260320-0001", "SHIPPED");
+            setField(shipped, "carrier", "ヤマト運輸");
+            setField(shipped, "trackingNumber", "123456789012");
+            setField(shipped, "shippedAt", OffsetDateTime.now());
+            setField(shipped, "shippedBy", 10L);
+            OutboundSlipLine line = createLine(11L, shipped, 1, "PRD-0001", 10);
+            setField(line, "shippedQty", 10);
+            setField(line, "lineStatus", "SHIPPED");
+            shipped.getLines().add(line);
+
+            when(outboundSlipService.ship(eq(1L), any(ShipOutboundRequest.class))).thenReturn(shipped);
+            when(outboundSlipService.findByIdWithLines(1L)).thenReturn(shipped);
+
+            mockMvc.perform(post(SLIPS_URL + "/1/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(SHIP_REQUEST_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1))
+                    .andExpect(jsonPath("$.slipNumber").value("OUT-20260320-0001"))
+                    .andExpect(jsonPath("$.status").value("SHIPPED"))
+                    .andExpect(jsonPath("$.carrier").value("ヤマト運輸"))
+                    .andExpect(jsonPath("$.trackingNumber").value("123456789012"))
+                    .andExpect(jsonPath("$.shippedAt").exists())
+                    .andExpect(jsonPath("$.shippedBy").value(10))
+                    .andExpect(jsonPath("$.lines", hasSize(1)))
+                    .andExpect(jsonPath("$.lines[0].shippedQty").value(10))
+                    .andExpect(jsonPath("$.lines[0].lineStatus").value("SHIPPED"));
+
+            verify(outboundSlipService).ship(eq(1L), any(ShipOutboundRequest.class));
+        }
+
+        @Test
+        @DisplayName("存在しないIDで404を返す")
+        void ship_notFound_returns404() throws Exception {
+            when(outboundSlipService.ship(eq(999L), any(ShipOutboundRequest.class)))
+                    .thenThrow(new ResourceNotFoundException("OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません (id=999)"));
+
+            mockMvc.perform(post(SLIPS_URL + "/999/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(SHIP_REQUEST_JSON))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("ステータスエラーで409を返す")
+        void ship_invalidStatus_returns409() throws Exception {
+            when(outboundSlipService.ship(eq(1L), any(ShipOutboundRequest.class)))
+                    .thenThrow(new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
+                            "出荷完了可能なステータスではありません"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(SHIP_REQUEST_JSON))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("在庫不足で422を返す")
+        void ship_insufficientInventory_returns422() throws Exception {
+            when(outboundSlipService.ship(eq(1L), any(ShipOutboundRequest.class)))
+                    .thenThrow(new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
+                            "在庫が不足しています"));
+
+            mockMvc.perform(post(SLIPS_URL + "/1/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(SHIP_REQUEST_JSON))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("shippedDateが必須")
+        void ship_missingShippedDate_returns400() throws Exception {
+            String json = """
+                    {
+                        "carrier": "ヤマト運輸"
+                    }
+                    """;
+
+            mockMvc.perform(post(SLIPS_URL + "/1/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isBadRequest());
         }
     }
 

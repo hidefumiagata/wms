@@ -60,9 +60,11 @@ public class OutboundSlip {
     @Column(name = "planned_date", nullable = false)
     private LocalDate plannedDate;
 
+    @Setter
     @Column(name = "carrier", length = 100)
     private String carrier;
 
+    @Setter
     @Column(name = "tracking_number", length = 100)
     private String trackingNumber;
 
@@ -70,6 +72,7 @@ public class OutboundSlip {
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
+    @Setter
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
