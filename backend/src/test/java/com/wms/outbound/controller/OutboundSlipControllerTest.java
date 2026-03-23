@@ -122,6 +122,57 @@ class OutboundSlipControllerTest {
         }
 
         @Test
+        @DisplayName("ステータスフィルタ指定で一覧を返す")
+        void list_withStatusFilter_returns200() throws Exception {
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED");
+
+            when(outboundSlipService.search(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(slip)));
+            when(outboundSlipService.countLinesBySlipId(1L)).thenReturn(2L);
+
+            mockMvc.perform(get(SLIPS_URL)
+                            .param("warehouseId", "1")
+                            .param("status", "ORDERED", "ALLOCATED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(1)));
+        }
+
+        @Test
+        @DisplayName("ソート指定descで一覧を返す")
+        void list_withSortDesc_returns200() throws Exception {
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED");
+
+            when(outboundSlipService.search(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(slip)));
+            when(outboundSlipService.countLinesBySlipId(1L)).thenReturn(1L);
+
+            mockMvc.perform(get(SLIPS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "slipNumber,desc"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(1)));
+        }
+
+        @Test
+        @DisplayName("無効なソートプロパティの場合デフォルトにフォールバックする")
+        void list_withInvalidSortProperty_fallsBackToDefault() throws Exception {
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED");
+
+            when(outboundSlipService.search(
+                    eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(slip)));
+            when(outboundSlipService.countLinesBySlipId(1L)).thenReturn(1L);
+
+            mockMvc.perform(get(SLIPS_URL)
+                            .param("warehouseId", "1")
+                            .param("sort", "invalidProperty"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(1)));
+        }
+
+        @Test
         @DisplayName("倉庫が存在しない場合404を返す")
         void list_warehouseNotFound_returns404() throws Exception {
             when(outboundSlipService.search(
