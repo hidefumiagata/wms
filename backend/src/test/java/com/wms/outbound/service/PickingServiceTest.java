@@ -243,6 +243,23 @@ class PickingServiceTest {
         }
 
         @Test
+        @DisplayName("指示番号・日付範囲指定で検索する")
+        void search_withFilters() {
+            Warehouse wh = new Warehouse();
+            setField(wh, "id", 1L);
+            when(warehouseService.findById(1L)).thenReturn(wh);
+
+            when(pickingInstructionRepository.search(eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(Page.empty());
+
+            pickingService.search(1L, "PIC-2026%",
+                    List.of("CREATED"), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31),
+                    PageRequest.of(0, 20));
+
+            verify(pickingInstructionRepository).search(eq(1L), any(), any(), any(), any(), any(Pageable.class));
+        }
+
+        @Test
         @DisplayName("倉庫が存在しない場合404")
         void search_warehouseNotFound() {
             when(warehouseService.findById(999L))
@@ -277,6 +294,20 @@ class PickingServiceTest {
             assertThatThrownBy(() -> pickingService.findByIdWithLines(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("ピッキング指示が見つかりません");
+        }
+    }
+
+    // ==================== countLinesByInstructionId ====================
+
+    @Nested
+    @DisplayName("countLinesByInstructionId")
+    class CountLinesTests {
+
+        @Test
+        @DisplayName("明細件数を返す")
+        void countLines_success() {
+            when(pickingInstructionRepository.countLinesByInstructionId(1L)).thenReturn(5L);
+            assertThat(pickingService.countLinesByInstructionId(1L)).isEqualTo(5L);
         }
     }
 
@@ -396,6 +427,194 @@ class PickingServiceTest {
         }
 
         @Test
+        @DisplayName("複数伝票を指定した場合に正常に作成できる")
+        void create_multipleSlips_success() {
+            setUpSecurityContext();
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            OutboundSlip slip1 = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine1 = createOutboundSlipLine(10L, slip1, 1);
+            slip1.getLines().add(slipLine1);
+            OutboundSlip slip2 = createOutboundSlip(2L, "OUT-20260320-0002", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine2 = createOutboundSlipLine(20L, slip2, 1);
+            slip2.getLines().add(slipLine2);
+            when(outboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip1));
+            when(outboundSlipRepository.findByIdWithLines(2L)).thenReturn(Optional.of(slip2));
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(eq(1L), eq("INSTRUCTED"))).thenReturn(List.of());
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(eq(2L), eq("INSTRUCTED"))).thenReturn(List.of());
+
+            AllocationDetail alloc1 = createAllocation(1L, 1L, 10L, 20L, 101L);
+            AllocationDetail alloc2 = createAllocation(2L, 2L, 20L, 30L, 102L);
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(alloc1));
+            when(allocationDetailRepository.findByOutboundSlipId(2L)).thenReturn(List.of(alloc2));
+
+            Location loc1 = createLocation(20L, 5L, "A-01-01");
+            Location loc2 = createLocation(30L, 5L, "A-02-01");
+            when(locationRepository.findById(20L)).thenReturn(Optional.of(loc1));
+            when(locationRepository.findById(30L)).thenReturn(Optional.of(loc2));
+            when(pickingInstructionRepository.findMaxSequenceByDate("20260320")).thenReturn(0);
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> {
+                        PickingInstruction saved = inv.getArgument(0);
+                        setField(saved, "id", 50L);
+                        setField(saved, "createdAt", OffsetDateTime.now());
+                        setField(saved, "createdBy", 10L);
+                        return saved;
+                    });
+
+            CreatePickingInstructionRequest request = new CreatePickingInstructionRequest(List.of(1L, 2L));
+
+            PickingInstruction result = pickingService.createPickingInstruction(request);
+
+            assertThat(result.getLines()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("areaId指定時にエリア外のロケーションがフィルタされる")
+        void create_areaFilter_skipsNonMatchingLocations() {
+            setUpSecurityContext();
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine = createOutboundSlipLine(10L, slip, 1);
+            slip.getLines().add(slipLine);
+            when(outboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(1L, "INSTRUCTED"))
+                    .thenReturn(List.of());
+
+            AllocationDetail alloc1 = createAllocation(1L, 1L, 10L, 20L, 101L);
+            AllocationDetail alloc2 = createAllocation(2L, 1L, 10L, 30L, 101L);
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(alloc1, alloc2));
+
+            // alloc1のロケーション: areaId=5 → マッチ
+            Location loc1 = createLocation(20L, 5L, "A-01-01");
+            // alloc2のロケーション: areaId=6 → フィルタされる
+            Location loc2 = createLocation(30L, 6L, "B-01-01");
+            when(locationRepository.findById(20L)).thenReturn(Optional.of(loc1));
+            when(locationRepository.findById(30L)).thenReturn(Optional.of(loc2));
+
+            when(areaService.findById(5L)).thenReturn(new Area());
+            when(pickingInstructionRepository.findMaxSequenceByDate("20260320")).thenReturn(0);
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> {
+                        PickingInstruction saved = inv.getArgument(0);
+                        setField(saved, "id", 50L);
+                        setField(saved, "createdAt", OffsetDateTime.now());
+                        setField(saved, "createdBy", 10L);
+                        return saved;
+                    });
+
+            CreatePickingInstructionRequest request = new CreatePickingInstructionRequest(List.of(1L));
+            request.setAreaId(5L);
+
+            PickingInstruction result = pickingService.createPickingInstruction(request);
+
+            assertThat(result.getLines()).hasSize(1);
+            assertThat(result.getLines().get(0).getLocationCode()).isEqualTo("A-01-01");
+        }
+
+        @Test
+        @DisplayName("areaId指定時にロケーションが見つからない引当明細はスキップされる")
+        void create_areaFilter_skipsNullLocation() {
+            setUpSecurityContext();
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine = createOutboundSlipLine(10L, slip, 1);
+            slip.getLines().add(slipLine);
+            when(outboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(1L, "INSTRUCTED"))
+                    .thenReturn(List.of());
+
+            AllocationDetail alloc1 = createAllocation(1L, 1L, 10L, 20L, 101L);
+            AllocationDetail alloc2 = createAllocation(2L, 1L, 10L, 99L, 101L);
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(alloc1, alloc2));
+
+            Location loc1 = createLocation(20L, 5L, "A-01-01");
+            when(locationRepository.findById(20L)).thenReturn(Optional.of(loc1));
+            // alloc2のロケーションが見つからない
+            when(locationRepository.findById(99L)).thenReturn(Optional.empty());
+
+            when(areaService.findById(5L)).thenReturn(new Area());
+            when(pickingInstructionRepository.findMaxSequenceByDate("20260320")).thenReturn(0);
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> {
+                        PickingInstruction saved = inv.getArgument(0);
+                        setField(saved, "id", 50L);
+                        setField(saved, "createdAt", OffsetDateTime.now());
+                        setField(saved, "createdBy", 10L);
+                        return saved;
+                    });
+
+            CreatePickingInstructionRequest request = new CreatePickingInstructionRequest(List.of(1L));
+            request.setAreaId(5L);
+
+            PickingInstruction result = pickingService.createPickingInstruction(request);
+
+            assertThat(result.getLines()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("出荷明細に対応するslipLineが見つからない場合も明細作成される")
+        void create_slipLineNotFound_usesEmptyNames() {
+            setUpSecurityContext();
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            // slipLineは存在しない（空のlines）
+            when(outboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(1L, "INSTRUCTED"))
+                    .thenReturn(List.of());
+
+            // 引当明細のslipLineIdが伝票のlinesに存在しない
+            AllocationDetail alloc = createAllocation(1L, 1L, 999L, 20L, 101L);
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(alloc));
+
+            Location loc = createLocation(20L, 5L, "A-01-01");
+            when(locationRepository.findById(20L)).thenReturn(Optional.of(loc));
+            when(pickingInstructionRepository.findMaxSequenceByDate("20260320")).thenReturn(0);
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> {
+                        PickingInstruction saved = inv.getArgument(0);
+                        setField(saved, "id", 50L);
+                        setField(saved, "createdAt", OffsetDateTime.now());
+                        setField(saved, "createdBy", 10L);
+                        return saved;
+                    });
+
+            CreatePickingInstructionRequest request = new CreatePickingInstructionRequest(List.of(1L));
+
+            PickingInstruction result = pickingService.createPickingInstruction(request);
+
+            assertThat(result.getLines()).hasSize(1);
+            assertThat(result.getLines().get(0).getProductName()).isEmpty();
+            assertThat(result.getLines().get(0).getProductCode()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("ロケーションが見つからない場合ResourceNotFoundException")
+        void create_locationNotFound_throws() {
+            setUpSecurityContext();
+
+            OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine = createOutboundSlipLine(10L, slip, 1);
+            slip.getLines().add(slipLine);
+            when(outboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(unpackInstructionRepository.findByOutboundSlipIdAndStatus(1L, "INSTRUCTED"))
+                    .thenReturn(List.of());
+
+            AllocationDetail alloc = createAllocation(1L, 1L, 10L, 99L, 101L);
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(alloc));
+            when(locationRepository.findById(99L)).thenReturn(Optional.empty());
+
+            CreatePickingInstructionRequest request = new CreatePickingInstructionRequest(List.of(1L));
+
+            assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ロケーションが見つかりません");
+        }
+
+        @Test
         @DisplayName("引当明細が存在しない場合エラー")
         void create_noAllocations() {
             OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
@@ -487,6 +706,94 @@ class PickingServiceTest {
             assertThat(result.getStatus()).isEqualTo(PickingInstructionStatus.IN_PROGRESS.getValue());
             assertThat(result.getCompletedAt()).isNull();
             verify(outboundSlipRepository, never()).findBySlipLineId(any());
+        }
+
+        @Test
+        @DisplayName("全明細完了時に出荷伝票の一部明細のみPICKING_COMPLETEDになる")
+        void complete_partialSlipLines_updated() {
+            setUpSecurityContext();
+
+            PickingInstruction pi = createPickingInstruction(50L, "PIC-20260320-001",
+                    PickingInstructionStatus.CREATED.getValue());
+            PickingInstructionLine line1 = createPickingLine(101L, pi, 1, 10L, 5);
+            pi.getLines().add(line1);
+
+            when(pickingInstructionRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(pi));
+
+            OutboundSlip slip = createOutboundSlip(1L, "OUT-20260320-0001", OutboundSlipStatus.ALLOCATED.getValue());
+            OutboundSlipLine slipLine1 = createOutboundSlipLine(10L, slip, 1);
+            OutboundSlipLine slipLine2 = createOutboundSlipLine(11L, slip, 2); // ピッキング指示に含まれない
+            slip.getLines().add(slipLine1);
+            slip.getLines().add(slipLine2);
+            when(outboundSlipRepository.findBySlipLineId(10L)).thenReturn(Optional.of(slip));
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+            when(outboundSlipRepository.save(any(OutboundSlip.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            CompletePickingRequest request = new CompletePickingRequest(List.of(
+                    new CompletePickingLineRequest(101L, 5)));
+
+            pickingService.completePickingInstruction(50L, request);
+
+            // slipLine1のみPICKING_COMPLETEDに更新
+            assertThat(slipLine1.getLineStatus()).isEqualTo(OutboundLineStatus.PICKING_COMPLETED.getValue());
+            // slipLine2はALLOCATEDのまま
+            assertThat(slipLine2.getLineStatus()).isEqualTo(OutboundLineStatus.ALLOCATED.getValue());
+        }
+
+        @Test
+        @DisplayName("IN_PROGRESSステータスから一部明細完了してもIN_PROGRESSのまま")
+        void complete_partialFromInProgress() {
+            setUpSecurityContext();
+
+            PickingInstruction pi = createPickingInstruction(50L, "PIC-20260320-001",
+                    PickingInstructionStatus.IN_PROGRESS.getValue());
+            PickingInstructionLine line1 = createPickingLine(101L, pi, 1, 10L, 5);
+            line1.setLineStatus(PickingLineStatus.COMPLETED.getValue());
+            line1.setQtyPicked(5);
+            PickingInstructionLine line2 = createPickingLine(102L, pi, 2, 11L, 3);
+            PickingInstructionLine line3 = createPickingLine(103L, pi, 3, 12L, 4);
+            pi.getLines().add(line1);
+            pi.getLines().add(line2);
+            pi.getLines().add(line3);
+
+            when(pickingInstructionRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(pi));
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            CompletePickingRequest request = new CompletePickingRequest(List.of(
+                    new CompletePickingLineRequest(102L, 3)));
+
+            PickingInstruction result = pickingService.completePickingInstruction(50L, request);
+
+            // まだ全明細完了していないのでIN_PROGRESSのまま
+            assertThat(result.getStatus()).isEqualTo(PickingInstructionStatus.IN_PROGRESS.getValue());
+        }
+
+        @Test
+        @DisplayName("全明細完了時に出荷伝票が見つからない場合もスキップされる")
+        void complete_slipNotFound_skipped() {
+            setUpSecurityContext();
+
+            PickingInstruction pi = createPickingInstruction(50L, "PIC-20260320-001",
+                    PickingInstructionStatus.CREATED.getValue());
+            PickingInstructionLine line1 = createPickingLine(101L, pi, 1, 10L, 5);
+            pi.getLines().add(line1);
+
+            when(pickingInstructionRepository.findByIdForUpdate(50L)).thenReturn(Optional.of(pi));
+            // 出荷伝票が見つからない
+            when(outboundSlipRepository.findBySlipLineId(10L)).thenReturn(Optional.empty());
+            when(pickingInstructionRepository.save(any(PickingInstruction.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            CompletePickingRequest request = new CompletePickingRequest(List.of(
+                    new CompletePickingLineRequest(101L, 5)));
+
+            PickingInstruction result = pickingService.completePickingInstruction(50L, request);
+
+            assertThat(result.getStatus()).isEqualTo(PickingInstructionStatus.COMPLETED.getValue());
+            verify(outboundSlipRepository, never()).save(any());
         }
 
         @Test
