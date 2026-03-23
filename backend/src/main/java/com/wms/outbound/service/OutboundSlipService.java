@@ -307,6 +307,21 @@ public class OutboundSlipService {
                     "出荷完了可能なステータスではありません (status=" + slip.getStatus() + ")");
         }
 
+        // 出荷日バリデーション: 未来日は不可
+        LocalDate today = businessDateProvider.today();
+        if (request.getShippedDate() != null && request.getShippedDate().isAfter(today)) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                    "出荷日は当日以前の日付を指定してください");
+        }
+
+        // 全明細が検品済みであることを確認
+        for (OutboundSlipLine line : slip.getLines()) {
+            if (line.getInspectedQty() == null) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "未検品の明細が存在します (lineId=" + line.getId() + ")");
+            }
+        }
+
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
 

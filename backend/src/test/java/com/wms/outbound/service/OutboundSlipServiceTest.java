@@ -762,6 +762,7 @@ class OutboundSlipServiceTest {
         @DisplayName("正常系: INSPECTING の伝票を出荷完了できる")
         void ship_success() {
             setUpSecurityContext(10L);
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 23));
             OutboundSlip slip = createInspectingSlip();
             when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
 
@@ -874,6 +875,7 @@ class OutboundSlipServiceTest {
         @DisplayName("在庫不足の場合BusinessRuleViolationExceptionをスローする")
         void ship_insufficientInventory_throws() {
             setUpSecurityContext(10L);
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 23));
             OutboundSlip slip = createInspectingSlip();
             when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
 
@@ -901,6 +903,7 @@ class OutboundSlipServiceTest {
         @DisplayName("carrier/trackingNumber/noteがnullでも出荷完了できる")
         void ship_optionalFieldsNull_success() {
             setUpSecurityContext(10L);
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 23));
             OutboundSlip slip = createInspectingSlip();
             slip.setNote("元の備考");
             when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
