@@ -312,7 +312,12 @@ public class PickingService {
                         slipLine.setLineStatus(OutboundLineStatus.PICKING_COMPLETED.getValue());
                     }
                 }
-                slip.setStatus(OutboundSlipStatus.PICKING_COMPLETED.getValue());
+                // 全明細がPICKING_COMPLETEDの場合のみ伝票ヘッダを更新（分割ピッキング対応）
+                boolean allLinesDone = slip.getLines().stream()
+                        .allMatch(l -> OutboundLineStatus.PICKING_COMPLETED.getValue().equals(l.getLineStatus()));
+                if (allLinesDone) {
+                    slip.setStatus(OutboundSlipStatus.PICKING_COMPLETED.getValue());
+                }
                 outboundSlipRepository.save(slip);
                 log.info("OutboundSlip updated to PICKING_COMPLETED: id={}, slipNumber={}",
                         slip.getId(), slip.getSlipNumber());
