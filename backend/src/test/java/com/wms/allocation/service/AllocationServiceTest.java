@@ -204,6 +204,36 @@ class AllocationServiceTest {
         }
 
         @Test
+        @DisplayName("ステータス・パートナー名指定ありで検索する")
+        void searchOrders_withStatusesAndPartnerName() {
+            when(outboundSlipRepository.searchForAllocation(
+                    eq(1L), eq(List.of("ORDERED")), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(Page.empty());
+
+            allocationService.searchOrders(1L, List.of("ORDERED"),
+                    LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31),
+                    "顧客%A", PageRequest.of(0, 20));
+
+            verify(outboundSlipRepository).searchForAllocation(
+                    eq(1L), eq(List.of("ORDERED")), any(), any(), any(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("空リストのステータス指定時はデフォルトステータスを使用する")
+        void searchOrders_emptyStatuses_usesDefault() {
+            when(outboundSlipRepository.searchForAllocation(
+                    eq(1L), eq(List.of("ORDERED", "PARTIAL_ALLOCATED")),
+                    any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(Page.empty());
+
+            allocationService.searchOrders(1L, List.of(), null, null, null, PageRequest.of(0, 20));
+
+            verify(outboundSlipRepository).searchForAllocation(
+                    eq(1L), eq(List.of("ORDERED", "PARTIAL_ALLOCATED")),
+                    any(), any(), any(), any(Pageable.class));
+        }
+
+        @Test
         @DisplayName("ステータス指定なしの場合ORDERED/PARTIAL_ALLOCATEDがデフォルト")
         void searchOrders_defaultStatuses() {
             when(outboundSlipRepository.searchForAllocation(
@@ -239,6 +269,25 @@ class AllocationServiceTest {
 
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).getStatus()).isEqualTo("ALLOCATED");
+        }
+    }
+
+    @Nested
+    @DisplayName("countLinesBySlipId / countAllocatedLinesBySlipId")
+    class CountTests {
+
+        @Test
+        @DisplayName("countLinesBySlipIdで明細行数を返す")
+        void countLinesBySlipId_returnsCount() {
+            when(outboundSlipRepository.countLinesBySlipId(1L)).thenReturn(3L);
+            assertThat(allocationService.countLinesBySlipId(1L)).isEqualTo(3L);
+        }
+
+        @Test
+        @DisplayName("countAllocatedLinesBySlipIdで引当済み行数を返す")
+        void countAllocatedLinesBySlipId_returnsCount() {
+            when(outboundSlipRepository.countAllocatedLinesBySlipId(1L)).thenReturn(2L);
+            assertThat(allocationService.countAllocatedLinesBySlipId(1L)).isEqualTo(2L);
         }
     }
 
@@ -360,6 +409,93 @@ class AllocationServiceTest {
         }
 
         @Test
+        @DisplayName("複数在庫があり最初の在庫で全量引当できる場合、残りの在庫はスキップされる")
+        void executeAllocation_multiStock_firstSatisfies() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory inv1 = createInventory(200L, 1L, 50L, 10L, "PIECE", 20, 0);
+            Inventory inv2 = createInventory(201L, 1L, 51L, 10L, "PIECE", 10, 0);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(inv1, inv2));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(inv1));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(1);
+            // inv2にはアクセスしない
+            verify(inventoryRepository, never()).findByIdForUpdate(201L);
+        }
+
+        @Test
+        @DisplayName("在庫の利用可能数が0の場合Phase1でスキップされる")
+        void executeAllocation_zeroAvailableStock_skipped() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            // quantity == allocatedQty → available = 0
+            Inventory inv = createInventory(200L, 1L, 50L, 10L, "PIECE", 10, 10);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(inv));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(0);
+            assertThat(result.unallocatedLines()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Phase2でロック後に在庫が減った場合スキップされる")
+        void executeAllocation_upperUnitType_reducedAfterLock() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory caseInv = createInventory(200L, 1L, 50L, 10L, "CASE", 1, 0);
+            // ロック後に全量引当済み
+            Inventory lockedCaseInv = createInventory(200L, 1L, 50L, 10L, "CASE", 1, 1);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(caseInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(lockedCaseInv));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(0);
+            assertThat(result.unallocatedLines()).hasSize(1);
+        }
+
+        @Test
         @DisplayName("存在しない伝票はResourceNotFoundException")
         void executeAllocation_slipNotFound() {
             when(outboundSlipRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
@@ -370,6 +506,234 @@ class AllocationServiceTest {
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("出荷伝票が見つかりません");
+        }
+
+        @Test
+        @DisplayName("既に引当済みの明細はスキップされる")
+        void executeAllocation_alreadyAllocatedLine_skipped() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "PARTIAL_ALLOCATED", 1L);
+            OutboundSlipLine allocatedLine = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ALLOCATED");
+            slip.getLines().add(allocatedLine);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(1);
+            assertThat(result.allocatedSlips()).hasSize(1);
+            assertThat(result.allocatedSlips().get(0).allocatedLines()).hasSize(1);
+            assertThat(result.allocatedSlips().get(0).allocatedLines().get(0).allocatedQty()).isEqualTo(5);
+        }
+
+        @Test
+        @DisplayName("出荷禁止商品の明細は引当スキップされる")
+        void executeAllocation_shipmentStopped_skipped() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            product.setShipmentStopFlag(true);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(0);
+            assertThat(result.unallocatedLines()).hasSize(1);
+            assertThat(result.unallocatedLines().get(0).shortageQty()).isEqualTo(5);
+        }
+
+        @Test
+        @DisplayName("ロック後に在庫が減って引当不可の場合スキップされる")
+        void executeAllocation_stockReducedAfterLock_skipped() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory inv = createInventory(200L, 1L, 50L, 10L, "PIECE", 10, 0);
+
+            // ロック後に在庫が全て引当済みになっている
+            Inventory lockedInv = createInventory(200L, 1L, 50L, 10L, "PIECE", 10, 10);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(inv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(lockedInv));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(0);
+            assertThat(result.unallocatedLines()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("異なる荷姿の在庫はPhase1でスキップされる")
+        void executeAllocation_differentUnitType_skippedInPhase1() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            // BALL在庫のみ → Phase1ではスキップ、Phase2でBALL→PIECEの変換
+            Inventory ballInv = createInventory(200L, 1L, 50L, 10L, "BALL", 10, 0);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(ballInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(ballInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> {
+                UnpackInstruction saved = i.getArgument(0);
+                setField(saved, "id", 500L);
+                return saved;
+            });
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.unpackInstructions()).hasSize(1);
+            assertThat(result.unpackInstructions().get(0).fromUnitType()).isEqualTo("BALL");
+            assertThat(result.unpackInstructions().get(0).toUnitType()).isEqualTo("PIECE");
+        }
+
+        @Test
+        @DisplayName("Phase1でロック時に在庫が消失した場合ResourceNotFoundException")
+        void executeAllocation_phase1_inventoryDisappeared() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory inv = createInventory(200L, 1L, 50L, 10L, "PIECE", 10, 0);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(inv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            assertThatThrownBy(() -> allocationService.executeAllocation(request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("Phase2でロック時に在庫が消失した場合ResourceNotFoundException")
+        void executeAllocation_phase2_inventoryDisappeared() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory caseInv = createInventory(200L, 1L, 50L, 10L, "CASE", 1, 0);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(caseInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            assertThatThrownBy(() -> allocationService.executeAllocation(request))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("Phase2で複数上位荷姿在庫があり最初で十分な場合残りはスキップ")
+        void executeAllocation_phase2_multiUpperStock_firstSufficient() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory caseInv1 = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 0);
+            Inventory caseInv2 = createInventory(201L, 1L, 51L, 10L, "CASE", 3, 0);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(caseInv1, caseInv2));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(caseInv1));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> {
+                UnpackInstruction saved = i.getArgument(0);
+                setField(saved, "id", 500L);
+                return saved;
+            });
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(1);
+            // caseInv2にはアクセスしない
+            verify(inventoryRepository, never()).findByIdForUpdate(201L);
+        }
+
+        @Test
+        @DisplayName("Phase2で上位荷姿在庫の利用可能数が0の場合スキップされる")
+        void executeAllocation_phase2_zeroAvailable_skipped() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ORDERED");
+            slip.getLines().add(line);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            // CASE在庫があるが全量引当済み
+            Inventory caseInv = createInventory(200L, 1L, 50L, 10L, "CASE", 2, 2);
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(productService.findById(10L)).thenReturn(product);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(caseInv));
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ExecuteAllocationRequest request = new ExecuteAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationResult result = allocationService.executeAllocation(request);
+
+            assertThat(result.allocatedCount()).isEqualTo(0);
+            assertThat(result.unallocatedLines()).hasSize(1);
         }
 
         @Test
@@ -474,6 +838,117 @@ class AllocationServiceTest {
         }
 
         @Test
+        @DisplayName("正常系: 既存のばらし先在庫がある場合のばらし完了")
+        void completeUnpack_existingTargetInventory() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+            Inventory targetInv = createInventory(300L, 1L, 50L, 10L, "PIECE", 10, 0);
+
+            AllocationDetail detail = AllocationDetail.builder()
+                    .outboundSlipId(1L)
+                    .outboundSlipLineId(100L)
+                    .inventoryId(200L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .unitType("PIECE")
+                    .allocatedQty(12)
+                    .warehouseId(1L)
+                    .build();
+            setField(detail, "id", 1000L);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.of(targetInv));
+            when(inventoryRepository.findByIdForUpdate(300L)).thenReturn(Optional.of(targetInv));
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(detail));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
+
+            UnpackCompletionInfo result = allocationService.completeUnpackInstruction(500L);
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+            // target inventory should have qty increased
+            assertThat(targetInv.getQuantity()).isEqualTo(34); // 10 + 24
+            // allocation detail should be moved to target inventory
+            assertThat(detail.getInventoryId()).isEqualTo(300L);
+        }
+
+        @Test
+        @DisplayName("ばらし元在庫が直接見つからない場合フォールバック検索する")
+        void completeUnpack_sourceInventoryFallback() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            // 直接検索では見つからない
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            // 直接検索 → empty
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
+            // フォールバック検索
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.empty());
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of());
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
+
+            UnpackCompletionInfo result = allocationService.completeUnpackInstruction(500L);
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+        }
+
+        @Test
         @DisplayName("既に完了済みの場合は例外")
         void completeUnpack_alreadyCompleted() {
             UnpackInstruction unpack = UnpackInstruction.builder()
@@ -494,6 +969,311 @@ class AllocationServiceTest {
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(InvalidStateTransitionException.class)
                     .hasMessageContaining("既に完了済みのばらし指示です");
+        }
+
+        @Test
+        @DisplayName("ロケーションが見つからない場合ResourceNotFoundException")
+        void completeUnpack_locationNotFound_throws() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
+                    .status("INSTRUCTED").warehouseId(1L).build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ロケーションが見つかりません");
+        }
+
+        @Test
+        @DisplayName("ばらし元在庫ロック後に消失した場合ResourceNotFoundException")
+        void completeUnpack_sourceInventoryLockFailed_throws() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
+                    .status("INSTRUCTED").warehouseId(1L).build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ばらし元在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("既存ばらし先在庫ロック後に消失した場合ResourceNotFoundException")
+        void completeUnpack_targetInventoryLockFailed_throws() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
+                    .status("INSTRUCTED").warehouseId(1L).build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+            Inventory targetInv = createInventory(300L, 1L, 50L, 10L, "PIECE", 10, 0);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.of(targetInv));
+            when(inventoryRepository.findByIdForUpdate(300L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ばらし先在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("フォールバック検索で異なるunitTypeの在庫はフィルタされる")
+        void completeUnpack_sourceInventoryFallback_filtersUnitType() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
+                    .status("INSTRUCTED").warehouseId(1L).build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            // 同一ロケーション・同一unitTypeの在庫 → マッチ
+            Inventory matchingInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+            // 同一ロケーションだがunitTypeが異なる → フィルタされる
+            Inventory nonMatchingInv = createInventory(201L, 1L, 50L, 10L, "PIECE", 100, 0);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
+            when(inventoryRepository.findAvailableStock(1L, 10L))
+                    .thenReturn(List.of(nonMatchingInv, matchingInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(matchingInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.empty());
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of());
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
+
+            UnpackCompletionInfo result = allocationService.completeUnpackInstruction(500L);
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+        }
+
+        @Test
+        @DisplayName("ばらし元在庫のフォールバック検索でも見つからない場合は例外")
+        void completeUnpack_sourceInventoryNotFound_throws() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
+            // フォールバックでも見つからない — 異なるロケーションの在庫のみ
+            Inventory otherLocationInv = createInventory(201L, 1L, 99L, 10L, "CASE", 5, 0);
+            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(otherLocationInv));
+
+            assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ばらし元在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("既存ばらし先在庫に引当明細の付け替えが正しく行われる")
+        void completeUnpack_existingTarget_detailReassignment() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+            Inventory targetInv = createInventory(300L, 1L, 50L, 10L, "PIECE", 10, 0);
+
+            // 付け替え対象の引当明細（source inventoryに紐付き、unitType=PIECE）
+            AllocationDetail matchingDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(100L)
+                    .inventoryId(200L).locationId(50L).productId(10L)
+                    .unitType("PIECE").allocatedQty(12).warehouseId(1L).build();
+            setField(matchingDetail, "id", 1000L);
+
+            // 付け替え対象外の引当明細（unitTypeが異なる）
+            AllocationDetail nonMatchingDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(101L)
+                    .inventoryId(200L).locationId(50L).productId(10L)
+                    .unitType("CASE").allocatedQty(3).warehouseId(1L).build();
+            setField(nonMatchingDetail, "id", 1001L);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.of(targetInv));
+            when(inventoryRepository.findByIdForUpdate(300L)).thenReturn(Optional.of(targetInv));
+            when(allocationDetailRepository.findByOutboundSlipId(1L))
+                    .thenReturn(List.of(matchingDetail, nonMatchingDetail));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
+
+            allocationService.completeUnpackInstruction(500L);
+
+            // matchingDetailはtargetに付け替え
+            assertThat(matchingDetail.getInventoryId()).isEqualTo(300L);
+            // nonMatchingDetailは変更なし
+            assertThat(nonMatchingDetail.getInventoryId()).isEqualTo(200L);
+            // targetのallocatedQty = 0 + 12 (matching detail)
+            assertThat(targetInv.getAllocatedQty()).isEqualTo(12);
+        }
+
+        @Test
+        @DisplayName("新規ばらし先在庫の場合も引当明細が正しく付け替えられる")
+        void completeUnpack_newTarget_detailReassignment() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
+
+            AllocationDetail matchingDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(100L)
+                    .inventoryId(200L).locationId(50L).productId(10L)
+                    .unitType("PIECE").allocatedQty(8).warehouseId(1L).build();
+            setField(matchingDetail, "id", 1000L);
+
+            // inventoryIdは同じだがunitTypeが異なる → フィルタされる
+            AllocationDetail nonMatchingDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(101L)
+                    .inventoryId(200L).locationId(50L).productId(10L)
+                    .unitType("CASE").allocatedQty(5).warehouseId(1L).build();
+            setField(nonMatchingDetail, "id", 1001L);
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> {
+                Inventory inv = i.getArgument(0);
+                if (inv.getId() == null) {
+                    setField(inv, "id", 400L);
+                }
+                return inv;
+            });
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.empty());
+            when(allocationDetailRepository.findByOutboundSlipId(1L))
+                    .thenReturn(List.of(matchingDetail, nonMatchingDetail));
+            when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
+
+            allocationService.completeUnpackInstruction(500L);
+
+            // matchingDetailのinventoryIdが新しいtargetに付け替えられる
+            assertThat(matchingDetail.getInventoryId()).isEqualTo(400L);
+            // nonMatchingDetailは変更なし（unitTypeが異なるため）
+            assertThat(nonMatchingDetail.getInventoryId()).isEqualTo(200L);
         }
 
         @Test
@@ -560,6 +1340,43 @@ class AllocationServiceTest {
         }
 
         @Test
+        @DisplayName("在庫が既に削除されている場合でも解放が成功する")
+        void releaseAllocation_inventoryDeleted_success() {
+            setUpSecurityContext(10L);
+
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ALLOCATED", 1L);
+            OutboundSlipLine line = createLine(100L, slip, 1, 10L, "PRD-0001", 5, "PIECE", "ALLOCATED");
+            slip.getLines().add(line);
+
+            AllocationDetail detail = AllocationDetail.builder()
+                    .outboundSlipId(1L)
+                    .outboundSlipLineId(100L)
+                    .inventoryId(200L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .unitType("PIECE")
+                    .allocatedQty(5)
+                    .warehouseId(1L)
+                    .build();
+
+            when(outboundSlipRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(slip));
+            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of(detail));
+            // 在庫が見つからない（既に削除済み）
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
+            when(outboundSlipRepository.save(any(OutboundSlip.class))).thenAnswer(i -> i.getArgument(0));
+
+            ReleaseAllocationRequest request = new ReleaseAllocationRequest()
+                    .outboundSlipIds(List.of(1L));
+
+            AllocationReleaseInfo result = allocationService.releaseAllocation(request);
+
+            assertThat(result.releasedCount()).isEqualTo(1);
+            assertThat(slip.getStatus()).isEqualTo("ORDERED");
+            // 在庫のsaveは呼ばれない
+            verify(inventoryRepository, never()).save(any());
+        }
+
+        @Test
         @DisplayName("ステータス不正: ORDERED伝票は解放不可")
         void releaseAllocation_invalidStatus() {
             OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED", 1L);
@@ -620,6 +1437,34 @@ class AllocationServiceTest {
         void sameUnitType() {
             Product product = createProduct(10L, "PRD-0001", 24, 6);
             assertThat(allocationService.getConversionRate("PIECE", "PIECE", product)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("BALL→CASE (不正方向) は0")
+        void ballToCase() {
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            assertThat(allocationService.getConversionRate("BALL", "CASE", product)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("BALL→BALL (同一荷姿) は0")
+        void ballToBall() {
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            assertThat(allocationService.getConversionRate("BALL", "BALL", product)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("CASE→CASE (同一荷姿) は0")
+        void caseToCase() {
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            assertThat(allocationService.getConversionRate("CASE", "CASE", product)).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("CASE→BALL ballQuantityが0の場合は0")
+        void caseToBall_zeroBallQuantity() {
+            Product product = createProduct(10L, "PRD-0001", 24, 0);
+            assertThat(allocationService.getConversionRate("CASE", "BALL", product)).isEqualTo(0);
         }
 
         @Test

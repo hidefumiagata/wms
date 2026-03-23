@@ -119,6 +119,32 @@ class AllocationControllerTest {
                     .andExpect(jsonPath("$.page").value(0))
                     .andExpect(jsonPath("$.totalElements").value(1));
         }
+
+        @Test
+        @DisplayName("ソートdesc指定で一覧を返す")
+        void getAllocationOrders_sortDesc_returns200() throws Exception {
+            when(allocationService.searchOrders(
+                    eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get("/api/v1/allocation/orders")
+                            .param("warehouseId", "1")
+                            .param("sort", "slipNumber,desc"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("無効なソートプロパティの場合デフォルトにフォールバックする")
+        void getAllocationOrders_invalidSort_returns200() throws Exception {
+            when(allocationService.searchOrders(
+                    eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+
+            mockMvc.perform(get("/api/v1/allocation/orders")
+                            .param("warehouseId", "1")
+                            .param("sort", "invalidField"))
+                    .andExpect(status().isOk());
+        }
     }
 
     // --- GET /api/v1/allocation/allocated-orders ---
@@ -221,6 +247,33 @@ class AllocationControllerTest {
                     .andExpect(jsonPath("$.allocatedSlips[0].status").value("ALLOCATED"))
                     .andExpect(jsonPath("$.unpackInstructions", hasSize(0)))
                     .andExpect(jsonPath("$.unallocatedLines", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("ばらし指示・未引当行を含む引当結果を返す")
+        void execute_withUnpackAndUnallocated_returns200() throws Exception {
+            AllocationResult result = new AllocationResult(
+                    0,
+                    List.of(new AllocatedSlipInfo(1L, "OUT-20260320-0001", "PARTIAL_ALLOCATED",
+                            List.of(new AllocatedLineInfo(1, "PRD-0001", "商品1", 10, 5)))),
+                    List.of(new UnpackInstructionInfo(500L, "PRD-0002", "商品2", "CASE", "PIECE", 1)),
+                    List.of(new UnallocatedLineInfo(1L, "OUT-20260320-0001", 2, "PRD-0003", "商品3", 8))
+            );
+
+            when(allocationService.executeAllocation(any())).thenReturn(result);
+
+            mockMvc.perform(post("/api/v1/allocation/execute")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(EXECUTE_REQUEST_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.allocatedCount").value(0))
+                    .andExpect(jsonPath("$.unpackInstructions", hasSize(1)))
+                    .andExpect(jsonPath("$.unpackInstructions[0].productCode").value("PRD-0002"))
+                    .andExpect(jsonPath("$.unpackInstructions[0].fromUnitType").value("CASE"))
+                    .andExpect(jsonPath("$.unpackInstructions[0].toUnitType").value("PIECE"))
+                    .andExpect(jsonPath("$.unallocatedLines", hasSize(1)))
+                    .andExpect(jsonPath("$.unallocatedLines[0].productCode").value("PRD-0003"))
+                    .andExpect(jsonPath("$.unallocatedLines[0].shortageQty").value(8));
         }
 
         @Test
