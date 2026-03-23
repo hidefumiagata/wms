@@ -19,21 +19,8 @@ interface LineItem {
   expiryManageFlag: boolean
 }
 
-let lineKeySeq = 1
-
-function createEmptyLine(): LineItem {
-  return {
-    key: lineKeySeq++,
-    productCode: '',
-    productId: null,
-    productName: '',
-    unitType: 'CASE',
-    lotNumber: '',
-    expiryDate: null,
-    plannedQty: null,
-    lotManageFlag: false,
-    expiryManageFlag: false,
-  }
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10)
 }
 
 export function useInboundSlipNew() {
@@ -41,12 +28,43 @@ export function useInboundSlipNew() {
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
 
+  // lineKeySeq をcomposable内に閉じ込める（E-MAJ-01対応）
+  let lineKeySeq = 1
+
+  function createEmptyLine(): LineItem {
+    return {
+      key: lineKeySeq++,
+      productCode: '',
+      productId: null,
+      productName: '',
+      unitType: 'CASE',
+      lotNumber: '',
+      expiryDate: null,
+      plannedQty: null,
+      lotManageFlag: false,
+      expiryManageFlag: false,
+    }
+  }
+
   // --- ヘッダー ---
   const headerForm = reactive({
-    plannedDate: formatDate(new Date()),
+    plannedDate: formatDate(new Date()), // 初期値はブラウザ日付（fetchBusinessDateで上書き）
     partnerId: null as number | null,
     note: '',
   })
+
+  // 営業日（D-MAJ-01対応: 営業日APIから取得）
+  const businessDate = ref<string>(formatDate(new Date()))
+
+  async function fetchBusinessDate() {
+    try {
+      const res = await apiClient.get('/system/business-date')
+      businessDate.value = res.data.businessDate ?? formatDate(new Date())
+      headerForm.plannedDate = businessDate.value
+    } catch {
+      // 取得失敗時はブラウザ日付をフォールバック
+    }
+  }
 
   // --- 明細 ---
   const lines = ref<LineItem[]>([createEmptyLine()])
@@ -99,7 +117,6 @@ export function useInboundSlipNew() {
         line.productName = product.productName
         line.lotManageFlag = product.lotManageFlag ?? false
         line.expiryManageFlag = product.expiryManageFlag ?? false
-        // ロット/期限管理でない場合はクリア
         if (!line.lotManageFlag) line.lotNumber = ''
         if (!line.expiryManageFlag) line.expiryDate = null
       } else {
@@ -128,11 +145,20 @@ export function useInboundSlipNew() {
   function validate(): boolean {
     const newErrors: Record<string, string> = {}
 
+    // ヘッダー
     if (!headerForm.plannedDate) {
       newErrors.plannedDate = t('inbound.slip.validation.plannedDateRequired')
+    } else if (headerForm.plannedDate < businessDate.value) {
+      // D-CRT-01: 入荷予定日 >= 営業日
+      newErrors.plannedDate = t('inbound.slip.validation.plannedDateTooEarly')
     }
     if (!headerForm.partnerId) {
       newErrors.partnerId = t('inbound.slip.validation.partnerRequired')
+    }
+
+    // D-CRT-03: 明細1行以上
+    if (lines.value.length === 0) {
+      newErrors.lines = t('inbound.slip.validation.minOneLine')
     }
 
     lines.value.forEach((line, i) => {
@@ -147,6 +173,10 @@ export function useInboundSlipNew() {
       }
       if (line.expiryManageFlag && !line.expiryDate) {
         newErrors[`line_${i}_expiryDate`] = t('inbound.slip.validation.expiryRequired')
+      }
+      // D-CRT-02: 賞味期限 >= 営業日
+      if (line.expiryManageFlag && line.expiryDate && line.expiryDate < businessDate.value) {
+        newErrors[`line_${i}_expiryDate`] = t('inbound.slip.validation.expiryDateTooEarly')
       }
     })
 
@@ -195,7 +225,6 @@ export function useInboundSlipNew() {
       } else if (error.response.status === 422) {
         ElMessage.error(error.response.data?.message ?? t('error.server'))
       }
-      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }
@@ -224,6 +253,7 @@ export function useInboundSlipNew() {
     partnerOptions,
     loading,
     errors,
+    fetchBusinessDate,
     fetchPartnerOptions,
     handleProductCodeBlur,
     addLine,
@@ -231,8 +261,4 @@ export function useInboundSlipNew() {
     handleSubmit,
     handleCancel,
   }
-}
-
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10)
 }

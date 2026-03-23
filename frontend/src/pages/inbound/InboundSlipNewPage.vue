@@ -80,7 +80,9 @@
             <el-input
               v-model="row.productCode"
               size="small"
+              :maxlength="20"
               @blur="handleProductCodeBlur(row)"
+              @keyup.enter="handleProductCodeBlur(row)"
               :class="{ 'is-error': errors[`line_${$index}_productCode`] }"
             />
           </template>
@@ -104,6 +106,7 @@
             <el-input
               v-model="row.lotNumber"
               size="small"
+              :maxlength="50"
               :disabled="!row.lotManageFlag"
               :placeholder="row.lotManageFlag ? '' : '—'"
               :class="{ 'is-error': errors[`line_${$index}_lotNumber`] }"
@@ -176,6 +179,7 @@ const {
   partnerOptions,
   loading,
   errors,
+  fetchBusinessDate,
   fetchPartnerOptions,
   handleProductCodeBlur,
   addLine,
@@ -185,6 +189,7 @@ const {
 } = useInboundSlipNew()
 
 onMounted(() => {
+  fetchBusinessDate()
   fetchPartnerOptions()
 })
 </script>
