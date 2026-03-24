@@ -168,6 +168,8 @@ gh issue develop {Issue番号} --pr {PR番号}
 ```
 または PR 本文に `Closes #{Issue番号}` を含める。
 
+**注意: チェーンPR（baseがmain以外のブランチ）の場合、`Closes` による自動クローズは発動しない。** マージ後に `gh issue close {Issue番号}` で手動クローズすること。
+
 PR本文に以下を含める:
 
 ```markdown
