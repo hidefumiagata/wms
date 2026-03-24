@@ -6,6 +6,7 @@
  * - 60分無操作で強制ログアウト
  * - Axiosレスポンス成功時・DOM操作時にタイマーリセット
  * - BroadcastChannel によるマルチタブ間ログアウト同期
+ * - Page Visibility API によるバックグラウンドタブ・スリープ復帰時チェック
  */
 import { ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
@@ -14,8 +15,13 @@ import router from '@/router'
 import i18n from '@/i18n'
 
 // デフォルト値（API取得前 or 取得失敗時のフォールバック）
-let WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分
-let TIMEOUT_MS = 60 * 60 * 1000 // 60分
+const DEFAULT_WARNING_MS = 55 * 60 * 1000 // 55分
+const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000 // 60分
+const MAX_TIMEOUT_MS = 480 * 60 * 1000    // 上限: 8時間
+const ACTIVITY_THROTTLE_MS = 30_000       // mousemove等のスロットリング間隔: 30秒
+
+let WARNING_THRESHOLD_MS = DEFAULT_WARNING_MS
+let TIMEOUT_MS = DEFAULT_TIMEOUT_MS
 
 const ACTIVITY_EVENTS = ['mousemove', 'click', 'keydown', 'touchstart'] as const
 
@@ -23,6 +29,9 @@ let warningTimer: ReturnType<typeof setTimeout> | null = null
 let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 let warningShown = false
 let isLoggingOut = false
+let lastActiveAt = Date.now()
+let isActive = false // セッションタイマーのライフサイクル管理フラグ
+let interceptorId: number | null = null // Axiosインターセプターのeject用ID
 
 // --- マルチタブ同期 ---
 // BroadcastChannel: 同一オリジンの複数タブ間でメッセージを送受信する Web API。
@@ -47,6 +56,17 @@ function getSessionNonce(): string {
     localStorage.setItem(BC_NONCE_KEY, nonce)
   }
   return nonce
+}
+
+/** セッション開始時に nonce をローテーションする。 */
+function rotateSessionNonce(): void {
+  const nonce = crypto.randomUUID()
+  localStorage.setItem(BC_NONCE_KEY, nonce)
+}
+
+/** ログアウト時に nonce を削除する。 */
+function clearSessionNonce(): void {
+  localStorage.removeItem(BC_NONCE_KEY)
 }
 
 // メッセージの実行時型ガード
@@ -90,12 +110,16 @@ async function doLogout(options?: { broadcast?: boolean }) {
     bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
   }
 
+  clearSessionNonce()
+
   try {
     await useAuthStore().logout()
   } catch {
     // logout API が失敗してもクライアント側の遷移は必ず実行する
   }
-  isLoggingOut = false
+  // isLoggingOut はリセットしない。ログアウト後のページ遷移中に
+  // BroadcastChannel や visibilitychange から再度 doLogout が呼ばれるのを防ぐ。
+  // 次回ログイン時に startSessionTimer() 内で再初期化される。
   router.push({ name: 'login', query: { reason: 'session_expired' } })
 }
 
@@ -124,7 +148,7 @@ async function showWarning() {
   if (extended) {
     try {
       // リフレッシュAPIを呼び出してバックエンドのセッションも延長する
-      // ※成功時にインターセプターが resetSessionTimer() を呼び出す
+      // ※成功時にインターセプターが startTimers() を呼び出す
       await apiClient.post('/auth/refresh')
     } catch {
       // リフレッシュ失敗 → ログアウト
@@ -138,6 +162,7 @@ async function showWarning() {
 function startTimers() {
   clearTimers()
   warningShown = false
+  lastActiveAt = Date.now()
   warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
   timeoutTimer = setTimeout(doLogout, TIMEOUT_MS)
 }
@@ -152,8 +177,60 @@ export function resetSessionTimer() {
   }
 }
 
+/**
+ * アクティビティイベントハンドラ。
+ * mousemove 等の高頻度イベントによるタイマー再生成を抑制するため、
+ * 最後のアクティビティから ACTIVITY_THROTTLE_MS 以内の再呼び出しを無視する。
+ */
 function onActivity() {
+  const now = Date.now()
+  if (now - lastActiveAt < ACTIVITY_THROTTLE_MS) return
   resetSessionTimer()
+}
+
+/**
+ * Page Visibility API による復帰時チェック。
+ * バックグラウンドタブやPCスリープから復帰した際、setTimeout の遅延を補償する。
+ * 実際の経過時間を計算し、タイムアウト閾値を超えていれば即座に警告またはログアウトする。
+ * 閾値未満の場合は残り時間でタイマーを再設定する（全時間リセットではない）。
+ */
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (isLoggingOut) return
+
+  const elapsed = Date.now() - lastActiveAt
+  if (elapsed >= TIMEOUT_MS) {
+    doLogout()
+  } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
+    showWarning()
+  } else if (!warningShown) {
+    // 閾値未満 → 残り時間でタイマーを再設定（lastActiveAt は更新しない）
+    clearTimers()
+    const warningRemaining = WARNING_THRESHOLD_MS - elapsed
+    const timeoutRemaining = TIMEOUT_MS - elapsed
+    warningTimer = setTimeout(showWarning, warningRemaining)
+    timeoutTimer = setTimeout(doLogout, timeoutRemaining)
+  }
+}
+
+/**
+ * サーバーから取得したタイムアウト値をバリデーションし適用する。
+ * - 上限: MAX_TIMEOUT_MS（8時間）
+ * - WARNING_THRESHOLD_MS < TIMEOUT_MS を保証
+ */
+function applySessionConfig(data: Record<string, unknown>): void {
+  const timeout = data?.timeoutMinutes
+  const warning = data?.warningMinutes
+  if (typeof timeout === 'number' && timeout > 0) {
+    TIMEOUT_MS = Math.min(timeout * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (typeof warning === 'number' && warning > 0) {
+    WARNING_THRESHOLD_MS = Math.min(warning * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  // warning >= timeout の場合、タイムアウト5分前にフォールバック
+  if (WARNING_THRESHOLD_MS >= TIMEOUT_MS) {
+    WARNING_THRESHOLD_MS = Math.max(TIMEOUT_MS - 5 * 60 * 1000, 0)
+  }
 }
 
 /**
@@ -161,22 +238,29 @@ function onActivity() {
  * バックエンドからセッション設定を取得し、タイムアウト値を更新する。
  */
 export async function startSessionTimer() {
+  isLoggingOut = false
+  isActive = true
+  rotateSessionNonce()
   try {
     const { data } = await apiClient.get('/system/session-config')
-    const timeout = data?.timeoutMinutes
-    const warning = data?.warningMinutes
-    if (typeof timeout === 'number' && timeout > 0) {
-      TIMEOUT_MS = timeout * 60 * 1000
-    }
-    if (typeof warning === 'number' && warning >= 0) {
-      WARNING_THRESHOLD_MS = warning * 60 * 1000
-    }
+    applySessionConfig(data)
   } catch {
     // API取得失敗時はデフォルト値を維持
   }
   ACTIVITY_EVENTS.forEach((event) =>
     window.addEventListener(event, onActivity, { passive: true })
   )
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  // Axiosインターセプター登録（既存があればまず解除）
+  if (interceptorId !== null) {
+    apiClient.interceptors.response.eject(interceptorId)
+  }
+  interceptorId = apiClient.interceptors.response.use((response) => {
+    if (isActive) {
+      startTimers()
+    }
+    return response
+  })
   startTimers()
 }
 
@@ -184,14 +268,14 @@ export async function startSessionTimer() {
  * セッションタイマーを停止する。DefaultLayout の onUnmounted から呼び出す。
  */
 export function stopSessionTimer() {
+  isActive = false
   clearTimers()
   ACTIVITY_EVENTS.forEach((event) =>
     window.removeEventListener(event, onActivity)
   )
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+  if (interceptorId !== null) {
+    apiClient.interceptors.response.eject(interceptorId)
+    interceptorId = null
+  }
 }
-
-// Axiosレスポンス成功時にタイマーリセット（警告ダイアログ表示中も含む）
-apiClient.interceptors.response.use((response) => {
-  startTimers()
-  return response
-})

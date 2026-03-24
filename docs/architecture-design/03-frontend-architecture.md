@@ -1128,64 +1128,115 @@ apiClient.interceptors.response.use(
 認証アーキテクチャ（[07-auth-architecture.md](../architecture-blueprint/07-auth-architecture.md)）の仕様に基づき、55分経過時に警告ダイアログを表示する。
 
 ```typescript
-// utils/session-timer.ts
-import { ElMessageBox } from 'element-plus'
-import { apiClient } from './api'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/router'
-import i18n from '@/main'
+// utils/session-timer.ts（抜粋）
+const MAX_TIMEOUT_MS = 480 * 60 * 1000    // 上限: 8時間
+const ACTIVITY_THROTTLE_MS = 30_000       // スロットリング間隔: 30秒
+let WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分（API取得で上書き可）
+let TIMEOUT_MS = 60 * 60 * 1000           // 60分（API取得で上書き可）
+let isActive = false  // ライフサイクル管理フラグ
+let interceptorId: number | null = null   // Axiosインターセプターeject用
 
-const WARNING_THRESHOLD_MS = 55 * 60 * 1000  // 55分
-const TIMEOUT_MS = 60 * 60 * 1000            // 60分
-let lastActivityTime = Date.now()
-let warningTimer: ReturnType<typeof setTimeout> | null = null
-let timeoutTimer: ReturnType<typeof setTimeout> | null = null
-
-export function resetSessionTimer() {
-  lastActivityTime = Date.now()
-  clearTimers()
-  startTimers()
+// --- アクティビティ検知 ---
+// mousemove は 60Hz+ で発火するため、30秒間隔でスロットリングする。
+// タイムアウトの粒度（55分）に対して十分に細かい。
+function onActivity() {
+  const now = Date.now()
+  if (now - lastActiveAt < ACTIVITY_THROTTLE_MS) return
+  resetSessionTimer()
 }
 
-function startTimers() {
-  warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
-  timeoutTimer = setTimeout(forceLogout, TIMEOUT_MS)
-}
-
-function clearTimers() {
-  if (warningTimer) clearTimeout(warningTimer)
-  if (timeoutTimer) clearTimeout(timeoutTimer)
-}
-
-async function showWarning() {
-  const { t } = i18n.global
-  try {
-    await ElMessageBox.confirm(
-      t('auth.sessionWarning'),
-      t('auth.sessionWarningTitle'),
-      { confirmButtonText: t('auth.continueSession'), cancelButtonText: t('auth.logout') }
-    )
-    // 「続ける」→ リフレッシュAPIを呼んでタイマーリセット
-    await apiClient.post('/api/v1/auth/refresh')
-    resetSessionTimer()
-  } catch {
-    // 「ログアウト」またはダイアログ閉じ
-    await forceLogout()
+// --- サーバー値バリデーション ---
+// 上限: 8時間。warning >= timeout の場合はタイムアウト5分前にフォールバック。
+function applySessionConfig(data: Record<string, unknown>): void {
+  const timeout = data?.timeoutMinutes
+  const warning = data?.warningMinutes
+  if (typeof timeout === 'number' && timeout > 0) {
+    TIMEOUT_MS = Math.min(timeout * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (typeof warning === 'number' && warning > 0) {
+    WARNING_THRESHOLD_MS = Math.min(warning * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (WARNING_THRESHOLD_MS >= TIMEOUT_MS) {
+    WARNING_THRESHOLD_MS = Math.max(TIMEOUT_MS - 5 * 60 * 1000, 0)
   }
 }
 
-async function forceLogout() {
-  clearTimers()
-  const authStore = useAuthStore()
-  await authStore.logout()
-  router.push({ name: 'login', query: { reason: 'session_expired' } })
-}
-
-// Axiosリクエスト成功時にタイマーリセット
-apiClient.interceptors.response.use((response) => {
-  resetSessionTimer()
+// --- Axiosインターセプターのライフサイクル管理 ---
+// startSessionTimer() で登録、stopSessionTimer() で eject する。
+// isActive フラグにより、タイマー停止後の API レスポンスでタイマーが
+// 再起動されるのを防ぐ。
+interceptorId = apiClient.interceptors.response.use((response) => {
+  if (isActive) { startTimers() }
   return response
 })
+
+// タイマーリセットのトリガー:
+// 1. DOMイベント（mousemove, click, keydown, touchstart）— 30秒スロットリング
+// 2. Axiosレスポンス成功時（インターセプター経由、isActive時のみ）
+// 3. visibilitychange 復帰時（閾値未満の場合、残り時間で再設定）
+```
+
+#### 7.3.1 バックグラウンドタブ・スリープ復帰時チェック
+
+ブラウザのバックグラウンドタブ最適化（タイマー throttling）やPCスリープにより、`setTimeout` が大幅に遅延する問題に対応する。`Page Visibility API`（`visibilitychange` イベント）を使用し、タブがアクティブに復帰した際に実際の経過時間を検証する。
+
+##### 課題
+
+- ブラウザはバックグラウンドタブの `setTimeout` を最小1秒間隔に制限する（Chrome の場合）
+- PCスリープ中は `setTimeout` が完全に停止する
+- 例: 55分タイマー設定後にPCスリープ → 復帰後、`setTimeout` が発火するまで追加の遅延が発生し、実際の経過時間とタイマー発火のタイミングが乖離する
+
+##### 設計方針
+
+- 最後のアクティビティ時刻（`lastActiveAt`）を `Date.now()` で記録する
+- タイマーリセット時（`startTimers()`）に `lastActiveAt` を更新する
+- `visibilitychange` イベントで `visible` 状態への遷移を検知し、実経過時間で判定する
+- `setTimeout` の補償メカニズムであり、`setTimeout` 自体を置き換えるものではない
+
+```typescript
+let lastActiveAt = Date.now()
+
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (isLoggingOut) return
+
+  const elapsed = Date.now() - lastActiveAt
+  if (elapsed >= TIMEOUT_MS) {
+    doLogout()                // タイムアウト超過 → 即座にログアウト
+  } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
+    showWarning()             // 警告閾値超過 → 警告ダイアログ表示
+  } else if (!warningShown) {
+    // 閾値未満 → 残り時間でタイマーを再設定（lastActiveAt は更新しない）
+    clearTimers()
+    const warningRemaining = WARNING_THRESHOLD_MS - elapsed
+    const timeoutRemaining = TIMEOUT_MS - elapsed
+    warningTimer = setTimeout(showWarning, warningRemaining)
+    timeoutTimer = setTimeout(doLogout, timeoutRemaining)
+  }
+}
+
+// startSessionTimer() 内で登録
+document.addEventListener('visibilitychange', onVisibilityChange)
+// stopSessionTimer() 内で解除
+document.removeEventListener('visibilitychange', onVisibilityChange)
+```
+
+**重要**: 復帰時に `startTimers()` を呼ぶと `lastActiveAt` がリセットされ、タブ切替だけで全タイムアウト時間が再付与されてしまう。復帰時は必ず残り時間で再設定する。
+
+##### 判定フロー
+
+```mermaid
+flowchart TD
+    A[visibilitychange → visible] --> B{isLoggingOut?}
+    B -- Yes --> Z[何もしない]
+    B -- No --> C[elapsed = now - lastActiveAt]
+    C --> D{elapsed >= TIMEOUT_MS?}
+    D -- Yes --> E[即座にログアウト]
+    D -- No --> F{elapsed >= WARNING_THRESHOLD_MS<br/>かつ !warningShown?}
+    F -- Yes --> G[警告ダイアログ表示]
+    F -- No --> H{!warningShown?}
+    H -- Yes --> I[残り時間でタイマー再設定]
+    H -- No --> Z
 ```
 
 ### 7.4 マルチタブ間ログアウト同期
@@ -1198,31 +1249,64 @@ apiClient.interceptors.response.use((response) => {
 - セッションタイムアウト・手動ログアウトの両方で `{ type: 'logout' }` メッセージを送信
 - 受信側は `broadcast: false` で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）
 - `BroadcastChannel` 非対応ブラウザ（IE等）は `typeof BroadcastChannel !== 'undefined'` で検出し、単タブ動作にフォールバック
+- **nonce によるメッセージ検証**: チャンネル名だけを知る外部スクリプト（ブラウザ拡張等）からのログアウト注入を防ぐ多層防御
+
+#### nonce 検証
+
+`localStorage` に `wms_bc_nonce` キーで nonce（`crypto.randomUUID()`）を保持し、タブ間で共有する。送信時に nonce を含め、受信時に検証することで、nonce を知らない外部からの注入を阻止する。
+
+> **制約**: XSS が成立した場合は `localStorage` も読めるため完全な防御ではない。チャンネル名だけを知る単純な注入攻撃を防ぐ多層防御として位置づける。
 
 ```typescript
-// BroadcastChannel 初期化（モジュールレベル）
-const bc: BroadcastChannel | null =
-  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+// nonce 管理
+const BC_NONCE_KEY = 'wms_bc_nonce'
 
-// 他タブからの受信
+function getSessionNonce(): string {
+  let nonce = localStorage.getItem(BC_NONCE_KEY)
+  if (!nonce) {
+    nonce = crypto.randomUUID()
+    localStorage.setItem(BC_NONCE_KEY, nonce)
+  }
+  return nonce
+}
+
+// 実行時型ガード（外部からの payload を検証）
+function isLogoutMessage(data: unknown): data is { type: 'logout'; nonce: string } {
+  return (
+    typeof data === 'object' && data !== null &&
+    (data as Record<string, unknown>)['type'] === 'logout' &&
+    typeof (data as Record<string, unknown>)['nonce'] === 'string'
+  )
+}
+
+// 受信: 型ガード + nonce 検証の両方を通過したメッセージのみ処理
 if (bc) {
-  bc.onmessage = (event) => {
-    if (event.data?.type === 'logout') {
-      doLogout({ broadcast: false })  // 再ブロードキャストしない
+  bc.onmessage = (event: MessageEvent<unknown>) => {
+    if (isLogoutMessage(event.data) && event.data.nonce === getSessionNonce()) {
+      doLogout({ broadcast: false })
     }
   }
 }
 
-// ログアウト時に送信
-async function doLogout(options?: { broadcast?: boolean }) {
-  if (isLoggingOut) return
-  isLoggingOut = true
-  if (options?.broadcast !== false && bc) {
-    bc.postMessage({ type: 'logout' })
-  }
-  // ... ログアウト処理
+// 送信: nonce を含める
+if (options?.broadcast !== false && bc) {
+  bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
+}
+
+// セッション開始時に nonce をローテーション（前セッションの nonce を無効化）
+function rotateSessionNonce(): void {
+  localStorage.setItem(BC_NONCE_KEY, crypto.randomUUID())
+}
+
+// ログアウト時に nonce を削除
+function clearSessionNonce(): void {
+  localStorage.removeItem(BC_NONCE_KEY)
 }
 ```
+
+**nonce ライフサイクル:**
+- `startSessionTimer()` 時に `rotateSessionNonce()` で新規 nonce を発行（前セッションの nonce を無効化）
+- `doLogout()` 時に `clearSessionNonce()` で localStorage から削除
 
 #### 同期対象
 
