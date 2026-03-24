@@ -47,25 +47,25 @@ public class InventoryCorrectionService {
             throw new BusinessRuleViolationException("VALIDATION_ERROR", "訂正理由は1〜200文字で入力してください");
         }
 
-        // ロケーション・棚卸ロック
+        // ロケーション存在チェック
         Location location = locationService.findById(locationId);
+
+        // 商品存在チェック（spec: 棚卸ロック前にチェック E-MAJ-02）
+        Product product = productService.findById(productId);
+
+        // 棚卸ロックチェック
         if (Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
             throw new BusinessRuleViolationException("INVENTORY_STOCKTAKE_IN_PROGRESS",
                     "ロケーションが棚卸ロック中です");
         }
 
-        // 商品
-        Product product = productService.findById(productId);
-
-        // 在庫ロック
-        Inventory inv = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+        // 在庫を悲観的ロック付きで直接取得（E-MAJ-01: TOCTOU回避）
+        Inventory locked = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                         locationId, productId, unitType, lotNumber, expiryDate)
+                .map(inv -> inventoryRepository.findByIdForUpdate(inv.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND", "在庫が見つかりません")))
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
                         "対象在庫が存在しません"));
-
-        Inventory locked = inventoryRepository.findByIdForUpdate(inv.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "在庫が見つかりません"));
 
         // 引当数チェック
         if (newQty < locked.getAllocatedQty()) {
@@ -85,7 +85,9 @@ public class InventoryCorrectionService {
                 .warehouseId(location.getWarehouseId())
                 .locationId(locationId).locationCode(location.getLocationCode())
                 .productId(productId).productCode(product.getProductCode()).productName(product.getProductName())
-                .unitType(unitType).movementType("CORRECTION")
+                .unitType(unitType)
+                .lotNumber(lotNumber).expiryDate(expiryDate)
+                .movementType("CORRECTION")
                 .quantity(newQty - quantityBefore)
                 .quantityAfter(newQty)
                 .correctionReason(reason)
