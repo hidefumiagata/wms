@@ -236,6 +236,27 @@ const router = createRouter({
           component: () => import('@/pages/inventory/InventoryListPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
         },
+        // 在庫移動登録 — INV-002: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inventory/move',
+          name: 'inventory-move',
+          component: () => import('@/pages/inventory/InventoryMovePage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // ばらし登録 — INV-003: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inventory/breakdown',
+          name: 'inventory-breakdown',
+          component: () => import('@/pages/inventory/InventoryBreakdownPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 在庫訂正登録 — INV-004: WAREHOUSE_MANAGER
+        {
+          path: 'inventory/correction',
+          name: 'inventory-correction',
+          component: () => import('@/pages/inventory/InventoryCorrectionPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
         // 受注一覧 — OUT-001: 全ロール
         {
           path: 'outbound/slips',

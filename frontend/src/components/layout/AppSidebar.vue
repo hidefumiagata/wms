@@ -75,6 +75,18 @@
         <el-icon><Search /></el-icon>
         <span>{{ t('nav.inventoryList') }}</span>
       </el-menu-item>
+      <el-menu-item index="/inventory/move">
+        <el-icon><Sort /></el-icon>
+        <span>{{ t('nav.inventoryMove') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/inventory/breakdown">
+        <el-icon><Scissor /></el-icon>
+        <span>{{ t('nav.inventoryBreakdown') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/inventory/correction">
+        <el-icon><EditPen /></el-icon>
+        <span>{{ t('nav.inventoryCorrection') }}</span>
+      </el-menu-item>
     </el-sub-menu>
 
     <!-- 出荷管理 -->
@@ -110,7 +122,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
