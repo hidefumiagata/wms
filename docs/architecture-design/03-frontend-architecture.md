@@ -1128,64 +1128,87 @@ apiClient.interceptors.response.use(
 認証アーキテクチャ（[07-auth-architecture.md](../architecture-blueprint/07-auth-architecture.md)）の仕様に基づき、55分経過時に警告ダイアログを表示する。
 
 ```typescript
-// utils/session-timer.ts
-import { ElMessageBox } from 'element-plus'
-import { apiClient } from './api'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/router'
-import i18n from '@/main'
-
-const WARNING_THRESHOLD_MS = 55 * 60 * 1000  // 55分
-const TIMEOUT_MS = 60 * 60 * 1000            // 60分
-let lastActivityTime = Date.now()
-let warningTimer: ReturnType<typeof setTimeout> | null = null
-let timeoutTimer: ReturnType<typeof setTimeout> | null = null
-
-export function resetSessionTimer() {
-  lastActivityTime = Date.now()
-  clearTimers()
-  startTimers()
-}
+// utils/session-timer.ts（抜粋）
+let WARNING_THRESHOLD_MS = 55 * 60 * 1000  // 55分（API取得で上書き可）
+let TIMEOUT_MS = 60 * 60 * 1000            // 60分（API取得で上書き可）
+let warningShown = false
+let isLoggingOut = false
+let lastActiveAt = Date.now()
 
 function startTimers() {
+  clearTimers()
+  warningShown = false
+  lastActiveAt = Date.now()
   warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
-  timeoutTimer = setTimeout(forceLogout, TIMEOUT_MS)
+  timeoutTimer = setTimeout(doLogout, TIMEOUT_MS)
 }
 
-function clearTimers() {
-  if (warningTimer) clearTimeout(warningTimer)
-  if (timeoutTimer) clearTimeout(timeoutTimer)
-}
-
-async function showWarning() {
-  const { t } = i18n.global
-  try {
-    await ElMessageBox.confirm(
-      t('auth.sessionWarning'),
-      t('auth.sessionWarningTitle'),
-      { confirmButtonText: t('auth.continueSession'), cancelButtonText: t('auth.logout') }
-    )
-    // 「続ける」→ リフレッシュAPIを呼んでタイマーリセット
-    await apiClient.post('/api/v1/auth/refresh')
-    resetSessionTimer()
-  } catch {
-    // 「ログアウト」またはダイアログ閉じ
-    await forceLogout()
+export function resetSessionTimer() {
+  if (!warningShown) {
+    startTimers()
   }
 }
 
-async function forceLogout() {
-  clearTimers()
-  const authStore = useAuthStore()
-  await authStore.logout()
-  router.push({ name: 'login', query: { reason: 'session_expired' } })
+// タイマーリセットのトリガー:
+// 1. DOMイベント（mousemove, click, keydown, touchstart）
+// 2. Axiosレスポンス成功時（インターセプター経由）
+// 3. visibilitychange 復帰時（閾値未満の場合）
+```
+
+#### 7.3.1 バックグラウンドタブ・スリープ復帰時チェック
+
+ブラウザのバックグラウンドタブ最適化（タイマー throttling）やPCスリープにより、`setTimeout` が大幅に遅延する問題に対応する。`Page Visibility API`（`visibilitychange` イベント）を使用し、タブがアクティブに復帰した際に実際の経過時間を検証する。
+
+##### 課題
+
+- ブラウザはバックグラウンドタブの `setTimeout` を最小1秒間隔に制限する（Chrome の場合）
+- PCスリープ中は `setTimeout` が完全に停止する
+- 例: 55分タイマー設定後にPCスリープ → 復帰後、`setTimeout` が発火するまで追加の遅延が発生し、実際の経過時間とタイマー発火のタイミングが乖離する
+
+##### 設計方針
+
+- 最後のアクティビティ時刻（`lastActiveAt`）を `Date.now()` で記録する
+- タイマーリセット時（`startTimers()`）に `lastActiveAt` を更新する
+- `visibilitychange` イベントで `visible` 状態への遷移を検知し、実経過時間で判定する
+- `setTimeout` の補償メカニズムであり、`setTimeout` 自体を置き換えるものではない
+
+```typescript
+let lastActiveAt = Date.now()
+
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (isLoggingOut) return
+
+  const elapsed = Date.now() - lastActiveAt
+  if (elapsed >= TIMEOUT_MS) {
+    doLogout()                // タイムアウト超過 → 即座にログアウト
+  } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
+    showWarning()             // 警告閾値超過 → 警告ダイアログ表示
+  } else if (!warningShown) {
+    startTimers()             // 閾値未満 → タイマーを残り時間で再設定
+  }
 }
 
-// Axiosリクエスト成功時にタイマーリセット
-apiClient.interceptors.response.use((response) => {
-  resetSessionTimer()
-  return response
-})
+// startSessionTimer() 内で登録
+document.addEventListener('visibilitychange', onVisibilityChange)
+// stopSessionTimer() 内で解除
+document.removeEventListener('visibilitychange', onVisibilityChange)
+```
+
+##### 判定フロー
+
+```mermaid
+flowchart TD
+    A[visibilitychange → visible] --> B{isLoggingOut?}
+    B -- Yes --> Z[何もしない]
+    B -- No --> C[elapsed = now - lastActiveAt]
+    C --> D{elapsed >= TIMEOUT_MS?}
+    D -- Yes --> E[即座にログアウト]
+    D -- No --> F{elapsed >= WARNING_THRESHOLD_MS<br/>かつ !warningShown?}
+    F -- Yes --> G[警告ダイアログ表示]
+    F -- No --> H{!warningShown?}
+    H -- Yes --> I[タイマー再設定]
+    H -- No --> Z
 ```
 
 ### 7.4 マルチタブ間ログアウト同期

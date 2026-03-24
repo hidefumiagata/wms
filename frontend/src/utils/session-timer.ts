@@ -23,6 +23,7 @@ let warningTimer: ReturnType<typeof setTimeout> | null = null
 let timeoutTimer: ReturnType<typeof setTimeout> | null = null
 let warningShown = false
 let isLoggingOut = false
+let lastActiveAt = Date.now()
 
 // --- マルチタブ同期 ---
 // BroadcastChannel: 同一オリジンの複数タブ間でメッセージを送受信する Web API。
@@ -138,6 +139,7 @@ async function showWarning() {
 function startTimers() {
   clearTimers()
   warningShown = false
+  lastActiveAt = Date.now()
   warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
   timeoutTimer = setTimeout(doLogout, TIMEOUT_MS)
 }
@@ -154,6 +156,26 @@ export function resetSessionTimer() {
 
 function onActivity() {
   resetSessionTimer()
+}
+
+/**
+ * Page Visibility API による復帰時チェック。
+ * バックグラウンドタブやPCスリープから復帰した際、setTimeout の遅延を補償する。
+ * 実際の経過時間を計算し、タイムアウト閾値を超えていれば即座に警告またはログアウトする。
+ */
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (isLoggingOut) return
+
+  const elapsed = Date.now() - lastActiveAt
+  if (elapsed >= TIMEOUT_MS) {
+    doLogout()
+  } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
+    showWarning()
+  } else if (!warningShown) {
+    // 閾値未満 → タイマーを残り時間で再設定
+    startTimers()
+  }
 }
 
 /**
@@ -177,6 +199,7 @@ export async function startSessionTimer() {
   ACTIVITY_EVENTS.forEach((event) =>
     window.addEventListener(event, onActivity, { passive: true })
   )
+  document.addEventListener('visibilitychange', onVisibilityChange)
   startTimers()
 }
 
@@ -188,6 +211,7 @@ export function stopSessionTimer() {
   ACTIVITY_EVENTS.forEach((event) =>
     window.removeEventListener(event, onActivity)
   )
+  document.removeEventListener('visibilitychange', onVisibilityChange)
 }
 
 // Axiosレスポンス成功時にタイマーリセット（警告ダイアログ表示中も含む）
