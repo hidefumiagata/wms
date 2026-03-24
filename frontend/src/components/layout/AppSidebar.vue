@@ -65,6 +65,18 @@
       </el-menu-item>
     </el-sub-menu>
 
+    <!-- 在庫管理 -->
+    <el-sub-menu index="inventory">
+      <template #title>
+        <el-icon><Coin /></el-icon>
+        <span>{{ t('nav.inventory') }}</span>
+      </template>
+      <el-menu-item index="/inventory">
+        <el-icon><Search /></el-icon>
+        <span>{{ t('nav.inventoryList') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
     <!-- 出荷管理 -->
     <el-sub-menu index="outbound">
       <template #title>
@@ -98,7 +110,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean

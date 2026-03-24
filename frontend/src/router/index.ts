@@ -229,6 +229,13 @@ const router = createRouter({
           component: () => import('@/pages/inbound/InboundResultsPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
         },
+        // 在庫一覧照会 — INV-001: 全ロール
+        {
+          path: 'inventory',
+          name: 'inventory-list',
+          component: () => import('@/pages/inventory/InventoryListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
         // 受注一覧 — OUT-001: 全ロール
         {
           path: 'outbound/slips',
