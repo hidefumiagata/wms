@@ -40,6 +40,20 @@ class InventoryControllerTest {
     @MockitoBean
     private InventoryQueryService inventoryQueryService;
     @MockitoBean
+    private com.wms.inventory.service.InventoryMoveService inventoryMoveService;
+    @MockitoBean
+    private com.wms.inventory.service.InventoryBreakdownService inventoryBreakdownService;
+    @MockitoBean
+    private com.wms.inventory.service.InventoryCorrectionService inventoryCorrectionService;
+    @MockitoBean
+    private com.wms.inventory.service.StocktakeQueryService stocktakeQueryService;
+    @MockitoBean
+    private com.wms.inventory.service.StocktakeService stocktakeService;
+    @MockitoBean
+    private com.wms.master.service.WarehouseService warehouseService;
+    @MockitoBean
+    private com.wms.system.repository.UserRepository userRepository;
+    @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;

@@ -55,4 +55,9 @@ public class StocktakeQueryService {
     public long countCountedLines(Long headerId) {
         return stocktakeLineRepository.countCountedByHeaderId(headerId);
     }
+
+    public Page<com.wms.inventory.entity.StocktakeLine> searchLines(Long headerId, Boolean isCounted,
+                                                                      String locationCodePrefix, Pageable pageable) {
+        return stocktakeLineRepository.searchByHeader(headerId, isCounted, locationCodePrefix, pageable);
+    }
 }
