@@ -32,7 +32,7 @@ public class InventoryController implements InventoryApi {
 
     private final InventoryQueryService inventoryQueryService;
 
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
     public ResponseEntity<ListInventory200Response> listInventory(
             Long warehouseId, String locationCodePrefix, Long productId,
@@ -86,10 +86,10 @@ public class InventoryController implements InventoryApi {
             Long warehouseId, Long productId, String storageCondition,
             Integer page, Integer size, String sort) {
 
-        Sort sortObj = parseSort(sort, "productCode", SUMMARY_SORT_PROPERTIES);
+        // PRODUCT_SUMMARY は Object[] プロジェクションのため Sort 適用不可。ページングのみ。
         Page<Object[]> resultPage = inventoryQueryService.searchProductSummary(
                 warehouseId, productId, storageCondition,
-                PageRequest.of(page, size, sortObj));
+                PageRequest.of(page, size));
 
         Set<Long> pIds = resultPage.getContent().stream()
                 .map(row -> (Long) row[0]).collect(Collectors.toSet());
@@ -152,7 +152,9 @@ public class InventoryController implements InventoryApi {
         int casePieces = product != null ? product.getCaseQuantity() : 1;
         int ballPieces = product != null ? product.getBallQuantity() : 1;
 
-        long totalPieceEquivalent = (long) caseQty * casePieces + (long) ballQty * ballPieces + pieceQty;
+        // case_quantity = ボール/ケース, ball_quantity = バラ/ボール
+        // 総バラ換算 = ケース数 × ボール/ケース × バラ/ボール + ボール数 × バラ/ボール + バラ数
+        long totalPieceEquivalent = (long) caseQty * casePieces * ballPieces + (long) ballQty * ballPieces + pieceQty;
 
         return new InventoryProductSummaryItem()
                 .productId(pId)

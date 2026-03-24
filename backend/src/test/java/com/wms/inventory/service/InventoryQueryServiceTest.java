@@ -5,8 +5,8 @@ import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Location;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
-import com.wms.master.repository.LocationRepository;
-import com.wms.master.repository.ProductRepository;
+import com.wms.master.service.LocationService;
+import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -40,9 +40,9 @@ class InventoryQueryServiceTest {
     @Mock
     private WarehouseService warehouseService;
     @Mock
-    private LocationRepository locationRepository;
+    private LocationService locationService;
     @Mock
-    private ProductRepository productRepository;
+    private ProductService productService;
 
     @InjectMocks
     private InventoryQueryService inventoryQueryService;
@@ -158,7 +158,7 @@ class InventoryQueryServiceTest {
             Location loc = new Location();
             setField(loc, "id", 10L);
             loc.setLocationCode("A-01-01");
-            when(locationRepository.findAllById(Set.of(10L))).thenReturn(List.of(loc));
+            when(locationService.findByIds(Set.of(10L))).thenReturn(Map.of(10L, loc));
 
             Map<Long, String> result = inventoryQueryService.getLocationCodeMap(Set.of(10L));
 
@@ -178,7 +178,7 @@ class InventoryQueryServiceTest {
             Product product = new Product();
             setField(product, "id", 100L);
             product.setProductCode("P-001");
-            when(productRepository.findAllById(Set.of(100L))).thenReturn(List.of(product));
+            when(productService.findAllByIds(Set.of(100L))).thenReturn(List.of(product));
 
             Map<Long, Product> result = inventoryQueryService.getProductMap(Set.of(100L));
 

@@ -4,10 +4,9 @@ import com.wms.inventory.entity.Inventory;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Location;
 import com.wms.master.entity.Product;
-import com.wms.master.repository.LocationRepository;
-import com.wms.master.repository.ProductRepository;
+import com.wms.master.service.LocationService;
+import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
-import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,8 +26,8 @@ public class InventoryQueryService {
 
     private final InventoryRepository inventoryRepository;
     private final WarehouseService warehouseService;
-    private final LocationRepository locationRepository;
-    private final ProductRepository productRepository;
+    private final LocationService locationService;
+    private final ProductService productService;
 
     /**
      * LOCATIONモード: 在庫一覧をロケーション別に取得
@@ -46,20 +45,21 @@ public class InventoryQueryService {
     }
 
     /**
-     * ロケーションコードのマップを取得
+     * ロケーションコードのマップを取得（RULE-SVC-002: LocationService経由）
      */
     public Map<Long, String> getLocationCodeMap(Set<Long> locationIds) {
         if (locationIds.isEmpty()) return Map.of();
-        return locationRepository.findAllById(locationIds).stream()
-                .collect(Collectors.toMap(Location::getId, Location::getLocationCode));
+        Map<Long, Location> locationMap = locationService.findByIds(locationIds);
+        return locationMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getLocationCode()));
     }
 
     /**
-     * 商品情報のマップを取得
+     * 商品情報のマップを取得（RULE-SVC-002: ProductService経由）
      */
     public Map<Long, Product> getProductMap(Set<Long> productIds) {
         if (productIds.isEmpty()) return Map.of();
-        return productRepository.findAllById(productIds).stream()
+        return productService.findAllByIds(productIds).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
     }
 
