@@ -71,7 +71,8 @@ export function useOutboundSlipInspect() {
       const reqLines = lines.value.map(l => ({ lineId: l.id, inspectedQty: l.inspectedQty }))
       await apiClient.post(`/outbound/slips/${slipId.value}/inspect`, { lines: reqLines })
       ElMessage.success(t('outbound.inspect.saveSuccess'))
-      router.push({ name: 'outbound-slip-detail', params: { id: slipId.value } })
+      // spec: 検品完了後は出荷完了画面へ遷移
+      router.push({ name: 'outbound-slip-ship', params: { id: slipId.value } })
     } catch (err: unknown) {
       const error = toApiError(err)
       if (!error.response) ElMessage.error(t('error.network'))

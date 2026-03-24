@@ -2,10 +2,13 @@
   <div class="wms-page" v-loading="loading">
     <template v-if="slip">
       <el-card>
-        <el-descriptions :column="3" border size="small">
+        <el-descriptions :column="4" border size="small">
           <el-descriptions-item :label="t('outbound.slip.slipNumber')">{{ slip.slipNumber }}</el-descriptions-item>
           <el-descriptions-item :label="t('outbound.slip.partner')">{{ slip.partnerName ?? '—' }}</el-descriptions-item>
           <el-descriptions-item :label="t('outbound.slip.plannedDate')">{{ slip.plannedDate }}</el-descriptions-item>
+          <el-descriptions-item :label="t('outbound.slip.status')">
+            <el-tag size="small">{{ outboundStatusLabel(slip.status!, t) }}</el-tag>
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -58,6 +61,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useOutboundSlipShip } from '@/composables/outbound/useOutboundSlipShip'
+import { outboundStatusLabel } from '@/utils/outboundFormatters'
 
 const { t } = useI18n()
 const { slip, loading, submitting, errors, shipForm, fetchBusinessDate, fetchDetail, handleSubmit, goBack } = useOutboundSlipShip()
