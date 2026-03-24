@@ -1,6 +1,6 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
@@ -14,6 +14,7 @@ interface InspectLine {
   unitType: string
   orderedQty: number
   inspectedQty: number
+  diffQty: number
 }
 
 export function useOutboundSlipInspect() {
@@ -25,6 +26,8 @@ export function useOutboundSlipInspect() {
   const lines = ref<InspectLine[]>([])
   const loading = ref(false)
   const saving = ref(false)
+  const isDirty = ref(false)
+  const saved = ref(false)
 
   const slipId = computed(() => {
     const id = route.params.id
@@ -39,15 +42,20 @@ export function useOutboundSlipInspect() {
     try {
       const res = await apiClient.get<OutboundSlipDetail>(`/outbound/slips/${slipId.value}`)
       slip.value = res.data
-      lines.value = (res.data.lines ?? []).map(l => ({
-        id: l.id!,
-        lineNo: l.lineNo!,
-        productCode: l.productCode!,
-        productName: l.productName!,
-        unitType: l.unitType!,
-        orderedQty: l.orderedQty!,
-        inspectedQty: l.inspectedQty ?? l.orderedQty!,
-      }))
+      lines.value = (res.data.lines ?? []).map(l => {
+        const inspectedQty = l.inspectedQty ?? l.orderedQty!
+        return {
+          id: l.id!,
+          lineNo: l.lineNo!,
+          productCode: l.productCode!,
+          productName: l.productName!,
+          unitType: l.unitType!,
+          orderedQty: l.orderedQty!,
+          inspectedQty,
+          diffQty: inspectedQty - l.orderedQty!,
+        }
+      })
+      isDirty.value = false
     } catch (err: unknown) {
       const error = toApiError(err)
       if (!error.response) ElMessage.error(t('error.network'))
@@ -56,6 +64,11 @@ export function useOutboundSlipInspect() {
         router.push({ name: 'outbound-slip-list' })
       }
     } finally { loading.value = false }
+  }
+
+  function updateDiff(line: InspectLine) {
+    line.diffQty = (line.inspectedQty ?? 0) - line.orderedQty
+    isDirty.value = true
   }
 
   async function handleSave() {
@@ -71,7 +84,8 @@ export function useOutboundSlipInspect() {
       const reqLines = lines.value.map(l => ({ lineId: l.id, inspectedQty: l.inspectedQty }))
       await apiClient.post(`/outbound/slips/${slipId.value}/inspect`, { lines: reqLines })
       ElMessage.success(t('outbound.inspect.saveSuccess'))
-      // spec: 検品完了後は出荷完了画面へ遷移
+      saved.value = true
+      isDirty.value = false
       router.push({ name: 'outbound-slip-ship', params: { id: slipId.value } })
     } catch (err: unknown) {
       const error = toApiError(err)
@@ -83,5 +97,22 @@ export function useOutboundSlipInspect() {
 
   function goBack() { router.push({ name: 'outbound-slip-detail', params: { id: slipId.value } }) }
 
-  return { slip, lines, loading, saving, fetchDetail, handleSave, goBack }
+  // 未保存変更ガード
+  onBeforeRouteLeave(async () => {
+    if (isDirty.value && !saved.value) {
+      try {
+        await ElMessageBox.confirm(
+          t('outbound.inspect.unsavedWarning'),
+          t('common.confirm'),
+          { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
+        )
+        return true
+      } catch {
+        return false
+      }
+    }
+    return true
+  })
+
+  return { slip, lines, loading, saving, fetchDetail, updateDiff, handleSave, goBack }
 }

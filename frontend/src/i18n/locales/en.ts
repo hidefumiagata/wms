@@ -661,6 +661,8 @@ export default {
       save: 'Save Inspection',
       saveSuccess: 'Inspection saved',
       qtyInvalid: 'Inspected quantity must be 0 or more',
+      diffQty: 'Difference',
+      unsavedWarning: 'Unsaved changes will be lost. Leave this page?',
     },
     ship: {
       title: 'Ship (Delivery Info)',
@@ -674,10 +676,10 @@ export default {
       shipSuccess: 'Shipped (Slip No: {slipNo})',
       carrierRequired: 'Carrier is required',
       shipDateRequired: 'Ship date is required',
+      statusNotInspecting: 'This order is not in inspecting status',
       carrierYamato: 'Yamato',
       carrierSagawa: 'Sagawa',
       carrierJP: 'Japan Post',
-      carrierOther: 'Other',
     },
   },
   error: {

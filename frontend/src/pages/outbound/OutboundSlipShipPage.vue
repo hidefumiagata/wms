@@ -30,11 +30,10 @@
       <el-card>
         <el-form label-width="120px" style="max-width: 500px">
           <el-form-item :label="t('outbound.ship.carrier')" required :error="errors.carrier">
-            <el-select v-model="shipForm.carrier" :placeholder="t('outbound.ship.carrier')" style="width: 100%">
-              <el-option :label="t('outbound.ship.carrierYamato')" value="ヤマト運輸" />
-              <el-option :label="t('outbound.ship.carrierSagawa')" value="佐川急便" />
-              <el-option :label="t('outbound.ship.carrierJP')" value="日本郵便" />
-              <el-option :label="t('outbound.ship.carrierOther')" value="その他" />
+            <el-select v-model="shipForm.carrier" :placeholder="t('outbound.ship.carrier')" style="width: 100%" filterable allow-create>
+              <el-option :label="t('outbound.ship.carrierYamato')" value="YAMATO" />
+              <el-option :label="t('outbound.ship.carrierSagawa')" value="SAGAWA" />
+              <el-option :label="t('outbound.ship.carrierJP')" value="JP_POST" />
             </el-select>
           </el-form-item>
           <el-form-item :label="t('outbound.ship.trackingNumber')">

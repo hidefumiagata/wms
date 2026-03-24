@@ -664,6 +664,8 @@ export default {
       save: '検品内容を保存する',
       saveSuccess: '検品内容を保存しました',
       qtyInvalid: '検品数は0以上の整数を入力してください',
+      diffQty: '差異',
+      unsavedWarning: '検品内容が保存されていません。画面を離れますか？',
     },
     ship: {
       title: '出荷完了（配送情報入力）',
@@ -677,10 +679,10 @@ export default {
       shipSuccess: '出荷が完了しました（伝票番号: {slipNo}）',
       carrierRequired: '配送業者は必須です',
       shipDateRequired: '出荷日は必須です',
+      statusNotInspecting: 'この受注は出荷検品中ではありません',
       carrierYamato: 'ヤマト運輸',
       carrierSagawa: '佐川急便',
       carrierJP: '日本郵便',
-      carrierOther: 'その他',
     },
   },
   error: {

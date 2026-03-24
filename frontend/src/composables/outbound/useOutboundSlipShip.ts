@@ -53,6 +53,12 @@ export function useOutboundSlipShip() {
     try {
       const res = await apiClient.get<OutboundSlipDetail>(`/outbound/slips/${slipId.value}`)
       slip.value = res.data
+      // ステータス事前チェック: INSPECTINGでなければ詳細に戻す
+      if (res.data.status !== 'INSPECTING') {
+        ElMessage.warning(t('outbound.ship.statusNotInspecting'))
+        router.push({ name: 'outbound-slip-detail', params: { id: slipId.value } })
+        return
+      }
     } catch (err: unknown) {
       const error = toApiError(err)
       if (!error.response) ElMessage.error(t('error.network'))
