@@ -1,5 +1,6 @@
 import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
@@ -11,6 +12,7 @@ import type { StocktakeSummaryPageResponse } from '@/api/generated/models/stockt
 
 export function useStocktakeList() {
   const { t } = useI18n()
+  const router = useRouter()
   const warehouseStore = useWarehouseStore()
   const auth = useAuthStore()
 
@@ -34,7 +36,6 @@ export function useStocktakeList() {
   }
 
   const searchForm = reactive({
-    stocktakeNumber: '',
     dateFrom: formatDate(monthStart) as string | null,
     dateTo: formatDate(now) as string | null,
     status: null as string | null,
@@ -98,7 +99,6 @@ export function useStocktakeList() {
   function handleReset() {
     const resetNow = new Date()
     const resetMonthStart = new Date(resetNow.getFullYear(), resetNow.getMonth(), 1)
-    searchForm.stocktakeNumber = ''
     searchForm.dateFrom = formatDate(resetMonthStart)
     searchForm.dateTo = formatDate(resetNow)
     searchForm.status = null
@@ -117,6 +117,20 @@ export function useStocktakeList() {
     fetchList()
   }
 
+  function formatStocktakeDate(dateStr: string): string {
+    if (!dateStr) return ''
+    const d = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00')
+    return d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  }
+
+  function goToDetail(row: StocktakeSummary) {
+    router.push({ name: 'stocktake-detail', params: { id: row.id } })
+  }
+
+  function goToConfirm(row: StocktakeSummary) {
+    router.push({ name: 'stocktake-confirm', params: { id: row.id } })
+  }
+
   return {
     items,
     loading,
@@ -131,5 +145,8 @@ export function useStocktakeList() {
     handleReset,
     handlePageChange,
     handleSizeChange,
+    formatStocktakeDate,
+    goToDetail,
+    goToConfirm,
   }
 }

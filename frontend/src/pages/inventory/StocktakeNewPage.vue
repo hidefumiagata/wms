@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useStocktakeNew } from '@/composables/inventory/useStocktakeNew'
+import { useStocktakeForm } from '@/composables/inventory/useStocktakeForm'
 
 const { t } = useI18n()
 
@@ -124,7 +124,7 @@ const {
   onAreaChange,
   submitStart,
   goBack,
-} = useStocktakeNew()
+} = useStocktakeForm()
 
 onMounted(() => {
   fetchBuildings()

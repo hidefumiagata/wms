@@ -16,12 +16,16 @@ interface AreaOption {
   areaName: string
 }
 
-export function useStocktakeNew() {
+export function useStocktakeForm() {
   const { t } = useI18n()
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
 
   const submitting = ref(false)
+
+  // --- AbortController ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
 
   // フォーム
   const selectedBuildingId = ref<number | null>(null)
@@ -97,6 +101,8 @@ export function useStocktakeNew() {
       targetLocationCount.value = null
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
     try {
       const params: Record<string, unknown> = {
         warehouseId: warehouseStore.currentWarehouseId,
@@ -106,7 +112,7 @@ export function useStocktakeNew() {
         size: 1,
       }
       if (selectedAreaId.value) params.areaId = selectedAreaId.value
-      const res = await apiClient.get('/master/locations', { params })
+      const res = await apiClient.get('/master/locations', { params, signal: abortController.signal })
       targetLocationCount.value = res.data.totalElements ?? 0
     } catch {
       targetLocationCount.value = null
@@ -126,6 +132,12 @@ export function useStocktakeNew() {
     }
     if (note.value.length > 200) {
       ElMessage.error(t('inventory.stocktakeNotePlaceholder'))
+      return
+    }
+    // 実施日は当日以降（フロントエンドバリデーション）
+    const today = new Date().toISOString().slice(0, 10)
+    if (stocktakeDate.value < today) {
+      ElMessage.error(t('inventory.stocktakeDateRequired'))
       return
     }
 

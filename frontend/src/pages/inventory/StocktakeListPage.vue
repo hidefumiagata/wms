@@ -69,7 +69,7 @@
         </el-table-column>
         <el-table-column :label="t('inventory.stocktakeDate')" width="120">
           <template #default="{ row }">
-            {{ formatDate(row.startedAt) }}
+            {{ formatStocktakeDate(row.startedAt) }}
           </template>
         </el-table-column>
         <el-table-column prop="targetDescription" :label="t('inventory.stocktakeBuilding')" min-width="160" />
@@ -136,7 +136,6 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { useStocktakeList } from '@/composables/inventory/useStocktakeList'
-import type { StocktakeSummary } from '@/api/generated/models/stocktake-summary'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -155,20 +154,10 @@ const {
   handleReset,
   handlePageChange,
   handleSizeChange,
+  formatStocktakeDate,
+  goToDetail,
+  goToConfirm,
 } = useStocktakeList()
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
-}
-
-function goToDetail(row: StocktakeSummary) {
-  router.push({ name: 'stocktake-detail', params: { id: row.id } })
-}
-
-function goToConfirm(row: StocktakeSummary) {
-  router.push({ name: 'stocktake-confirm', params: { id: row.id } })
-}
 
 onMounted(() => {
   fetchList()
