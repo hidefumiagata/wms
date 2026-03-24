@@ -102,7 +102,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStocktakeConfirm } from '@/composables/inventory/useStocktakeConfirm'
-import { unitTypeLabel } from '@/utils/inventoryFormatters'
+import { unitTypeLabel, formatDate } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
 
@@ -120,7 +120,6 @@ const {
   formatDiff,
   confirmStocktake,
   goBackToInput,
-  formatDate,
 } = useStocktakeConfirm()
 
 function unitTypeLabelFn(unitType: string): string {

@@ -80,6 +80,7 @@
           v-if="header?.status === 'STARTED'"
           type="info"
           :loading="saving"
+          :disabled="!hasDirtyLines"
           @click="saveLines"
         >
           {{ t('inventory.stocktakeSave') }}
@@ -101,7 +102,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStocktakeDetail } from '@/composables/inventory/useStocktakeDetail'
-import { unitTypeLabel } from '@/utils/inventoryFormatters'
+import { unitTypeLabel, formatDate } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
 
@@ -119,17 +120,15 @@ const {
   saveLines,
   goToConfirm,
   goBack,
-  formatDate,
+  hasDirtyLines,
 } = useStocktakeDetail()
 
 function unitTypeLabelFn(unitType: string): string {
   return unitTypeLabel(unitType, t)
 }
 
-function rowClassName({ row }: { row: { editQty: number | null; quantityBefore: number; isCounted: boolean; quantityCounted?: number | null } }): string {
-  const qty = row.editQty ?? (row.isCounted ? row.quantityCounted : null)
-  if (qty != null && qty !== row.quantityBefore) return 'diff-row'
-  return ''
+function rowClassName({ row }: { row: Parameters<typeof lineStatus>[0] }): string {
+  return lineStatus(row) === 'diff' ? 'diff-row' : ''
 }
 
 onMounted(() => {

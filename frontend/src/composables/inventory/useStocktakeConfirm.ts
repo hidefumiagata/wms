@@ -5,6 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { formatDate } from '@/utils/inventoryFormatters'
 import type { StocktakeDetail } from '@/api/generated/models/stocktake-detail'
 import type { StocktakeLineItem } from '@/api/generated/models/stocktake-line-item'
 
@@ -40,11 +41,12 @@ export function useStocktakeConfirm() {
   async function fetchDetail() {
     abortController?.abort()
     abortController = new AbortController()
+    const signal = abortController.signal
     loading.value = true
     try {
       const res = await apiClient.get<StocktakeDetail>(
         `/inventory/stocktakes/${stocktakeId.value}`,
-        { signal: abortController.signal }
+        { signal }
       )
       header.value = res.data
       lines.value = res.data.lines?.content ?? []
@@ -54,7 +56,9 @@ export function useStocktakeConfirm() {
       lines.value = []
       ElMessage.error(t('inventory.stocktakeDetailFetchError'))
     } finally {
-      loading.value = false
+      if (!signal.aborted) {
+        loading.value = false
+      }
     }
   }
 
@@ -86,7 +90,7 @@ export function useStocktakeConfirm() {
 
     confirming.value = true
     try {
-      const res = await apiClient.post(`/inventory/stocktakes/${stocktakeId.value}/confirm`)
+      await apiClient.post(`/inventory/stocktakes/${stocktakeId.value}/confirm`)
       ElMessage.success(t('inventory.stocktakeConfirmSuccess', {
         number: header.value?.stocktakeNumber ?? ''
       }))
@@ -108,12 +112,6 @@ export function useStocktakeConfirm() {
   // --- 遷移 ---
   function goBackToInput() {
     router.push({ name: 'stocktake-detail', params: { id: stocktakeId.value } })
-  }
-
-  function formatDate(dateStr: string): string {
-    if (!dateStr) return ''
-    const d = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00')
-    return d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
   }
 
   return {
