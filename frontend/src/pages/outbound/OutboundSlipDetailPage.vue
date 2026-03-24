@@ -18,6 +18,7 @@
             {{ slip.slipType === 'NORMAL' ? t('outbound.slip.typeNormal') : t('outbound.slip.typeTransfer') }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('outbound.slip.plannedDate')">{{ slip.plannedDate }}</el-descriptions-item>
+          <el-descriptions-item v-if="slip.transferSlipNumber" label="振替伝票番号">{{ slip.transferSlipNumber }}</el-descriptions-item>
           <el-descriptions-item :label="t('outbound.slip.partner')">
             <span v-if="slip.partnerCode">{{ slip.partnerCode }} — {{ slip.partnerName }}</span>
             <span v-else>—</span>

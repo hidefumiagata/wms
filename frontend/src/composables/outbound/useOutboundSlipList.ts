@@ -150,26 +150,11 @@ export function useOutboundSlipList() {
     selectedIds.value = rows.map(r => r.id)
   }
 
-  // --- 一括引当 ---
-  async function handleBulkAllocate() {
-    if (selectedIds.value.length === 0) {
-      ElMessage.warning(t('outbound.slip.selectRequired'))
-      return
-    }
-
-    try {
-      await ElMessageBox.confirm(
-        t('outbound.slip.allocateMessage', { count: selectedIds.value.length }),
-        t('common.confirm'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
-      )
-    } catch {
-      return
-    }
-
+  // --- 引当実行（共通） ---
+  async function executeAllocation(ids: number[]) {
     loading.value = true
     try {
-      await apiClient.post('/allocation/execute', { outboundSlipIds: selectedIds.value })
+      await apiClient.post('/allocation/execute', { outboundSlipIds: ids })
       ElMessage.success(t('outbound.slip.allocateSuccess'))
       await fetchList()
     } catch (err: unknown) {
@@ -187,6 +172,22 @@ export function useOutboundSlipList() {
     }
   }
 
+  // --- 一括引当 ---
+  async function handleBulkAllocate() {
+    if (selectedIds.value.length === 0) {
+      ElMessage.warning(t('outbound.slip.selectRequired'))
+      return
+    }
+    try {
+      await ElMessageBox.confirm(
+        t('outbound.slip.allocateMessage', { count: selectedIds.value.length }),
+        t('common.confirm'),
+        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
+      )
+    } catch { return }
+    await executeAllocation(selectedIds.value)
+  }
+
   // --- 行単位引当 ---
   async function handleAllocateSingle(id: number) {
     try {
@@ -195,28 +196,8 @@ export function useOutboundSlipList() {
         t('common.confirm'),
         { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
       )
-    } catch {
-      return
-    }
-
-    loading.value = true
-    try {
-      await apiClient.post('/allocation/execute', { outboundSlipIds: [id] })
-      ElMessage.success(t('outbound.slip.allocateSuccess'))
-      await fetchList()
-    } catch (err: unknown) {
-      const error = toApiError(err)
-      if (!error.response) {
-        ElMessage.error(t('error.network'))
-      } else if (error.response.status === 422) {
-        ElMessage.warning(t('outbound.slip.allocatePartialError'))
-        await fetchList()
-      } else if (error.response.status === 409) {
-        ElMessage.error(t('error.optimisticLock'))
-      }
-    } finally {
-      loading.value = false
-    }
+    } catch { return }
+    await executeAllocation([id])
   }
 
   return {

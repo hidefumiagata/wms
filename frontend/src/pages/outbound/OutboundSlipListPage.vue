@@ -78,10 +78,19 @@
         <el-table-column prop="createdAt" :label="t('outbound.slip.createdAt')" width="160">
           <template #default="{ row }">{{ formatDateTime(row.createdAt) }}</template>
         </el-table-column>
-        <el-table-column v-if="!isViewer" :label="t('common.actions')" width="120" align="center" fixed="right">
+        <el-table-column v-if="!isViewer" :label="t('common.actions')" width="140" align="center" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.status === 'ORDERED' || row.status === 'PARTIAL_ALLOCATED'" size="small" type="warning" plain @click="handleAllocateSingle(row.id)">
               {{ t('outbound.slip.allocate') }}
+            </el-button>
+            <el-button v-if="row.status === 'ALLOCATED'" size="small" type="primary" plain @click="router.push({ name: 'picking-new' })">
+              {{ t('outbound.slip.goPickingNew') }}
+            </el-button>
+            <el-button v-if="row.status === 'PICKING_COMPLETED'" size="small" type="warning" plain @click="router.push({ name: 'outbound-slip-inspect', params: { id: row.id } })">
+              {{ t('outbound.slip.goInspect') }}
+            </el-button>
+            <el-button v-if="row.status === 'INSPECTING'" size="small" type="success" plain @click="router.push({ name: 'outbound-slip-ship', params: { id: row.id } })">
+              {{ t('outbound.slip.goShip') }}
             </el-button>
           </template>
         </el-table-column>

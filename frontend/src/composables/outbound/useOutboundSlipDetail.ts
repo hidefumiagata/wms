@@ -34,9 +34,11 @@ export function useOutboundSlipDetail() {
       slip.value?.status === OutboundSlipStatus.PartialAllocated
     )
   )
+  // SCR-10: SHIPPED/CANCELLED以外でキャンセル可
   const canCancel = computed(() =>
     !isViewer.value &&
-    slip.value?.status === OutboundSlipStatus.Ordered
+    slip.value?.status !== OutboundSlipStatus.Shipped &&
+    slip.value?.status !== OutboundSlipStatus.Cancelled
   )
   const canPickingNew = computed(() =>
     !isViewer.value &&
@@ -68,6 +70,7 @@ export function useOutboundSlipDetail() {
         ElMessage.error(t('outbound.slip.notFound'))
         router.push({ name: 'outbound-slip-list' })
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       loading.value = false
     }
