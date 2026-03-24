@@ -1129,30 +1129,51 @@ apiClient.interceptors.response.use(
 
 ```typescript
 // utils/session-timer.ts（抜粋）
-let WARNING_THRESHOLD_MS = 55 * 60 * 1000  // 55分（API取得で上書き可）
-let TIMEOUT_MS = 60 * 60 * 1000            // 60分（API取得で上書き可）
-let warningShown = false
-let isLoggingOut = false
-let lastActiveAt = Date.now()
+const MAX_TIMEOUT_MS = 480 * 60 * 1000    // 上限: 8時間
+const ACTIVITY_THROTTLE_MS = 30_000       // スロットリング間隔: 30秒
+let WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分（API取得で上書き可）
+let TIMEOUT_MS = 60 * 60 * 1000           // 60分（API取得で上書き可）
+let isActive = false  // ライフサイクル管理フラグ
+let interceptorId: number | null = null   // Axiosインターセプターeject用
 
-function startTimers() {
-  clearTimers()
-  warningShown = false
-  lastActiveAt = Date.now()
-  warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
-  timeoutTimer = setTimeout(doLogout, TIMEOUT_MS)
+// --- アクティビティ検知 ---
+// mousemove は 60Hz+ で発火するため、30秒間隔でスロットリングする。
+// タイムアウトの粒度（55分）に対して十分に細かい。
+function onActivity() {
+  const now = Date.now()
+  if (now - lastActiveAt < ACTIVITY_THROTTLE_MS) return
+  resetSessionTimer()
 }
 
-export function resetSessionTimer() {
-  if (!warningShown) {
-    startTimers()
+// --- サーバー値バリデーション ---
+// 上限: 8時間。warning >= timeout の場合はタイムアウト5分前にフォールバック。
+function applySessionConfig(data: Record<string, unknown>): void {
+  const timeout = data?.timeoutMinutes
+  const warning = data?.warningMinutes
+  if (typeof timeout === 'number' && timeout > 0) {
+    TIMEOUT_MS = Math.min(timeout * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (typeof warning === 'number' && warning > 0) {
+    WARNING_THRESHOLD_MS = Math.min(warning * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (WARNING_THRESHOLD_MS >= TIMEOUT_MS) {
+    WARNING_THRESHOLD_MS = Math.max(TIMEOUT_MS - 5 * 60 * 1000, 0)
   }
 }
 
+// --- Axiosインターセプターのライフサイクル管理 ---
+// startSessionTimer() で登録、stopSessionTimer() で eject する。
+// isActive フラグにより、タイマー停止後の API レスポンスでタイマーが
+// 再起動されるのを防ぐ。
+interceptorId = apiClient.interceptors.response.use((response) => {
+  if (isActive) { startTimers() }
+  return response
+})
+
 // タイマーリセットのトリガー:
-// 1. DOMイベント（mousemove, click, keydown, touchstart）
-// 2. Axiosレスポンス成功時（インターセプター経由）
-// 3. visibilitychange 復帰時（閾値未満の場合）
+// 1. DOMイベント（mousemove, click, keydown, touchstart）— 30秒スロットリング
+// 2. Axiosレスポンス成功時（インターセプター経由、isActive時のみ）
+// 3. visibilitychange 復帰時（閾値未満の場合、残り時間で再設定）
 ```
 
 #### 7.3.1 バックグラウンドタブ・スリープ復帰時チェック
@@ -1271,7 +1292,21 @@ if (bc) {
 if (options?.broadcast !== false && bc) {
   bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
 }
+
+// セッション開始時に nonce をローテーション（前セッションの nonce を無効化）
+function rotateSessionNonce(): void {
+  localStorage.setItem(BC_NONCE_KEY, crypto.randomUUID())
+}
+
+// ログアウト時に nonce を削除
+function clearSessionNonce(): void {
+  localStorage.removeItem(BC_NONCE_KEY)
+}
 ```
+
+**nonce ライフサイクル:**
+- `startSessionTimer()` 時に `rotateSessionNonce()` で新規 nonce を発行（前セッションの nonce を無効化）
+- `doLogout()` 時に `clearSessionNonce()` で localStorage から削除
 
 #### 同期対象
 
