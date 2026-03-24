@@ -142,19 +142,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { useInboundSlipList } from '@/composables/inbound/useInboundSlipList'
-import { useAuthStore } from '@/stores/auth'
 import { inboundStatusLabel, inboundStatusTagType, formatDateTime } from '@/utils/inboundFormatters'
 
 const { t } = useI18n()
 const router = useRouter()
-const auth = useAuthStore()
-
-const isViewer = computed(() => auth.user?.role === 'VIEWER')
 
 const {
   items,
@@ -164,6 +160,7 @@ const {
   pageSize,
   searchForm,
   partnerOptions,
+  isViewer,
   fetchList,
   fetchPartnerOptions,
   handleSearch,

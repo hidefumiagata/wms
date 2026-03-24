@@ -1,10 +1,11 @@
-import { ref, reactive, onUnmounted } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
+import { useAuthStore } from '@/stores/auth'
 import type { InboundSlipSummary } from '@/api/generated/models/inbound-slip-summary'
 import type { InboundSlipSummaryPageResponse } from '@/api/generated/models/inbound-slip-summary-page-response'
 import type { InboundSlipStatus } from '@/api/generated/models/inbound-slip-status'
@@ -12,6 +13,9 @@ import type { InboundSlipStatus } from '@/api/generated/models/inbound-slip-stat
 export function useInboundSlipList() {
   const { t } = useI18n()
   const warehouseStore = useWarehouseStore()
+  const auth = useAuthStore()
+
+  const isViewer = computed(() => auth.user?.role === 'VIEWER')
 
   // --- 状態 ---
   const items = ref<InboundSlipSummary[]>([])
@@ -81,7 +85,7 @@ export function useInboundSlipList() {
         size: pageSize.value,
         sort: 'plannedDate,desc',
       }
-      if (searchForm.slipNumber) params.slipNumber = searchForm.slipNumber
+      if (searchForm.slipNumber?.trim()) params.slipNumber = searchForm.slipNumber.trim()
       if (searchForm.plannedDateFrom) params.plannedDateFrom = searchForm.plannedDateFrom
       if (searchForm.plannedDateTo) params.plannedDateTo = searchForm.plannedDateTo
       if (searchForm.partnerId) params.partnerId = searchForm.partnerId
@@ -151,6 +155,7 @@ export function useInboundSlipList() {
     pageSize,
     searchForm,
     partnerOptions,
+    isViewer,
     fetchList,
     fetchPartnerOptions,
     handleSearch,
