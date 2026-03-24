@@ -329,7 +329,8 @@ public class InventoryController implements InventoryApi {
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
     public ResponseEntity<StocktakeDetail> getStocktake(Long id, Boolean isCounted, String locationCodePrefix, Integer page, Integer size) {
-        com.wms.inventory.entity.StocktakeHeader header = stocktakeQueryService.findByIdWithLines(id);
+        // ヘッダのみ取得（明細はsearchLinesでページング取得するため）
+        com.wms.inventory.entity.StocktakeHeader header = stocktakeQueryService.findById(id);
 
         // 明細ページング
         Page<com.wms.inventory.entity.StocktakeLine> linesPage =
@@ -348,7 +349,7 @@ public class InventoryController implements InventoryApi {
         // 倉庫名
         String whName = "";
         try { whName = warehouseService.findById(header.getWarehouseId()).getWarehouseName(); }
-        catch (Exception ignored) {}
+        catch (Exception e) { log.warn("Failed to resolve warehouse name for id={}", header.getWarehouseId(), e); }
 
         long totalLines = stocktakeQueryService.countTotalLines(id);
         long countedLines = stocktakeQueryService.countCountedLines(id);
@@ -366,7 +367,7 @@ public class InventoryController implements InventoryApi {
                         .expiryDate(l.getExpiryDate())
                         .quantityBefore(l.getQuantityBefore())
                         .quantityCounted(l.getQuantityCounted())
-                        .quantityDiff(l.getQuantityDiff())
+                        .quantityDiff("CONFIRMED".equals(header.getStatus()) ? l.getQuantityDiff() : null)
                         .isCounted(l.isCounted())
                         .countedAt(l.getCountedAt())
                         .countedByName(l.getCountedBy() != null ? uNameMap.getOrDefault(l.getCountedBy(), "") : null))

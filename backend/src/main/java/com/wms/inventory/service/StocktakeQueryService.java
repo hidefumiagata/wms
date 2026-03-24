@@ -42,6 +42,12 @@ public class StocktakeQueryService {
         return stocktakeHeaderRepository.search(warehouseId, status, from, to, pageable);
     }
 
+    public StocktakeHeader findById(Long id) {
+        return stocktakeHeaderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "STOCKTAKE_NOT_FOUND", "棚卸が見つかりません (id=" + id + ")"));
+    }
+
     public StocktakeHeader findByIdWithLines(Long id) {
         return stocktakeHeaderRepository.findByIdWithLines(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
