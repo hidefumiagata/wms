@@ -579,6 +579,13 @@ export default {
       diffWarning: '{count}件の明細に差異があります。このまま確定しますか？',
       noDiffConfirm: '全明細が予定数通りです。このまま確定しますか？',
     },
+    results: {
+      title: '入荷実績照会',
+      storedDateFrom: '入庫日（From）',
+      storedDateTo: '入庫日（To）',
+      storedDate: '入庫日',
+      fetchError: '入荷実績の取得に失敗しました',
+    },
     store: {
       title: '入庫明細',
       location: '入庫先ロケーション',

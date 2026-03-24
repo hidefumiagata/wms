@@ -576,6 +576,13 @@ export default {
       diffWarning: '{count} line(s) have differences. Proceed?',
       noDiffConfirm: 'All lines match planned quantities. Proceed?',
     },
+    results: {
+      title: 'Inbound Results',
+      storedDateFrom: 'Stored Date (From)',
+      storedDateTo: 'Stored Date (To)',
+      storedDate: 'Stored Date',
+      fetchError: 'Failed to fetch inbound results',
+    },
     store: {
       title: 'Store Lines',
       location: 'Store Location',
