@@ -33,6 +33,12 @@ export function formatNumber(val: number | undefined | null): string {
   return val.toLocaleString('ja-JP')
 }
 
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return ''
+  const d = dateStr.includes('T') ? new Date(dateStr) : new Date(dateStr + 'T00:00:00')
+  return d.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
+
 export function formatDateTime(dateStr: string): string {
   if (!dateStr) return ''
   const d = new Date(dateStr)
