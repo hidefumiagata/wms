@@ -37,4 +37,10 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
             @Param("buildingId") Long buildingId,
             @Param("areaId") Long areaId,
             @Param("isActive") Boolean isActive);
+
+    @Query("SELECT l FROM Location l JOIN Area a ON l.areaId = a.id WHERE l.warehouseId = :warehouseId AND a.buildingId = :buildingId AND (:areaId IS NULL OR l.areaId = :areaId) AND l.isActive = true")
+    java.util.List<Location> findActiveByWarehouseAndBuilding(
+            @Param("warehouseId") Long warehouseId,
+            @Param("buildingId") Long buildingId,
+            @Param("areaId") Long areaId);
 }
