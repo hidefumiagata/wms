@@ -3,10 +3,12 @@ package com.wms.inventory.controller;
 import com.wms.generated.api.InventoryApi;
 import com.wms.generated.model.*;
 import com.wms.inventory.entity.Inventory;
+import com.wms.inventory.entity.StocktakeHeader;
 import com.wms.inventory.service.InventoryBreakdownService;
 import com.wms.inventory.service.InventoryCorrectionService;
 import com.wms.inventory.service.InventoryMoveService;
 import com.wms.inventory.service.InventoryQueryService;
+import com.wms.inventory.service.StocktakeQueryService;
 import com.wms.master.entity.Product;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ public class InventoryController implements InventoryApi {
     private final InventoryMoveService inventoryMoveService;
     private final InventoryBreakdownService inventoryBreakdownService;
     private final InventoryCorrectionService inventoryCorrectionService;
+    private final StocktakeQueryService stocktakeQueryService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
@@ -249,11 +252,47 @@ public class InventoryController implements InventoryApi {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
     public ResponseEntity<StocktakeSummaryPageResponse> listStocktakes(
             Long warehouseId, StocktakeStatus status, LocalDate dateFrom, LocalDate dateTo,
             Integer page, Integer size, String sort) {
-        throw new UnsupportedOperationException("棚卸一覧は後続Issueで実装予定");
+
+        String statusStr = status != null ? status.getValue() : null;
+
+        Sort sortObj = parseSort(sort, "startedAt", Set.of("startedAt", "stocktakeNumber", "status"));
+        Page<StocktakeHeader> resultPage = stocktakeQueryService.search(
+                warehouseId, statusStr, dateFrom, dateTo,
+                PageRequest.of(page, size, sortObj));
+
+        List<StocktakeSummary> items = resultPage.getContent().stream()
+                .map(this::toStocktakeSummary)
+                .toList();
+
+        StocktakeSummaryPageResponse response = new StocktakeSummaryPageResponse()
+                .content(items)
+                .page(resultPage.getNumber())
+                .size(resultPage.getSize())
+                .totalElements(resultPage.getTotalElements())
+                .totalPages(resultPage.getTotalPages());
+
+        return ResponseEntity.ok(response);
+    }
+
+    private StocktakeSummary toStocktakeSummary(StocktakeHeader h) {
+        long totalLines = stocktakeQueryService.countTotalLines(h.getId());
+        long countedLines = stocktakeQueryService.countCountedLines(h.getId());
+
+        return new StocktakeSummary()
+                .id(h.getId())
+                .stocktakeNumber(h.getStocktakeNumber())
+                .warehouseId(h.getWarehouseId())
+                .targetDescription(h.getTargetDescription())
+                .status(StocktakeStatus.fromValue(h.getStatus()))
+                .totalLines((int) totalLines)
+                .countedLines((int) countedLines)
+                .startedAt(h.getStartedAt())
+                .confirmedAt(h.getConfirmedAt());
     }
 
     @Override
