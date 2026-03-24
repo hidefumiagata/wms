@@ -1259,6 +1259,239 @@ async function validate() {
   return errors > 0 ? 1 : 0;
 }
 
+// ─── Document Map Generator (YAML → Markdown) ──────────────────────────────
+
+const DOCUMENT_MAP_YAML = path.join(DOCS_DIR, 'document-map.yaml');
+const DOCUMENT_MAP_MD   = path.join(DOCS_DIR, 'document-map.md');
+
+/**
+ * Minimal YAML parser for document-map.yaml.
+ * Handles the specific structure: modules[] and cross-cutting[] with nested docs.
+ */
+function parseDocumentMapYaml(yamlText) {
+  const lines = yamlText.split('\n');
+  const result = { modules: [], 'cross-cutting': [] };
+
+  let currentList = null;   // 'modules' or 'cross-cutting'
+  let currentItem = null;   // current module/cross-cutting entry
+  let currentDocs = null;   // current docs object (for modules)
+  let currentDocKey = null;  // current doc category key
+  let currentDocList = null; // current doc list (for cross-cutting)
+
+  for (const rawLine of lines) {
+    // Skip comments and empty lines
+    if (rawLine.match(/^\s*#/) || rawLine.trim() === '') continue;
+
+    const indent = rawLine.search(/\S/);
+    const line = rawLine.trim();
+
+    // Top-level keys
+    if (indent === 0 && line === 'modules:') {
+      currentList = 'modules';
+      currentItem = null;
+      continue;
+    }
+    if (indent === 0 && line === 'cross-cutting:') {
+      currentList = 'cross-cutting';
+      currentItem = null;
+      continue;
+    }
+
+    // List item start (- id: xxx)
+    if (line.startsWith('- id:')) {
+      const id = line.replace('- id:', '').trim();
+      if (currentList === 'modules') {
+        currentItem = { id, name: '', name_en: '', docs: {} };
+        result.modules.push(currentItem);
+        currentDocs = null;
+        currentDocKey = null;
+      } else if (currentList === 'cross-cutting') {
+        currentItem = { id, name: '', name_en: '', docs: [] };
+        result['cross-cutting'].push(currentItem);
+        currentDocList = null;
+      }
+      continue;
+    }
+
+    if (!currentItem) continue;
+
+    // Scalar fields
+    const nameMatch = line.match(/^name:\s*(.+)/);
+    if (nameMatch) { currentItem.name = nameMatch[1]; continue; }
+    const nameEnMatch = line.match(/^name_en:\s*(.+)/);
+    if (nameEnMatch) { currentItem.name_en = nameEnMatch[1]; continue; }
+
+    // docs: key (for modules)
+    if (line === 'docs:') {
+      if (currentList === 'modules') {
+        currentDocs = currentItem.docs;
+      }
+      currentDocKey = null;
+      currentDocList = null;
+      continue;
+    }
+
+    // Doc category key (e.g., "requirements:", "api:")
+    if (currentList === 'modules' && currentDocs && line.endsWith(':') && !line.startsWith('-')) {
+      currentDocKey = line.replace(':', '');
+      currentDocs[currentDocKey] = [];
+      continue;
+    }
+
+    // Doc list item (- path/to/file.md)
+    if (line.startsWith('- ')) {
+      const value = line.substring(2).replace(/#.*$/, '').trim(); // strip inline comments
+      if (currentList === 'modules' && currentDocs && currentDocKey) {
+        currentDocs[currentDocKey].push(value);
+      } else if (currentList === 'cross-cutting' && currentItem) {
+        currentItem.docs.push(value);
+      }
+      continue;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Resolve display name from file path (read first heading from .md file).
+ */
+function resolveDocTitle(relPath) {
+  const absPath = path.join(DOCS_DIR, relPath);
+  if (!fs.existsSync(absPath)) return relPath;
+  try {
+    const content = fs.readFileSync(absPath, 'utf-8');
+    const match = content.match(/^#\s+(.+)/m);
+    return match ? match[1].trim() : relPath;
+  } catch { return relPath; }
+}
+
+/** Doc category labels */
+const DOC_CATEGORY_LABELS = {
+  requirements:  { ja: '要件定義',    icon: '📝' },
+  api:           { ja: 'API設計',     icon: '🔌' },
+  screen:        { ja: '画面設計',    icon: '🖥️' },
+  report:        { ja: '帳票設計',    icon: '📊' },
+  batch:         { ja: 'バッチ設計',  icon: '⚙️' },
+  interface:     { ja: 'I/F設計',     icon: '🔗' },
+  'data-model':  { ja: 'データモデル', icon: '🗄️' },
+  test:          { ja: 'テスト仕様',  icon: '🧪' },
+  architecture:  { ja: 'アーキテクチャ', icon: '🏗️' },
+};
+
+function generateDocumentMapMd(mapData) {
+  const lines = [];
+  lines.push('# ドキュメント関連マップ (Document Relationship Map)');
+  lines.push('');
+  lines.push('> **このファイルは `docs/document-map.yaml` から自動生成されています。直接編集しないでください。**');
+  lines.push('> ');
+  lines.push('> 再生成: `node docs/scripts/build-docs.js --generate-map`');
+  lines.push('');
+
+  // ── Matrix table ──
+  lines.push('## モジュール × ドキュメント種別 マトリクス');
+  lines.push('');
+  lines.push('| モジュール | 要件定義 | API設計 | 画面設計 | 帳票 | バッチ | I/F | データモデル | テスト | アーキテクチャ |');
+  lines.push('|-----------|---------|---------|---------|------|--------|-----|-------------|--------|--------------|');
+
+  const docKeys = ['requirements', 'api', 'screen', 'report', 'batch', 'interface', 'data-model', 'test', 'architecture'];
+
+  for (const mod of mapData.modules) {
+    const cells = docKeys.map(key => {
+      const files = (mod.docs[key] || []);
+      if (files.length === 0) return '—';
+      return files.map(f => {
+        const basename = path.basename(f, '.md');
+        return basename;
+      }).join(', ');
+    });
+    lines.push(`| **${mod.name}** | ${cells.join(' | ')} |`);
+  }
+
+  lines.push('');
+
+  // ── Module detail sections ──
+  lines.push('## モジュール別 詳細');
+  lines.push('');
+
+  for (const mod of mapData.modules) {
+    lines.push(`### ${mod.name} (${mod.name_en})`);
+    lines.push('');
+
+    for (const key of docKeys) {
+      const files = mod.docs[key] || [];
+      if (files.length === 0) continue;
+      const label = DOC_CATEGORY_LABELS[key] || { ja: key, icon: '📄' };
+      lines.push(`**${label.icon} ${label.ja}:**`);
+      for (const f of files) {
+        lines.push(`- [${path.basename(f, '.md')}](${f})`);
+      }
+      lines.push('');
+    }
+  }
+
+  // ── Cross-cutting concerns ──
+  lines.push('## 横断的関心事 (Cross-Cutting Concerns)');
+  lines.push('');
+  lines.push('全モジュールに共通して参照されるドキュメント。');
+  lines.push('');
+
+  for (const cc of mapData['cross-cutting']) {
+    lines.push(`### ${cc.name} (${cc.name_en})`);
+    lines.push('');
+    for (const f of cc.docs) {
+      lines.push(`- [${path.basename(f, '.md')}](${f})`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function generateDocumentMap() {
+  if (!fs.existsSync(DOCUMENT_MAP_YAML)) {
+    console.error('❌ document-map.yaml が見つかりません');
+    process.exit(1);
+  }
+
+  const yamlText = fs.readFileSync(DOCUMENT_MAP_YAML, 'utf-8');
+  const mapData  = parseDocumentMapYaml(yamlText);
+
+  console.log(`📄 Parsed: ${mapData.modules.length} modules, ${mapData['cross-cutting'].length} cross-cutting concerns`);
+
+  // Validate file existence
+  let warnings = 0;
+  for (const mod of mapData.modules) {
+    for (const [, files] of Object.entries(mod.docs)) {
+      for (const f of files) {
+        if (!fs.existsSync(path.join(DOCS_DIR, f))) {
+          console.warn(`  ⚠ ${mod.id}: ファイルが存在しません — ${f}`);
+          warnings++;
+        }
+      }
+    }
+  }
+  for (const cc of mapData['cross-cutting']) {
+    for (const f of cc.docs) {
+      if (!fs.existsSync(path.join(DOCS_DIR, f))) {
+        console.warn(`  ⚠ ${cc.id}: ファイルが存在しません — ${f}`);
+        warnings++;
+      }
+    }
+  }
+
+  // Generate Markdown
+  const md = generateDocumentMapMd(mapData);
+  fs.writeFileSync(DOCUMENT_MAP_MD, md, 'utf-8');
+  console.log(`✓  document-map.md 生成完了 (${(Buffer.byteLength(md) / 1024).toFixed(1)} KB)`);
+
+  if (warnings > 0) {
+    console.warn(`⚠  ${warnings} 件のファイル参照警告があります`);
+  }
+
+  return mapData;
+}
+
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
 async function entry() {
@@ -1266,6 +1499,8 @@ async function entry() {
   if (args.includes('--validate')) {
     const exitCode = await validate();
     process.exit(exitCode);
+  } else if (args.includes('--generate-map')) {
+    generateDocumentMap();
   } else {
     await main();
   }
