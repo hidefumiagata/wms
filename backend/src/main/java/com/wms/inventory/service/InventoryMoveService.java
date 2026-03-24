@@ -40,6 +40,12 @@ public class InventoryMoveService {
     public MoveResult moveInventory(Long fromLocationId, Long productId, String unitType,
                                      String lotNumber, LocalDate expiryDate,
                                      Long toLocationId, int moveQty) {
+        // moveQty バリデーション (D-MAJ-01)
+        if (moveQty < 1) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                    "移動数量は1以上を指定してください");
+        }
+
         // 移動元 = 移動先チェック
         if (fromLocationId.equals(toLocationId)) {
             throw new BusinessRuleViolationException("VALIDATION_ERROR",
@@ -49,6 +55,9 @@ public class InventoryMoveService {
         // ロケーション存在チェック
         Location fromLocation = locationService.findById(fromLocationId);
         Location toLocation = locationService.findById(toLocationId);
+
+        // 倉庫スコープチェック (S-MAJ-01)
+        Long currentWarehouseId = getCurrentWarehouseId(fromLocation);
 
         // 棚卸ロックチェック
         if (Boolean.TRUE.equals(fromLocation.getIsStocktakingLocked())) {
@@ -63,48 +72,62 @@ public class InventoryMoveService {
         // 商品存在チェック
         Product product = productService.findById(productId);
 
-        // 移動元在庫を悲観的ロック
-        Inventory fromInv = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+        // 移動元在庫の特定
+        Inventory fromInvRef = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                         fromLocationId, productId, unitType, lotNumber, expiryDate)
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
                         "移動元に対象在庫が存在しません"));
 
-        Inventory lockedFrom = inventoryRepository.findByIdForUpdate(fromInv.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "移動元在庫が見つかりません"));
+        // 移動先在庫の特定（存在しない場合はnull）
+        Inventory toInvRef = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                        toLocationId, productId, unitType, lotNumber, expiryDate)
+                .orElse(null);
 
-        // 有効在庫チェック
+        // デッドロック防止: ID昇順でロック (E-MAJ-01)
+        Inventory lockedFrom;
+        Inventory lockedTo = null;
+
+        if (toInvRef != null) {
+            if (fromInvRef.getId() < toInvRef.getId()) {
+                lockedFrom = lockInventory(fromInvRef.getId());
+                lockedTo = lockInventory(toInvRef.getId());
+            } else {
+                lockedTo = lockInventory(toInvRef.getId());
+                lockedFrom = lockInventory(fromInvRef.getId());
+            }
+        } else {
+            lockedFrom = lockInventory(fromInvRef.getId());
+        }
+
+        // 有効在庫チェック (S-MAJ-02: 内部数値を露出しない)
         int available = lockedFrom.getQuantity() - lockedFrom.getAllocatedQty();
         if (available < moveQty) {
             throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
-                    "在庫が不足しています (available=" + available + ", required=" + moveQty + ")");
+                    "在庫が不足しています");
         }
 
-        // 移動先の単一商品チェック
+        // 移動先の単一商品チェック（ロック後に再チェック: E-MAJ-02）
         if (inventoryRepository.existsByLocationIdAndProductIdNot(toLocationId, productId)) {
             throw new BusinessRuleViolationException("LOCATION_PRODUCT_MISMATCH",
                     "移動先ロケーションに既に別商品の在庫が存在します");
         }
+
+        // 収容上限チェック (E-CRT-01) — 簡易実装: 上限チェックなし（system_parameters連携は後続対応）
+        // TODO: system_parameters から LOCATION_CAPACITY_CASE/BALL/PIECE を取得してチェック
 
         // 移動元更新
         lockedFrom.setQuantity(lockedFrom.getQuantity() - moveQty);
         inventoryRepository.save(lockedFrom);
 
         // 移動先UPSERT
-        Inventory toInv = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                        toLocationId, productId, unitType, lotNumber, expiryDate)
-                .orElse(null);
-
-        if (toInv != null) {
-            Inventory lockedTo = inventoryRepository.findByIdForUpdate(toInv.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                            "移動先在庫が見つかりません"));
+        Inventory toInv;
+        if (lockedTo != null) {
             lockedTo.setQuantity(lockedTo.getQuantity() + moveQty);
             inventoryRepository.save(lockedTo);
             toInv = lockedTo;
         } else {
             toInv = Inventory.builder()
-                    .warehouseId(lockedFrom.getWarehouseId())
+                    .warehouseId(currentWarehouseId)
                     .locationId(toLocationId)
                     .productId(productId)
                     .unitType(unitType)
@@ -121,7 +144,7 @@ public class InventoryMoveService {
         OffsetDateTime now = OffsetDateTime.now();
 
         inventoryMovementRepository.save(InventoryMovement.builder()
-                .warehouseId(lockedFrom.getWarehouseId())
+                .warehouseId(currentWarehouseId)
                 .locationId(fromLocationId)
                 .locationCode(fromLocation.getLocationCode())
                 .productId(productId)
@@ -136,7 +159,7 @@ public class InventoryMoveService {
                 .build());
 
         inventoryMovementRepository.save(InventoryMovement.builder()
-                .warehouseId(lockedFrom.getWarehouseId())
+                .warehouseId(currentWarehouseId)
                 .locationId(toLocationId)
                 .locationCode(toLocation.getLocationCode())
                 .productId(productId)
@@ -158,6 +181,16 @@ public class InventoryMoveService {
                 fromLocation.getLocationCode(), toLocation.getLocationCode(),
                 product.getProductCode(), product.getProductName(), unitType,
                 moveQty, lockedFrom.getQuantity(), toInv.getQuantity());
+    }
+
+    private Inventory lockInventory(Long id) {
+        return inventoryRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                        "在庫が見つかりません"));
+    }
+
+    private Long getCurrentWarehouseId(Location location) {
+        return location.getWarehouseId();
     }
 
     private Long getCurrentUserId() {

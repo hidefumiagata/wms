@@ -156,6 +156,15 @@ class InventoryMoveServiceTest {
         }
 
         @Test
+        @DisplayName("moveQtyが0以下の場合エラー")
+        void move_zeroQty_throws() {
+            assertThatThrownBy(() -> inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
         @DisplayName("移動元と移動先が同一の場合エラー")
         void move_sameLocation_throws() {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
