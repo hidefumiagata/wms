@@ -125,8 +125,6 @@
               type="primary"
               link
               size="small"
-              disabled
-              :title="t('common.noData')"
               @click="handleMove(row)"
             >
               {{ t('inventory.move') }}
