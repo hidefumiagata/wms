@@ -11,8 +11,11 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.LocationRepository;
 import com.wms.master.service.AreaService;
 import com.wms.master.service.BuildingService;
+import com.wms.master.entity.Product;
+import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +46,7 @@ class StocktakeServiceTest {
     @Mock private WarehouseService warehouseService;
     @Mock private BuildingService buildingService;
     @Mock private AreaService areaService;
+    @Mock private ProductService productService;
     @InjectMocks private StocktakeService service;
 
     @AfterEach void tearDown() { SecurityContextHolder.clearContext(); }
@@ -88,7 +92,10 @@ class StocktakeServiceTest {
         Inventory inv = Inventory.builder().warehouseId(1L).locationId(10L).productId(100L)
                 .unitType("CASE").quantity(5).allocatedQty(0).build();
         setField(inv, "id", 1L);
-        when(inventoryRepository.findAll()).thenReturn(List.of(inv));
+        Product prod = new Product(); setField(prod, "id", 100L);
+        prod.setProductCode("P-001"); prod.setProductName("テスト商品");
+        when(inventoryRepository.findByLocationIdsWithPositiveQty(any())).thenReturn(List.of(inv));
+        when(productService.findAllByIds(any())).thenReturn(List.of(prod));
 
         when(headerRepository.findMaxSequenceByYear("2026")).thenReturn(null);
         when(headerRepository.save(any(StocktakeHeader.class))).thenAnswer(i -> {
@@ -113,7 +120,8 @@ class StocktakeServiceTest {
         Location l1 = loc(10L, "A-01-01", false);
         when(locationRepository.findActiveByWarehouseAndBuilding(1L, 2L, 5L)).thenReturn(List.of(l1));
 
-        when(inventoryRepository.findAll()).thenReturn(List.of());
+        when(inventoryRepository.findByLocationIdsWithPositiveQty(any())).thenReturn(List.of());
+        when(productService.findAllByIds(any())).thenReturn(List.of());
         when(headerRepository.findMaxSequenceByYear("2026")).thenReturn(3);
         when(headerRepository.save(any())).thenAnswer(i -> { StocktakeHeader h = i.getArgument(0); setField(h, "id", 42L); return h; });
         when(locationRepository.saveAll(any())).thenReturn(List.of());
@@ -131,8 +139,8 @@ class StocktakeServiceTest {
         when(areaService.findById(5L)).thenReturn(area(5L, 99L, "他棟エリア"));
 
         assertThatThrownBy(() -> service.startStocktake(1L, 2L, 5L, LocalDate.of(2026, 3, 13), null))
-                .isInstanceOf(BusinessRuleViolationException.class)
-                .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                .isInstanceOf(ResourceNotFoundException.class)
+                .extracting("errorCode").isEqualTo("AREA_NOT_FOUND");
     }
 
     @Test @DisplayName("対象ロケーションなしの場合エラー")

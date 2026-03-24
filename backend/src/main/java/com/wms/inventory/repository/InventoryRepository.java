@@ -31,6 +31,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT i FROM Inventory i WHERE i.warehouseId = :warehouseId AND i.productId = :productId AND (i.quantity - i.allocatedQty) > 0 ORDER BY i.expiryDate ASC NULLS LAST, i.id ASC")
     List<Inventory> findAvailableStock(@Param("warehouseId") Long warehouseId, @Param("productId") Long productId);
 
+    @Query("SELECT i FROM Inventory i WHERE i.locationId IN :locationIds AND i.quantity > 0")
+    List<Inventory> findByLocationIdsWithPositiveQty(@Param("locationIds") List<Long> locationIds);
+
     @Query("""
             SELECT i FROM Inventory i
             WHERE i.warehouseId = :warehouseId

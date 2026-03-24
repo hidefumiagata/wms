@@ -8,11 +8,14 @@ import com.wms.inventory.repository.StocktakeHeaderRepository;
 import com.wms.master.entity.Area;
 import com.wms.master.entity.Building;
 import com.wms.master.entity.Location;
+import com.wms.master.entity.Product;
 import com.wms.master.repository.LocationRepository;
 import com.wms.master.service.AreaService;
 import com.wms.master.service.BuildingService;
+import com.wms.master.service.ProductService;
 import com.wms.master.service.WarehouseService;
 import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +26,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class StocktakeService {
+
+    private static final int MAX_STOCKTAKE_LINES = 2000;
 
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
     private final InventoryRepository inventoryRepository;
@@ -35,6 +43,7 @@ public class StocktakeService {
     private final WarehouseService warehouseService;
     private final BuildingService buildingService;
     private final AreaService areaService;
+    private final ProductService productService;
 
     public record StartResult(Long id, String stocktakeNumber, String targetDescription,
                                String status, int totalLines, OffsetDateTime startedAt) {}
@@ -50,7 +59,7 @@ public class StocktakeService {
         if (areaId != null) {
             area = areaService.findById(areaId);
             if (!area.getBuildingId().equals(buildingId)) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new ResourceNotFoundException("AREA_NOT_FOUND",
                         "指定エリアは指定棟に属していません");
             }
         }
@@ -98,33 +107,41 @@ public class StocktakeService {
                 .startedBy(userId)
                 .build();
 
-        // 在庫スナップショット → 明細作成
+        // 在庫スナップショット取得（ロケーションIDでフィルタ）
         List<Long> locationIds = locations.stream().map(Location::getId).toList();
-        int lineCount = 0;
-        for (Long locId : locationIds) {
-            Location loc = locations.stream().filter(l -> l.getId().equals(locId)).findFirst().orElse(null);
-            if (loc == null) continue;
+        List<Inventory> inventories = inventoryRepository.findByLocationIdsWithPositiveQty(locationIds);
 
-            List<Inventory> inventories = inventoryRepository.findAll().stream()
-                    .filter(inv -> inv.getLocationId().equals(locId) && inv.getQuantity() > 0)
-                    .toList();
+        // 2000行上限チェック
+        if (inventories.size() > MAX_STOCKTAKE_LINES) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                    "棚卸対象の在庫明細が" + MAX_STOCKTAKE_LINES + "行を超えています。エリアを絞ってください");
+        }
 
-            for (Inventory inv : inventories) {
-                StocktakeLine line = StocktakeLine.builder()
-                        .locationId(locId)
-                        .locationCode(loc.getLocationCode())
-                        .productId(inv.getProductId())
-                        .productCode("") // 後で解決
-                        .productName("")
-                        .unitType(inv.getUnitType())
-                        .lotNumber(inv.getLotNumber())
-                        .expiryDate(inv.getExpiryDate())
-                        .quantityBefore(inv.getQuantity())
-                        .isCounted(false)
-                        .build();
-                header.addLine(line);
-                lineCount++;
-            }
+        // 商品情報バッチ取得
+        Set<Long> productIds = inventories.stream().map(Inventory::getProductId).collect(Collectors.toSet());
+        Map<Long, Product> productMap = productService.findAllByIds(productIds).stream()
+                .collect(Collectors.toMap(Product::getId, p -> p));
+
+        // ロケーションコードマップ
+        Map<Long, String> locCodeMap = locations.stream()
+                .collect(Collectors.toMap(Location::getId, Location::getLocationCode));
+
+        // 明細作成
+        for (Inventory inv : inventories) {
+            Product product = productMap.get(inv.getProductId());
+            StocktakeLine line = StocktakeLine.builder()
+                    .locationId(inv.getLocationId())
+                    .locationCode(locCodeMap.getOrDefault(inv.getLocationId(), ""))
+                    .productId(inv.getProductId())
+                    .productCode(product != null ? product.getProductCode() : "")
+                    .productName(product != null ? product.getProductName() : "")
+                    .unitType(inv.getUnitType())
+                    .lotNumber(inv.getLotNumber())
+                    .expiryDate(inv.getExpiryDate())
+                    .quantityBefore(inv.getQuantity())
+                    .isCounted(false)
+                    .build();
+            header.addLine(line);
         }
 
         StocktakeHeader saved = stocktakeHeaderRepository.save(header);
@@ -136,10 +153,10 @@ public class StocktakeService {
         locationRepository.saveAll(locations);
 
         log.info("Stocktake started: number={}, warehouse={}, target={}, lines={}",
-                stocktakeNumber, warehouseId, targetDescription, lineCount);
+                stocktakeNumber, warehouseId, targetDescription, inventories.size());
 
         return new StartResult(saved.getId(), stocktakeNumber, targetDescription,
-                "STARTED", lineCount, now);
+                "STARTED", inventories.size(), now);
     }
 
     private Long getCurrentUserId() {
