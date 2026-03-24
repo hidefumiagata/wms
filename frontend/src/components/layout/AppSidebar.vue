@@ -87,6 +87,10 @@
         <el-icon><EditPen /></el-icon>
         <span>{{ t('nav.inventoryCorrection') }}</span>
       </el-menu-item>
+      <el-menu-item index="/inventory/stocktakes">
+        <el-icon><Notebook /></el-icon>
+        <span>{{ t('nav.inventoryStocktake') }}</span>
+      </el-menu-item>
     </el-sub-menu>
 
     <!-- 出荷管理 -->
@@ -122,7 +126,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen, Notebook } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
