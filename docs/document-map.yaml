@@ -1,0 +1,323 @@
+# ============================================================================
+# WMS ShowCase — ドキュメント関連マップ (Document Relationship Map)
+# ============================================================================
+# このファイルが SSOT。docs/document-map.md は build-docs.js で自動生成される。
+#
+# 構造:
+#   modules[]        — 業務モジュール（機能単位）
+#   cross-cutting[]  — 横断的関心事（アーキテクチャ・共通基盤）
+#
+# 各モジュールの docs キー:
+#   requirements  — 機能要件定義書 (functional-requirements/)
+#   api           — API設計書 (functional-design/API-*)
+#   screen        — 画面設計書 (functional-design/SCR-*)
+#   report        — 帳票設計書 (functional-design/RPT-*)
+#   batch         — バッチ設計書 (functional-design/BAT-*)
+#   interface     — I/F設計書 (functional-design/IF-*)
+#   data-model    — データモデル (data-model/)
+#   test          — テスト仕様書 (test-specifications/)
+#   architecture  — 関連アーキテクチャ (architecture-blueprint/, architecture-design/)
+# ============================================================================
+
+modules:
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: auth
+    name: 認証・認可
+    name_en: Authentication & Authorization
+    docs:
+      requirements:
+        - functional-requirements/00-authentication.md
+      api:
+        - functional-design/API-01-auth.md
+      screen:
+        - functional-design/SCR-01-auth.md
+      data-model:
+        - data-model/02-master-tables.md          # users, roles
+      test:
+        - test-specifications/TST-AUTH-login-password.md
+      architecture:
+        - architecture-blueprint/07-auth-architecture.md
+        - architecture-blueprint/10-security-architecture.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: master
+    name: マスタ管理
+    name_en: Master Management
+    docs:
+      requirements:
+        - functional-requirements/01-master-management.md
+      api:
+        - functional-design/API-02-master-facility.md
+        - functional-design/API-03-master-partner.md
+        - functional-design/API-04-master-product.md
+        - functional-design/API-05-master-user.md
+      screen:
+        - functional-design/SCR-02-master-facility.md
+        - functional-design/SCR-03-master-partner.md
+        - functional-design/SCR-04-master-warehouse.md
+        - functional-design/SCR-05-master-product.md
+        - functional-design/SCR-06-master-user.md
+      data-model:
+        - data-model/02-master-tables.md
+      test:
+        - test-specifications/TST-MST-master-management.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: system-parameters
+    name: システムパラメータ
+    name_en: System Parameters
+    docs:
+      requirements:
+        - functional-requirements/01a-system-parameters.md
+      api:
+        - functional-design/API-11-system-parameters.md
+      screen:
+        - functional-design/SCR-12-system-parameters.md
+      data-model:
+        - data-model/02-master-tables.md          # system_parameters
+      test:
+        - test-specifications/TST-SYS-parameters.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: inbound
+    name: 入荷管理
+    name_en: Inbound Management
+    docs:
+      requirements:
+        - functional-requirements/02-inbound-management.md
+      api:
+        - functional-design/API-06-inbound.md
+      screen:
+        - functional-design/SCR-07-inbound.md
+      report:
+        - functional-design/RPT-01-inbound-inspection.md
+        - functional-design/RPT-03-inbound-plan.md
+        - functional-design/RPT-04-inbound-result.md
+        - functional-design/RPT-05-unreceived-realtime.md
+        - functional-design/RPT-06-unreceived-confirmed.md
+      interface:
+        - functional-design/IF-01-inbound-plan.md
+      data-model:
+        - data-model/03-transaction-tables.md     # inbound_orders, inbound_order_details
+      test:
+        - test-specifications/TST-INB-inbound.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: inventory
+    name: 在庫管理
+    name_en: Inventory Management
+    docs:
+      requirements:
+        - functional-requirements/03-inventory-management.md
+      api:
+        - functional-design/API-07-inventory.md
+      screen:
+        - functional-design/SCR-08-inventory-ops.md
+        - functional-design/SCR-09-inventory-stocktake.md
+      report:
+        - functional-design/RPT-07-inventory.md
+        - functional-design/RPT-08-inventory-transition.md
+        - functional-design/RPT-09-inventory-correction.md
+        - functional-design/RPT-10-stocktake-list.md
+        - functional-design/RPT-11-stocktake-result.md
+      data-model:
+        - data-model/03-transaction-tables.md     # inventories, inventory_histories, stocktakes
+      test:
+        - test-specifications/TST-INV-inventory.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: outbound
+    name: 出荷管理
+    name_en: Outbound Management
+    docs:
+      requirements:
+        - functional-requirements/04-outbound-management.md
+      api:
+        - functional-design/API-08-outbound.md
+      screen:
+        - functional-design/SCR-10-outbound.md
+      report:
+        - functional-design/RPT-12-picking-instruction.md
+        - functional-design/RPT-13-shipping-inspection.md
+        - functional-design/RPT-14-delivery-list.md
+        - functional-design/RPT-15-unshipped-realtime.md
+        - functional-design/RPT-16-unshipped-confirmed.md
+      interface:
+        - functional-design/IF-02-order.md
+      data-model:
+        - data-model/03-transaction-tables.md     # outbound_orders, outbound_order_details
+      test:
+        - test-specifications/TST-OUT-outbound.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: allocation
+    name: 在庫引当
+    name_en: Stock Allocation
+    docs:
+      requirements:
+        - functional-requirements/04a-allocation.md
+      api:
+        - functional-design/API-12-allocation.md
+      screen:
+        - functional-design/SCR-13-allocation.md
+      data-model:
+        - data-model/03-transaction-tables.md     # allocations
+      test:
+        - test-specifications/TST-ALL-allocation.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: returns
+    name: 返品管理
+    name_en: Returns Management
+    docs:
+      requirements:
+        - functional-requirements/08-returns.md
+      api:
+        - functional-design/API-13-returns.md
+      screen:
+        - functional-design/SCR-14-returns.md
+      report:
+        - functional-design/RPT-18-returns.md
+      data-model:
+        - data-model/03-transaction-tables.md     # returns
+      test:
+        - test-specifications/TST-RTN-returns.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: batch
+    name: バッチ処理
+    name_en: Batch Processing
+    docs:
+      requirements:
+        - functional-requirements/06-batch-processing.md
+      api:
+        - functional-design/API-09-batch.md
+      screen:
+        - functional-design/SCR-11-batch.md
+      batch:
+        - functional-design/BAT-01-daily-close.md
+      data-model:
+        - data-model/04-batch-tables.md
+      test:
+        - test-specifications/TST-BAT-batch.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: report
+    name: レポート共通
+    name_en: Reporting (Common)
+    docs:
+      requirements:
+        - functional-requirements/05-reports.md
+      api:
+        - functional-design/API-10-report.md
+      report:
+        - functional-design/RPT-17-daily-summary.md
+      test:
+        - test-specifications/TST-RPT-reports.md
+
+  # ──────────────────────────────────────────────────────────────────────────
+  - id: interface
+    name: 外部連携I/F
+    name_en: External Interface
+    docs:
+      requirements:
+        - functional-requirements/07-interface.md
+      screen:
+        - functional-design/SCR-15-interface.md
+      test:
+        - test-specifications/TST-IF-interface.md
+      architecture:
+        - architecture-blueprint/09-interface-architecture.md
+
+# ============================================================================
+# 横断的関心事 (Cross-Cutting Concerns)
+# ============================================================================
+# 全モジュールに共通して参照されるアーキテクチャ・基盤ドキュメント。
+# 特定モジュールとの強い関連は modules[].docs.architecture に記載。
+
+cross-cutting:
+  - id: overall-architecture
+    name: 全体アーキテクチャ
+    name_en: Overall Architecture
+    docs:
+      - architecture-blueprint/01-overall-architecture.md
+      - architecture-design/02-system-architecture.md
+
+  - id: frontend
+    name: フロントエンド基盤
+    name_en: Frontend Architecture
+    docs:
+      - architecture-blueprint/03-frontend-architecture.md
+
+  - id: backend
+    name: バックエンド基盤
+    name_en: Backend Architecture
+    docs:
+      - architecture-blueprint/04-backend-architecture.md
+
+  - id: database
+    name: データベース基盤
+    name_en: Database Architecture
+    docs:
+      - architecture-blueprint/05-database-architecture.md
+      - architecture-design/05-database-architecture.md
+      - data-model/01-overview.md
+
+  - id: infrastructure
+    name: インフラ基盤
+    name_en: Infrastructure Architecture
+    docs:
+      - architecture-blueprint/06-infrastructure-architecture.md
+      - architecture-design/06-infrastructure-architecture.md
+
+  - id: security
+    name: セキュリティ
+    name_en: Security
+    docs:
+      - architecture-blueprint/07-auth-architecture.md
+      - architecture-blueprint/10-security-architecture.md
+
+  - id: common-infra
+    name: アプリケーション共通基盤
+    name_en: Common Application Infrastructure
+    docs:
+      - architecture-blueprint/08-common-infrastructure.md
+      - architecture-design/08-common-infrastructure.md
+
+  - id: monitoring
+    name: 監視・運用
+    name_en: Monitoring & Operations
+    docs:
+      - architecture-blueprint/11-monitoring-operations.md
+      - architecture-design/11-monitoring-operations.md
+
+  - id: dev-deploy
+    name: 開発・デプロイ
+    name_en: Development & Deployment
+    docs:
+      - architecture-blueprint/12-development-deploy.md
+      - architecture-design/12-development-deploy.md
+
+  - id: nfr
+    name: 非機能要件
+    name_en: Non-Functional Requirements
+    docs:
+      - architecture-blueprint/13-non-functional-requirements.md
+      - architecture-design/13-non-functional-requirements.md
+
+  - id: test-plan
+    name: テスト計画
+    name_en: Test Plan
+    docs:
+      - test-specifications/00-test-plan.md
+
+  - id: standards
+    name: 設計標準テンプレート
+    name_en: Design Standards & Templates
+    docs:
+      - functional-design/_standard-api.md
+      - functional-design/_standard-screen.md
+      - functional-design/_standard-report.md
+      - functional-design/_id-registry.md
+      - test-specifications/01-test-template.md
+      - ARCHITECTURE-RULES.md

@@ -59,6 +59,15 @@
 3. **レビューで矛盾を見つけた時**: SSOT側を正とし、複製側を参照リンクに置き換える
 4. **例外**: 画面設計書のイベント一覧にはAPIエンドポイントパス（`POST /api/v1/xxx`）を記載してよい（開発時の利便性のため）。ただしリクエスト/レスポンスの詳細は複製しない
 
+## ドキュメント関連マップ
+
+実装・レビュー・設計変更の際は **[docs/document-map.yaml](docs/document-map.yaml)** で対象モジュールの関連ドキュメントを確認すること。
+
+- **SSOT**: `docs/document-map.yaml`（YAMLが定義場所）
+- **閲覧用**: `docs/document-map.md`（自動生成。`node docs/scripts/build-docs.js --generate-map` で再生成）
+- モジュールごとに要件定義・API設計・画面設計・帳票・テスト仕様・データモデル・アーキテクチャの関連が定義されている
+- 新しいドキュメントを追加した場合は `document-map.yaml` も更新すること
+
 ## アーキテクチャルール（実装時の必読事項）
 
 実装作業を開始する前に必ず **[docs/ARCHITECTURE-RULES.md](docs/ARCHITECTURE-RULES.md)** を読み込むこと。
