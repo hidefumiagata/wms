@@ -590,6 +590,7 @@ export default {
       locationRequired: 'Please select a store location',
       allStoredSuccess: 'All lines stored. Status changed to "Stored"',
       partialSuccess: '{productName} stored (Location: {location})',
+      backToDetail: 'Back to Detail',
     },
   },
   error: {

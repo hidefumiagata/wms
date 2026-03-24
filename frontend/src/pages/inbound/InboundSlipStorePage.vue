@@ -80,7 +80,7 @@
 
       <!-- フッター -->
       <div class="action-bar">
-        <el-button @click="goBack">{{ t('inbound.inspect.backToDetail') }}</el-button>
+        <el-button @click="goBack">{{ t('inbound.store.backToDetail') }}</el-button>
       </div>
     </template>
   </div>

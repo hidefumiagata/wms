@@ -593,6 +593,7 @@ export default {
       locationRequired: '入庫先ロケーションを選択してください',
       allStoredSuccess: '全明細の入庫確定が完了しました。ステータスが「入庫完了」になりました',
       partialSuccess: '{productName}を入庫確定しました（ロケーション: {location}）',
+      backToDetail: '詳細に戻る',
     },
   },
   error: {

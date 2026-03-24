@@ -33,13 +33,18 @@ export function useInboundSlipStore() {
 
   const slipId = computed(() => {
     const id = route.params.id
-    return typeof id === 'string' ? Number(id) : null
+    if (typeof id !== 'string') return null
+    const num = Number(id)
+    return Number.isFinite(num) && num > 0 ? num : null
   })
 
   const hasUnstored = computed(() => lines.value.some(l => !l.isStored))
 
   async function fetchDetail() {
-    if (!slipId.value) return
+    if (!slipId.value) {
+      router.push({ name: 'inbound-slip-list' })
+      return
+    }
     loading.value = true
     try {
       const res = await apiClient.get<InboundSlipDetail>(`/inbound/slips/${slipId.value}`)
