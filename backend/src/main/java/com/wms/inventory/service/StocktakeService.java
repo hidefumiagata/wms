@@ -3,8 +3,10 @@ package com.wms.inventory.service;
 import com.wms.inventory.entity.Inventory;
 import com.wms.inventory.entity.StocktakeHeader;
 import com.wms.inventory.entity.StocktakeLine;
+import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.inventory.repository.StocktakeHeaderRepository;
+import com.wms.inventory.repository.StocktakeLineRepository;
 import com.wms.master.entity.Area;
 import com.wms.master.entity.Building;
 import com.wms.master.entity.Location;
@@ -38,7 +40,9 @@ public class StocktakeService {
     private static final int MAX_STOCKTAKE_LINES = 2000;
 
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
+    private final StocktakeLineRepository stocktakeLineRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
     private final LocationRepository locationRepository;
     private final WarehouseService warehouseService;
     private final BuildingService buildingService;
@@ -157,6 +161,170 @@ public class StocktakeService {
 
         return new StartResult(saved.getId(), stocktakeNumber, targetDescription,
                 "STARTED", inventories.size(), now);
+    }
+
+    // --- INV-014: 棚卸実数入力 ---
+
+    public record InputResult(int updatedCount, long totalLines, long countedLines) {}
+
+    @Transactional
+    public InputResult saveStocktakeLines(Long headerId, java.util.List<LineInput> inputs) {
+        if (inputs == null || inputs.isEmpty()) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR", "明細を1件以上指定してください");
+        }
+
+        StocktakeHeader header = stocktakeHeaderRepository.findById(headerId)
+                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                        "棚卸が見つかりません (id=" + headerId + ")"));
+
+        if (!"STARTED".equals(header.getStatus())) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
+                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+        }
+
+        Long userId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+        int updated = 0;
+
+        for (LineInput input : inputs) {
+            if (input.actualQty() < 0) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "実数は0以上を指定してください");
+            }
+
+            com.wms.inventory.entity.StocktakeLine line = stocktakeLineRepository.findById(input.lineId())
+                    .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
+                            "棚卸明細が見つかりません (lineId=" + input.lineId() + ")"));
+
+            if (!line.getStocktakeHeader().getId().equals(headerId)) {
+                throw new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
+                        "棚卸明細が指定棚卸に属していません (lineId=" + input.lineId() + ")");
+            }
+
+            line.setQuantityCounted(input.actualQty());
+            line.setCounted(true);
+            line.setCountedAt(now);
+            line.setCountedBy(userId);
+            updated++;
+        }
+
+        stocktakeHeaderRepository.save(header);
+
+        long totalLines = stocktakeLineRepository.countByHeaderId(headerId);
+        long countedLines = stocktakeLineRepository.countCountedByHeaderId(headerId);
+
+        log.info("Stocktake lines saved: headerId={}, updated={}", headerId, updated);
+
+        return new InputResult(updated, totalLines, countedLines);
+    }
+
+    public record LineInput(Long lineId, int actualQty) {}
+
+    // --- INV-015: 棚卸確定 ---
+
+    public record ConfirmResult(Long id, String stocktakeNumber, String status,
+                                 int totalLines, int adjustedLines, OffsetDateTime confirmedAt) {}
+
+    @Transactional
+    public ConfirmResult confirmStocktake(Long headerId) {
+        StocktakeHeader header = stocktakeHeaderRepository.findByIdWithLines(headerId)
+                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                        "棚卸が見つかりません (id=" + headerId + ")"));
+
+        if (!"STARTED".equals(header.getStatus())) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
+                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+        }
+
+        // 全明細入力済みチェック
+        boolean allCounted = header.getLines().stream().allMatch(StocktakeLine::isCounted);
+        if (!allCounted) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException(
+                    "INVENTORY_STOCKTAKE_NOT_ALL_COUNTED",
+                    "未入力の実数があります");
+        }
+
+        Long userId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+        int adjustedCount = 0;
+
+        // 差異計算
+        for (StocktakeLine line : header.getLines()) {
+            int diff = line.getQuantityCounted() - line.getQuantityBefore();
+            line.setQuantityDiff(diff);
+        }
+
+        // 在庫IDを事前収集してID昇順でロック（デッドロック防止）
+        java.util.TreeMap<Long, StocktakeLine> invIdToLine = new java.util.TreeMap<>();
+        for (StocktakeLine line : header.getLines()) {
+            if (line.getQuantityDiff() != 0) {
+                inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                                line.getLocationId(), line.getProductId(), line.getUnitType(),
+                                line.getLotNumber(), line.getExpiryDate())
+                        .ifPresentOrElse(
+                                inv -> invIdToLine.put(inv.getId(), line),
+                                () -> log.warn("Stocktake confirm: inventory not found for line={}, loc={}, product={}",
+                                        line.getId(), line.getLocationCode(), line.getProductCode())
+                        );
+            }
+        }
+
+        // ID昇順で在庫ロック→更新
+        for (var entry : invIdToLine.entrySet()) {
+            Long invId = entry.getKey();
+            StocktakeLine line = entry.getValue();
+            Inventory locked = inventoryRepository.findByIdForUpdate(invId).orElse(null);
+            if (locked != null) {
+                locked.setQuantity(line.getQuantityCounted());
+                inventoryRepository.save(locked);
+            } else {
+                log.warn("Stocktake confirm: failed to lock inventory id={}", invId);
+            }
+
+            // movement 記録
+            inventoryMovementRepository.save(com.wms.inventory.entity.InventoryMovement.builder()
+                    .warehouseId(header.getWarehouseId())
+                    .locationId(line.getLocationId())
+                    .locationCode(line.getLocationCode())
+                    .productId(line.getProductId())
+                    .productCode(line.getProductCode())
+                    .productName(line.getProductName())
+                    .unitType(line.getUnitType())
+                    .lotNumber(line.getLotNumber())
+                    .expiryDate(line.getExpiryDate())
+                    .movementType("STOCKTAKE_ADJUSTMENT")
+                    .quantity(line.getQuantityDiff())
+                    .quantityAfter(line.getQuantityCounted())
+                    .referenceId(header.getId())
+                    .referenceType("STOCKTAKE_HEADER")
+                    .executedAt(now)
+                    .executedBy(userId)
+                    .build());
+
+            adjustedCount++;
+        }
+
+        // ロケーション棚卸ロック解除
+        Set<Long> locationIds = header.getLines().stream()
+                .map(StocktakeLine::getLocationId)
+                .collect(Collectors.toSet());
+        List<Location> locations = locationRepository.findAllById(locationIds);
+        for (Location loc : locations) {
+            loc.setIsStocktakingLocked(false);
+        }
+        locationRepository.saveAll(locations);
+
+        // ヘッダ更新
+        header.setStatus("CONFIRMED");
+        header.setConfirmedAt(now);
+        header.setConfirmedBy(userId);
+        stocktakeHeaderRepository.save(header);
+
+        log.info("Stocktake confirmed: number={}, adjustedLines={}",
+                header.getStocktakeNumber(), adjustedCount);
+
+        return new ConfirmResult(header.getId(), header.getStocktakeNumber(),
+                "CONFIRMED", header.getLines().size(), adjustedCount, now);
     }
 
     private Long getCurrentUserId() {
