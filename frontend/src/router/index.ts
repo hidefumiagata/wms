@@ -229,6 +229,62 @@ const router = createRouter({
           component: () => import('@/pages/inbound/InboundResultsPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
         },
+        // 受注一覧 — OUT-001: 全ロール
+        {
+          path: 'outbound/slips',
+          name: 'outbound-slip-list',
+          component: () => import('@/pages/outbound/OutboundSlipListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
+        // 受注登録 — OUT-002: MANAGER, STAFF
+        {
+          path: 'outbound/slips/new',
+          name: 'outbound-slip-new',
+          component: () => import('@/pages/outbound/OutboundSlipNewPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 受注詳細 — OUT-003: 全ロール
+        {
+          path: 'outbound/slips/:id',
+          name: 'outbound-slip-detail',
+          component: () => import('@/pages/outbound/OutboundSlipDetailPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
+        // 出荷検品 — OUT-021: MANAGER, STAFF
+        {
+          path: 'outbound/slips/:id/inspect',
+          name: 'outbound-slip-inspect',
+          component: () => import('@/pages/outbound/OutboundSlipInspectPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 出荷完了 — OUT-022: MANAGER, STAFF
+        {
+          path: 'outbound/slips/:id/ship',
+          name: 'outbound-slip-ship',
+          component: () => import('@/pages/outbound/OutboundSlipShipPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // ピッキング指示一覧 — OUT-011: 全ロール
+        {
+          path: 'outbound/picking',
+          name: 'picking-list',
+          component: () => import('@/pages/outbound/PickingListPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER'] },
+        },
+        // ピッキング指示作成 — OUT-012: MANAGER, STAFF
+        {
+          path: 'outbound/picking/new',
+          name: 'picking-new',
+          component: () => import('@/pages/outbound/PickingNewPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // ピッキング完了入力 — OUT-013: MANAGER, STAFF
+        {
+          path: 'outbound/picking/:id',
+          name: 'picking-detail',
+          component: () => import('@/pages/outbound/PickingDetailPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
         // システムパラメータ管理 — SCR-12 (SYS-001): SYSTEM_ADMIN のみ
         {
           path: 'system/parameters',
