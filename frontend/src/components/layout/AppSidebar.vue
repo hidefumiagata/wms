@@ -65,6 +65,22 @@
       </el-menu-item>
     </el-sub-menu>
 
+    <!-- 出荷管理 -->
+    <el-sub-menu index="outbound">
+      <template #title>
+        <el-icon><Upload /></el-icon>
+        <span>{{ t('nav.outbound') }}</span>
+      </template>
+      <el-menu-item index="/outbound/slips">
+        <el-icon><Document /></el-icon>
+        <span>{{ t('nav.outboundSlips') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/outbound/picking">
+        <el-icon><List /></el-icon>
+        <span>{{ t('nav.pickingInstructions') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
     <!-- システム管理 -->
     <el-sub-menu index="system">
       <template #title>
@@ -82,7 +98,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean
