@@ -4,6 +4,7 @@ import com.wms.generated.api.InventoryApi;
 import com.wms.generated.model.*;
 import com.wms.inventory.entity.Inventory;
 import com.wms.inventory.service.InventoryBreakdownService;
+import com.wms.inventory.service.InventoryCorrectionService;
 import com.wms.inventory.service.InventoryMoveService;
 import com.wms.inventory.service.InventoryQueryService;
 import com.wms.master.entity.Product;
@@ -35,6 +36,7 @@ public class InventoryController implements InventoryApi {
     private final InventoryQueryService inventoryQueryService;
     private final InventoryMoveService inventoryMoveService;
     private final InventoryBreakdownService inventoryBreakdownService;
+    private final InventoryCorrectionService inventoryCorrectionService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
@@ -225,9 +227,26 @@ public class InventoryController implements InventoryApi {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<CorrectionInventoryResponse> correctInventory(CorrectionInventoryRequest request) {
-        throw new UnsupportedOperationException("在庫訂正は後続Issueで実装予定");
+        InventoryCorrectionService.CorrectionResult result = inventoryCorrectionService.correct(
+                request.getLocationId(), request.getProductId(),
+                request.getUnitType().getValue(),
+                request.getLotNumber(), request.getExpiryDate(),
+                request.getNewQty(), request.getReason());
+
+        CorrectionInventoryResponse response = new CorrectionInventoryResponse()
+                .inventoryId(result.inventoryId())
+                .locationCode(result.locationCode())
+                .productCode(result.productCode())
+                .productName(result.productName())
+                .unitType(UnitType.fromValue(result.unitType()))
+                .quantityBefore(result.quantityBefore())
+                .quantityAfter(result.quantityAfter())
+                .reason(result.reason());
+
+        return ResponseEntity.ok(response);
     }
 
     @Override
