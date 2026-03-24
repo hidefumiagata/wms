@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { AllocationOrderSummary } from '@/api/generated/models/allocation-order-summary'
@@ -58,6 +58,14 @@ export function usePickingNew() {
       ElMessage.warning(t('outbound.picking.selectRequired'))
       return
     }
+
+    try {
+      await ElMessageBox.confirm(
+        t('outbound.picking.confirmCreate', { count: selectedSlipIds.value.length }),
+        t('common.confirm'),
+        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
+      )
+    } catch { return }
 
     submitting.value = true
     try {

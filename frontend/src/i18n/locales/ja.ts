@@ -643,6 +643,7 @@ export default {
       areaAll: 'すべて',
       allocatedOrders: '引当済み受注一覧',
       selectRequired: 'ピッキング対象の受注を1件以上選択してください',
+      confirmCreate: '{count}件の受注でピッキング指示を作成します。よろしいですか？',
       createSuccess: 'ピッキング指示を作成しました（指示番号: {no}）',
       fetchError: 'ピッキング指示の取得に失敗しました',
       notFound: '指定のピッキング指示が見つかりません',

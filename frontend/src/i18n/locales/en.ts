@@ -640,6 +640,7 @@ export default {
       areaAll: 'All',
       allocatedOrders: 'Allocated Orders',
       selectRequired: 'Select at least one order',
+      confirmCreate: 'Create picking instruction for {count} order(s). Are you sure?',
       createSuccess: 'Picking instruction created ({no})',
       fetchError: 'Failed to fetch picking instructions',
       notFound: 'Picking instruction not found',
