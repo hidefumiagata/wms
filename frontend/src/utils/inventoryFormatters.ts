@@ -30,7 +30,7 @@ export function storageConditionTagType(condition: string): '' | 'success' | 'wa
 
 export function formatNumber(val: number | undefined | null): string {
   if (val == null) return '-'
-  return val.toLocaleString()
+  return val.toLocaleString('ja-JP')
 }
 
 export function formatDateTime(dateStr: string): string {

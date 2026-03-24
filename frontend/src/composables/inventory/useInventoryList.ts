@@ -80,18 +80,22 @@ export function useInventoryList() {
       if (searchForm.storageCondition) params.storageCondition = searchForm.storageCondition
 
       if (viewType.value === 'LOCATION') {
+        params.sort = 'locationCode,asc'
         const res = await apiClient.get<InventoryLocationPageResponse>('/inventory', {
           params,
           signal,
         })
         locationItems.value = res.data.content ?? []
+        productSummaryItems.value = []
         total.value = res.data.totalElements ?? 0
       } else {
+        params.sort = 'productCode,asc'
         const res = await apiClient.get<InventoryProductSummaryPageResponse>('/inventory', {
           params,
           signal,
         })
         productSummaryItems.value = res.data.content ?? []
+        locationItems.value = []
         total.value = res.data.totalElements ?? 0
       }
     } catch (err: unknown) {

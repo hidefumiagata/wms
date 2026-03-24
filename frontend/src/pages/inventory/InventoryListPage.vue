@@ -125,6 +125,8 @@
               type="primary"
               link
               size="small"
+              disabled
+              :title="t('common.noData')"
               @click="handleMove(row)"
             >
               {{ t('inventory.move') }}
@@ -284,7 +286,7 @@ onMounted(() => {
 }
 
 .has-allocated {
-  color: #e6a23c;
+  color: var(--el-color-warning);
   font-weight: 600;
 }
 </style>
