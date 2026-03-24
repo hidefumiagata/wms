@@ -62,7 +62,7 @@ public class StocktakeLine {
 
     @Column(name = "is_counted", nullable = false)
     @Builder.Default
-    private Boolean isCounted = false;
+    private boolean isCounted = false;
 
     @Column(name = "counted_at")
     private OffsetDateTime countedAt;

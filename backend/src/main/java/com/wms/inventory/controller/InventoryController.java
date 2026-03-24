@@ -10,6 +10,10 @@ import com.wms.inventory.service.InventoryMoveService;
 import com.wms.inventory.service.InventoryQueryService;
 import com.wms.inventory.service.StocktakeQueryService;
 import com.wms.master.entity.Product;
+import com.wms.master.entity.Warehouse;
+import com.wms.master.service.WarehouseService;
+import com.wms.system.entity.User;
+import com.wms.system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +44,8 @@ public class InventoryController implements InventoryApi {
     private final InventoryBreakdownService inventoryBreakdownService;
     private final InventoryCorrectionService inventoryCorrectionService;
     private final StocktakeQueryService stocktakeQueryService;
+    private final WarehouseService warehouseService;
+    private final UserRepository userRepository;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
@@ -265,8 +271,26 @@ public class InventoryController implements InventoryApi {
                 warehouseId, statusStr, dateFrom, dateTo,
                 PageRequest.of(page, size, sortObj));
 
+        // ユーザー名・倉庫名のバッチ取得（N+1回避）
+        Set<Long> userIds = new java.util.HashSet<>();
+        Set<Long> warehouseIds = new java.util.HashSet<>();
+        for (StocktakeHeader h : resultPage.getContent()) {
+            userIds.add(h.getStartedBy());
+            if (h.getConfirmedBy() != null) userIds.add(h.getConfirmedBy());
+            warehouseIds.add(h.getWarehouseId());
+        }
+        Map<Long, String> userNameMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getFullName));
+        Map<Long, String> warehouseNameMap = new java.util.HashMap<>();
+        for (Long wId : warehouseIds) {
+            try {
+                Warehouse wh = warehouseService.findById(wId);
+                warehouseNameMap.put(wId, wh.getWarehouseName());
+            } catch (Exception ignored) { }
+        }
+
         List<StocktakeSummary> items = resultPage.getContent().stream()
-                .map(this::toStocktakeSummary)
+                .map(h -> toStocktakeSummary(h, userNameMap, warehouseNameMap))
                 .toList();
 
         StocktakeSummaryPageResponse response = new StocktakeSummaryPageResponse()
@@ -279,7 +303,9 @@ public class InventoryController implements InventoryApi {
         return ResponseEntity.ok(response);
     }
 
-    private StocktakeSummary toStocktakeSummary(StocktakeHeader h) {
+    private StocktakeSummary toStocktakeSummary(StocktakeHeader h,
+                                                 Map<Long, String> userNameMap,
+                                                 Map<Long, String> warehouseNameMap) {
         long totalLines = stocktakeQueryService.countTotalLines(h.getId());
         long countedLines = stocktakeQueryService.countCountedLines(h.getId());
 
@@ -287,12 +313,15 @@ public class InventoryController implements InventoryApi {
                 .id(h.getId())
                 .stocktakeNumber(h.getStocktakeNumber())
                 .warehouseId(h.getWarehouseId())
+                .warehouseName(warehouseNameMap.getOrDefault(h.getWarehouseId(), ""))
                 .targetDescription(h.getTargetDescription())
                 .status(StocktakeStatus.fromValue(h.getStatus()))
                 .totalLines((int) totalLines)
                 .countedLines((int) countedLines)
                 .startedAt(h.getStartedAt())
-                .confirmedAt(h.getConfirmedAt());
+                .startedByName(userNameMap.getOrDefault(h.getStartedBy(), ""))
+                .confirmedAt(h.getConfirmedAt())
+                .confirmedByName(h.getConfirmedBy() != null ? userNameMap.getOrDefault(h.getConfirmedBy(), "") : null);
     }
 
     @Override

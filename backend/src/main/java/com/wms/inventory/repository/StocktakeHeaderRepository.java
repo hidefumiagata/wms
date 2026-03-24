@@ -29,6 +29,6 @@ public interface StocktakeHeaderRepository extends JpaRepository<StocktakeHeader
     @Query("SELECT h FROM StocktakeHeader h LEFT JOIN FETCH h.lines WHERE h.id = :id")
     Optional<StocktakeHeader> findByIdWithLines(@Param("id") Long id);
 
-    @Query("SELECT MAX(CAST(SUBSTRING(h.stocktakeNumber, LENGTH('ST-') + 1) AS int)) FROM StocktakeHeader h")
-    Integer findMaxSequence();
+    @Query("SELECT MAX(CAST(SUBSTRING(h.stocktakeNumber, LENGTH('ST-YYYY-') + 1) AS int)) FROM StocktakeHeader h WHERE h.stocktakeNumber LIKE CONCAT('ST-', :year, '-%')")
+    Integer findMaxSequenceByYear(@Param("year") String year);
 }
