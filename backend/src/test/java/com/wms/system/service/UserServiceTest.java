@@ -247,6 +247,22 @@ class UserServiceTest {
         }
 
         @Test
+        @DisplayName("自分自身の情報をロール・有効状態を変えずに更新できる")
+        void update_selfSameRoleAndActive_success() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setRole("SYSTEM_ADMIN");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            UserService.UpdateUserCommand cmd = new UserService.UpdateUserCommand(
+                    1L, "山田次郎", "jiro@example.com", "SYSTEM_ADMIN", true, 0, 1L);
+
+            User result = userService.update(cmd);
+
+            assertThat(result.getFullName()).isEqualTo("山田次郎");
+        }
+
+        @Test
         @DisplayName("存在しないIDでResourceNotFoundExceptionをスロー")
         void update_notFound_throwsException() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
@@ -283,6 +299,19 @@ class UserServiceTest {
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 0, 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasMessageContaining("無効化");
+        }
+
+        @Test
+        @DisplayName("自分自身を有効化できる（自己無効化のみ禁止）")
+        void toggleActive_selfActivate_success() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setIsActive(false);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = userService.toggleActive(1L, true, 0, 1L);
+
+            assertThat(result.getIsActive()).isTrue();
         }
 
         @Test
