@@ -83,7 +83,7 @@ export function useInboundSlipInspect() {
       }
     }
 
-    // 差異確認ダイアログ
+    // 確認ダイアログ（D-MAJ-04: 差異有無に応じて分岐）
     const diffLines = lines.value.filter(l => !l.isStored && l.diffQty !== 0)
     if (diffLines.length > 0) {
       try {
@@ -91,6 +91,16 @@ export function useInboundSlipInspect() {
           t('inbound.inspect.diffWarning', { count: diffLines.length }),
           t('common.confirm'),
           { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
+        )
+      } catch {
+        return
+      }
+    } else {
+      try {
+        await ElMessageBox.confirm(
+          t('inbound.inspect.noDiffConfirm'),
+          t('common.confirm'),
+          { type: 'info', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
         )
       } catch {
         return
@@ -112,7 +122,10 @@ export function useInboundSlipInspect() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 409) {
         ElMessage.error(error.response.data?.message ?? t('error.optimisticLock'))
+      } else if (error.response.status === 422) {
+        ElMessage.error(error.response.data?.message ?? t('error.server'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       saving.value = false
     }

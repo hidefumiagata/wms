@@ -78,8 +78,11 @@ export function useInboundSlipStore() {
         id: l.id,
         locationCode: l.locationCode,
       }))
-    } catch {
-      // エラーは無視
+    } catch (err: unknown) {
+      const error = toApiError(err)
+      if (!error.response) {
+        ElMessage.error(t('error.network'))
+      }
     }
   }
 
@@ -111,8 +114,16 @@ export function useInboundSlipStore() {
       if (allStored) {
         ElMessage.success(t('inbound.store.allStoredSuccess'))
         router.push({ name: 'inbound-slip-detail', params: { id: slipId.value } })
+      } else if (targetLines.length === 1) {
+        // 個別確定: 商品名とロケーション表示（D-MAJ-03）
+        const line = targetLines[0]
+        const loc = locationOptions.value.find(l => l.id === line.locationId)
+        ElMessage.success(t('inbound.store.partialSuccess', {
+          productName: line.productName,
+          location: loc?.locationCode ?? '',
+        }))
       } else {
-        ElMessage.success(t('inbound.store.partialSuccess'))
+        ElMessage.success(t('inbound.store.partialSuccess', { productName: '', location: '' }))
       }
     } catch (err: unknown) {
       const error = toApiError(err)
@@ -120,7 +131,10 @@ export function useInboundSlipStore() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 409) {
         ElMessage.error(error.response.data?.message ?? t('error.optimisticLock'))
+      } else if (error.response.status === 422) {
+        ElMessage.error(error.response.data?.message ?? t('error.server'))
       }
+      // 403/500 はインターセプターが処理済み
     } finally {
       storing.value = false
     }

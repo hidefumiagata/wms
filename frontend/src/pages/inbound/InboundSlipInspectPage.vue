@@ -21,7 +21,7 @@
           <span>{{ t('inbound.inspect.title') }}</span>
         </template>
 
-        <el-table :data="lines" stripe border style="width: 100%">
+        <el-table :data="lines" stripe border style="width: 100%" :row-class-name="diffRowClass">
           <el-table-column prop="lineNo" :label="t('inbound.slip.lineNo')" width="60" align="center" />
           <el-table-column prop="productCode" :label="t('inbound.slip.productCode')" width="140" />
           <el-table-column prop="productName" :label="t('inbound.slip.productName')" min-width="160" />
@@ -33,6 +33,7 @@
                 v-model="row.inspectedQty"
                 :min="0"
                 :max="999999"
+                :precision="0"
                 size="small"
                 controls-position="right"
                 style="width: 100%"
@@ -72,6 +73,10 @@ const { t } = useI18n()
 
 const { slip, lines, loading, saving, fetchDetail, updateDiff, handleSave, goBack } = useInboundSlipInspect()
 
+function diffRowClass({ row }: { row: { diffQty: number } }) {
+  return row.diffQty !== 0 ? 'diff-highlight-row' : ''
+}
+
 onMounted(() => fetchDetail())
 </script>
 
@@ -90,4 +95,8 @@ onMounted(() => fetchDetail())
 
 .text-danger { color: var(--el-color-danger); }
 .text-highlight { font-weight: bold; }
+
+:deep(.diff-highlight-row) {
+  background-color: #fdf6ec !important;
+}
 </style>
