@@ -94,9 +94,15 @@ export function useInboundSlipNew() {
 
   // --- 状態 ---
   const loading = ref(false)
-  const errors = reactive<Record<string, string>>({})
+  const errors = ref<Record<string, string>>({})
 
-  // --- 商品コード自動補完 ---
+  function clearErrors() {
+    errors.value = {}
+  }
+
+  // --- 商品コード自動補完（行ごとにリクエスト制御） ---
+  const productCodeLoading = ref<Record<number, boolean>>({})
+
   async function handleProductCodeBlur(line: LineItem) {
     if (!line.productCode) {
       line.productId = null
@@ -106,6 +112,7 @@ export function useInboundSlipNew() {
       return
     }
 
+    productCodeLoading.value[line.key] = true
     try {
       const res = await apiClient.get('/master/products', {
         params: { productCode: line.productCode, page: 0, size: 1, isActive: true },
@@ -128,6 +135,8 @@ export function useInboundSlipNew() {
       }
     } catch {
       ElMessage.error(t('error.network'))
+    } finally {
+      delete productCodeLoading.value[line.key]
     }
   }
 
@@ -186,8 +195,7 @@ export function useInboundSlipNew() {
       newErrors.lines = t('inbound.slip.validation.duplicateProduct')
     }
 
-    Object.keys(errors).forEach(key => delete errors[key])
-    Object.assign(errors, newErrors)
+    errors.value = newErrors
     return Object.keys(newErrors).length === 0
   }
 
