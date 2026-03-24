@@ -159,7 +159,8 @@ public class InventoryBreakdownService {
         if ("BALL".equals(fromUnitType) && "PIECE".equals(toUnitType)) {
             return product.getBallQuantity();
         }
-        return 0;
+        throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                "無効な荷姿変換です (" + fromUnitType + " → " + toUnitType + ")");
     }
 
     private int unitRank(String unitType) {

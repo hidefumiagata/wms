@@ -293,8 +293,9 @@ class InventoryBreakdownServiceTest {
         @Test void ballToPiece() {
             assertThat(service.getConversionRate("BALL", "PIECE", createProduct(1L, 12, 6))).isEqualTo(6);
         }
-        @Test void invalidConversion() {
-            assertThat(service.getConversionRate("PIECE", "CASE", createProduct(1L, 12, 6))).isEqualTo(0);
+        @Test void invalidConversion_throws() {
+            assertThatThrownBy(() -> service.getConversionRate("PIECE", "CASE", createProduct(1L, 12, 6)))
+                    .isInstanceOf(BusinessRuleViolationException.class);
         }
     }
 }
