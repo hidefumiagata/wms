@@ -326,9 +326,76 @@ public class InventoryController implements InventoryApi {
                 .confirmedByName(h.getConfirmedBy() != null ? userNameMap.getOrDefault(h.getConfirmedBy(), "") : null);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
     public ResponseEntity<StocktakeDetail> getStocktake(Long id, Boolean isCounted, String locationCodePrefix, Integer page, Integer size) {
-        throw new UnsupportedOperationException("棚卸詳細は後続Issueで実装予定");
+        // ヘッダのみ取得（明細はsearchLinesでページング取得するため）
+        com.wms.inventory.entity.StocktakeHeader header = stocktakeQueryService.findById(id);
+
+        // 明細ページング
+        Page<com.wms.inventory.entity.StocktakeLine> linesPage =
+                stocktakeQueryService.searchLines(id, isCounted, locationCodePrefix, PageRequest.of(page, size));
+
+        // ユーザー名解決
+        Set<Long> uIds = new java.util.HashSet<>();
+        uIds.add(header.getStartedBy());
+        if (header.getConfirmedBy() != null) uIds.add(header.getConfirmedBy());
+        linesPage.getContent().stream()
+                .filter(l -> l.getCountedBy() != null)
+                .forEach(l -> uIds.add(l.getCountedBy()));
+        Map<Long, String> uNameMap = userRepository.findAllById(uIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getFullName));
+
+        // 倉庫名
+        String whName = "";
+        try { whName = warehouseService.findById(header.getWarehouseId()).getWarehouseName(); }
+        catch (Exception e) { log.warn("Failed to resolve warehouse name for id={}", header.getWarehouseId(), e); }
+
+        long totalLines = stocktakeQueryService.countTotalLines(id);
+        long countedLines = stocktakeQueryService.countCountedLines(id);
+
+        List<StocktakeLineItem> lineItems = linesPage.getContent().stream()
+                .<StocktakeLineItem>map(l -> new StocktakeLineItem()
+                        .lineId(l.getId())
+                        .locationId(l.getLocationId())
+                        .locationCode(l.getLocationCode())
+                        .productId(l.getProductId())
+                        .productCode(l.getProductCode())
+                        .productName(l.getProductName())
+                        .unitType(UnitType.fromValue(l.getUnitType()))
+                        .lotNumber(l.getLotNumber())
+                        .expiryDate(l.getExpiryDate())
+                        .quantityBefore(l.getQuantityBefore())
+                        .quantityCounted(l.getQuantityCounted())
+                        .quantityDiff("CONFIRMED".equals(header.getStatus()) ? l.getQuantityDiff() : null)
+                        .isCounted(l.isCounted())
+                        .countedAt(l.getCountedAt())
+                        .countedByName(l.getCountedBy() != null ? uNameMap.getOrDefault(l.getCountedBy(), "") : null))
+                .toList();
+
+        StocktakeDetailLines detailLines = new StocktakeDetailLines()
+                .content(lineItems)
+                .page(linesPage.getNumber())
+                .size(linesPage.getSize())
+                .totalElements(linesPage.getTotalElements())
+                .totalPages(linesPage.getTotalPages());
+
+        StocktakeDetail detail = new StocktakeDetail()
+                .id(header.getId())
+                .stocktakeNumber(header.getStocktakeNumber())
+                .warehouseId(header.getWarehouseId())
+                .warehouseName(whName)
+                .targetDescription(header.getTargetDescription())
+                .status(StocktakeStatus.fromValue(header.getStatus()))
+                .totalLines((int) totalLines)
+                .countedLines((int) countedLines)
+                .startedAt(header.getStartedAt())
+                .startedByName(uNameMap.getOrDefault(header.getStartedBy(), ""))
+                .confirmedAt(header.getConfirmedAt())
+                .confirmedByName(header.getConfirmedBy() != null ? uNameMap.getOrDefault(header.getConfirmedBy(), "") : null)
+                .lines(detailLines);
+
+        return ResponseEntity.ok(detail);
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
