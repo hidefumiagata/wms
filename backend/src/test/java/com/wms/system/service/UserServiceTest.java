@@ -23,6 +23,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -246,6 +247,22 @@ class UserServiceTest {
         }
 
         @Test
+        @DisplayName("自分自身の情報をロール・有効状態を変えずに更新できる")
+        void update_selfSameRoleAndActive_success() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setRole("SYSTEM_ADMIN");
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            UserService.UpdateUserCommand cmd = new UserService.UpdateUserCommand(
+                    1L, "山田次郎", "jiro@example.com", "SYSTEM_ADMIN", true, 0, 1L);
+
+            User result = userService.update(cmd);
+
+            assertThat(result.getFullName()).isEqualTo("山田次郎");
+        }
+
+        @Test
         @DisplayName("存在しないIDでResourceNotFoundExceptionをスロー")
         void update_notFound_throwsException() {
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
@@ -282,6 +299,19 @@ class UserServiceTest {
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 0, 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasMessageContaining("無効化");
+        }
+
+        @Test
+        @DisplayName("自分自身を有効化できる（自己無効化のみ禁止）")
+        void toggleActive_selfActivate_success() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setIsActive(false);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            User result = userService.toggleActive(1L, true, 0, 1L);
+
+            assertThat(result.getIsActive()).isTrue();
         }
 
         @Test
@@ -369,6 +399,66 @@ class UserServiceTest {
             when(userRepository.existsByUserCode("XXXX")).thenReturn(false);
 
             assertThat(userService.existsByCode("XXXX")).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("getUserFullName")
+    class GetUserFullName {
+        @Test
+        @DisplayName("存在するユーザーIDでフルネームを返す")
+        void getUserFullName_exists_returnsFullName() {
+            User u = createUser(10L, "USR010", "山田 太郎");
+            when(userRepository.findById(10L)).thenReturn(Optional.of(u));
+
+            assertThat(userService.getUserFullName(10L)).isEqualTo("山田 太郎");
+        }
+
+        @Test
+        @DisplayName("存在しないユーザーIDでnullを返す")
+        void getUserFullName_notExists_returnsNull() {
+            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThat(userService.getUserFullName(999L)).isNull();
+        }
+
+        @Test
+        @DisplayName("nullのユーザーIDでnullを返す")
+        void getUserFullName_null_returnsNull() {
+            assertThat(userService.getUserFullName(null)).isNull();
+            verify(userRepository, never()).findById(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getUserFullNameMap")
+    class GetUserFullNameMap {
+        @Test
+        @DisplayName("複数ユーザーIDでフルネームのマップを返す")
+        void getUserFullNameMap_returnsMap() {
+            User u1 = createUser(1L, "USR001", "山田太郎");
+            User u2 = createUser(2L, "USR002", "鈴木一郎");
+            when(userRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(u1, u2));
+
+            Map<Long, String> result = userService.getUserFullNameMap(List.of(1L, 2L));
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(1L)).isEqualTo("山田太郎");
+            assertThat(result.get(2L)).isEqualTo("鈴木一郎");
+        }
+
+        @Test
+        @DisplayName("空のコレクションで空マップを返す")
+        void getUserFullNameMap_empty_returnsEmptyMap() {
+            assertThat(userService.getUserFullNameMap(List.of())).isEmpty();
+            verify(userRepository, never()).findAllById(any());
+        }
+
+        @Test
+        @DisplayName("nullで空マップを返す")
+        void getUserFullNameMap_null_returnsEmptyMap() {
+            assertThat(userService.getUserFullNameMap(null)).isEmpty();
+            verify(userRepository, never()).findAllById(any());
         }
     }
 

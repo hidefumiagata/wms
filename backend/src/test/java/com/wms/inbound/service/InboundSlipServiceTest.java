@@ -33,8 +33,7 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
 import org.springframework.dao.DataIntegrityViolationException;
-import com.wms.system.entity.User;
-import com.wms.system.repository.UserRepository;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -98,7 +97,7 @@ class InboundSlipServiceTest {
     private BusinessDateProvider businessDateProvider;
 
     @Mock
-    private UserRepository userRepository;
+    private UserService userService;
 
     @InjectMocks
     private InboundSlipService inboundSlipService;
@@ -309,27 +308,29 @@ class InboundSlipServiceTest {
     class ResolveUserNameTests {
 
         @Test
-        @DisplayName("存在するユーザーIDでフルネームを返す")
-        void resolveUserName_exists() {
-            User user = new User();
-            user.setFullName("山田 太郎");
-            when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+        @DisplayName("UserService経由でフルネームを返す")
+        void resolveUserName_delegatesToUserService() {
+            when(userService.getUserFullName(10L)).thenReturn("山田 太郎");
 
             assertThat(inboundSlipService.resolveUserName(10L)).isEqualTo("山田 太郎");
+            verify(userService).getUserFullName(10L);
         }
 
         @Test
-        @DisplayName("存在しないユーザーIDでnullを返す")
-        void resolveUserName_notExists() {
-            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        @DisplayName("UserServiceがnullを返す場合はnullを返す")
+        void resolveUserName_returnsNull() {
+            when(userService.getUserFullName(999L)).thenReturn(null);
 
             assertThat(inboundSlipService.resolveUserName(999L)).isNull();
         }
 
         @Test
-        @DisplayName("nullのユーザーIDでnullを返す")
+        @DisplayName("nullのユーザーIDを委譲する")
         void resolveUserName_null() {
+            when(userService.getUserFullName(null)).thenReturn(null);
+
             assertThat(inboundSlipService.resolveUserName(null)).isNull();
+            verify(userService).getUserFullName(null);
         }
     }
 

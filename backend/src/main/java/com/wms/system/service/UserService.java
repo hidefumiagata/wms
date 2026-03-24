@@ -8,6 +8,9 @@ import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -135,5 +138,30 @@ public class UserService {
 
     public boolean existsByCode(String userCode) {
         return userRepository.existsByUserCode(userCode);
+    }
+
+    /**
+     * ユーザーIDからフルネームを取得する。
+     * ユーザーが存在しない場合やIDがnullの場合はnullを返す。
+     */
+    public String getUserFullName(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .map(User::getFullName)
+                .orElse(null);
+    }
+
+    /**
+     * 複数ユーザーIDからフルネームのマップを取得する（N+1回避用）。
+     * 存在しないIDは結果に含まれない。
+     */
+    public Map<Long, String> getUserFullNameMap(Collection<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getFullName));
     }
 }
