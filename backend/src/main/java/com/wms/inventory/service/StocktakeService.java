@@ -169,6 +169,10 @@ public class StocktakeService {
 
     @Transactional
     public InputResult saveStocktakeLines(Long headerId, java.util.List<LineInput> inputs) {
+        if (inputs == null || inputs.isEmpty()) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR", "明細を1件以上指定してください");
+        }
+
         StocktakeHeader header = stocktakeHeaderRepository.findById(headerId)
                 .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
                         "棚卸が見つかりません (id=" + headerId + ")"));
@@ -244,48 +248,60 @@ public class StocktakeService {
         OffsetDateTime now = OffsetDateTime.now();
         int adjustedCount = 0;
 
-        // 差異計算 + 在庫更新 + movement記録
+        // 差異計算
         for (StocktakeLine line : header.getLines()) {
             int diff = line.getQuantityCounted() - line.getQuantityBefore();
             line.setQuantityDiff(diff);
+        }
 
-            if (diff != 0) {
-                // 在庫更新
-                Inventory inv = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+        // 在庫IDを事前収集してID昇順でロック（デッドロック防止）
+        java.util.TreeMap<Long, StocktakeLine> invIdToLine = new java.util.TreeMap<>();
+        for (StocktakeLine line : header.getLines()) {
+            if (line.getQuantityDiff() != 0) {
+                inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                                 line.getLocationId(), line.getProductId(), line.getUnitType(),
                                 line.getLotNumber(), line.getExpiryDate())
-                        .orElse(null);
-
-                if (inv != null) {
-                    Inventory locked = inventoryRepository.findByIdForUpdate(inv.getId()).orElse(null);
-                    if (locked != null) {
-                        locked.setQuantity(line.getQuantityCounted());
-                        inventoryRepository.save(locked);
-                    }
-                }
-
-                // movement 記録
-                inventoryMovementRepository.save(com.wms.inventory.entity.InventoryMovement.builder()
-                        .warehouseId(header.getWarehouseId())
-                        .locationId(line.getLocationId())
-                        .locationCode(line.getLocationCode())
-                        .productId(line.getProductId())
-                        .productCode(line.getProductCode())
-                        .productName(line.getProductName())
-                        .unitType(line.getUnitType())
-                        .lotNumber(line.getLotNumber())
-                        .expiryDate(line.getExpiryDate())
-                        .movementType("STOCKTAKE_ADJUSTMENT")
-                        .quantity(diff)
-                        .quantityAfter(line.getQuantityCounted())
-                        .referenceId(header.getId())
-                        .referenceType("STOCKTAKE_HEADER")
-                        .executedAt(now)
-                        .executedBy(userId)
-                        .build());
-
-                adjustedCount++;
+                        .ifPresentOrElse(
+                                inv -> invIdToLine.put(inv.getId(), line),
+                                () -> log.warn("Stocktake confirm: inventory not found for line={}, loc={}, product={}",
+                                        line.getId(), line.getLocationCode(), line.getProductCode())
+                        );
             }
+        }
+
+        // ID昇順で在庫ロック→更新
+        for (var entry : invIdToLine.entrySet()) {
+            Long invId = entry.getKey();
+            StocktakeLine line = entry.getValue();
+            Inventory locked = inventoryRepository.findByIdForUpdate(invId).orElse(null);
+            if (locked != null) {
+                locked.setQuantity(line.getQuantityCounted());
+                inventoryRepository.save(locked);
+            } else {
+                log.warn("Stocktake confirm: failed to lock inventory id={}", invId);
+            }
+
+            // movement 記録
+            inventoryMovementRepository.save(com.wms.inventory.entity.InventoryMovement.builder()
+                    .warehouseId(header.getWarehouseId())
+                    .locationId(line.getLocationId())
+                    .locationCode(line.getLocationCode())
+                    .productId(line.getProductId())
+                    .productCode(line.getProductCode())
+                    .productName(line.getProductName())
+                    .unitType(line.getUnitType())
+                    .lotNumber(line.getLotNumber())
+                    .expiryDate(line.getExpiryDate())
+                    .movementType("STOCKTAKE_ADJUSTMENT")
+                    .quantity(line.getQuantityDiff())
+                    .quantityAfter(line.getQuantityCounted())
+                    .referenceId(header.getId())
+                    .referenceType("STOCKTAKE_HEADER")
+                    .executedAt(now)
+                    .executedBy(userId)
+                    .build());
+
+            adjustedCount++;
         }
 
         // ロケーション棚卸ロック解除
