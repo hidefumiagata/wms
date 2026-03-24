@@ -136,4 +136,17 @@ public class UserService {
     public boolean existsByCode(String userCode) {
         return userRepository.existsByUserCode(userCode);
     }
+
+    /**
+     * ユーザーIDからフルネームを取得する。
+     * ユーザーが存在しない場合やIDがnullの場合はnullを返す。
+     */
+    public String getUserFullName(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .map(User::getFullName)
+                .orElse(null);
+    }
 }

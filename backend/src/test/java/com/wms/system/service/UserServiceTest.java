@@ -372,6 +372,34 @@ class UserServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("getUserFullName")
+    class GetUserFullName {
+        @Test
+        @DisplayName("存在するユーザーIDでフルネームを返す")
+        void getUserFullName_exists_returnsFullName() {
+            User u = createUser(10L, "USR010", "山田 太郎");
+            when(userRepository.findById(10L)).thenReturn(Optional.of(u));
+
+            assertThat(userService.getUserFullName(10L)).isEqualTo("山田 太郎");
+        }
+
+        @Test
+        @DisplayName("存在しないユーザーIDでnullを返す")
+        void getUserFullName_notExists_returnsNull() {
+            when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThat(userService.getUserFullName(999L)).isNull();
+        }
+
+        @Test
+        @DisplayName("nullのユーザーIDでnullを返す")
+        void getUserFullName_null_returnsNull() {
+            assertThat(userService.getUserFullName(null)).isNull();
+            verify(userRepository, never()).findById(any());
+        }
+    }
+
     // --- Helper ---
 
     private User createUser(Long id, String code, String fullName) {

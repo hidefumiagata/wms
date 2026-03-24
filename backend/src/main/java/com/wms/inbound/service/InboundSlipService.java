@@ -31,7 +31,7 @@ import com.wms.generated.model.InboundLineStatus;
 import com.wms.generated.model.InboundSlipStatus;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
-import com.wms.system.repository.UserRepository;
+import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -70,7 +70,7 @@ public class InboundSlipService {
     private final LocationService locationService;
     private final AreaService areaService;
     private final BusinessDateProvider businessDateProvider;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     public Page<InboundSlip> search(Long warehouseId, String slipNumber,
                                      List<String> statuses, LocalDate plannedDateFrom,
@@ -127,12 +127,7 @@ public class InboundSlipService {
     }
 
     public String resolveUserName(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        return userRepository.findById(userId)
-                .map(u -> u.getFullName())
-                .orElse(null);
+        return userService.getUserFullName(userId);
     }
 
     @Transactional
