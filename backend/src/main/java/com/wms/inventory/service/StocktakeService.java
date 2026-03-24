@@ -3,6 +3,7 @@ package com.wms.inventory.service;
 import com.wms.inventory.entity.Inventory;
 import com.wms.inventory.entity.StocktakeHeader;
 import com.wms.inventory.entity.StocktakeLine;
+import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.inventory.repository.StocktakeHeaderRepository;
 import com.wms.inventory.repository.StocktakeLineRepository;
@@ -41,6 +42,7 @@ public class StocktakeService {
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
     private final StocktakeLineRepository stocktakeLineRepository;
     private final InventoryRepository inventoryRepository;
+    private final InventoryMovementRepository inventoryMovementRepository;
     private final LocationRepository locationRepository;
     private final WarehouseService warehouseService;
     private final BuildingService buildingService;
@@ -213,6 +215,101 @@ public class StocktakeService {
     }
 
     public record LineInput(Long lineId, int actualQty) {}
+
+    // --- INV-015: 棚卸確定 ---
+
+    public record ConfirmResult(Long id, String stocktakeNumber, String status,
+                                 int totalLines, int adjustedLines, OffsetDateTime confirmedAt) {}
+
+    @Transactional
+    public ConfirmResult confirmStocktake(Long headerId) {
+        StocktakeHeader header = stocktakeHeaderRepository.findByIdWithLines(headerId)
+                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                        "棚卸が見つかりません (id=" + headerId + ")"));
+
+        if (!"STARTED".equals(header.getStatus())) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
+                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+        }
+
+        // 全明細入力済みチェック
+        boolean allCounted = header.getLines().stream().allMatch(StocktakeLine::isCounted);
+        if (!allCounted) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException(
+                    "INVENTORY_STOCKTAKE_NOT_ALL_COUNTED",
+                    "未入力の実数があります");
+        }
+
+        Long userId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+        int adjustedCount = 0;
+
+        // 差異計算 + 在庫更新 + movement記録
+        for (StocktakeLine line : header.getLines()) {
+            int diff = line.getQuantityCounted() - line.getQuantityBefore();
+            line.setQuantityDiff(diff);
+
+            if (diff != 0) {
+                // 在庫更新
+                Inventory inv = inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                                line.getLocationId(), line.getProductId(), line.getUnitType(),
+                                line.getLotNumber(), line.getExpiryDate())
+                        .orElse(null);
+
+                if (inv != null) {
+                    Inventory locked = inventoryRepository.findByIdForUpdate(inv.getId()).orElse(null);
+                    if (locked != null) {
+                        locked.setQuantity(line.getQuantityCounted());
+                        inventoryRepository.save(locked);
+                    }
+                }
+
+                // movement 記録
+                inventoryMovementRepository.save(com.wms.inventory.entity.InventoryMovement.builder()
+                        .warehouseId(header.getWarehouseId())
+                        .locationId(line.getLocationId())
+                        .locationCode(line.getLocationCode())
+                        .productId(line.getProductId())
+                        .productCode(line.getProductCode())
+                        .productName(line.getProductName())
+                        .unitType(line.getUnitType())
+                        .lotNumber(line.getLotNumber())
+                        .expiryDate(line.getExpiryDate())
+                        .movementType("STOCKTAKE_ADJUSTMENT")
+                        .quantity(diff)
+                        .quantityAfter(line.getQuantityCounted())
+                        .referenceId(header.getId())
+                        .referenceType("STOCKTAKE_HEADER")
+                        .executedAt(now)
+                        .executedBy(userId)
+                        .build());
+
+                adjustedCount++;
+            }
+        }
+
+        // ロケーション棚卸ロック解除
+        Set<Long> locationIds = header.getLines().stream()
+                .map(StocktakeLine::getLocationId)
+                .collect(Collectors.toSet());
+        List<Location> locations = locationRepository.findAllById(locationIds);
+        for (Location loc : locations) {
+            loc.setIsStocktakingLocked(false);
+        }
+        locationRepository.saveAll(locations);
+
+        // ヘッダ更新
+        header.setStatus("CONFIRMED");
+        header.setConfirmedAt(now);
+        header.setConfirmedBy(userId);
+        stocktakeHeaderRepository.save(header);
+
+        log.info("Stocktake confirmed: number={}, adjustedLines={}",
+                header.getStocktakeNumber(), adjustedCount);
+
+        return new ConfirmResult(header.getId(), header.getStocktakeNumber(),
+                "CONFIRMED", header.getLines().size(), adjustedCount, now);
+    }
 
     private Long getCurrentUserId() {
         WmsUserDetails ud = (WmsUserDetails) SecurityContextHolder.getContext()

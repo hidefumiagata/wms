@@ -432,9 +432,20 @@ public class InventoryController implements InventoryApi {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<ConfirmStocktakeResponse> confirmStocktake(Long id) {
-        throw new UnsupportedOperationException("棚卸確定は後続Issueで実装予定");
+        StocktakeService.ConfirmResult result = stocktakeService.confirmStocktake(id);
+
+        ConfirmStocktakeResponse response = new ConfirmStocktakeResponse()
+                .id(result.id())
+                .stocktakeNumber(result.stocktakeNumber())
+                .status(StocktakeStatus.fromValue(result.status()))
+                .totalLines(result.totalLines())
+                .adjustedLines(result.adjustedLines())
+                .confirmedAt(result.confirmedAt());
+
+        return ResponseEntity.ok(response);
     }
 
     private Sort parseSort(String sort, String defaultProperty, Set<String> allowedProperties) {
