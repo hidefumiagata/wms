@@ -9,6 +9,7 @@ import com.wms.inventory.service.InventoryCorrectionService;
 import com.wms.inventory.service.InventoryMoveService;
 import com.wms.inventory.service.InventoryQueryService;
 import com.wms.inventory.service.StocktakeQueryService;
+import com.wms.inventory.service.StocktakeService;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
@@ -46,6 +47,7 @@ public class InventoryController implements InventoryApi {
     private final StocktakeQueryService stocktakeQueryService;
     private final WarehouseService warehouseService;
     private final UserRepository userRepository;
+    private final StocktakeService stocktakeService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
@@ -329,9 +331,22 @@ public class InventoryController implements InventoryApi {
         throw new UnsupportedOperationException("棚卸詳細は後続Issueで実装予定");
     }
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
     public ResponseEntity<StartStocktakeResponse> startStocktake(StartStocktakeRequest request) {
-        throw new UnsupportedOperationException("棚卸開始は後続Issueで実装予定");
+        StocktakeService.StartResult result = stocktakeService.startStocktake(
+                request.getWarehouseId(), request.getBuildingId(), request.getAreaId(),
+                request.getStocktakeDate(), request.getNote());
+
+        StartStocktakeResponse response = new StartStocktakeResponse()
+                .id(result.id())
+                .stocktakeNumber(result.stocktakeNumber())
+                .targetDescription(result.targetDescription())
+                .status(StocktakeStatus.fromValue(result.status()))
+                .totalLines(result.totalLines())
+                .startedAt(result.startedAt());
+
+        return ResponseEntity.status(201).body(response);
     }
 
     @Override
