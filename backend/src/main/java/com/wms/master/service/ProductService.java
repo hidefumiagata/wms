@@ -43,6 +43,11 @@ public class ProductService {
         return all;
     }
 
+    public List<Product> findAllByIds(java.util.Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return productRepository.findAllById(ids);
+    }
+
     public Product findById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of(
