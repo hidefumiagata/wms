@@ -1185,7 +1185,12 @@ function onVisibilityChange() {
   } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
     showWarning()             // 警告閾値超過 → 警告ダイアログ表示
   } else if (!warningShown) {
-    startTimers()             // 閾値未満 → タイマーを残り時間で再設定
+    // 閾値未満 → 残り時間でタイマーを再設定（lastActiveAt は更新しない）
+    clearTimers()
+    const warningRemaining = WARNING_THRESHOLD_MS - elapsed
+    const timeoutRemaining = TIMEOUT_MS - elapsed
+    warningTimer = setTimeout(showWarning, warningRemaining)
+    timeoutTimer = setTimeout(doLogout, timeoutRemaining)
   }
 }
 
@@ -1194,6 +1199,8 @@ document.addEventListener('visibilitychange', onVisibilityChange)
 // stopSessionTimer() 内で解除
 document.removeEventListener('visibilitychange', onVisibilityChange)
 ```
+
+**重要**: 復帰時に `startTimers()` を呼ぶと `lastActiveAt` がリセットされ、タブ切替だけで全タイムアウト時間が再付与されてしまう。復帰時は必ず残り時間で再設定する。
 
 ##### 判定フロー
 
@@ -1207,7 +1214,7 @@ flowchart TD
     D -- No --> F{elapsed >= WARNING_THRESHOLD_MS<br/>かつ !warningShown?}
     F -- Yes --> G[警告ダイアログ表示]
     F -- No --> H{!warningShown?}
-    H -- Yes --> I[タイマー再設定]
+    H -- Yes --> I[残り時間でタイマー再設定]
     H -- No --> Z
 ```
 
@@ -1221,29 +1228,48 @@ flowchart TD
 - セッションタイムアウト・手動ログアウトの両方で `{ type: 'logout' }` メッセージを送信
 - 受信側は `broadcast: false` で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）
 - `BroadcastChannel` 非対応ブラウザ（IE等）は `typeof BroadcastChannel !== 'undefined'` で検出し、単タブ動作にフォールバック
+- **nonce によるメッセージ検証**: チャンネル名だけを知る外部スクリプト（ブラウザ拡張等）からのログアウト注入を防ぐ多層防御
+
+#### nonce 検証
+
+`localStorage` に `wms_bc_nonce` キーで nonce（`crypto.randomUUID()`）を保持し、タブ間で共有する。送信時に nonce を含め、受信時に検証することで、nonce を知らない外部からの注入を阻止する。
+
+> **制約**: XSS が成立した場合は `localStorage` も読めるため完全な防御ではない。チャンネル名だけを知る単純な注入攻撃を防ぐ多層防御として位置づける。
 
 ```typescript
-// BroadcastChannel 初期化（モジュールレベル）
-const bc: BroadcastChannel | null =
-  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+// nonce 管理
+const BC_NONCE_KEY = 'wms_bc_nonce'
 
-// 他タブからの受信
+function getSessionNonce(): string {
+  let nonce = localStorage.getItem(BC_NONCE_KEY)
+  if (!nonce) {
+    nonce = crypto.randomUUID()
+    localStorage.setItem(BC_NONCE_KEY, nonce)
+  }
+  return nonce
+}
+
+// 実行時型ガード（外部からの payload を検証）
+function isLogoutMessage(data: unknown): data is { type: 'logout'; nonce: string } {
+  return (
+    typeof data === 'object' && data !== null &&
+    (data as Record<string, unknown>)['type'] === 'logout' &&
+    typeof (data as Record<string, unknown>)['nonce'] === 'string'
+  )
+}
+
+// 受信: 型ガード + nonce 検証の両方を通過したメッセージのみ処理
 if (bc) {
-  bc.onmessage = (event) => {
-    if (event.data?.type === 'logout') {
-      doLogout({ broadcast: false })  // 再ブロードキャストしない
+  bc.onmessage = (event: MessageEvent<unknown>) => {
+    if (isLogoutMessage(event.data) && event.data.nonce === getSessionNonce()) {
+      doLogout({ broadcast: false })
     }
   }
 }
 
-// ログアウト時に送信
-async function doLogout(options?: { broadcast?: boolean }) {
-  if (isLoggingOut) return
-  isLoggingOut = true
-  if (options?.broadcast !== false && bc) {
-    bc.postMessage({ type: 'logout' })
-  }
-  // ... ログアウト処理
+// 送信: nonce を含める
+if (options?.broadcast !== false && bc) {
+  bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
 }
 ```
 

@@ -96,7 +96,9 @@ async function doLogout(options?: { broadcast?: boolean }) {
   } catch {
     // logout API が失敗してもクライアント側の遷移は必ず実行する
   }
-  isLoggingOut = false
+  // isLoggingOut はリセットしない。ログアウト後のページ遷移中に
+  // BroadcastChannel や visibilitychange から再度 doLogout が呼ばれるのを防ぐ。
+  // 次回ログイン時に startSessionTimer() 内で再初期化される。
   router.push({ name: 'login', query: { reason: 'session_expired' } })
 }
 
@@ -162,6 +164,7 @@ function onActivity() {
  * Page Visibility API による復帰時チェック。
  * バックグラウンドタブやPCスリープから復帰した際、setTimeout の遅延を補償する。
  * 実際の経過時間を計算し、タイムアウト閾値を超えていれば即座に警告またはログアウトする。
+ * 閾値未満の場合は残り時間でタイマーを再設定する（全時間リセットではない）。
  */
 function onVisibilityChange() {
   if (document.visibilityState !== 'visible') return
@@ -173,8 +176,12 @@ function onVisibilityChange() {
   } else if (elapsed >= WARNING_THRESHOLD_MS && !warningShown) {
     showWarning()
   } else if (!warningShown) {
-    // 閾値未満 → タイマーを残り時間で再設定
-    startTimers()
+    // 閾値未満 → 残り時間でタイマーを再設定（lastActiveAt は更新しない）
+    clearTimers()
+    const warningRemaining = WARNING_THRESHOLD_MS - elapsed
+    const timeoutRemaining = TIMEOUT_MS - elapsed
+    warningTimer = setTimeout(showWarning, warningRemaining)
+    timeoutTimer = setTimeout(doLogout, timeoutRemaining)
   }
 }
 
@@ -183,6 +190,7 @@ function onVisibilityChange() {
  * バックエンドからセッション設定を取得し、タイムアウト値を更新する。
  */
 export async function startSessionTimer() {
+  isLoggingOut = false
   try {
     const { data } = await apiClient.get('/system/session-config')
     const timeout = data?.timeoutMinutes
