@@ -52,7 +52,7 @@ class InventoryControllerTest {
     @MockitoBean
     private com.wms.master.service.WarehouseService warehouseService;
     @MockitoBean
-    private com.wms.system.repository.UserRepository userRepository;
+    private com.wms.system.service.UserService userService;
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean

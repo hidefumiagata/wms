@@ -23,6 +23,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -397,6 +398,38 @@ class UserServiceTest {
         void getUserFullName_null_returnsNull() {
             assertThat(userService.getUserFullName(null)).isNull();
             verify(userRepository, never()).findById(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("getUserFullNameMap")
+    class GetUserFullNameMap {
+        @Test
+        @DisplayName("複数ユーザーIDでフルネームのマップを返す")
+        void getUserFullNameMap_returnsMap() {
+            User u1 = createUser(1L, "USR001", "山田太郎");
+            User u2 = createUser(2L, "USR002", "鈴木一郎");
+            when(userRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(u1, u2));
+
+            Map<Long, String> result = userService.getUserFullNameMap(List.of(1L, 2L));
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(1L)).isEqualTo("山田太郎");
+            assertThat(result.get(2L)).isEqualTo("鈴木一郎");
+        }
+
+        @Test
+        @DisplayName("空のコレクションで空マップを返す")
+        void getUserFullNameMap_empty_returnsEmptyMap() {
+            assertThat(userService.getUserFullNameMap(List.of())).isEmpty();
+            verify(userRepository, never()).findAllById(any());
+        }
+
+        @Test
+        @DisplayName("nullで空マップを返す")
+        void getUserFullNameMap_null_returnsEmptyMap() {
+            assertThat(userService.getUserFullNameMap(null)).isEmpty();
+            verify(userRepository, never()).findAllById(any());
         }
     }
 

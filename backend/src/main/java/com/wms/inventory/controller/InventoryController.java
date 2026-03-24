@@ -13,8 +13,7 @@ import com.wms.inventory.service.StocktakeService;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.WarehouseService;
-import com.wms.system.entity.User;
-import com.wms.system.repository.UserRepository;
+import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,7 +45,7 @@ public class InventoryController implements InventoryApi {
     private final InventoryCorrectionService inventoryCorrectionService;
     private final StocktakeQueryService stocktakeQueryService;
     private final WarehouseService warehouseService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final StocktakeService stocktakeService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
@@ -281,8 +280,7 @@ public class InventoryController implements InventoryApi {
             if (h.getConfirmedBy() != null) userIds.add(h.getConfirmedBy());
             warehouseIds.add(h.getWarehouseId());
         }
-        Map<Long, String> userNameMap = userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getFullName));
+        Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
         Map<Long, String> warehouseNameMap = new java.util.HashMap<>();
         for (Long wId : warehouseIds) {
             try {
@@ -343,8 +341,7 @@ public class InventoryController implements InventoryApi {
         linesPage.getContent().stream()
                 .filter(l -> l.getCountedBy() != null)
                 .forEach(l -> uIds.add(l.getCountedBy()));
-        Map<Long, String> uNameMap = userRepository.findAllById(uIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getFullName));
+        Map<Long, String> uNameMap = userService.getUserFullNameMap(uIds);
 
         // 倉庫名
         String whName = "";
