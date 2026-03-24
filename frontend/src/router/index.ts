@@ -271,6 +271,20 @@ const router = createRouter({
           component: () => import('@/pages/inventory/StocktakeNewPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
         },
+        // 棚卸実施（実数入力） — INV-013: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'inventory/stocktakes/:id',
+          name: 'stocktake-detail',
+          component: () => import('@/pages/inventory/StocktakeDetailPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
+        // 棚卸確定 — INV-014: WAREHOUSE_MANAGER
+        {
+          path: 'inventory/stocktakes/:id/confirm',
+          name: 'stocktake-confirm',
+          component: () => import('@/pages/inventory/StocktakeConfirmPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
         // 受注一覧 — OUT-001: 全ロール
         {
           path: 'outbound/slips',
