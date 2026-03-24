@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -32,6 +32,7 @@ export function useInventoryMove() {
 
   // 移動元
   const fromLocationCode = ref('')
+  const fromLocationId = ref<number | null>(null)
   const fromInventoryOptions = ref<InventoryOption[]>([])
   const selectedProductId = ref<number | null>(null)
   const selectedUnitType = ref<string | null>(null)
@@ -62,6 +63,25 @@ export function useInventoryMove() {
 
     loading.value = true
     try {
+      // ロケーションID取得
+      const locRes = await apiClient.get('/master/locations', {
+        params: {
+          warehouseId: warehouseStore.currentWarehouseId,
+          locationCode: fromLocationCode.value.trim(),
+          page: 0, size: 1,
+        },
+        signal: abortController.signal,
+      })
+      const locs = locRes.data.content ?? []
+      if (locs.length === 0) {
+        ElMessage.warning(t('inventory.locationNotFound'))
+        fromInventoryOptions.value = []
+        fromLocationId.value = null
+        loading.value = false
+        return
+      }
+      fromLocationId.value = locs[0].id
+
       const res = await apiClient.get('/inventory', {
         params: {
           warehouseId: warehouseStore.currentWarehouseId,
@@ -165,7 +185,7 @@ export function useInventoryMove() {
 
   // --- 登録 ---
   async function submitMove() {
-    if (!fromInventory.value || !toLocationId.value) return
+    if (!fromInventory.value || !toLocationId.value || !fromLocationId.value) return
 
     // バリデーション
     if (fromLocationCode.value.trim() === toLocationCode.value.trim()) {
@@ -174,21 +194,6 @@ export function useInventoryMove() {
     }
     if (moveQty.value < 1 || moveQty.value > fromInventory.value.availableQty) {
       ElMessage.error(t('inventory.moveQtyExceedsAvailable'))
-      return
-    }
-
-    // fromLocationId を取得
-    const fromLocRes = await apiClient.get('/master/locations', {
-      params: {
-        warehouseId: warehouseStore.currentWarehouseId,
-        locationCode: fromLocationCode.value.trim(),
-        page: 0,
-        size: 1,
-      },
-    })
-    const fromLocs = fromLocRes.data.content ?? []
-    if (fromLocs.length === 0) {
-      ElMessage.error(t('inventory.locationNotFound'))
       return
     }
 
@@ -211,7 +216,7 @@ export function useInventoryMove() {
     submitting.value = true
     try {
       await apiClient.post('/inventory/move', {
-        fromLocationId: fromLocs[0].id,
+        fromLocationId: fromLocationId.value,
         productId: fromInventory.value.productId,
         unitType: fromInventory.value.unitType,
         lotNumber: fromInventory.value.lotNumber ?? null,

@@ -86,6 +86,11 @@
         <el-form-item v-if="conversionRate != null" :label="t('inventory.conversionRate')">
           <span class="rate-info">{{ conversionRate }}</span>
         </el-form-item>
+        <el-form-item v-if="conversionRate != null && conversionRate <= 0">
+          <el-alert type="error" :closable="false" show-icon>
+            {{ t('inventory.conversionRateNotSet') }}
+          </el-alert>
+        </el-form-item>
       </el-form>
 
       <!-- ばらし先ロケーション -->

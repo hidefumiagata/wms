@@ -172,15 +172,12 @@ export function useInventoryCorrection() {
       diff: diff.value,
     })
 
+    const fullMsg = newQty.value === 0
+      ? `${confirmMsg}\n\n${t('inventory.correctionConfirmZeroMessage')}`
+      : confirmMsg
+
     try {
-      if (newQty.value === 0) {
-        await ElMessageBox.confirm(
-          t('inventory.correctionConfirmZeroMessage'),
-          t('common.confirm'),
-          { type: 'warning' }
-        )
-      }
-      await ElMessageBox.confirm(confirmMsg, t('common.confirm'), { type: 'warning' })
+      await ElMessageBox.confirm(fullMsg, t('common.confirm'), { type: 'warning' })
     } catch {
       return
     }
