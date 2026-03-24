@@ -42,6 +42,7 @@ export function useOutboundSlipNew() {
     slipType: 'NORMAL' as 'NORMAL' | 'WAREHOUSE_TRANSFER',
     plannedDate: '',
     partnerId: null as number | null,
+    transferWarehouseId: null as number | null,
     note: '',
   })
 
@@ -61,6 +62,23 @@ export function useOutboundSlipNew() {
 
   // --- 明細 ---
   const lines = ref<LineItem[]>([createEmptyLine()])
+
+  // --- 振替先倉庫プルダウン（WAREHOUSE_TRANSFER時） ---
+  const warehouseOptions = ref<{ id: number; warehouseName: string }[]>([])
+
+  async function fetchWarehouseOptions() {
+    try {
+      const res = await apiClient.get('/master/warehouses', {
+        params: { page: 0, size: 100, isActive: true, sort: 'warehouseName,asc' },
+      })
+      // 現在選択中の倉庫を除外
+      warehouseOptions.value = res.data.content
+        .filter((w: { id: number }) => w.id !== warehouseStore.currentWarehouseId)
+        .map((w: { id: number; warehouseName: string }) => ({ id: w.id, warehouseName: w.warehouseName }))
+    } catch {
+      // エラーは無視
+    }
+  }
 
   // --- 出荷先プルダウン ---
   const partnerOptions = ref<{ id: number; partnerName: string }[]>([])
@@ -133,6 +151,9 @@ export function useOutboundSlipNew() {
     if (isNormal.value && !headerForm.partnerId) {
       newErrors.partnerId = t('outbound.slip.validation.partnerRequired')
     }
+    if (!isNormal.value && !headerForm.transferWarehouseId) {
+      newErrors.transferWarehouseId = t('outbound.slip.validation.transferWarehouseRequired')
+    }
 
     if (lines.value.length === 0) {
       newErrors.lines = t('outbound.slip.validation.minOneLine')
@@ -186,6 +207,8 @@ export function useOutboundSlipNew() {
       const error = toApiError(err)
       if (!error.response) {
         ElMessage.error(t('error.network'))
+      } else if (error.response.status === 409) {
+        ElMessage.error(t('error.optimisticLock'))
       } else if (error.response.status === 422) {
         ElMessage.error(error.response.data?.message ?? t('error.server'))
       }
@@ -210,8 +233,8 @@ export function useOutboundSlipNew() {
   }
 
   return {
-    headerForm, lines, partnerOptions, loading, errors, isNormal, businessDate,
-    fetchBusinessDate, fetchPartnerOptions, handleProductCodeBlur,
+    headerForm, lines, partnerOptions, warehouseOptions, loading, errors, isNormal, businessDate,
+    fetchBusinessDate, fetchPartnerOptions, fetchWarehouseOptions, handleProductCodeBlur,
     addLine, removeLine, handleSubmit, handleCancel,
   }
 }

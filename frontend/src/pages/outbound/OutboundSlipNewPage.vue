@@ -24,6 +24,12 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item v-if="!isNormal" :label="t('outbound.slip.transferWarehouse')" required :error="errors.transferWarehouseId">
+          <el-select v-model="headerForm.transferWarehouseId" filterable :placeholder="t('outbound.slip.transferWarehouse')" style="width: 100%">
+            <el-option v-for="w in warehouseOptions" :key="w.id" :label="w.warehouseName" :value="w.id" />
+          </el-select>
+        </el-form-item>
+
         <el-form-item :label="t('outbound.slip.note')">
           <el-input v-model="headerForm.note" type="textarea" :rows="3" :maxlength="500" show-word-limit />
         </el-form-item>
@@ -94,14 +100,15 @@ import { useOutboundSlipNew } from '@/composables/outbound/useOutboundSlipNew'
 const { t } = useI18n()
 
 const {
-  headerForm, lines, partnerOptions, loading, errors, isNormal,
-  fetchBusinessDate, fetchPartnerOptions, handleProductCodeBlur,
+  headerForm, lines, partnerOptions, warehouseOptions, loading, errors, isNormal,
+  fetchBusinessDate, fetchPartnerOptions, fetchWarehouseOptions, handleProductCodeBlur,
   addLine, removeLine, handleSubmit, handleCancel,
 } = useOutboundSlipNew()
 
 onMounted(() => {
   fetchBusinessDate()
   fetchPartnerOptions()
+  fetchWarehouseOptions()
 })
 </script>
 
