@@ -3,6 +3,7 @@ package com.wms.inventory.controller;
 import com.wms.generated.api.InventoryApi;
 import com.wms.generated.model.*;
 import com.wms.inventory.entity.Inventory;
+import com.wms.inventory.service.InventoryMoveService;
 import com.wms.inventory.service.InventoryQueryService;
 import com.wms.master.entity.Product;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class InventoryController implements InventoryApi {
             "productCode", "productName");
 
     private final InventoryQueryService inventoryQueryService;
+    private final InventoryMoveService inventoryMoveService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
     @Override
@@ -171,9 +173,31 @@ public class InventoryController implements InventoryApi {
 
     // --- Stub implementations for other inventory APIs ---
 
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<MoveInventoryResponse> moveInventory(MoveInventoryRequest request) {
-        throw new UnsupportedOperationException("在庫移動は後続Issueで実装予定");
+        InventoryMoveService.MoveResult result = inventoryMoveService.moveInventory(
+                request.getFromLocationId(),
+                request.getProductId(),
+                request.getUnitType().getValue(),
+                request.getLotNumber(),
+                request.getExpiryDate(),
+                request.getToLocationId(),
+                request.getMoveQty());
+
+        MoveInventoryResponse response = new MoveInventoryResponse()
+                .fromInventoryId(result.fromInventoryId())
+                .toInventoryId(result.toInventoryId())
+                .fromLocationCode(result.fromLocationCode())
+                .toLocationCode(result.toLocationCode())
+                .productCode(result.productCode())
+                .productName(result.productName())
+                .unitType(UnitType.fromValue(result.unitType()))
+                .movedQty(result.movedQty())
+                .fromQuantityAfter(result.fromQuantityAfter())
+                .toQuantityAfter(result.toQuantityAfter());
+
+        return ResponseEntity.ok(response);
     }
 
     @Override

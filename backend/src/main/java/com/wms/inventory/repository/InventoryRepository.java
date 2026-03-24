@@ -4,10 +4,14 @@ import com.wms.inventory.entity.Inventory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import jakarta.persistence.LockModeType;
+
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
@@ -16,6 +20,16 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             Long locationId, Long productId, String unitType, String lotNumber, LocalDate expiryDate);
 
     boolean existsByLocationIdAndProductIdNot(Long locationId, Long productId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventory i WHERE i.id = :id")
+    Optional<Inventory> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM Inventory i WHERE i.locationId = :locationId AND i.unitType = :unitType")
+    int sumQuantityByLocationAndUnitType(@Param("locationId") Long locationId, @Param("unitType") String unitType);
+
+    @Query("SELECT i FROM Inventory i WHERE i.warehouseId = :warehouseId AND i.productId = :productId AND (i.quantity - i.allocatedQty) > 0 ORDER BY i.expiryDate ASC NULLS LAST, i.id ASC")
+    List<Inventory> findAvailableStock(@Param("warehouseId") Long warehouseId, @Param("productId") Long productId);
 
     @Query("""
             SELECT i FROM Inventory i
