@@ -5,6 +5,7 @@ import com.wms.inventory.entity.StocktakeHeader;
 import com.wms.inventory.entity.StocktakeLine;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.inventory.repository.StocktakeHeaderRepository;
+import com.wms.inventory.repository.StocktakeLineRepository;
 import com.wms.master.entity.Area;
 import com.wms.master.entity.Building;
 import com.wms.master.entity.Location;
@@ -38,6 +39,7 @@ public class StocktakeService {
     private static final int MAX_STOCKTAKE_LINES = 2000;
 
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
+    private final StocktakeLineRepository stocktakeLineRepository;
     private final InventoryRepository inventoryRepository;
     private final LocationRepository locationRepository;
     private final WarehouseService warehouseService;
@@ -158,6 +160,59 @@ public class StocktakeService {
         return new StartResult(saved.getId(), stocktakeNumber, targetDescription,
                 "STARTED", inventories.size(), now);
     }
+
+    // --- INV-014: 棚卸実数入力 ---
+
+    public record InputResult(int updatedCount, long totalLines, long countedLines) {}
+
+    @Transactional
+    public InputResult saveStocktakeLines(Long headerId, java.util.List<LineInput> inputs) {
+        StocktakeHeader header = stocktakeHeaderRepository.findById(headerId)
+                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                        "棚卸が見つかりません (id=" + headerId + ")"));
+
+        if (!"STARTED".equals(header.getStatus())) {
+            throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
+                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+        }
+
+        Long userId = getCurrentUserId();
+        OffsetDateTime now = OffsetDateTime.now();
+        int updated = 0;
+
+        for (LineInput input : inputs) {
+            if (input.actualQty() < 0) {
+                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                        "実数は0以上を指定してください");
+            }
+
+            com.wms.inventory.entity.StocktakeLine line = stocktakeLineRepository.findById(input.lineId())
+                    .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
+                            "棚卸明細が見つかりません (lineId=" + input.lineId() + ")"));
+
+            if (!line.getStocktakeHeader().getId().equals(headerId)) {
+                throw new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
+                        "棚卸明細が指定棚卸に属していません (lineId=" + input.lineId() + ")");
+            }
+
+            line.setQuantityCounted(input.actualQty());
+            line.setCounted(true);
+            line.setCountedAt(now);
+            line.setCountedBy(userId);
+            updated++;
+        }
+
+        stocktakeHeaderRepository.save(header);
+
+        long totalLines = stocktakeLineRepository.countByHeaderId(headerId);
+        long countedLines = stocktakeLineRepository.countCountedByHeaderId(headerId);
+
+        log.info("Stocktake lines saved: headerId={}, updated={}", headerId, updated);
+
+        return new InputResult(updated, totalLines, countedLines);
+    }
+
+    public record LineInput(Long lineId, int actualQty) {}
 
     private Long getCurrentUserId() {
         WmsUserDetails ud = (WmsUserDetails) SecurityContextHolder.getContext()
