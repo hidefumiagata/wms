@@ -727,6 +727,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
       &quot;warehouseNameKana&quot;: &quot;トウキョウディーシー&quot;,
       &quot;address&quot;: &quot;東京都江東区辰巳1-1-1&quot;,
       &quot;isActive&quot;: true,
+      &quot;version&quot;: 0,
       &quot;createdAt&quot;: &quot;2025-01-10T09:00:00+09:00&quot;,
       &quot;updatedAt&quot;: &quot;2025-03-01T14:30:00+09:00&quot;
     }
@@ -1170,6 +1171,7 @@ GET /api/v1/master/warehouses?all=true&amp;isActive=true</code></pre>
       &quot;warehouseId&quot;: 1,
       &quot;warehouseCode&quot;: &quot;WH001&quot;,
       &quot;isActive&quot;: true,
+      &quot;version&quot;: 0,
       &quot;createdAt&quot;: &quot;2025-01-10T09:00:00+09:00&quot;,
       &quot;updatedAt&quot;: &quot;2025-03-01T14:30:00+09:00&quot;
     }
@@ -1536,6 +1538,7 @@ GET /api/v1/master/areas?warehouseId=1&amp;areaType=STOCK&amp;isActive=true</cod
       &quot;storageCondition&quot;: &quot;AMBIENT&quot;,
       &quot;areaType&quot;: &quot;STOCK&quot;,
       &quot;isActive&quot;: true,
+      &quot;version&quot;: 0,
       &quot;createdAt&quot;: &quot;2025-01-10T09:00:00+09:00&quot;,
       &quot;updatedAt&quot;: &quot;2025-03-01T14:30:00+09:00&quot;
     }
@@ -1925,6 +1928,7 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
       &quot;areaCode&quot;: &quot;A01&quot;,
       &quot;areaType&quot;: &quot;STOCK&quot;,
       &quot;isActive&quot;: true,
+      &quot;version&quot;: 0,
       &quot;createdAt&quot;: &quot;2025-01-10T09:00:00+09:00&quot;,
       &quot;updatedAt&quot;: &quot;2025-03-01T14:30:00+09:00&quot;
     }
@@ -4084,7 +4088,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>401 Unauthorized</code></td><td><code>UNAUTHORIZED</code></td><td>未認証</td></tr>
 <tr><td><code>403 Forbidden</code></td><td><code>FORBIDDEN</code></td><td>SYSTEM_ADMIN 以外のロールでアクセス</td></tr>
 <tr><td><code>404 Not Found</code></td><td><code>USER_NOT_FOUND</code></td><td>指定したIDのユーザーが存在しない</td></tr>
-<tr><td><code>409 Conflict</code></td><td><code>OPTIMISTIC_LOCK_ERROR</code></td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
+<tr><td><code>409 Conflict</code></td><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
 <tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_CHANGE_SELF_ROLE</code></td><td>自分自身のロールを変更しようとした</td></tr>
 <tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_DEACTIVATE_SELF</code></td><td>自分自身を無効化しようとした（<code>isActive = false</code>）</td></tr>
 <p></tbody><br></table></p>
@@ -4108,7 +4112,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHK_SELF_DEACTIVATE -->|Yes| ERR_422_DEACTIVATE[422 CANNOT_DEACTIVATE_SELF]
     CHK_SELF_DEACTIVATE -->|No| CHK_VERSION{version一致?}
 
-    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_ERROR]
+    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_CONFLICT]
     CHK_VERSION -->|一致| UPDATE["UPDATE users SET<br/>- full_name<br/>- email<br/>- role<br/>- is_active<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
 
     UPDATE --> END([200 OK + 更新後ユーザーオブジェクト])</div>
@@ -4120,7 +4124,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td>2</td><td>ログイン中のユーザー自身の <code>role</code> 変更は不可。ロール変更によって自身のアクセス権が意図せず失われるのを防ぐ</td><td><code>CANNOT_CHANGE_SELF_ROLE</code></td></tr>
 <tr><td>3</td><td>ログイン中のユーザー自身を <code>isActive = false</code> に更新することは不可</td><td><code>CANNOT_DEACTIVATE_SELF</code></td></tr>
 <tr><td>4</td><td>更新対象ユーザーが存在しない場合は404を返す</td><td><code>USER_NOT_FOUND</code></td></tr>
-<tr><td>5</td><td>リクエストの <code>version</code> とDBの <code>version</code> が一致しない場合は409を返す（楽観的ロック）</td><td><code>OPTIMISTIC_LOCK_ERROR</code></td></tr>
+<tr><td>5</td><td>リクエストの <code>version</code> とDBの <code>version</code> が一致しない場合は409を返す（楽観的ロック）</td><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td></tr>
 <p></tbody><br></table></p>
 <blockquote>自分自身かどうかの判定は JWT から取得したユーザーIDとパスパラメータの <code>id</code> を比較して行う。</blockquote>
 <hr>
@@ -4187,7 +4191,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>401 Unauthorized</code></td><td><code>UNAUTHORIZED</code></td><td>未認証</td></tr>
 <tr><td><code>403 Forbidden</code></td><td><code>FORBIDDEN</code></td><td>SYSTEM_ADMIN 以外のロールでアクセス</td></tr>
 <tr><td><code>404 Not Found</code></td><td><code>USER_NOT_FOUND</code></td><td>指定したIDのユーザーが存在しない</td></tr>
-<tr><td><code>409 Conflict</code></td><td><code>OPTIMISTIC_LOCK_ERROR</code></td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
+<tr><td><code>409 Conflict</code></td><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
 <tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_DEACTIVATE_SELF</code></td><td>自分自身を無効化しようとした（<code>isActive = false</code>）</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -4207,7 +4211,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHK_SELF -->|Yes| ERR_422[422 CANNOT_DEACTIVATE_SELF]
     CHK_SELF -->|No| CHK_VERSION{version一致?}
 
-    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_ERROR]
+    CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_CONFLICT]
     CHK_VERSION -->|一致| UPDATE["UPDATE users SET<br/>- is_active = :isActive<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
 
     UPDATE --> END([200 OK + 更新後ユーザーオブジェクト])</div>
@@ -4218,7 +4222,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td>1</td><td>ログイン中のユーザー自身を <code>isActive = false</code> に変更することは不可</td><td><code>CANNOT_DEACTIVATE_SELF</code></td></tr>
 <tr><td>2</td><td><code>isActive = true</code> への再有効化は制限なく実施可能（自分自身への適用も可）</td><td>—</td></tr>
 <tr><td>3</td><td>このAPIは <code>is_active</code> のみを変更する。<code>locked</code> フラグ等他のカラムには一切触れない</td><td>—</td></tr>
-<tr><td>4</td><td>リクエストの <code>version</code> とDBの <code>version</code> が一致しない場合は409を返す（楽観的ロック）</td><td><code>OPTIMISTIC_LOCK_ERROR</code></td></tr>
+<tr><td>4</td><td>リクエストの <code>version</code> とDBの <code>version</code> が一致しない場合は409を返す（楽観的ロック）</td><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
@@ -4363,7 +4367,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>VALIDATION_ERROR</code></td><td>400</td><td>001, 002, 004, 005, 007</td><td>入力バリデーションエラー</td></tr>
 <tr><td><code>USER_NOT_FOUND</code></td><td>404</td><td>003, 004, 005, 006</td><td>指定したIDのユーザーが存在しない</td></tr>
 <tr><td><code>DUPLICATE_CODE</code></td><td>409</td><td>002</td><td>指定した <code>userCode</code> がすでに存在する</td></tr>
-<tr><td><code>OPTIMISTIC_LOCK_ERROR</code></td><td>409</td><td>004, 005</td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
+<tr><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td><td>409</td><td>004, 005</td><td>他のユーザーにより先に更新された（version不一致）</td></tr>
 <tr><td><code>CANNOT_CHANGE_SELF_ROLE</code></td><td>422</td><td>004</td><td>自分自身のロールを変更しようとした</td></tr>
 <tr><td><code>CANNOT_DEACTIVATE_SELF</code></td><td>422</td><td>004, 005</td><td>自分自身を無効化しようとした</td></tr>
 <p></tbody><br></table></p>
@@ -4404,6 +4408,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     PARTIAL_STORED --> CANCELLED : キャンセル（API-INB-007）
     CONFIRMED --> INSPECTING : 検品登録（API-INB-008）初回
     INSPECTING --> INSPECTING : 検品登録（API-INB-008）追加
+    PARTIAL_STORED --> PARTIAL_STORED : 検品登録（API-INB-008）残明細・ステータス変更なし
     INSPECTING --> PARTIAL_STORED : 入庫確定（API-INB-009）一部
     INSPECTING --> STORED : 入庫確定（API-INB-009）全件
     PARTIAL_STORED --> PARTIAL_STORED : 入庫確定（API-INB-009）追加
@@ -4416,7 +4421,11 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     PENDING --> INSPECTED : 検品登録（API-INB-008）
     INSPECTED --> INSPECTED : 検品数再登録（上書き可）
     INSPECTED --> STORED : 入庫確定（API-INB-009）
-    STORED --> [*]</div>
+    STORED --> [*]
+    PENDING --> CANCELLED : キャンセル（API-INB-007）
+    INSPECTED --> CANCELLED : キャンセル（API-INB-007）
+    STORED --> CANCELLED : キャンセル（API-INB-007）
+    CANCELLED --> [*]</div>
 <hr>
 <h2>API-INB-001: 入荷予定一覧取得</h2>
 <h3>1. API概要</h3>
@@ -4755,7 +4764,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>expiryDate</code></td><td>String</td><td>賞味/使用期限日</td></tr>
 <tr><td><code>putawayLocationId</code></td><td>Long</td><td>入庫先ロケーションID（入庫確定後）</td></tr>
 <tr><td><code>putawayLocationCode</code></td><td>String</td><td>入庫先ロケーションコード（入庫確定後）</td></tr>
-<tr><td><code>lineStatus</code></td><td>String</td><td>明細ステータス（<code>PENDING</code> / <code>INSPECTED</code> / <code>STORED</code>）</td></tr>
+<tr><td><code>lineStatus</code></td><td>String</td><td>明細ステータス（<code>PENDING</code> / <code>INSPECTED</code> / <code>STORED</code> / <code>CANCELLED</code>）</td></tr>
 <tr><td><code>inspectedAt</code></td><td>String</td><td>検品日時</td></tr>
 <tr><td><code>inspectedBy</code></td><td>Long</td><td>検品者ID</td></tr>
 <tr><td><code>storedAt</code></td><td>String</td><td>入庫確定日時</td></tr>
@@ -4932,9 +4941,11 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     FETCH -->|存在する| CHECK{status IN PLANNED,\nCONFIRMED, INSPECTING,\nPARTIAL_STORED?}
     CHECK -->|NO（STORED/CANCELLED）| ERR409[409 INBOUND_INVALID_STATUS]
     CHECK -->|YES| CHECK_PARTIAL{status =\nPARTIAL_STORED?}
-    CHECK_PARTIAL -->|NO（PLANNED/CONFIRMED/INSPECTING）| UPDATE
+    CHECK_PARTIAL -->|NO（PLANNED/CONFIRMED/INSPECTING）| UPDATE_LINES
     CHECK_PARTIAL -->|YES| ROLLBACK[入庫確定済み明細の在庫ロールバック\nline_status=STOREDの明細ごとに:\ninventories UPDATE quantity -= stored_qty\ninventory_movements INSERT\nmovement_type=INBOUND_CANCEL\nquantity=stored_qty（負値）]
-    ROLLBACK --> UPDATE
+    ROLLBACK --> UPDATE_LINES
+    UPDATE_LINES[inbound_slip_lines UPDATE\nline_status → CANCELLED（全明細）]
+    UPDATE_LINES --> UPDATE
     UPDATE[inbound_slips UPDATE\nstatus → CANCELLED\ncancelled_at = now\ncancelled_by = ログインユーザー]
     UPDATE --> COMMIT[コミット]
     COMMIT --> RETURN[200 OK + 更新後伝票]
@@ -4947,6 +4958,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td>2</td><td>キャンセル時に <code>cancelled_at</code>（現在日時）と <code>cancelled_by</code>（実行ユーザーID）を記録する</td><td>—</td></tr>
 <tr><td>3</td><td><code>PARTIAL_STORED</code> の伝票をキャンセルする場合、<code>line_status = STORED</code> の明細に対して在庫ロールバック処理を行う（<code>inventories.quantity</code> から入庫数量を減算し、<code>inventory_movements</code> に <code>INBOUND_CANCEL</code> レコードを挿入する）</td><td>—</td></tr>
 <tr><td>4</td><td><code>PLANNED</code>・<code>CONFIRMED</code>・<code>INSPECTING</code> の伝票キャンセルは在庫への影響なし（検品は在庫を変動させない）</td><td>—</td></tr>
+<tr><td>5</td><td>キャンセル時に全明細の <code>line_status</code> を <code>CANCELLED</code> に更新する（ステータス不整合防止）</td><td>—</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <hr>
@@ -4961,7 +4973,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><strong>パス</strong></td><td><code>/api/v1/inbound/slips/{id}/inspect</code></td></tr>
 <tr><td><strong>認証</strong></td><td>要</td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><strong>概要</strong></td><td>到着した入荷品を明細単位で検品し、実際の入荷数を記録する。初回呼び出し時にステータスが <code>INSPECTING</code> に遷移する。検品数は再保存（上書き）可能。</td></tr>
+<tr><td><strong>概要</strong></td><td>到着した入荷品を明細単位で検品し、実際の入荷数を記録する。<code>CONFIRMED</code> からの初回呼び出し時にヘッダーステータスが <code>INSPECTING</code> に遷移する。<code>PARTIAL_STORED</code>（一部入庫済み）状態での呼び出しはヘッダーステータスを変更しない（残明細の追加検品として扱う）。検品数は再保存（上書き）可能。</td></tr>
 <tr><td><strong>関連画面</strong></td><td>INB-004（入荷検品）の「検品内容を保存する」ボタン</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -4999,7 +5011,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>ロール不足</td></tr>
 <tr><td><code>404</code></td><td><code>INBOUND_SLIP_NOT_FOUND</code></td><td>伝票が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>INBOUND_LINE_NOT_FOUND</code></td><td>指定の明細IDが当該伝票に存在しない</td></tr>
-<tr><td><code>409</code></td><td><code>INBOUND_INVALID_STATUS</code></td><td>ステータスが <code>CONFIRMED</code> / <code>INSPECTING</code> でない</td></tr>
+<tr><td><code>409</code></td><td><code>INBOUND_INVALID_STATUS</code></td><td>ステータスが <code>CONFIRMED</code> / <code>INSPECTING</code> / <code>PARTIAL_STORED</code> でない</td></tr>
 <tr><td><code>422</code></td><td><code>EXPIRY_DATE_EXPIRED</code></td><td>賞味期限管理商品で賞味期限が営業日以前</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -5007,19 +5019,23 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <div class="mermaid">flowchart TD
     START([開始]) --> FETCH[入荷伝票取得 WHERE id = ?]
     FETCH -->|存在しない| ERR404[404 INBOUND_SLIP_NOT_FOUND]
-    FETCH -->|存在する| CHECK_STATUS{status IN\nCONFIRMED, INSPECTING?}
+    FETCH -->|存在する| CHECK_STATUS{status IN\nCONFIRMED, INSPECTING,\nPARTIAL_STORED?}
     CHECK_STATUS -->|NO| ERR409[409 INBOUND_INVALID_STATUS]
     CHECK_STATUS -->|YES| VALIDATE[inspectedQty ≥ 0 チェック]
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
-    VALIDATE -->|OK| LINE_LOOP[明細ループ]
+    VALIDATE -->|OK| CHECK_DUP{リクエスト内に\n重複 lineId あり?}
+    CHECK_DUP -->|YES| ERR_DUP[400 DUPLICATE_LINE_IN_REQUEST]
+    CHECK_DUP -->|NO| LINE_LOOP[明細ループ]
     LINE_LOOP --> CHECK_LINE{lineId が当該伝票の\n明細IDか?}
     CHECK_LINE -->|NO| ERR_LINE[404 INBOUND_LINE_NOT_FOUND]
-    CHECK_LINE -->|YES| UPD_LINE[inbound_slip_lines UPDATE\ninspected_qty = ?\nline_status → INSPECTED\ninspected_at = now\ninspected_by = ログインユーザー]
+    CHECK_LINE -->|YES| CHECK_STORED{line_status = STORED?}
+    CHECK_STORED -->|YES| ERR_STORED[409 INBOUND_LINE_ALREADY_STORED]
+    CHECK_STORED -->|NO| UPD_LINE[inbound_slip_lines UPDATE\ninspected_qty = ?\nline_status → INSPECTED\ninspected_at = now\ninspected_by = ログインユーザー]
     UPD_LINE --> NEXT{次の明細あり?}
     NEXT -->|YES| LINE_LOOP
     NEXT -->|NO| CHECK_HEADER_STATUS{現在の status = CONFIRMED?}
     CHECK_HEADER_STATUS -->|YES 初回検品| UPD_HEADER_INSPECTING[inbound_slips UPDATE\nstatus → INSPECTING]
-    CHECK_HEADER_STATUS -->|NO 既にINSPECTING| SKIP_HEADER[ヘッダーステータス変更なし]
+    CHECK_HEADER_STATUS -->|NO INSPECTING or\nPARTIAL_STORED| SKIP_HEADER[ヘッダーステータス変更なし\n（PARTIAL_STOREDは維持）]
     UPD_HEADER_INSPECTING --> COMMIT[コミット]
     SKIP_HEADER --> COMMIT
     COMMIT --> RETURN[200 OK + 更新後伝票]
@@ -5028,17 +5044,19 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>ステータスが <code>CONFIRMED</code> または <code>INSPECTING</code> の伝票のみ検品登録可能</td><td><code>INBOUND_INVALID_STATUS</code></td></tr>
+<tr><td>1</td><td>ステータスが <code>CONFIRMED</code>・<code>INSPECTING</code>・<code>PARTIAL_STORED</code> の伝票のみ検品登録可能</td><td><code>INBOUND_INVALID_STATUS</code></td></tr>
 <tr><td>2</td><td><code>inspectedQty = 0</code> は「全量不着」を意味する合法な値として許容する</td><td>—</td></tr>
-<tr><td>3</td><td>初回の検品登録呼び出しでヘッダーステータスを <code>CONFIRMED → INSPECTING</code> に遷移させる</td><td>—</td></tr>
+<tr><td>3</td><td><code>CONFIRMED</code> からの初回呼び出しでヘッダーステータスを <code>CONFIRMED → INSPECTING</code> に遷移させる</td><td>—</td></tr>
 <tr><td>4</td><td>すでに <code>INSPECTING</code> の場合、繰り返し呼び出して検品数を上書き更新できる（再検品可）</td><td>—</td></tr>
-<tr><td>5</td><td>リクエストに含まれない明細の <code>inspected_qty</code> は変更しない（部分更新）</td><td>—</td></tr>
-<tr><td>6</td><td><code>lineId</code> は当該伝票（<code>inbound_slip_id = id</code>）に属する明細IDでなければならない</td><td><code>INBOUND_LINE_NOT_FOUND</code></td></tr>
-<tr><td>7</td><td>既に <code>line_status = STORED</code> の明細は検品数上書き不可</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>5</td><td><code>PARTIAL_STORED</code> の場合、ヘッダーステータスは変更しない。残明細（<code>PENDING</code> / <code>INSPECTED</code>）のみ検品可能（入庫済み明細への操作はルール8が禁止）</td><td>—</td></tr>
+<tr><td>6</td><td>リクエストに含まれない明細の <code>inspected_qty</code> は変更しない（部分更新）</td><td>—</td></tr>
+<tr><td>7</td><td><code>lineId</code> は当該伝票（<code>inbound_slip_id = id</code>）に属する明細IDでなければならない</td><td><code>INBOUND_LINE_NOT_FOUND</code></td></tr>
+<tr><td>8</td><td>既に <code>line_status = STORED</code> の明細は検品数上書き不可</td><td><code>INBOUND_LINE_ALREADY_STORED</code></td></tr>
+<tr><td>9</td><td>リクエスト内に同一 <code>lineId</code> が重複して含まれる場合はエラー</td><td><code>DUPLICATE_LINE_IN_REQUEST</code></td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">検品登録後に <code>line_status</code> が <code>STORED</code> の明細が一部存在する状態（<code>PARTIAL_STORED</code>）では、残りの <code>INSPECTED</code> 明細に対して検品数の再登録が可能。</li><li style="margin-left:0px">全明細が <code>INSPECTED</code> または <code>STORED</code> になった後も、<code>STORED</code> でない明細の検品数は再登録（上書き）可能とする。</li></ul>
+<ul><li style="margin-left:0px">検品登録後に <code>line_status</code> が <code>STORED</code> の明細が一部存在する状態（<code>PARTIAL_STORED</code>）では、残りの <code>PENDING</code> / <code>INSPECTED</code> 明細に対して検品数の登録・再登録が可能。</li><li style="margin-left:0px"><code>PARTIAL_STORED</code> での検品はヘッダーステータスを <code>PARTIAL_STORED</code> のまま維持する。<code>INSPECTING</code> に戻すことはしない（入庫済み明細が存在するため、INSPECTINGへの巻き戻しは不適切）。</li><li style="margin-left:0px">全明細が <code>INSPECTED</code> または <code>STORED</code> になった後も、<code>STORED</code> でない明細の検品数は再登録（上書き）可能とする。</li></ul>
 <hr>
 <hr>
 <h2>API-INB-009: 入庫確定</h2>

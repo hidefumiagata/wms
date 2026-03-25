@@ -482,7 +482,7 @@ product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
 <tr><td><code>expiry_date</code></td><td>date</td><td>NULL</td><td>—</td><td>賞味/使用期限日（expiry_manage_flag=true の商品の入荷時に必須）</td></tr>
 <tr><td><code>putaway_location_id</code></td><td>bigint</td><td>NULL</td><td>—</td><td>FK → locations.id（入庫確定後にセット）</td></tr>
 <tr><td><code>putaway_location_code</code></td><td>varchar(50)</td><td>NULL</td><td>—</td><td>入庫先ロケーションコード（入庫確定時コピー）</td></tr>
-<tr><td><code>line_status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>PENDING</code></td><td>明細ステータス: <code>PENDING</code>(未処理) / <code>INSPECTED</code>(検品済) / <code>STORED</code>(入庫済)</td></tr>
+<tr><td><code>line_status</code></td><td>varchar(20)</td><td>NOT NULL</td><td><code>PENDING</code></td><td>明細ステータス: <code>PENDING</code>(未処理) / <code>INSPECTED</code>(検品済) / <code>STORED</code>(入庫済) / <code>CANCELLED</code>(キャンセル済)</td></tr>
 <tr><td><code>inspected_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>検品日時</td></tr>
 <tr><td><code>inspected_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>検品者（FK → users.id）</td></tr>
 <tr><td><code>stored_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>入庫確定日時</td></tr>

@@ -1906,21 +1906,24 @@ export function useWarehouseForm() {
   const version = ref(0) // 楽観的ロック用
 
   // === 3. バリデーションスキーマ（Zod） ===
-  const schema = toTypedSchema(
-    z.object({
-      warehouseCode: z.string()
-        .min(1, t('master.validation.required', { field: t('master.warehouse.code') }))
-        .max(4, t('master.validation.maxLength', { field: t('master.warehouse.code'), max: 4 }))
-        .regex(/^[A-Z]{4}$/, t('master.warehouse.codeFormat')),
-      warehouseName: z.string()
-        .min(1, t('master.validation.required', { field: t('master.warehouse.name') }))
-        .max(200, t('master.validation.maxLength', { field: t('master.warehouse.name'), max: 200 })),
-    })
+  // computed化により、ロケール切替時にt()が再評価されバリデーションメッセージが自動更新される
+  const validationSchema = computed(() =&gt;
+    toTypedSchema(
+      z.object({
+        warehouseCode: z.string()
+          .min(1, t('master.validation.required', { field: t('master.warehouse.code') }))
+          .max(4, t('master.validation.maxLength', { field: t('master.warehouse.code'), max: 4 }))
+          .regex(/^[A-Z]{4}$/, t('master.warehouse.codeFormat')),
+        warehouseName: z.string()
+          .min(1, t('master.validation.required', { field: t('master.warehouse.name') }))
+          .max(200, t('master.validation.maxLength', { field: t('master.warehouse.name'), max: 200 })),
+      })
+    )
   )
 
   // === 4. VeeValidate フォーム ===
   const { handleSubmit, setFieldError, resetForm, values } = useForm({
-    validationSchema: schema,
+    validationSchema,
   })
 
   // === 5. API呼び出し関数 ===
@@ -2509,66 +2512,82 @@ export const inboundRoutes: RouteRecordRaw[] = [
 <h3>6.3 ルートメタ型定義</h3>
 <pre><code class="lang-typescript">// types/router.d.ts
 import 'vue-router'
+import type { UserRole } from '@/stores/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
     /** 認証必須フラグ（デフォルト: 親ルートから継承） */
     requiresAuth?: boolean
-    /** アクセス許可ロール（空配列 = 全ロール許可） */
-    roles?: Array&lt;'SYSTEM_ADMIN' | 'WAREHOUSE_MANAGER' | 'WAREHOUSE_STAFF' | 'VIEWER'&gt;
+    /**
+     * アクセス許可ロール。
+     * 指定された場合、ユーザーのロールが含まれていなければ /forbidden へリダイレクト。
+     * 未指定の場合はロールチェックをスキップ（認証のみで到達可能）。
+     */
+    roles?: UserRole[]
     /** パンくずリストのi18nキー配列 */
     breadcrumb?: string[]
   }
 }</code></pre>
 <h3>6.4 ナビゲーションガード</h3>
-<pre><code class="lang-typescript">// router/guards.ts
-import type { Router } from 'vue-router'
+<p>ガードは <code>router/index.ts</code> の <code>beforeEach</code> に直接記述する（ファイル分割なし）。</p>
+<pre><code class="lang-typescript">// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage } from 'element-plus'
+// RouteMeta 型拡張は types/router.d.ts で定義
 
-export function setupGuards(router: Router) {
-  router.beforeEach(async (to, _from, next) =&gt; {
-    const authStore = useAuthStore()
+const router = createRouter({ ... })
 
-    // --- 1. 認証チェック ---
-    if (to.meta.requiresAuth !== false &amp;&amp; !authStore.isLoggedIn) {
-      // 未認証 → ログイン画面
-      // まずサーバーにセッション確認を試行
-      await authStore.fetchCurrentUser()
-      if (!authStore.isLoggedIn) {
-        return next({ name: 'login', query: { redirect: to.fullPath } })
-      }
+router.beforeEach(async (to) =&gt; {
+  const auth = useAuthStore()
+
+  // --- 1. 認証不要ページ ---
+  if (to.meta.requiresAuth === false) {
+    if (auth.isAuthenticated) return { path: '/' }
+    return true
+  }
+
+  // --- 2. 認証チェック（リフレッシュ試行）---
+  if (!auth.isAuthenticated) {
+    const ok = await auth.refresh()
+    if (!ok) {
+      return { name: 'login', query: { redirect: to.fullPath, reason: 'session_expired' } }
     }
+  }
 
-    // --- 2. パスワード変更強制 ---
-    if (authStore.requiresPasswordChange &amp;&amp; to.name !== 'change-password' &amp;&amp; to.name !== 'login') {
-      return next({ name: 'change-password' })
+  // --- 3. パスワード変更強制 ---
+  if (auth.user?.passwordChangeRequired &amp;&amp; to.name !== 'change-password') {
+    return { name: 'change-password' }
+  }
+
+  // --- 4. ロールチェック ---
+  const requiredRoles = to.meta.roles
+  if (requiredRoles &amp;&amp; requiredRoles.length &gt; 0) {
+    const userRole = auth.user?.role
+    if (!userRole || !requiredRoles.includes(userRole)) {
+      return { name: 'forbidden' }  // /forbidden ページへリダイレクト
     }
+  }
 
-    // --- 3. ロールチェック ---
-    const requiredRoles = to.meta.roles
-    if (requiredRoles &amp;&amp; requiredRoles.length &gt; 0 &amp;&amp; authStore.userRole) {
-      if (!requiredRoles.includes(authStore.userRole)) {
-        ElMessage.error('この操作を実行する権限がありません')
-        return next(false)
-      }
-    }
-
-    next()
-  })
-}</code></pre>
+  return true
+})</code></pre>
 <h3>6.5 ナビゲーションガードのフロー</h3>
 <div class="mermaid">flowchart TD
-    START["beforeEach"] --> AUTH_CHECK{"認証済み？"}
-    AUTH_CHECK -->|"No"| FETCH["fetchCurrentUser()"]
-    FETCH --> STILL_NO{"まだ未認証？"}
-    STILL_NO -->|"Yes"| LOGIN["→ /login"]
-    STILL_NO -->|"No"| PW_CHECK
-    AUTH_CHECK -->|"Yes"| PW_CHECK{"パスワード変更必要？"}
-    PW_CHECK -->|"Yes & 遷移先≠ChangePassword"| CHANGE_PW["→ /change-password"]
-    PW_CHECK -->|"No"| ROLE_CHECK{"ロール許可？"}
-    ROLE_CHECK -->|"No"| FORBIDDEN["ElMessage.error → 遷移中止"]
-    ROLE_CHECK -->|"Yes"| NEXT["next()"]</div>
+    START["beforeEach"] --> REQUIRES_AUTH{"requiresAuth === false?"}
+    REQUIRES_AUTH -->|"Yes"| LOGGED_IN{"認証済み？"}
+    LOGGED_IN -->|"Yes"| REDIRECT_HOME["→ /"]
+    LOGGED_IN -->|"No"| ALLOW["next()"]
+    REQUIRES_AUTH -->|"No"| AUTH_CHECK{"認証済み？"}
+    AUTH_CHECK -->|"No"| REFRESH["auth.refresh()"]
+    REFRESH --> REFRESH_OK{"成功？"}
+    REFRESH_OK -->|"No"| LOGIN["→ /login?reason=session_expired"]
+    REFRESH_OK -->|"Yes"| PW_CHECK
+    AUTH_CHECK -->|"Yes"| PW_CHECK{"passwordChangeRequired?"}
+    PW_CHECK -->|"Yes & 遷移先≠change-password"| CHANGE_PW["→ /change-password"]
+    PW_CHECK -->|"No"| ROLE_CHECK{"meta.roles あり？"}
+    ROLE_CHECK -->|"No"| NEXT["next()"]
+    ROLE_CHECK -->|"Yes"| ROLE_OK{"ロール一致？"}
+    ROLE_OK -->|"No"| FORBIDDEN["→ /forbidden"]
+    ROLE_OK -->|"Yes"| NEXT</div>
 <hr>
 <h2>7. API通信層設計</h2>
 <h3>7.1 Axiosインスタンス</h3>
@@ -2679,90 +2698,149 @@ apiClient.interceptors.response.use(
 )</code></pre>
 <h3>7.3 セッションタイムアウト警告</h3>
 <p>認証アーキテクチャ（<a href="../architecture-blueprint/07-auth-architecture.md" target="_blank">07-auth-architecture.md</a>）の仕様に基づき、55分経過時に警告ダイアログを表示する。</p>
-<pre><code class="lang-typescript">// utils/session-timer.ts
-import { ElMessageBox } from 'element-plus'
-import { apiClient } from './api'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/router'
-import i18n from '@/main'
+<pre><code class="lang-typescript">// utils/session-timer.ts（抜粋）
+const MAX_TIMEOUT_MS = 480 * 60 * 1000    // 上限: 8時間
+const ACTIVITY_THROTTLE_MS = 30_000       // スロットリング間隔: 30秒
+let WARNING_THRESHOLD_MS = 55 * 60 * 1000 // 55分（API取得で上書き可）
+let TIMEOUT_MS = 60 * 60 * 1000           // 60分（API取得で上書き可）
+let isActive = false  // ライフサイクル管理フラグ
+let interceptorId: number | null = null   // Axiosインターセプターeject用
 
-const WARNING_THRESHOLD_MS = 55 * 60 * 1000  // 55分
-const TIMEOUT_MS = 60 * 60 * 1000            // 60分
-let lastActivityTime = Date.now()
-let warningTimer: ReturnType&lt;typeof setTimeout&gt; | null = null
-let timeoutTimer: ReturnType&lt;typeof setTimeout&gt; | null = null
-
-export function resetSessionTimer() {
-  lastActivityTime = Date.now()
-  clearTimers()
-  startTimers()
+// --- アクティビティ検知 ---
+// mousemove は 60Hz+ で発火するため、30秒間隔でスロットリングする。
+// タイムアウトの粒度（55分）に対して十分に細かい。
+function onActivity() {
+  const now = Date.now()
+  if (now - lastActiveAt &lt; ACTIVITY_THROTTLE_MS) return
+  resetSessionTimer()
 }
 
-function startTimers() {
-  warningTimer = setTimeout(showWarning, WARNING_THRESHOLD_MS)
-  timeoutTimer = setTimeout(forceLogout, TIMEOUT_MS)
-}
-
-function clearTimers() {
-  if (warningTimer) clearTimeout(warningTimer)
-  if (timeoutTimer) clearTimeout(timeoutTimer)
-}
-
-async function showWarning() {
-  const { t } = i18n.global
-  try {
-    await ElMessageBox.confirm(
-      t('auth.sessionWarning'),
-      t('auth.sessionWarningTitle'),
-      { confirmButtonText: t('auth.continueSession'), cancelButtonText: t('auth.logout') }
-    )
-    // 「続ける」→ リフレッシュAPIを呼んでタイマーリセット
-    await apiClient.post('/api/v1/auth/refresh')
-    resetSessionTimer()
-  } catch {
-    // 「ログアウト」またはダイアログ閉じ
-    await forceLogout()
+// --- サーバー値バリデーション ---
+// 上限: 8時間。warning &gt;= timeout の場合はタイムアウト5分前にフォールバック。
+function applySessionConfig(data: Record&lt;string, unknown&gt;): void {
+  const timeout = data?.timeoutMinutes
+  const warning = data?.warningMinutes
+  if (typeof timeout === 'number' &amp;&amp; timeout &gt; 0) {
+    TIMEOUT_MS = Math.min(timeout * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (typeof warning === 'number' &amp;&amp; warning &gt; 0) {
+    WARNING_THRESHOLD_MS = Math.min(warning * 60 * 1000, MAX_TIMEOUT_MS)
+  }
+  if (WARNING_THRESHOLD_MS &gt;= TIMEOUT_MS) {
+    WARNING_THRESHOLD_MS = Math.max(TIMEOUT_MS - 5 * 60 * 1000, 0)
   }
 }
 
-async function forceLogout() {
-  clearTimers()
-  const authStore = useAuthStore()
-  await authStore.logout()
-  router.push({ name: 'login', query: { reason: 'session_expired' } })
+// --- Axiosインターセプターのライフサイクル管理 ---
+// startSessionTimer() で登録、stopSessionTimer() で eject する。
+// isActive フラグにより、タイマー停止後の API レスポンスでタイマーが
+// 再起動されるのを防ぐ。
+interceptorId = apiClient.interceptors.response.use((response) =&gt; {
+  if (isActive) { startTimers() }
+  return response
+})
+
+// タイマーリセットのトリガー:
+// 1. DOMイベント（mousemove, click, keydown, touchstart）— 30秒スロットリング
+// 2. Axiosレスポンス成功時（インターセプター経由、isActive時のみ）
+// 3. visibilitychange 復帰時（閾値未満の場合、残り時間で再設定）</code></pre>
+<h4>7.3.1 バックグラウンドタブ・スリープ復帰時チェック</h4>
+<p>ブラウザのバックグラウンドタブ最適化（タイマー throttling）やPCスリープにより、<code>setTimeout</code> が大幅に遅延する問題に対応する。<code>Page Visibility API</code>（<code>visibilitychange</code> イベント）を使用し、タブがアクティブに復帰した際に実際の経過時間を検証する。</p>
+<p>##### 課題</p>
+<ul><li style="margin-left:0px">ブラウザはバックグラウンドタブの <code>setTimeout</code> を最小1秒間隔に制限する（Chrome の場合）</li><li style="margin-left:0px">PCスリープ中は <code>setTimeout</code> が完全に停止する</li><li style="margin-left:0px">例: 55分タイマー設定後にPCスリープ → 復帰後、<code>setTimeout</code> が発火するまで追加の遅延が発生し、実際の経過時間とタイマー発火のタイミングが乖離する</li></ul>
+<p>##### 設計方針</p>
+<ul><li style="margin-left:0px">最後のアクティビティ時刻（<code>lastActiveAt</code>）を <code>Date.now()</code> で記録する</li><li style="margin-left:0px">タイマーリセット時（<code>startTimers()</code>）に <code>lastActiveAt</code> を更新する</li><li style="margin-left:0px"><code>visibilitychange</code> イベントで <code>visible</code> 状態への遷移を検知し、実経過時間で判定する</li><li style="margin-left:0px"><code>setTimeout</code> の補償メカニズムであり、<code>setTimeout</code> 自体を置き換えるものではない</li></ul>
+<pre><code class="lang-typescript">let lastActiveAt = Date.now()
+
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible') return
+  if (isLoggingOut) return
+
+  const elapsed = Date.now() - lastActiveAt
+  if (elapsed &gt;= TIMEOUT_MS) {
+    doLogout()                // タイムアウト超過 → 即座にログアウト
+  } else if (elapsed &gt;= WARNING_THRESHOLD_MS &amp;&amp; !warningShown) {
+    showWarning()             // 警告閾値超過 → 警告ダイアログ表示
+  } else if (!warningShown) {
+    // 閾値未満 → 残り時間でタイマーを再設定（lastActiveAt は更新しない）
+    clearTimers()
+    const warningRemaining = WARNING_THRESHOLD_MS - elapsed
+    const timeoutRemaining = TIMEOUT_MS - elapsed
+    warningTimer = setTimeout(showWarning, warningRemaining)
+    timeoutTimer = setTimeout(doLogout, timeoutRemaining)
+  }
 }
 
-// Axiosリクエスト成功時にタイマーリセット
-apiClient.interceptors.response.use((response) =&gt; {
-  resetSessionTimer()
-  return response
-})</code></pre>
+// startSessionTimer() 内で登録
+document.addEventListener('visibilitychange', onVisibilityChange)
+// stopSessionTimer() 内で解除
+document.removeEventListener('visibilitychange', onVisibilityChange)</code></pre>
+<p><strong>重要</strong>: 復帰時に <code>startTimers()</code> を呼ぶと <code>lastActiveAt</code> がリセットされ、タブ切替だけで全タイムアウト時間が再付与されてしまう。復帰時は必ず残り時間で再設定する。</p>
+<p>##### 判定フロー</p>
+<div class="mermaid">flowchart TD
+    A[visibilitychange → visible] --> B{isLoggingOut?}
+    B -- Yes --> Z[何もしない]
+    B -- No --> C[elapsed = now - lastActiveAt]
+    C --> D{elapsed >= TIMEOUT_MS?}
+    D -- Yes --> E[即座にログアウト]
+    D -- No --> F{elapsed >= WARNING_THRESHOLD_MS<br/>かつ !warningShown?}
+    F -- Yes --> G[警告ダイアログ表示]
+    F -- No --> H{!warningShown?}
+    H -- Yes --> I[残り時間でタイマー再設定]
+    H -- No --> Z</div>
 <h3>7.4 マルチタブ間ログアウト同期</h3>
 <p>複数タブでアプリを開いている場合、1タブでログアウトが発生した際に他タブも即座にログアウトする。<code>BroadcastChannel</code> API を使用してタブ間でログアウトイベントを伝播させる。</p>
 <h4>設計方針</h4>
-<ul><li style="margin-left:0px"><strong><code>BroadcastChannel('wms_session')</code></strong> をモジュールロード時に初期化（<code>session-timer.ts</code> 内）</li><li style="margin-left:0px">セッションタイムアウト・手動ログアウトの両方で <code>{ type: 'logout' }</code> メッセージを送信</li><li style="margin-left:0px">受信側は <code>broadcast: false</code> で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）</li><li style="margin-left:0px"><code>BroadcastChannel</code> 非対応ブラウザ（IE等）は <code>typeof BroadcastChannel !== 'undefined'</code> で検出し、単タブ動作にフォールバック</li></ul>
-<pre><code class="lang-typescript">// BroadcastChannel 初期化（モジュールレベル）
-const bc: BroadcastChannel | null =
-  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('wms_session') : null
+<ul><li style="margin-left:0px"><strong><code>BroadcastChannel('wms_session')</code></strong> をモジュールロード時に初期化（<code>session-timer.ts</code> 内）</li><li style="margin-left:0px">セッションタイムアウト・手動ログアウトの両方で <code>{ type: 'logout' }</code> メッセージを送信</li><li style="margin-left:0px">受信側は <code>broadcast: false</code> で呼び出し、再ブロードキャストを防ぐ（無限ループ回避）</li><li style="margin-left:0px"><code>BroadcastChannel</code> 非対応ブラウザ（IE等）は <code>typeof BroadcastChannel !== 'undefined'</code> で検出し、単タブ動作にフォールバック</li><li style="margin-left:0px"><strong>nonce によるメッセージ検証</strong>: チャンネル名だけを知る外部スクリプト（ブラウザ拡張等）からのログアウト注入を防ぐ多層防御</li></ul>
+<h4>nonce 検証</h4>
+<code>localStorage</code> に <code>wms_bc_nonce</code> キーで nonce（<code>crypto.randomUUID()</code>）を保持し、タブ間で共有する。送信時に nonce を含め、受信時に検証することで、nonce を知らない外部からの注入を阻止する。
+<blockquote><strong>制約</strong>: XSS が成立した場合は <code>localStorage</code> も読めるため完全な防御ではない。チャンネル名だけを知る単純な注入攻撃を防ぐ多層防御として位置づける。</blockquote>
+<pre><code class="lang-typescript">// nonce 管理
+const BC_NONCE_KEY = 'wms_bc_nonce'
 
-// 他タブからの受信
+function getSessionNonce(): string {
+  let nonce = localStorage.getItem(BC_NONCE_KEY)
+  if (!nonce) {
+    nonce = crypto.randomUUID()
+    localStorage.setItem(BC_NONCE_KEY, nonce)
+  }
+  return nonce
+}
+
+// 実行時型ガード（外部からの payload を検証）
+function isLogoutMessage(data: unknown): data is { type: 'logout'; nonce: string } {
+  return (
+    typeof data === 'object' &amp;&amp; data !== null &amp;&amp;
+    (data as Record&lt;string, unknown&gt;)['type'] === 'logout' &amp;&amp;
+    typeof (data as Record&lt;string, unknown&gt;)['nonce'] === 'string'
+  )
+}
+
+// 受信: 型ガード + nonce 検証の両方を通過したメッセージのみ処理
 if (bc) {
-  bc.onmessage = (event) =&gt; {
-    if (event.data?.type === 'logout') {
-      doLogout({ broadcast: false })  // 再ブロードキャストしない
+  bc.onmessage = (event: MessageEvent&lt;unknown&gt;) =&gt; {
+    if (isLogoutMessage(event.data) &amp;&amp; event.data.nonce === getSessionNonce()) {
+      doLogout({ broadcast: false })
     }
   }
 }
 
-// ログアウト時に送信
-async function doLogout(options?: { broadcast?: boolean }) {
-  if (isLoggingOut) return
-  isLoggingOut = true
-  if (options?.broadcast !== false &amp;&amp; bc) {
-    bc.postMessage({ type: 'logout' })
-  }
-  // ... ログアウト処理
+// 送信: nonce を含める
+if (options?.broadcast !== false &amp;&amp; bc) {
+  bc.postMessage({ type: 'logout', nonce: getSessionNonce() })
+}
+
+// セッション開始時に nonce をローテーション（前セッションの nonce を無効化）
+function rotateSessionNonce(): void {
+  localStorage.setItem(BC_NONCE_KEY, crypto.randomUUID())
+}
+
+// ログアウト時に nonce を削除
+function clearSessionNonce(): void {
+  localStorage.removeItem(BC_NONCE_KEY)
 }</code></pre>
+<p><strong>nonce ライフサイクル:</strong></p>
+<ul><li style="margin-left:0px"><code>startSessionTimer()</code> 時に <code>rotateSessionNonce()</code> で新規 nonce を発行（前セッションの nonce を無効化）</li><li style="margin-left:0px"><code>doLogout()</code> 時に <code>clearSessionNonce()</code> で localStorage から削除</li></ul>
 <h4>同期対象</h4>
 <table>
 <thead><tr><th>イベント</th><th>同期</th><th>備考</th></tr></thead>
@@ -3555,7 +3633,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @GetMapping
-    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    @PreAuthorize(&quot;hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')&quot;)
     public PageResponse&lt;WarehouseResponse&gt; getWarehouses(
             WarehouseSearchCriteria criteria,
             @PageableDefault(size = 20, sort = &quot;warehouseCode&quot;) Pageable pageable) {
@@ -3573,7 +3651,7 @@ public class WarehouseController {
     }
 
     @GetMapping(&quot;/{id}&quot;)
-    @PreAuthorize(&quot;isAuthenticated()&quot;)
+    @PreAuthorize(&quot;hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')&quot;)
     public WarehouseResponse getWarehouse(@PathVariable Long id) {
         Warehouse warehouse = warehouseService.findById(id);
         return WarehouseResponse.from(warehouse);
