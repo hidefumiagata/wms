@@ -1,27 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { nextTick } from 'vue'
 import apiClient from '@/api/client'
-import { withSetup, mockAxiosResponse, createCancelError, createAxiosError } from '../../helpers'
+import { withSetup, mockAxiosResponse, createAxiosError, flushPromises } from '../../helpers'
 import { useWarehouseList } from '@/composables/master/useWarehouseList'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 
-// axios.isCancel のモック
-vi.mock('axios', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('axios')>()
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      isCancel: vi.fn((err: unknown) => {
-        return (err as { __CANCEL__?: boolean })?.__CANCEL__ === true
-      }),
-    },
-  }
-})
-
 describe('useWarehouseList', () => {
-  const mockListResponse = {
+  const createMockListResponse = () => ({
     content: [
       {
         id: 1,
@@ -37,11 +22,13 @@ describe('useWarehouseList', () => {
     size: 20,
     totalElements: 1,
     totalPages: 1,
-  }
+  })
 
   beforeEach(() => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(mockListResponse))
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(createMockListResponse()))
   })
+
+  // --- fetchList 基本動作 ---
 
   it('fetchList がデータを取得し、items と total を更新する', async () => {
     const { result } = withSetup(() => useWarehouseList())
@@ -51,7 +38,7 @@ describe('useWarehouseList', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/master/warehouses', expect.objectContaining({
       params: expect.objectContaining({ page: 0, size: 20 }),
     }))
-    expect(result.items.value).toEqual(mockListResponse.content)
+    expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
   })
@@ -66,34 +53,34 @@ describe('useWarehouseList', () => {
     expect(callArgs[1]!.signal).toBeInstanceOf(AbortSignal)
   })
 
-  it('fetchList を連続呼び出しすると前のリクエストがキャンセルされる', async () => {
+  // --- AbortController 動作 ---
+
+  it('fetchList を連続呼び出しすると前のリクエストのsignalがabortされる', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
     // 1回目の呼び出し
-    const abortSpy = vi.spyOn(AbortController.prototype, 'abort')
+    await result.fetchList()
+    const firstSignal = vi.mocked(apiClient.get).mock.calls[0][1]!.signal!
+
+    // 2回目の呼び出し — 1回目のsignalがabortされる
     await result.fetchList()
 
-    // 2回目の呼び出し — 1回目のAbortControllerがabortされる
-    await result.fetchList()
-
-    expect(abortSpy).toHaveBeenCalled()
-    abortSpy.mockRestore()
+    expect(firstSignal.aborted).toBe(true)
   })
 
   it('onUnmounted 時に進行中のリクエストがキャンセルされる', async () => {
     const { result, wrapper } = withSetup(() => useWarehouseList())
 
-    // fetchList でAbortControllerを作成
     const fetchPromise = result.fetchList()
 
-    // AbortController.abort を監視
-    const abortSpy = vi.spyOn(AbortController.prototype, 'abort')
+    // fetchList で渡された signal を取得
+    const signal = vi.mocked(apiClient.get).mock.calls[0][1]!.signal!
+    expect(signal.aborted).toBe(false)
 
     // コンポーネントをアンマウント
     wrapper.unmount()
 
-    expect(abortSpy).toHaveBeenCalled()
-    abortSpy.mockRestore()
+    expect(signal.aborted).toBe(true)
 
     await fetchPromise
   })
@@ -106,7 +93,8 @@ describe('useWarehouseList', () => {
     expect(result.items.value).toHaveLength(1)
 
     // 次の fetchList がキャンセルされるケースをシミュレート
-    vi.mocked(apiClient.get).mockRejectedValueOnce(createCancelError())
+    const cancelError = new Error('canceled')
+    vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
     vi.mocked(axios.isCancel).mockReturnValueOnce(true)
 
     await result.fetchList()
@@ -115,34 +103,42 @@ describe('useWarehouseList', () => {
     expect(result.items.value).toHaveLength(1)
   })
 
-  it('キャンセル時に loading が false にならない（新しいリクエストが管理する）', async () => {
+  it('キャンセル時に loading が false にならない（新しいリクエストが管理）', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
-    // AbortされたsignalをシミュレートするためAbortControllerを使う
-    const controller = new AbortController()
-    controller.abort()
-
-    // signal.aborted が true の場合、loading は false にならない
-    // 実際のコードでは finally 内で signal.aborted をチェックしている
-    vi.mocked(apiClient.get).mockImplementationOnce(async (_url, config) => {
-      // signal が aborted の状態をシミュレート
-      const cancelError = createCancelError()
-      vi.mocked(axios.isCancel).mockReturnValueOnce(true)
-      throw cancelError
+    // 1回目のfetchListを遅延させ、その間に2回目を呼ぶことで1回目をキャンセル
+    let resolveFirst!: (value: unknown) => void
+    vi.mocked(apiClient.get).mockImplementationOnce(() => {
+      return new Promise((resolve) => { resolveFirst = resolve })
     })
 
-    // fetchList 前に手動で loading を true にする想定
-    await result.fetchList()
+    // 1回目開始（pending状態）
+    const firstFetch = result.fetchList()
+    expect(result.loading.value).toBe(true)
 
-    // キャンセル時は loading の制御は新しいリクエストに委ねる
-    // (catch内で早期return → finallyでsignal.abortedチェック)
+    // 2回目のfetchListで1回目がabortされる
+    // 2回目は即座に解決
+    vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse(createMockListResponse()))
+    const secondFetch = result.fetchList()
+
+    // 1回目をキャンセルエラーで解決
+    vi.mocked(axios.isCancel).mockReturnValueOnce(true)
+    resolveFirst(Promise.reject(new Error('canceled')))
+
+    await Promise.allSettled([firstFetch, secondFetch])
+
+    // 2回目が完了しているので loading は false
+    expect(result.loading.value).toBe(false)
   })
+
+  // --- 操作メソッド ---
 
   it('handleSearch がページを1にリセットしてfetchListを呼ぶ', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
     result.page.value = 3
-    await result.handleSearch()
+    result.handleSearch()
+    await flushPromises()
 
     expect(result.page.value).toBe(1)
     expect(apiClient.get).toHaveBeenCalled()
@@ -156,7 +152,8 @@ describe('useWarehouseList', () => {
     result.searchForm.isActive = true
     result.page.value = 5
 
-    await result.handleReset()
+    result.handleReset()
+    await flushPromises()
 
     expect(result.searchForm.warehouseCode).toBe('')
     expect(result.searchForm.warehouseName).toBe('')
@@ -167,7 +164,8 @@ describe('useWarehouseList', () => {
   it('handlePageChange がページ番号を更新してfetchListを呼ぶ', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
-    await result.handlePageChange(5)
+    result.handlePageChange(5)
+    await flushPromises()
 
     expect(result.page.value).toBe(5)
     expect(apiClient.get).toHaveBeenCalled()
@@ -177,7 +175,8 @@ describe('useWarehouseList', () => {
     const { result } = withSetup(() => useWarehouseList())
 
     result.page.value = 3
-    await result.handleSizeChange(50)
+    result.handleSizeChange(50)
+    await flushPromises()
 
     expect(result.pageSize.value).toBe(50)
     expect(result.page.value).toBe(1)
@@ -201,6 +200,8 @@ describe('useWarehouseList', () => {
     }))
   })
 
+  // --- エラーハンドリング ---
+
   it('APIエラー時にitemsとtotalがリセットされる', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
@@ -209,8 +210,7 @@ describe('useWarehouseList', () => {
     expect(result.items.value).toHaveLength(1)
 
     // APIエラー
-    const axiosError = createAxiosError(500)
-    vi.mocked(apiClient.get).mockRejectedValueOnce(axiosError)
+    vi.mocked(apiClient.get).mockRejectedValueOnce(createAxiosError(500))
 
     await result.fetchList()
 
@@ -221,11 +221,71 @@ describe('useWarehouseList', () => {
   it('ネットワークエラー時にエラーメッセージが表示される', async () => {
     const { result } = withSetup(() => useWarehouseList())
 
-    // responseがないエラー = ネットワークエラー
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network Error'))
 
     await result.fetchList()
 
     expect(ElMessage.error).toHaveBeenCalled()
+  })
+
+  it('サーバーエラー時にfetchErrorメッセージが表示される', async () => {
+    const { result } = withSetup(() => useWarehouseList())
+
+    vi.mocked(apiClient.get).mockRejectedValueOnce(createAxiosError(500))
+
+    await result.fetchList()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('master.warehouse.fetchError')
+  })
+
+  // --- handleToggleActive ---
+
+  it('handleToggleActive が確認後にPATCH APIを呼ぶ', async () => {
+    vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
+
+    const { result } = withSetup(() => useWarehouseList())
+    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+
+    await result.handleToggleActive(row)
+
+    expect(ElMessageBox.confirm).toHaveBeenCalled()
+    expect(apiClient.patch).toHaveBeenCalledWith('/master/warehouses/1/deactivate', {
+      isActive: false,
+      version: 1,
+    })
+    expect(ElMessage.success).toHaveBeenCalled()
+  })
+
+  it('handleToggleActive で確認キャンセル時はAPIを呼ばない', async () => {
+    vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
+
+    const { result } = withSetup(() => useWarehouseList())
+    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+
+    await result.handleToggleActive(row)
+
+    expect(apiClient.patch).not.toHaveBeenCalled()
+  })
+
+  it('handleToggleActive の409エラーで楽観的ロックエラーが表示される', async () => {
+    vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
+
+    const { result } = withSetup(() => useWarehouseList())
+    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+
+    await result.handleToggleActive(row)
+
+    expect(ElMessage.error).toHaveBeenCalledWith('error.optimisticLock')
+  })
+
+  it('handleToggleActive の422エラーで在庫ありエラーが表示される', async () => {
+    vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422))
+
+    const { result } = withSetup(() => useWarehouseList())
+    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+
+    await result.handleToggleActive(row)
+
+    expect(ElMessage.error).toHaveBeenCalledWith('master.warehouse.cannotDeactivateHasInventory')
   })
 })

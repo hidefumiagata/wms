@@ -1,9 +1,11 @@
-import { vi } from 'vitest'
-import { defineComponent, onUnmounted } from 'vue'
+import { defineComponent } from 'vue'
 import { mount } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
 import { createPinia } from 'pinia'
+import { flushPromises } from '@vue/test-utils'
+import { testI18n } from './test-i18n'
 import type { AxiosResponse } from 'axios'
+
+export { flushPromises }
 
 /**
  * Composable をコンポーネント内で実行し、戻り値を取得するヘルパー。
@@ -14,14 +16,6 @@ export function withSetup<T>(composable: () => T): {
   wrapper: ReturnType<typeof mount>
 } {
   let result!: T
-
-  const i18n = createI18n({
-    legacy: false,
-    locale: 'ja',
-    fallbackLocale: 'ja',
-    missing: (_locale, key) => key,
-    messages: { ja: {} },
-  })
 
   const TestComponent = defineComponent({
     setup() {
@@ -35,7 +29,7 @@ export function withSetup<T>(composable: () => T): {
 
   const wrapper = mount(TestComponent, {
     global: {
-      plugins: [createPinia(), i18n],
+      plugins: [createPinia(), testI18n],
     },
   })
 
@@ -56,28 +50,26 @@ export function mockAxiosResponse<T>(data: T, status = 200): AxiosResponse<T> {
 }
 
 /**
- * AbortError（axios.isCancel が true を返すエラー）を生成するヘルパー
+ * mockAxiosResponse のファクトリ版（テスト間の共有による mutation リスクを回避）
  */
-export function createCancelError(): Error & { __CANCEL__: boolean } {
-  const error = new Error('canceled') as Error & { __CANCEL__: boolean }
-  error.__CANCEL__ = true
-  return error
+export function createMockResponseFactory<T>(data: T, status = 200) {
+  return () => mockAxiosResponse(structuredClone(data), status)
 }
 
 /**
- * API エラーレスポンスを生成するヘルパー
+ * API エラーレスポンスを生成するヘルパー（axios.isAxiosError で認識される）
  */
 export function createAxiosError(
   status: number,
   data?: { errorCode?: string; message?: string },
-): {
-  isAxiosError: boolean
-  response: { status: number; data: typeof data }
-} {
-  return {
-    isAxiosError: true,
-    response: { status, data },
+) {
+  const error = new Error(`Request failed with status code ${status}`) as Error & {
+    isAxiosError: boolean
+    response: { status: number; data: typeof data }
   }
+  error.isAxiosError = true
+  error.response = { status, data }
+  return error
 }
 
 /**

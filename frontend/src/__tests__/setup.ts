@@ -1,19 +1,9 @@
 import { vi } from 'vitest'
 import { config } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
 import { createPinia, setActivePinia } from 'pinia'
+import { testI18n } from './test-i18n'
 
-// --- vue-i18n モック ---
-// テスト用の最小限i18nインスタンス（翻訳キーをそのまま返す）
-const i18n = createI18n({
-  legacy: false,
-  locale: 'ja',
-  fallbackLocale: 'ja',
-  missing: (_locale, key) => key,
-  messages: { ja: {} },
-})
-
-config.global.plugins = [i18n]
+config.global.plugins = [testI18n]
 
 // --- Element Plus モック ---
 vi.mock('element-plus', () => ({
@@ -28,6 +18,23 @@ vi.mock('element-plus', () => ({
     alert: vi.fn().mockResolvedValue('confirm'),
   },
 }))
+
+// --- axios モック（isCancel / isAxiosError を含む） ---
+vi.mock('axios', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('axios')>()
+  return {
+    ...actual,
+    default: {
+      ...actual.default,
+      isCancel: vi.fn((err: unknown) => {
+        return err instanceof actual.default.CanceledError
+      }),
+      isAxiosError: vi.fn((err: unknown) => {
+        return (err as { isAxiosError?: boolean })?.isAxiosError === true
+      }),
+    },
+  }
+})
 
 // --- vue-router モック ---
 const mockRouter = {

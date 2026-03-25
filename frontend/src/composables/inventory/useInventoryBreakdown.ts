@@ -115,7 +115,7 @@ export function useInventoryBreakdown() {
       // ロケーションID取得
       const locRes = await apiClient.get('/master/locations', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: fromLocationCode.value.trim(),
           page: 0, size: 1,
         },
@@ -133,7 +133,7 @@ export function useInventoryBreakdown() {
       // 在庫取得
       const res = await apiClient.get('/inventory', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCodePrefix: fromLocationCode.value.trim(),
           viewType: 'LOCATION',
           page: 0, size: 100,
@@ -197,7 +197,7 @@ export function useInventoryBreakdown() {
     try {
       const locRes = await apiClient.get('/master/locations', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: toLocationCode.value.trim(),
           page: 0, size: 1,
         },
@@ -214,7 +214,7 @@ export function useInventoryBreakdown() {
       if (selectedProductId.value && toUnitType.value) {
         const invRes = await apiClient.get('/inventory', {
           params: {
-            warehouseId: warehouseStore.currentWarehouseId,
+            warehouseId: warehouseStore.selectedWarehouseId,
             locationCodePrefix: toLocationCode.value.trim(),
             productId: selectedProductId.value,
             unitType: toUnitType.value,

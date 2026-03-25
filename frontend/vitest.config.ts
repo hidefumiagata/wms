@@ -14,9 +14,10 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.{test,spec}.ts'],
+    restoreMocks: true,
     coverage: {
       provider: 'v8',
-      include: ['src/composables/**/*.ts'],
+      include: ['src/composables/**/*.ts', 'src/stores/**/*.ts', 'src/utils/**/*.ts'],
       reporter: ['text', 'text-summary'],
     },
   },

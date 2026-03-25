@@ -1,43 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
-import { withSetup, mockAxiosResponse, createCancelError } from '../../helpers'
+import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useInboundSlipList } from '@/composables/inbound/useInboundSlipList'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
-import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
-vi.mock('axios', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('axios')>()
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      isCancel: vi.fn((err: unknown) => {
-        return (err as { __CANCEL__?: boolean })?.__CANCEL__ === true
-      }),
-    },
-  }
-})
-
 describe('useInboundSlipList', () => {
-  const mockPageResponse = {
+  const createMockResponse = () => ({
     content: [{ id: 1, slipNumber: 'INB-001' }],
     totalElements: 1,
     totalPages: 1,
     page: 0,
     size: 20,
-  }
-
-  beforeEach(() => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(mockPageResponse))
   })
 
-  it('fetchList が warehouseStore.currentWarehouseId をパラメータに含める', async () => {
+  beforeEach(() => {
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(createMockResponse()))
+  })
+
+  it('fetchList が warehouseId をパラメータに含める', async () => {
     const { result } = withSetup(() => {
-      // NOTE: composable は warehouseStore.currentWarehouseId を参照しているが
-      // store の実際のプロパティは selectedWarehouseId。
-      // currentWarehouseId は undefined になる（要修正: 別Issue検討）
       const warehouseStore = useWarehouseStore()
       warehouseStore.selectedWarehouseId = 42
       return useInboundSlipList()
@@ -45,9 +28,8 @@ describe('useInboundSlipList', () => {
 
     await result.fetchList()
 
-    // currentWarehouseId は store に存在しないため undefined が渡される
     expect(apiClient.get).toHaveBeenCalledWith('/inbound/slips', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: undefined }),
+      params: expect.objectContaining({ warehouseId: 42 }),
       signal: expect.any(AbortSignal),
     }))
   })
@@ -74,12 +56,14 @@ describe('useInboundSlipList', () => {
     })
 
     const fetchPromise = result.fetchList()
-    const abortSpy = vi.spyOn(AbortController.prototype, 'abort')
+
+    // fetchList 呼び出し時に渡された signal を取得
+    const signal = vi.mocked(apiClient.get).mock.calls[0][1]!.signal!
+    expect(signal.aborted).toBe(false)
 
     wrapper.unmount()
 
-    expect(abortSpy).toHaveBeenCalled()
-    abortSpy.mockRestore()
+    expect(signal.aborted).toBe(true)
 
     await fetchPromise
   })
@@ -96,7 +80,8 @@ describe('useInboundSlipList', () => {
     expect(result.items.value).toHaveLength(1)
 
     // キャンセルエラー
-    vi.mocked(apiClient.get).mockRejectedValueOnce(createCancelError())
+    const cancelError = new Error('canceled')
+    vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
     vi.mocked(axios.isCancel).mockReturnValueOnce(true)
 
     await result.fetchList()
@@ -121,7 +106,7 @@ describe('useInboundSlipList', () => {
     expect(result.isViewer.value).toBe(true)
   })
 
-  it('handleSearch がページを1にリセットする', async () => {
+  it('handleSearch がページを1にリセットしてfetchListを呼ぶ', async () => {
     const { result } = withSetup(() => {
       const warehouseStore = useWarehouseStore()
       warehouseStore.selectedWarehouseId = 1
@@ -129,9 +114,11 @@ describe('useInboundSlipList', () => {
     })
 
     result.page.value = 5
-    await result.handleSearch()
+    result.handleSearch()
+    await flushPromises()
 
     expect(result.page.value).toBe(1)
+    expect(apiClient.get).toHaveBeenCalled()
   })
 
   it('handleReset が検索条件をデフォルトに戻す', async () => {
@@ -145,13 +132,28 @@ describe('useInboundSlipList', () => {
     result.searchForm.partnerId = 5
     result.page.value = 3
 
-    await result.handleReset()
+    result.handleReset()
+    await flushPromises()
 
     expect(result.searchForm.slipNumber).toBe('')
     expect(result.searchForm.partnerId).toBeNull()
     expect(result.page.value).toBe(1)
-    // 日付範囲がリセットされていること
     expect(result.searchForm.plannedDateFrom).toBeTruthy()
     expect(result.searchForm.plannedDateTo).toBeTruthy()
+  })
+
+  it('fetchPartnerOptions が仕入先オプションを取得する', async () => {
+    const supplierRes = mockAxiosResponse({ content: [{ id: 1, partnerName: '仕入先A' }] })
+    const bothRes = mockAxiosResponse({ content: [{ id: 2, partnerName: '兼用B' }] })
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(supplierRes)
+      .mockResolvedValueOnce(bothRes)
+
+    const { result } = withSetup(() => useInboundSlipList())
+    await result.fetchPartnerOptions()
+
+    expect(result.partnerOptions.value).toHaveLength(2)
+    expect(result.partnerOptions.value[0].partnerName).toBe('仕入先A')
+    expect(result.partnerOptions.value[1].partnerName).toBe('兼用B')
   })
 })
