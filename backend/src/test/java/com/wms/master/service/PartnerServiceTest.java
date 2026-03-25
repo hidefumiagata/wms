@@ -214,6 +214,19 @@ class PartnerServiceTest {
         }
 
         @Test
+        @DisplayName("バージョン不一致でOptimisticLockConflictExceptionをスロー")
+        void update_versionMismatch_throwsException() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.setVersion(5);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.update(new UpdatePartnerCommand(1L, "名前", null, PartnerType.SUPPLIER,
+                    null, null, null, null, 3)))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("id=1");
+        }
+
+        @Test
         @DisplayName("楽観的ロック競合でOptimisticLockConflictExceptionをスロー")
         void update_optimisticLockConflict_throwsException() {
             Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");

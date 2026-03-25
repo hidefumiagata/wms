@@ -75,4 +75,27 @@ class RateLimiterServiceTest {
         }
         assertThat(rateLimiterService.tryConsumePasswordResetByIdentifier("user2")).isTrue();
     }
+
+    @Test
+    void tryConsumeCodeExists_withinLimit_returnsTrue() {
+        for (int i = 0; i < 30; i++) {
+            assertThat(rateLimiterService.tryConsumeCodeExists("user-abc")).isTrue();
+        }
+    }
+
+    @Test
+    void tryConsumeCodeExists_exceedsLimit_returnsFalse() {
+        for (int i = 0; i < 30; i++) {
+            rateLimiterService.tryConsumeCodeExists("user-xyz");
+        }
+        assertThat(rateLimiterService.tryConsumeCodeExists("user-xyz")).isFalse();
+    }
+
+    @Test
+    void tryConsumeCodeExists_differentUsers_independent() {
+        for (int i = 0; i < 30; i++) {
+            rateLimiterService.tryConsumeCodeExists("user-full");
+        }
+        assertThat(rateLimiterService.tryConsumeCodeExists("user-other")).isTrue();
+    }
 }

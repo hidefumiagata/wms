@@ -1,8 +1,10 @@
 package com.wms.master.service;
 
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Product;
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.ProductRepository;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -24,6 +26,7 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final InventoryService inventoryService;
 
     public Page<Product> search(String productCode, String productName,
                                 String storageCondition, Boolean isActive,
@@ -48,10 +51,18 @@ public class ProductService {
         return productRepository.findAllById(ids);
     }
 
+    public record ProductWithInventory(Product product, boolean hasInventory) {}
+
     public Product findById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "PRODUCT_NOT_FOUND", "商品", id));
+    }
+
+    public ProductWithInventory findByIdWithInventoryCheck(Long id) {
+        Product product = findById(id);
+        boolean hasInventory = inventoryService.hasInventoryByProductId(id);
+        return new ProductWithInventory(product, hasInventory);
     }
 
     @Transactional
@@ -81,8 +92,16 @@ public class ProductService {
                     "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
         }
 
-        // TODO: 在庫テーブル実装後に lotManageFlag / expiryManageFlag 変更時の在庫存在チェックを追加
-        //       在庫あり && フラグ変更 → CANNOT_CHANGE_LOT_MANAGE_FLAG / CANNOT_CHANGE_EXPIRY_MANAGE_FLAG (422)
+        boolean lotFlagChanged = !product.getLotManageFlag().equals(cmd.lotManageFlag());
+        boolean expiryFlagChanged = !product.getExpiryManageFlag().equals(cmd.expiryManageFlag());
+        if ((lotFlagChanged || expiryFlagChanged) && inventoryService.hasInventoryByProductId(cmd.id())) {
+            if (lotFlagChanged) {
+                throw new BusinessRuleViolationException("CANNOT_CHANGE_LOT_MANAGE_FLAG",
+                        "在庫が存在するためロット管理フラグを変更できません (id=" + cmd.id() + ")");
+            }
+            throw new BusinessRuleViolationException("CANNOT_CHANGE_EXPIRY_MANAGE_FLAG",
+                    "在庫が存在するため期限管理フラグを変更できません (id=" + cmd.id() + ")");
+        }
 
         product.setProductName(cmd.productName());
         product.setProductNameKana(cmd.productNameKana());
@@ -121,9 +140,9 @@ public class ProductService {
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
 
-        if (!isActive) {
-            // TODO: 在庫テーブル実装後に在庫存在チェックを追加
-            //       在庫あり → CANNOT_DEACTIVATE_HAS_INVENTORY (422)
+        if (!isActive && inventoryService.hasInventoryByProductId(id)) {
+            throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_INVENTORY",
+                    "在庫が存在するため商品を無効化できません (id=" + id + ")");
         }
         if (product.getIsActive().equals(isActive)) {
             log.info("Product toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -144,6 +163,10 @@ public class ProductService {
                     "OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
+    }
+
+    public boolean hasInventory(Long productId) {
+        return inventoryService.hasInventoryByProductId(productId);
     }
 
     public boolean existsByCode(String productCode) {

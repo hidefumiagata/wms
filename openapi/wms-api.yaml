@@ -6316,7 +6316,7 @@ components:
 
     ProductDetail:
       type: object
-      required: [id, productCode, productName, caseQuantity, ballQuantity, storageCondition, isHazardous, lotManageFlag, expiryManageFlag, shipmentStopFlag, isActive, version, createdAt, updatedAt]
+      required: [id, productCode, productName, caseQuantity, ballQuantity, storageCondition, isHazardous, lotManageFlag, expiryManageFlag, shipmentStopFlag, isActive, hasInventory, version, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -6345,6 +6345,9 @@ components:
           type: boolean
         isActive:
           type: boolean
+        hasInventory:
+          type: boolean
+          description: 在庫が存在するかどうか（編集画面でのフラグ制御に使用）
         version:
           type: integer
         createdAt:

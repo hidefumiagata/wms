@@ -356,13 +356,22 @@ class WarehouseControllerTest {
     class ExistsTests {
 
         @Test
-        @DisplayName("存在するコードでexists=trueを返す")
+        @DisplayName("存在するコードでexists=trueを返す（認証あり・レートリミットOK）")
         void exists_true() throws Exception {
-            when(warehouseService.existsByCode("WARA")).thenReturn(true);
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
 
-            mockMvc.perform(get(BASE_URL + "/exists").param("warehouseCode", "WARA"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.exists").value(true));
+            try {
+                when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(true);
+                when(warehouseService.existsByCode("WARA")).thenReturn(true);
+
+                mockMvc.perform(get(BASE_URL + "/exists").param("warehouseCode", "WARA"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.exists").value(true));
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
 
         @Test
@@ -380,6 +389,23 @@ class WarehouseControllerTest {
         void exists_missingParam_returns400() throws Exception {
             mockMvc.perform(get(BASE_URL + "/exists"))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("レートリミット超過で429を返す")
+        void exists_rateLimitExceeded_returns429() throws Exception {
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+
+            try {
+                when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(false);
+
+                mockMvc.perform(get(BASE_URL + "/exists").param("warehouseCode", "WARA"))
+                        .andExpect(status().isTooManyRequests());
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
     }
 

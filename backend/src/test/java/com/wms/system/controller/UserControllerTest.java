@@ -133,6 +133,60 @@ class UserControllerTest {
         }
 
         @Test
+        @DisplayName("roleフィルタ指定時にgetValueが呼ばれる")
+        void list_paged_withRoleFilter() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), eq("SYSTEM_ADMIN"), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("role", "SYSTEM_ADMIN"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("statusフィルタ指定時にgetValueが呼ばれる")
+        void list_paged_withStatusFilter() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), any(), eq("ACTIVE"), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("status", "ACTIVE"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("ソートプロパティのみ（方向なし）でデフォルト方向を使用")
+        void list_paged_sortWithoutDirection_usesDefaultDirection() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("sort", "userCode"))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(userService).search(any(), any(), any(), pageableCaptor.capture());
+            var order = pageableCaptor.getValue().getSort().getOrderFor("userCode");
+            assertThat(order).isNotNull();
+            assertThat(order.getDirection()).isEqualTo(org.springframework.data.domain.Sort.Direction.DESC);
+        }
+
+        @Test
+        @DisplayName("sortがnull/blankの場合デフォルトソートを使用")
+        void list_paged_blankSort_usesDefault() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("sort", ""))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(userService).search(any(), any(), any(), pageableCaptor.capture());
+            assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt")).isNotNull();
+        }
+
+        @Test
         @DisplayName("all=trueでUserPageResponse形式の全件リストを返す")
         void list_all_returnsWrappedList() throws Exception {
             User u = createUser(1L, "USR001", "山田太郎");
@@ -453,6 +507,15 @@ class UserControllerTest {
         void exists_missingParam_returns400() throws Exception {
             mockMvc.perform(get(BASE_URL + "/exists"))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("レートリミット超過で429を返す")
+        void exists_rateLimitExceeded_returns429() throws Exception {
+            when(rateLimiterService.tryConsumeCodeExists(any())).thenReturn(false);
+
+            mockMvc.perform(get(BASE_URL + "/exists").param("code", "USR001"))
+                    .andExpect(status().isTooManyRequests());
         }
     }
 

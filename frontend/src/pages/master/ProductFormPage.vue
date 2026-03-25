@@ -134,12 +134,32 @@
 
         <!-- ロット管理フラグ -->
         <el-form-item :label="t('master.product.lotManageFlag')">
-          <el-checkbox v-model="lotManageFlag" v-bind="lotManageFlagAttrs" />
+          <el-tooltip
+            :content="t('master.product.inventoryExistsTooltip')"
+            :disabled="!isEdit || !hasInventory"
+            placement="top"
+          >
+            <el-checkbox
+              v-model="lotManageFlag"
+              v-bind="lotManageFlagAttrs"
+              :disabled="isEdit && hasInventory"
+            />
+          </el-tooltip>
         </el-form-item>
 
         <!-- 賞味/使用期限管理フラグ -->
         <el-form-item :label="t('master.product.expiryManageFlag')">
-          <el-checkbox v-model="expiryManageFlag" v-bind="expiryManageFlagAttrs" />
+          <el-tooltip
+            :content="t('master.product.inventoryExistsTooltip')"
+            :disabled="!isEdit || !hasInventory"
+            placement="top"
+          >
+            <el-checkbox
+              v-model="expiryManageFlag"
+              v-bind="expiryManageFlagAttrs"
+              :disabled="isEdit && hasInventory"
+            />
+          </el-tooltip>
         </el-form-item>
 
         <!-- 出荷禁止フラグ -->
@@ -193,6 +213,7 @@ const {
   loading,
   initialLoading,
   isEdit,
+  hasInventory,
   fetchProduct,
   handleSubmit,
   handleCancel,

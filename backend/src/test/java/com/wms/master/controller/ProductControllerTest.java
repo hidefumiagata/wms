@@ -299,21 +299,36 @@ class ProductControllerTest {
     class GetProduct {
 
         @Test
-        @DisplayName("存在するIDで200を返す")
+        @DisplayName("存在するIDで200を返す（在庫なし）")
         void getProduct_exists_returns200() throws Exception {
             Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
-            when(productService.findById(1L)).thenReturn(p);
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, false));
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.productCode").value("P-001"));
+                    .andExpect(jsonPath("$.productCode").value("P-001"))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
+        }
+
+        @Test
+        @DisplayName("在庫ありの商品でhasInventory=trueを返す")
+        void getProduct_hasInventory_returnsTrue() throws Exception {
+            Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, true));
+
+            mockMvc.perform(get(BASE_URL + "/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.hasInventory").value(true));
         }
 
         @Test
         @DisplayName("createdAt/updatedAtがnullの商品でも200を返す")
         void getProduct_nullTimestamps_returns200() throws Exception {
             Product p = createProduct(null, "P-001", "テスト商品A", "AMBIENT");
-            when(productService.findById(1L)).thenReturn(p);
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, false));
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk());
@@ -322,7 +337,7 @@ class ProductControllerTest {
         @Test
         @DisplayName("存在しないIDで404を返す")
         void getProduct_notExists_returns404() throws Exception {
-            when(productService.findById(999L))
+            when(productService.findByIdWithInventoryCheck(999L))
                     .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
                             "PRODUCT_NOT_FOUND", "商品", 999L));
 
@@ -349,12 +364,14 @@ class ProductControllerTest {
             Product updated = createProduct(1L, "P-001", "更新商品名", "REFRIGERATED");
             when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                     .thenReturn(updated);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(put(BASE_URL + "/1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.productName").value("更新商品名"));
+                    .andExpect(jsonPath("$.productName").value("更新商品名"))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
         }
 
         @Test
@@ -409,12 +426,14 @@ class ProductControllerTest {
             Product updated = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
             updated.deactivate();
             when(productService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.isActive").value(false));
+                    .andExpect(jsonPath("$.isActive").value(false))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
         }
 
         @Test
@@ -462,11 +481,18 @@ class ProductControllerTest {
         @Test
         @DisplayName("存在するコードでexists=trueを返す")
         void checkExists_exists_returnsTrue() throws Exception {
+            when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(true);
             when(productService.existsByCode("P-001")).thenReturn(true);
-
-            mockMvc.perform(get(BASE_URL + "/exists").param("productCode", "P-001"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.exists").value(true));
+            var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    "admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                mockMvc.perform(get(BASE_URL + "/exists").param("productCode", "P-001"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.exists").value(true));
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
 
         @Test
@@ -484,6 +510,22 @@ class ProductControllerTest {
         void checkExists_missingParam_returns400() throws Exception {
             mockMvc.perform(get(BASE_URL + "/exists"))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("レートリミット超過で429を返す")
+        void checkExists_rateLimited_returns429() throws Exception {
+            when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(false);
+            var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    "admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                mockMvc.perform(get(BASE_URL + "/exists")
+                                .param("productCode", "P-001"))
+                        .andExpect(status().isTooManyRequests());
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
     }
 }

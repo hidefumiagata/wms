@@ -1,8 +1,10 @@
 package com.wms.master.service;
 
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Product;
 import com.wms.master.repository.ProductRepository;
 import com.wms.master.service.UpdateProductCommand;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -36,6 +38,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private InventoryService inventoryService;
 
     @InjectMocks
     private ProductService productService;
@@ -113,6 +118,33 @@ class ProductServiceTest {
             List<Product> result = productService.findAllSimple(null);
 
             assertThat(result).hasSize(1000);
+        }
+    }
+
+    @Nested
+    @DisplayName("findAllByIds")
+    class FindAllByIds {
+        @Test
+        @DisplayName("nullの場合空リストを返す")
+        void findAllByIds_null_returnsEmpty() {
+            assertThat(productService.findAllByIds(null)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("空リストの場合空リストを返す")
+        void findAllByIds_empty_returnsEmpty() {
+            assertThat(productService.findAllByIds(List.of())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("IDリストで商品を返す")
+        void findAllByIds_withIds_returnsProducts() {
+            Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
+            when(productRepository.findAllById(List.of(1L))).thenReturn(List.of(p));
+
+            List<Product> result = productService.findAllByIds(List.of(1L));
+
+            assertThat(result).hasSize(1);
         }
     }
 
@@ -273,6 +305,85 @@ class ProductServiceTest {
                     false, false, false, false, true, 0)))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("在庫ありでlotManageFlag変更時にBusinessRuleViolationExceptionをスロー")
+        void update_hasInventory_changeLotFlag_throwsException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.setLotManageFlag(false);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(1L, "商品A", null,
+                    6, 10, null, "AMBIENT",
+                    false, true, false, false, true, 0)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("ロット管理フラグ");
+        }
+
+        @Test
+        @DisplayName("在庫ありでexpiryManageFlag変更時にBusinessRuleViolationExceptionをスロー")
+        void update_hasInventory_changeExpiryFlag_throwsException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.setExpiryManageFlag(false);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(1L, "商品A", null,
+                    6, 10, null, "AMBIENT",
+                    false, false, true, false, true, 0)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("期限管理フラグ");
+        }
+
+        @Test
+        @DisplayName("在庫ありで両フラグ同時変更時はlotManageFlagのエラーが優先される")
+        void update_hasInventory_changeBothFlags_throwsLotFlagException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.setLotManageFlag(false);
+            existing.setExpiryManageFlag(false);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> productService.update(new UpdateProductCommand(1L, "商品A", null,
+                    6, 10, null, "AMBIENT",
+                    false, true, true, false, true, 0)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("ロット管理フラグ");
+        }
+
+        @Test
+        @DisplayName("在庫ありでもフラグ未変更なら正常に更新できる（在庫チェックはスキップされる）")
+        void update_hasInventory_noFlagChange_success() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.setLotManageFlag(true);
+            existing.setExpiryManageFlag(true);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Product result = productService.update(new UpdateProductCommand(1L, "新商品名", null,
+                    6, 10, null, "AMBIENT",
+                    false, true, true, false, true, 0));
+
+            assertThat(result.getProductName()).isEqualTo("新商品名");
+            verify(inventoryService, never()).hasInventoryByProductId(any());
+        }
+
+        @Test
+        @DisplayName("在庫なしならフラグ変更可能")
+        void update_noInventory_changeFlagsAllowed() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(false);
+            when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Product result = productService.update(new UpdateProductCommand(1L, "商品A", null,
+                    6, 10, null, "AMBIENT",
+                    false, true, true, false, true, 0));
+
+            assertThat(result.getLotManageFlag()).isTrue();
+            assertThat(result.getExpiryManageFlag()).isTrue();
+        }
     }
 
     @Nested
@@ -283,11 +394,24 @@ class ProductServiceTest {
         void toggleActive_deactivate_success() {
             Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(false);
             when(productRepository.save(any(Product.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Product result = productService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("在庫ありで無効化時にBusinessRuleViolationExceptionをスロー")
+        void toggleActive_hasInventory_deactivate_throwsException() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> productService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("在庫が存在するため");
         }
 
         @Test
@@ -331,11 +455,58 @@ class ProductServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(false);
             when(productRepository.save(any(Product.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Product.class.getName(), 1L));
 
             assertThatThrownBy(() -> productService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("findByIdWithInventoryCheck")
+    class FindByIdWithInventoryCheck {
+        @Test
+        @DisplayName("商品と在庫有無を返す")
+        void findByIdWithInventoryCheck_returnsProductAndInventory() {
+            Product p = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            when(productRepository.findById(1L)).thenReturn(Optional.of(p));
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            var result = productService.findByIdWithInventoryCheck(1L);
+
+            assertThat(result.product().getProductCode()).isEqualTo("P-001");
+            assertThat(result.hasInventory()).isTrue();
+        }
+
+        @Test
+        @DisplayName("存在しないIDでResourceNotFoundExceptionをスロー")
+        void findByIdWithInventoryCheck_notFound_throwsException() {
+            when(productRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> productService.findByIdWithInventoryCheck(999L))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("hasInventory")
+    class HasInventory {
+        @Test
+        @DisplayName("在庫ありでtrueを返す")
+        void hasInventory_exists_returnsTrue() {
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(true);
+
+            assertThat(productService.hasInventory(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("在庫なしでfalseを返す")
+        void hasInventory_notExists_returnsFalse() {
+            when(inventoryService.hasInventoryByProductId(1L)).thenReturn(false);
+
+            assertThat(productService.hasInventory(1L)).isFalse();
         }
     }
 

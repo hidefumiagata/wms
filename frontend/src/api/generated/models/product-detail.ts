@@ -102,6 +102,12 @@ export interface ProductDetail {
      */
     'isActive': boolean;
     /**
+     * 在庫が存在するかどうか（編集画面でのフラグ制御に使用）
+     * @type {boolean}
+     * @memberof ProductDetail
+     */
+    'hasInventory': boolean;
+    /**
      * 
      * @type {number}
      * @memberof ProductDetail

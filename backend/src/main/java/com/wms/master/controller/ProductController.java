@@ -124,8 +124,8 @@ public class ProductController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetail> getProduct(@PathVariable Long id) {
-        Product product = productService.findById(id);
-        return ResponseEntity.ok(toDetail(product));
+        var result = productService.findByIdWithInventoryCheck(id);
+        return ResponseEntity.ok(toDetail(result.product()).hasInventory(result.hasInventory()));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
@@ -147,7 +147,8 @@ public class ProductController {
                 request.getShipmentStopFlag(),
                 request.getIsActive(),
                 request.getVersion()));
-        return ResponseEntity.ok(toDetail(updated));
+        boolean hasInventory = productService.hasInventory(id);
+        return ResponseEntity.ok(toDetail(updated).hasInventory(hasInventory));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
@@ -157,7 +158,8 @@ public class ProductController {
             @Valid @RequestBody ToggleActiveRequest request) {
         Product updated = productService.toggleActive(
                 id, request.getIsActive(), request.getVersion());
-        return ResponseEntity.ok(toDetail(updated));
+        boolean hasInventory = productService.hasInventory(id);
+        return ResponseEntity.ok(toDetail(updated).hasInventory(hasInventory));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -190,6 +192,7 @@ public class ProductController {
                 .expiryManageFlag(p.getExpiryManageFlag())
                 .shipmentStopFlag(p.getShipmentStopFlag())
                 .isActive(p.getIsActive())
+                .hasInventory(false)
                 .version(p.getVersion())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt());

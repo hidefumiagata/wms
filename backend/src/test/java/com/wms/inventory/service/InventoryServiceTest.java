@@ -407,4 +407,25 @@ class InventoryServiceTest {
             assertThat(inventoryService.existsDifferentProductAtLocation(200L, 100L)).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("hasInventoryByProductId")
+    class HasInventoryByProductIdTests {
+
+        @Test
+        @DisplayName("在庫ありでtrueを返す")
+        void hasInventory_exists_returnsTrue() {
+            when(inventoryRepository.existsByProductIdWithPositiveQty(1L)).thenReturn(true);
+
+            assertThat(inventoryService.hasInventoryByProductId(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("在庫なしでfalseを返す")
+        void hasInventory_notExists_returnsFalse() {
+            when(inventoryRepository.existsByProductIdWithPositiveQty(1L)).thenReturn(false);
+
+            assertThat(inventoryService.hasInventoryByProductId(1L)).isFalse();
+        }
+    }
 }

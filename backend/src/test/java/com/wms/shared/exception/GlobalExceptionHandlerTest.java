@@ -15,12 +15,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.context.MessageSourceResolvable;
 
 import java.util.List;
 import java.util.Set;
@@ -235,5 +239,65 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().traceId()).isEqualTo("unknown");
+    }
+
+    @Test
+    @DisplayName("HandlerMethodValidationException -> 400 BAD_REQUEST with field errors")
+    void handleMethodValidation_validationErrors_returns400WithDetails() {
+        HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
+
+        MethodParameter methodParameter = mock(MethodParameter.class);
+        when(methodParameter.getParameterName()).thenReturn("warehouseId");
+
+        MessageSourceResolvable resolvableError = mock(MessageSourceResolvable.class);
+        when(resolvableError.getDefaultMessage()).thenReturn("must be positive");
+
+        ParameterValidationResult validationResult = mock(ParameterValidationResult.class);
+        when(validationResult.getMethodParameter()).thenReturn(methodParameter);
+        when(validationResult.getResolvableErrors()).thenReturn(List.of(resolvableError));
+
+        when(ex.getAllValidationResults()).thenReturn(List.of(validationResult));
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodValidation(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().code()).isEqualTo("VALIDATION_ERROR");
+        assertThat(response.getBody().message()).isEqualTo("入力内容にエラーがあります");
+        assertThat(response.getBody().details()).hasSize(1);
+        assertThat(response.getBody().details().get(0).field()).isEqualTo("warehouseId");
+        assertThat(response.getBody().details().get(0).message()).isEqualTo("must be positive");
+        assertThat(response.getBody().traceId()).isEqualTo(TEST_TRACE_ID);
+    }
+
+    @Test
+    @DisplayName("HandlerMethodValidationException 複数パラメータ・複数エラー")
+    void handleMethodValidation_multipleParamsAndErrors_returns400WithAllDetails() {
+        HandlerMethodValidationException ex = mock(HandlerMethodValidationException.class);
+
+        MethodParameter param1 = mock(MethodParameter.class);
+        when(param1.getParameterName()).thenReturn("page");
+        MessageSourceResolvable error1 = mock(MessageSourceResolvable.class);
+        when(error1.getDefaultMessage()).thenReturn("must be >= 0");
+
+        MethodParameter param2 = mock(MethodParameter.class);
+        when(param2.getParameterName()).thenReturn("size");
+        MessageSourceResolvable error2 = mock(MessageSourceResolvable.class);
+        when(error2.getDefaultMessage()).thenReturn("must be > 0");
+
+        ParameterValidationResult result1 = mock(ParameterValidationResult.class);
+        when(result1.getMethodParameter()).thenReturn(param1);
+        when(result1.getResolvableErrors()).thenReturn(List.of(error1));
+
+        ParameterValidationResult result2 = mock(ParameterValidationResult.class);
+        when(result2.getMethodParameter()).thenReturn(param2);
+        when(result2.getResolvableErrors()).thenReturn(List.of(error2));
+
+        when(ex.getAllValidationResults()).thenReturn(List.of(result1, result2));
+
+        ResponseEntity<ErrorResponse> response = handler.handleMethodValidation(ex);
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().details()).hasSize(2);
     }
 }

@@ -165,6 +165,36 @@ class InventoryMoveServiceTest {
         }
 
         @Test
+        @DisplayName("正常系: 在庫移動成功（移動先に既存在庫あり、fromId > toId のロック順序）")
+        void move_success_existingTarget_reverseLockOrder() {
+            setUpSecurityContext();
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, "P-001"));
+
+            // fromInv.id=30 > toInv.id=5 → reverse lock order
+            Inventory fromInv = createInventory(30L, 1L, 100L, 20, 5);
+            Inventory toInv = createInventory(5L, 2L, 100L, 3, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    2L, 100L, "CASE", null, null)).thenReturn(Optional.of(toInv));
+            when(inventoryRepository.findByIdForUpdate(5L)).thenReturn(Optional.of(toInv));
+            when(inventoryRepository.findByIdForUpdate(30L)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.existsByLocationIdAndProductIdNot(2L, 100L)).thenReturn(false);
+
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+            when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(i -> i.getArgument(0));
+
+            InventoryMoveService.MoveResult result = inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 5);
+
+            assertThat(result.movedQty()).isEqualTo(5);
+            assertThat(result.fromQuantityAfter()).isEqualTo(15);
+            assertThat(result.toQuantityAfter()).isEqualTo(8);
+        }
+
+        @Test
         @DisplayName("移動元と移動先が同一の場合エラー")
         void move_sameLocation_throws() {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
@@ -228,6 +258,26 @@ class InventoryMoveServiceTest {
                     1L, 100L, "CASE", null, null, 2L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("INVENTORY_INSUFFICIENT");
+        }
+
+        @Test
+        @DisplayName("lockInventoryでfindByIdForUpdateが空を返す場合ResourceNotFoundException")
+        void move_lockFailed_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, "P-001"));
+
+            Inventory fromInv = createInventory(10L, 1L, 100L, 10, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    2L, 100L, "CASE", null, null)).thenReturn(Optional.empty());
+            when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 5))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
         }
 
         @Test

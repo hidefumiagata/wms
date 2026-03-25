@@ -46,6 +46,13 @@ public class InventoryService {
     }
 
     /**
+     * 指定した商品の在庫（quantity > 0）が存在するかチェックする。
+     */
+    public boolean hasInventoryByProductId(Long productId) {
+        return inventoryRepository.existsByProductIdWithPositiveQty(productId);
+    }
+
+    /**
      * 入荷格納時に在庫をUPSERTし、INBOUND移動記録を作成する。
      */
     @Transactional

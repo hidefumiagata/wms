@@ -21,6 +21,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     boolean existsByLocationIdAndProductIdNot(Long locationId, Long productId);
 
+    @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.productId = :productId AND i.quantity > 0")
+    boolean existsByProductIdWithPositiveQty(@Param("productId") Long productId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Inventory i WHERE i.id = :id")
     Optional<Inventory> findByIdForUpdate(@Param("id") Long id);
