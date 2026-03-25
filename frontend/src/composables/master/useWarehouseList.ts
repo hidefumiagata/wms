@@ -122,7 +122,7 @@ export function useWarehouseList() {
 
     loading.value = true
     try {
-      await apiClient.patch(`/master/warehouses/${row.id}/deactivate`, {
+      await apiClient.patch(`/master/warehouses/${row.id}/toggle-active`, {
         isActive: !row.isActive,
         version: row.version,
       })
