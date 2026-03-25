@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { ProductDetail } from '@/api/generated/models/product-detail'
@@ -120,6 +121,10 @@ export function useProductForm() {
   const version = ref(0)
   const hasInventory = ref(false)
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   // --- API呼び出し ---
   async function checkCodeExists() {
     if (isEdit.value) return
@@ -143,9 +148,13 @@ export function useProductForm() {
       router.push({ name: 'product-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<ProductDetail>(`/master/products/${productId.value}`)
+      const res = await apiClient.get<ProductDetail>(`/master/products/${productId.value}`, { signal })
       setValues({
         productCode: res.data.productCode,
         productName: res.data.productName,
@@ -163,6 +172,7 @@ export function useProductForm() {
       version.value = res.data.version
       hasInventory.value = res.data.hasInventory ?? false
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.product.notFound'))
@@ -172,7 +182,9 @@ export function useProductForm() {
       }
       // 403/500 はインターセプターが処理済み
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 

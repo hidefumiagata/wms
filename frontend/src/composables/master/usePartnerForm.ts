@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { PartnerDetail } from '@/api/generated/models/partner-detail'
@@ -108,6 +109,10 @@ export function usePartnerForm() {
   const initialLoading = ref(false)
   const version = ref(0)
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   // --- API呼び出し ---
   async function checkCodeExists() {
     if (isEdit.value) return
@@ -131,9 +136,13 @@ export function usePartnerForm() {
       router.push({ name: 'partner-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<PartnerDetail>(`/master/partners/${partnerId.value}`)
+      const res = await apiClient.get<PartnerDetail>(`/master/partners/${partnerId.value}`, { signal })
       setValues({
         partnerCode: res.data.partnerCode,
         partnerName: res.data.partnerName,
@@ -146,6 +155,7 @@ export function usePartnerForm() {
       })
       version.value = res.data.version
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.partner.notFound'))
@@ -154,7 +164,9 @@ export function usePartnerForm() {
         ElMessage.error(t('error.network'))
       }
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 

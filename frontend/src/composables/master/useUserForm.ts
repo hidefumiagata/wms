@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useAuthStore } from '@/stores/auth'
@@ -135,6 +136,10 @@ export function useUserForm() {
   const updatedAt = ref('')
   const showPassword = ref(false)
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   async function checkCodeExists() {
     if (isEdit.value) return
     const code = userCode.value
@@ -157,9 +162,13 @@ export function useUserForm() {
       router.push({ name: 'user-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<UserDetail>(`/master/users/${userId.value}`)
+      const res = await apiClient.get<UserDetail>(`/master/users/${userId.value}`, { signal })
       const data = res.data
       setValues({
         userCode: data.userCode,
@@ -174,6 +183,7 @@ export function useUserForm() {
       createdAt.value = data.createdAt
       updatedAt.value = data.updatedAt
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.user.notFound'))
@@ -182,7 +192,9 @@ export function useUserForm() {
         ElMessage.error(t('error.network'))
       }
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 

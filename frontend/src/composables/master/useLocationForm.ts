@@ -1,10 +1,11 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
@@ -72,6 +73,10 @@ export function useLocationForm() {
   const warehouseCode = ref('')
   const areaCode = ref('')
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   // 選択中のエリア情報
   const selectedArea = computed(() =>
     areas.value.find((a) => a.id === areaId.value) ?? null,
@@ -107,9 +112,13 @@ export function useLocationForm() {
       router.push({ name: 'location-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<LocationFullDetail>(`/master/locations/${locationId.value}`)
+      const res = await apiClient.get<LocationFullDetail>(`/master/locations/${locationId.value}`, { signal })
       setValues({
         areaId: res.data.areaId,
         locationCode: res.data.locationCode,
@@ -119,6 +128,7 @@ export function useLocationForm() {
       warehouseCode.value = res.data.warehouseCode
       areaCode.value = res.data.areaCode
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.location.notFound'))
@@ -127,7 +137,9 @@ export function useLocationForm() {
         ElMessage.error(t('error.network'))
       }
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 
