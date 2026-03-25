@@ -302,8 +302,8 @@ class ProductControllerTest {
         @DisplayName("存在するIDで200を返す（在庫なし）")
         void getProduct_exists_returns200() throws Exception {
             Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
-            when(productService.findById(1L)).thenReturn(p);
-            when(productService.hasInventory(1L)).thenReturn(false);
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, false));
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk())
@@ -315,8 +315,8 @@ class ProductControllerTest {
         @DisplayName("在庫ありの商品でhasInventory=trueを返す")
         void getProduct_hasInventory_returnsTrue() throws Exception {
             Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
-            when(productService.findById(1L)).thenReturn(p);
-            when(productService.hasInventory(1L)).thenReturn(true);
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, true));
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk())
@@ -327,8 +327,8 @@ class ProductControllerTest {
         @DisplayName("createdAt/updatedAtがnullの商品でも200を返す")
         void getProduct_nullTimestamps_returns200() throws Exception {
             Product p = createProduct(null, "P-001", "テスト商品A", "AMBIENT");
-            when(productService.findById(1L)).thenReturn(p);
-            when(productService.hasInventory(1L)).thenReturn(false);
+            when(productService.findByIdWithInventoryCheck(1L))
+                    .thenReturn(new ProductService.ProductWithInventory(p, false));
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk());
@@ -337,7 +337,7 @@ class ProductControllerTest {
         @Test
         @DisplayName("存在しないIDで404を返す")
         void getProduct_notExists_returns404() throws Exception {
-            when(productService.findById(999L))
+            when(productService.findByIdWithInventoryCheck(999L))
                     .thenThrow(com.wms.shared.exception.ResourceNotFoundException.of(
                             "PRODUCT_NOT_FOUND", "商品", 999L));
 
@@ -364,12 +364,14 @@ class ProductControllerTest {
             Product updated = createProduct(1L, "P-001", "更新商品名", "REFRIGERATED");
             when(productService.update(any(com.wms.master.service.UpdateProductCommand.class)))
                     .thenReturn(updated);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(put(BASE_URL + "/1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.productName").value("更新商品名"));
+                    .andExpect(jsonPath("$.productName").value("更新商品名"))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
         }
 
         @Test
@@ -424,12 +426,14 @@ class ProductControllerTest {
             Product updated = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
             updated.deactivate();
             when(productService.toggleActive(anyLong(), anyBoolean(), anyInt())).thenReturn(updated);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(patch(BASE_URL + "/1/toggle-active")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(VALID_JSON))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.isActive").value(false));
+                    .andExpect(jsonPath("$.isActive").value(false))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
         }
 
         @Test

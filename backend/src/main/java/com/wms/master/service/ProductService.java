@@ -51,10 +51,18 @@ public class ProductService {
         return productRepository.findAllById(ids);
     }
 
+    public record ProductWithInventory(Product product, boolean hasInventory) {}
+
     public Product findById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "PRODUCT_NOT_FOUND", "商品", id));
+    }
+
+    public ProductWithInventory findByIdWithInventoryCheck(Long id) {
+        Product product = findById(id);
+        boolean hasInventory = inventoryService.hasInventoryByProductId(id);
+        return new ProductWithInventory(product, hasInventory);
     }
 
     @Transactional
@@ -84,15 +92,15 @@ public class ProductService {
                     "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
         }
 
-        if (inventoryService.hasInventoryByProductId(cmd.id())) {
-            if (!product.getLotManageFlag().equals(cmd.lotManageFlag())) {
+        boolean lotFlagChanged = !product.getLotManageFlag().equals(cmd.lotManageFlag());
+        boolean expiryFlagChanged = !product.getExpiryManageFlag().equals(cmd.expiryManageFlag());
+        if ((lotFlagChanged || expiryFlagChanged) && inventoryService.hasInventoryByProductId(cmd.id())) {
+            if (lotFlagChanged) {
                 throw new BusinessRuleViolationException("CANNOT_CHANGE_LOT_MANAGE_FLAG",
                         "在庫が存在するためロット管理フラグを変更できません (id=" + cmd.id() + ")");
             }
-            if (!product.getExpiryManageFlag().equals(cmd.expiryManageFlag())) {
-                throw new BusinessRuleViolationException("CANNOT_CHANGE_EXPIRY_MANAGE_FLAG",
-                        "在庫が存在するため期限管理フラグを変更できません (id=" + cmd.id() + ")");
-            }
+            throw new BusinessRuleViolationException("CANNOT_CHANGE_EXPIRY_MANAGE_FLAG",
+                    "在庫が存在するため期限管理フラグを変更できません (id=" + cmd.id() + ")");
         }
 
         product.setProductName(cmd.productName());

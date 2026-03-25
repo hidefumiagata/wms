@@ -136,13 +136,13 @@
         <el-form-item :label="t('master.product.lotManageFlag')">
           <el-tooltip
             :content="t('master.product.inventoryExistsTooltip')"
-            :disabled="!hasInventory"
+            :disabled="!isEdit || !hasInventory"
             placement="top"
           >
             <el-checkbox
               v-model="lotManageFlag"
               v-bind="lotManageFlagAttrs"
-              :disabled="hasInventory"
+              :disabled="isEdit && hasInventory"
             />
           </el-tooltip>
         </el-form-item>
@@ -151,13 +151,13 @@
         <el-form-item :label="t('master.product.expiryManageFlag')">
           <el-tooltip
             :content="t('master.product.inventoryExistsTooltip')"
-            :disabled="!hasInventory"
+            :disabled="!isEdit || !hasInventory"
             placement="top"
           >
             <el-checkbox
               v-model="expiryManageFlag"
               v-bind="expiryManageFlagAttrs"
-              :disabled="hasInventory"
+              :disabled="isEdit && hasInventory"
             />
           </el-tooltip>
         </el-form-item>
