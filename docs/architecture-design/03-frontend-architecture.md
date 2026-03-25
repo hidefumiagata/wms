@@ -238,21 +238,24 @@ export function useWarehouseForm() {
   const version = ref(0) // 楽観的ロック用
 
   // === 3. バリデーションスキーマ（Zod） ===
-  const schema = toTypedSchema(
-    z.object({
-      warehouseCode: z.string()
-        .min(1, t('master.validation.required', { field: t('master.warehouse.code') }))
-        .max(4, t('master.validation.maxLength', { field: t('master.warehouse.code'), max: 4 }))
-        .regex(/^[A-Z]{4}$/, t('master.warehouse.codeFormat')),
-      warehouseName: z.string()
-        .min(1, t('master.validation.required', { field: t('master.warehouse.name') }))
-        .max(200, t('master.validation.maxLength', { field: t('master.warehouse.name'), max: 200 })),
-    })
+  // computed化により、ロケール切替時にt()が再評価されバリデーションメッセージが自動更新される
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        warehouseCode: z.string()
+          .min(1, t('master.validation.required', { field: t('master.warehouse.code') }))
+          .max(4, t('master.validation.maxLength', { field: t('master.warehouse.code'), max: 4 }))
+          .regex(/^[A-Z]{4}$/, t('master.warehouse.codeFormat')),
+        warehouseName: z.string()
+          .min(1, t('master.validation.required', { field: t('master.warehouse.name') }))
+          .max(200, t('master.validation.maxLength', { field: t('master.warehouse.name'), max: 200 })),
+      })
+    )
   )
 
   // === 4. VeeValidate フォーム ===
   const { handleSubmit, setFieldError, resetForm, values } = useForm({
-    validationSchema: schema,
+    validationSchema,
   })
 
   // === 5. API呼び出し関数 ===

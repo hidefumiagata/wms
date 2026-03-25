@@ -28,55 +28,59 @@ export function useUserForm() {
   const isEdit = computed(() => userId.value !== null)
   const isSelf = computed(() => isEdit.value && userId.value === auth.user?.userId)
 
-  // --- Zod スキーマ（登録用） ---
-  const createSchema = z
-    .object({
-      userCode: z
-        .string()
-        .min(1, t('master.user.validation.codeRequired'))
-        .max(50, t('master.user.validation.codeMaxLength'))
-        .regex(USER_CODE_REGEX, t('master.user.validation.codeFormat')),
-      fullName: z
-        .string()
-        .min(1, t('master.user.validation.nameRequired'))
-        .max(200, t('master.user.validation.nameMaxLength')),
-      email: z
-        .string()
-        .min(1, t('master.user.validation.emailRequired'))
-        .max(200, t('master.user.validation.emailMaxLength'))
-        .email(t('master.user.validation.emailFormat')),
-      role: z.string().min(1, t('master.user.validation.roleRequired')),
-      initialPassword: z
-        .string()
-        .min(8, t('master.user.validation.passwordMinLength'))
-        .max(128, t('master.user.validation.passwordMaxLength')),
-      confirmPassword: z.string().min(1, t('master.user.validation.confirmPasswordRequired')),
-    })
-    .refine((data) => data.initialPassword === data.confirmPassword, {
-      message: t('master.user.validation.passwordMismatch'),
-      path: ['confirmPassword'],
-    })
-
-  // --- Zod スキーマ（編集用） ---
-  const editSchema = z.object({
-    userCode: z.string(),
-    fullName: z
-      .string()
-      .min(1, t('master.user.validation.nameRequired'))
-      .max(200, t('master.user.validation.nameMaxLength')),
-    email: z
-      .string()
-      .min(1, t('master.user.validation.emailRequired'))
-      .max(200, t('master.user.validation.emailMaxLength'))
-      .email(t('master.user.validation.emailFormat')),
-    role: z.string().min(1, t('master.user.validation.roleRequired')),
-    isActive: z.boolean(),
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  // スキーマは isEdit と locale に応じて動的に決定される。
+  // DefaultLayout の RouterView が :key="route.fullPath" を使用しているため、
+  // /users/new → /users/:id/edit 間の遷移ではコンポーネントが再マウントされ正しいスキーマが選択される。
+  const validationSchema = computed(() => {
+    if (isEdit.value) {
+      return toTypedSchema(
+        z.object({
+          userCode: z.string(),
+          fullName: z
+            .string()
+            .min(1, t('master.user.validation.nameRequired'))
+            .max(200, t('master.user.validation.nameMaxLength')),
+          email: z
+            .string()
+            .min(1, t('master.user.validation.emailRequired'))
+            .max(200, t('master.user.validation.emailMaxLength'))
+            .email(t('master.user.validation.emailFormat')),
+          role: z.string().min(1, t('master.user.validation.roleRequired')),
+          isActive: z.boolean(),
+        }),
+      )
+    }
+    return toTypedSchema(
+      z
+        .object({
+          userCode: z
+            .string()
+            .min(1, t('master.user.validation.codeRequired'))
+            .max(50, t('master.user.validation.codeMaxLength'))
+            .regex(USER_CODE_REGEX, t('master.user.validation.codeFormat')),
+          fullName: z
+            .string()
+            .min(1, t('master.user.validation.nameRequired'))
+            .max(200, t('master.user.validation.nameMaxLength')),
+          email: z
+            .string()
+            .min(1, t('master.user.validation.emailRequired'))
+            .max(200, t('master.user.validation.emailMaxLength'))
+            .email(t('master.user.validation.emailFormat')),
+          role: z.string().min(1, t('master.user.validation.roleRequired')),
+          initialPassword: z
+            .string()
+            .min(8, t('master.user.validation.passwordMinLength'))
+            .max(128, t('master.user.validation.passwordMaxLength')),
+          confirmPassword: z.string().min(1, t('master.user.validation.confirmPasswordRequired')),
+        })
+        .refine((data) => data.initialPassword === data.confirmPassword, {
+          message: t('master.user.validation.passwordMismatch'),
+          path: ['confirmPassword'],
+        }),
+    )
   })
-
-  // スキーマは初期化時に決定される。DefaultLayout の RouterView が :key="route.fullPath" を
-  // 使用しているため、/users/new → /users/:id/edit 間の遷移ではコンポーネントが再マウントされ
-  // 正しいスキーマが選択される。
-  const schema = isEdit.value ? editSchema : createSchema
 
   const {
     errors,
@@ -86,7 +90,7 @@ export function useUserForm() {
     defineField,
     meta,
   } = useForm({
-    validationSchema: toTypedSchema(schema),
+    validationSchema,
     initialValues: {
       userCode: '',
       fullName: '',

@@ -27,17 +27,22 @@ export function useBuildingForm() {
   })
   const isEdit = computed(() => buildingId.value !== null)
 
-  const buildingSchema = z.object({
-    buildingCode: z
-      .string()
-      .min(1, t('master.building.validation.codeRequired'))
-      .max(10, t('master.building.validation.codeMaxLength'))
-      .regex(BUILDING_CODE_REGEX, t('master.building.validation.codeFormat')),
-    buildingName: z
-      .string()
-      .min(1, t('master.building.validation.nameRequired'))
-      .max(200, t('master.building.validation.nameMaxLength')),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        buildingCode: z
+          .string()
+          .min(1, t('master.building.validation.codeRequired'))
+          .max(10, t('master.building.validation.codeMaxLength'))
+          .regex(BUILDING_CODE_REGEX, t('master.building.validation.codeFormat')),
+        buildingName: z
+          .string()
+          .min(1, t('master.building.validation.nameRequired'))
+          .max(200, t('master.building.validation.nameMaxLength')),
+      }),
+    ),
+  )
 
   const {
     errors,
@@ -47,7 +52,7 @@ export function useBuildingForm() {
     defineField,
     meta,
   } = useForm({
-    validationSchema: toTypedSchema(buildingSchema),
+    validationSchema,
     initialValues: { buildingCode: '', buildingName: '' },
   })
 

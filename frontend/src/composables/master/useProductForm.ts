@@ -31,49 +31,53 @@ export function useProductForm() {
   })
   const isEdit = computed(() => productId.value !== null)
 
-  // --- Zod スキーマ ---
-  const productSchema = z.object({
-    productCode: z
-      .string()
-      .min(1, t('master.product.validation.codeRequired'))
-      .max(20, t('master.product.validation.codeMaxLength'))
-      .regex(PRODUCT_CODE_REGEX, t('master.product.validation.codeFormat')),
-    productName: z
-      .string()
-      .min(1, t('master.product.validation.nameRequired'))
-      .max(200, t('master.product.validation.nameMaxLength')),
-    productNameKana: z
-      .string()
-      .min(1, t('master.product.validation.kanaRequired'))
-      .max(200, t('master.product.validation.kanaMaxLength'))
-      .regex(KATAKANA_REGEX, t('master.product.validation.kanaFormat')),
-    barcode: z
-      .string()
-      .max(20, t('master.product.validation.barcodeMaxLength'))
-      .regex(BARCODE_REGEX, t('master.product.validation.barcodeFormat'))
-      .optional()
-      .or(z.literal('')),
-    storageCondition: z.enum([StorageCondition.Ambient, StorageCondition.Refrigerated, StorageCondition.Frozen]),
-    caseQuantity: z
-      .number({ invalid_type_error: t('master.product.validation.caseQuantityRange') })
-      .int(t('master.product.validation.caseQuantityRange'))
-      .min(1, t('master.product.validation.caseQuantityRange'))
-      .max(9999, t('master.product.validation.caseQuantityRange'))
-      .optional()
-      .or(z.nan()),
-    ballQuantity: z
-      .number({ invalid_type_error: t('master.product.validation.ballQuantityRange') })
-      .int(t('master.product.validation.ballQuantityRange'))
-      .min(1, t('master.product.validation.ballQuantityRange'))
-      .max(9999, t('master.product.validation.ballQuantityRange'))
-      .optional()
-      .or(z.nan()),
-    isHazardous: z.boolean(),
-    lotManageFlag: z.boolean(),
-    expiryManageFlag: z.boolean(),
-    shipmentStopFlag: z.boolean(),
-    isActive: z.boolean(),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        productCode: z
+          .string()
+          .min(1, t('master.product.validation.codeRequired'))
+          .max(20, t('master.product.validation.codeMaxLength'))
+          .regex(PRODUCT_CODE_REGEX, t('master.product.validation.codeFormat')),
+        productName: z
+          .string()
+          .min(1, t('master.product.validation.nameRequired'))
+          .max(200, t('master.product.validation.nameMaxLength')),
+        productNameKana: z
+          .string()
+          .min(1, t('master.product.validation.kanaRequired'))
+          .max(200, t('master.product.validation.kanaMaxLength'))
+          .regex(KATAKANA_REGEX, t('master.product.validation.kanaFormat')),
+        barcode: z
+          .string()
+          .max(20, t('master.product.validation.barcodeMaxLength'))
+          .regex(BARCODE_REGEX, t('master.product.validation.barcodeFormat'))
+          .optional()
+          .or(z.literal('')),
+        storageCondition: z.enum([StorageCondition.Ambient, StorageCondition.Refrigerated, StorageCondition.Frozen]),
+        caseQuantity: z
+          .number({ invalid_type_error: t('master.product.validation.caseQuantityRange') })
+          .int(t('master.product.validation.caseQuantityRange'))
+          .min(1, t('master.product.validation.caseQuantityRange'))
+          .max(9999, t('master.product.validation.caseQuantityRange'))
+          .optional()
+          .or(z.nan()),
+        ballQuantity: z
+          .number({ invalid_type_error: t('master.product.validation.ballQuantityRange') })
+          .int(t('master.product.validation.ballQuantityRange'))
+          .min(1, t('master.product.validation.ballQuantityRange'))
+          .max(9999, t('master.product.validation.ballQuantityRange'))
+          .optional()
+          .or(z.nan()),
+        isHazardous: z.boolean(),
+        lotManageFlag: z.boolean(),
+        expiryManageFlag: z.boolean(),
+        shipmentStopFlag: z.boolean(),
+        isActive: z.boolean(),
+      }),
+    ),
+  )
 
   // --- VeeValidate ---
   const {
@@ -83,7 +87,7 @@ export function useProductForm() {
     setValues,
     defineField,
   } = useForm({
-    validationSchema: toTypedSchema(productSchema),
+    validationSchema,
     initialValues: {
       productCode: '',
       productName: '',
