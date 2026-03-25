@@ -58,6 +58,12 @@ export interface BuildingListItem {
     'isActive': boolean;
     /**
      * 
+     * @type {number}
+     * @memberof BuildingListItem
+     */
+    'version': number;
+    /**
+     * 
      * @type {string}
      * @memberof BuildingListItem
      */

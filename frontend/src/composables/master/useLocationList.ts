@@ -6,7 +6,6 @@ import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { LocationListItem } from '@/api/generated/models/location-list-item'
-import type { LocationFullDetail } from '@/api/generated/models/location-full-detail'
 import type { AreaListItem } from '@/api/generated/models/area-list-item'
 import type { PageResponse } from '@/api/types'
 
@@ -133,10 +132,9 @@ export function useLocationList() {
 
     loading.value = true
     try {
-      const detail = await apiClient.get<LocationFullDetail>(`/master/locations/${row.id}`)
       await apiClient.patch(`/master/locations/${row.id}/toggle-active`, {
         isActive: !row.isActive,
-        version: detail.data.version,
+        version: row.version,
       })
       ElMessage.success(
         isDeactivating

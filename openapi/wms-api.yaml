@@ -5513,7 +5513,7 @@ components:
 
     WarehouseListItem:
       type: object
-      required: [id, warehouseCode, warehouseName, isActive, createdAt, updatedAt]
+      required: [id, warehouseCode, warehouseName, isActive, version, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -5528,6 +5528,8 @@ components:
           type: string
         isActive:
           type: boolean
+        version:
+          type: integer
         createdAt:
           type: string
           format: date-time
@@ -5637,7 +5639,7 @@ components:
 
     BuildingListItem:
       type: object
-      required: [id, buildingCode, buildingName, warehouseId, warehouseCode, isActive, createdAt, updatedAt]
+      required: [id, buildingCode, buildingName, warehouseId, warehouseCode, isActive, version, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -5653,6 +5655,8 @@ components:
           type: string
         isActive:
           type: boolean
+        version:
+          type: integer
         createdAt:
           type: string
           format: date-time
@@ -5779,7 +5783,7 @@ components:
 
     AreaListItem:
       type: object
-      required: [id, areaCode, areaName, warehouseId, warehouseCode, buildingId, buildingCode, storageCondition, areaType, isActive, createdAt, updatedAt]
+      required: [id, areaCode, areaName, warehouseId, warehouseCode, buildingId, buildingCode, storageCondition, areaType, isActive, version, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -5804,6 +5808,8 @@ components:
           $ref: '#/components/schemas/AreaType'
         isActive:
           type: boolean
+        version:
+          type: integer
         createdAt:
           type: string
           format: date-time
@@ -5990,7 +5996,7 @@ components:
 
     LocationListItem:
       type: object
-      required: [id, locationCode, warehouseId, warehouseCode, areaId, areaCode, areaType, isActive, createdAt, updatedAt]
+      required: [id, locationCode, warehouseId, warehouseCode, areaId, areaCode, areaType, isActive, version, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -6013,6 +6019,8 @@ components:
           $ref: '#/components/schemas/AreaType'
         isActive:
           type: boolean
+        version:
+          type: integer
         createdAt:
           type: string
           format: date-time

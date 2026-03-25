@@ -4,24 +4,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
-
-export interface WarehouseListItem {
-  id: number
-  warehouseCode: string
-  warehouseName: string
-  warehouseNameKana: string
-  address: string | null
-  isActive: boolean
-  version: number
-}
-
-interface WarehouseListResponse {
-  content: WarehouseListItem[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-}
+import type { WarehouseListItem } from '@/api/generated/models/warehouse-list-item'
+import type { PageResponse } from '@/api/types'
 
 export function useWarehouseList() {
   const { t } = useI18n()
@@ -68,7 +52,7 @@ export function useWarehouseList() {
       if (searchForm.warehouseName) params.warehouseName = searchForm.warehouseName
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<WarehouseListResponse>('/master/warehouses', {
+      const res = await apiClient.get<PageResponse<WarehouseListItem>>('/master/warehouses', {
         params,
         signal,
       })

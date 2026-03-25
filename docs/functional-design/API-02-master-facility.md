@@ -113,6 +113,7 @@ GET /api/v1/master/warehouses?all=true&isActive=true
       "warehouseNameKana": "トウキョウディーシー",
       "address": "東京都江東区辰巳1-1-1",
       "isActive": true,
+      "version": 0,
       "createdAt": "2025-01-10T09:00:00+09:00",
       "updatedAt": "2025-03-01T14:30:00+09:00"
     }
@@ -668,6 +669,7 @@ GET /api/v1/master/buildings?warehouseId=1&isActive=true&page=0&size=20
       "warehouseId": 1,
       "warehouseCode": "WH001",
       "isActive": true,
+      "version": 0,
       "createdAt": "2025-01-10T09:00:00+09:00",
       "updatedAt": "2025-03-01T14:30:00+09:00"
     }
@@ -1118,6 +1120,7 @@ GET /api/v1/master/areas?warehouseId=1&areaType=STOCK&isActive=true
       "storageCondition": "AMBIENT",
       "areaType": "STOCK",
       "isActive": true,
+      "version": 0,
       "createdAt": "2025-01-10T09:00:00+09:00",
       "updatedAt": "2025-03-01T14:30:00+09:00"
     }
@@ -1592,6 +1595,7 @@ GET /api/v1/master/locations/count?buildingId=1&areaId=2
       "areaCode": "A01",
       "areaType": "STOCK",
       "isActive": true,
+      "version": 0,
       "createdAt": "2025-01-10T09:00:00+09:00",
       "updatedAt": "2025-03-01T14:30:00+09:00"
     }

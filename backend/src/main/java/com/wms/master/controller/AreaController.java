@@ -162,6 +162,7 @@ public class AreaController implements MasterAreaApi {
                 .storageCondition(StorageCondition.fromValue(a.getStorageCondition()))
                 .areaType(AreaType.fromValue(a.getAreaType()))
                 .isActive(a.getIsActive())
+                .version(a.getVersion())
                 .createdAt(a.getCreatedAt())
                 .updatedAt(a.getUpdatedAt());
     }

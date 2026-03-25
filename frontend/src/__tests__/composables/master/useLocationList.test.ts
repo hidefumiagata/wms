@@ -291,18 +291,14 @@ describe('useLocationList', () => {
   // --- handleToggleActive ---
 
   it('handleToggleActive が確認後にPATCH APIを呼ぶ', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 2 }),
-    )
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true }
+    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true, version: 2 }
 
     await result.handleToggleActive(row as never)
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.get).toHaveBeenCalledWith('/master/locations/1')
     expect(apiClient.patch).toHaveBeenCalledWith('/master/locations/1/toggle-active', {
       isActive: false,
       version: 2,
@@ -322,13 +318,10 @@ describe('useLocationList', () => {
   })
 
   it('handleToggleActive の409エラーで楽観的ロックエラーが表示される', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 2 }),
-    )
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true }
+    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true, version: 2 }
 
     await result.handleToggleActive(row as never)
 
@@ -336,13 +329,10 @@ describe('useLocationList', () => {
   })
 
   it('handleToggleActive の422エラー（在庫あり）でエラーメッセージが表示される', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 2 }),
-    )
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true }
+    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true, version: 2 }
 
     await result.handleToggleActive(row as never)
 
@@ -350,15 +340,12 @@ describe('useLocationList', () => {
   })
 
   it('handleToggleActive の422エラー（棚卸中）でエラーメッセージが表示される', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 2 }),
-    )
     vi.mocked(apiClient.patch).mockRejectedValueOnce(
       createAxiosError(422, { errorCode: 'CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS' }),
     )
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true }
+    const row = { id: 1, locationCode: 'LOC-A01-01', isActive: true, version: 2 }
 
     await result.handleToggleActive(row as never)
 

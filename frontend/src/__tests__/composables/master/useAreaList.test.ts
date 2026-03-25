@@ -298,18 +298,14 @@ describe('useAreaList', () => {
   // --- handleToggleActive ---
 
   it('handleToggleActive が確認後にPATCH APIを呼ぶ', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 5 }),
-    )
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true }
+    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true, version: 5 }
 
     await result.handleToggleActive(row as never)
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.get).toHaveBeenCalledWith('/master/areas/1')
     expect(apiClient.patch).toHaveBeenCalledWith('/master/areas/1/toggle-active', {
       isActive: false,
       version: 5,
@@ -329,13 +325,10 @@ describe('useAreaList', () => {
   })
 
   it('handleToggleActive の409エラーで楽観的ロックエラーが表示される', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 5 }),
-    )
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true }
+    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true, version: 5 }
 
     await result.handleToggleActive(row as never)
 
@@ -343,13 +336,10 @@ describe('useAreaList', () => {
   })
 
   it('handleToggleActive の422エラーでエラーメッセージが表示される', async () => {
-    vi.mocked(apiClient.get).mockResolvedValueOnce(
-      mockAxiosResponse({ id: 1, version: 5 }),
-    )
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true }
+    const row = { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true, version: 5 }
 
     await result.handleToggleActive(row as never)
 

@@ -179,6 +179,7 @@ public class WarehouseController implements MasterWarehouseApi {
                 .warehouseNameKana(w.getWarehouseNameKana())
                 .address(w.getAddress())
                 .isActive(w.getIsActive())
+                .version(w.getVersion())
                 .createdAt(w.getCreatedAt())
                 .updatedAt(w.getUpdatedAt());
     }

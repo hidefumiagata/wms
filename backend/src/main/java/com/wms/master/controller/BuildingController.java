@@ -138,6 +138,7 @@ public class BuildingController implements MasterBuildingApi {
                 .warehouseId(b.getWarehouseId())
                 .warehouseCode(w != null ? w.getWarehouseCode() : null)
                 .isActive(b.getIsActive())
+                .version(b.getVersion())
                 .createdAt(b.getCreatedAt())
                 .updatedAt(b.getUpdatedAt());
     }

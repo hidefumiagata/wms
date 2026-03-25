@@ -6,7 +6,6 @@ import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
-import type { BuildingDetail } from '@/api/generated/models/building-detail'
 import type { PageResponse } from '@/api/types'
 
 export function useBuildingList() {
@@ -112,11 +111,9 @@ export function useBuildingList() {
 
     loading.value = true
     try {
-      // BuildingListItem doesn't have version — fetch detail first
-      const detail = await apiClient.get<BuildingDetail>(`/master/buildings/${row.id}`)
       await apiClient.patch(`/master/buildings/${row.id}/toggle-active`, {
         isActive: !row.isActive,
-        version: detail.data.version,
+        version: row.version,
       })
       ElMessage.success(
         isDeactivating
