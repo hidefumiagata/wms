@@ -6,7 +6,7 @@
       :sub-title="t('error.forbiddenDescription')"
     >
       <template #extra>
-        <el-button type="primary" @click="router.push({ path: '/' })">
+        <el-button type="primary" @click="router.push({ name: 'dashboard' })">
           {{ t('common.back') }}
         </el-button>
       </template>
