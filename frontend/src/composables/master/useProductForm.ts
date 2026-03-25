@@ -118,6 +118,7 @@ export function useProductForm() {
   const loading = ref(false)
   const initialLoading = ref(false)
   const version = ref(0)
+  const hasInventory = ref(false)
 
   // --- API呼び出し ---
   async function checkCodeExists() {
@@ -160,6 +161,7 @@ export function useProductForm() {
         isActive: res.data.isActive,
       })
       version.value = res.data.version
+      hasInventory.value = res.data.hasInventory ?? false
     } catch (err: unknown) {
       const error = toApiError(err)
       if (error.response?.status === 404) {
@@ -271,6 +273,7 @@ export function useProductForm() {
     loading,
     initialLoading,
     isEdit,
+    hasInventory,
     fetchProduct,
     handleSubmit,
     handleCancel,

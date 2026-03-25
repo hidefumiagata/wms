@@ -299,14 +299,28 @@ class ProductControllerTest {
     class GetProduct {
 
         @Test
-        @DisplayName("存在するIDで200を返す")
+        @DisplayName("存在するIDで200を返す（在庫なし）")
         void getProduct_exists_returns200() throws Exception {
             Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
             when(productService.findById(1L)).thenReturn(p);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.productCode").value("P-001"));
+                    .andExpect(jsonPath("$.productCode").value("P-001"))
+                    .andExpect(jsonPath("$.hasInventory").value(false));
+        }
+
+        @Test
+        @DisplayName("在庫ありの商品でhasInventory=trueを返す")
+        void getProduct_hasInventory_returnsTrue() throws Exception {
+            Product p = createProduct(1L, "P-001", "テスト商品A", "AMBIENT");
+            when(productService.findById(1L)).thenReturn(p);
+            when(productService.hasInventory(1L)).thenReturn(true);
+
+            mockMvc.perform(get(BASE_URL + "/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.hasInventory").value(true));
         }
 
         @Test
@@ -314,6 +328,7 @@ class ProductControllerTest {
         void getProduct_nullTimestamps_returns200() throws Exception {
             Product p = createProduct(null, "P-001", "テスト商品A", "AMBIENT");
             when(productService.findById(1L)).thenReturn(p);
+            when(productService.hasInventory(1L)).thenReturn(false);
 
             mockMvc.perform(get(BASE_URL + "/1"))
                     .andExpect(status().isOk());
@@ -462,11 +477,18 @@ class ProductControllerTest {
         @Test
         @DisplayName("存在するコードでexists=trueを返す")
         void checkExists_exists_returnsTrue() throws Exception {
+            when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(true);
             when(productService.existsByCode("P-001")).thenReturn(true);
-
-            mockMvc.perform(get(BASE_URL + "/exists").param("productCode", "P-001"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.exists").value(true));
+            var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    "admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                mockMvc.perform(get(BASE_URL + "/exists").param("productCode", "P-001"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.exists").value(true));
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
 
         @Test
@@ -484,6 +506,22 @@ class ProductControllerTest {
         void checkExists_missingParam_returns400() throws Exception {
             mockMvc.perform(get(BASE_URL + "/exists"))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("レートリミット超過で429を返す")
+        void checkExists_rateLimited_returns429() throws Exception {
+            when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(false);
+            var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                    "admin", null, List.of());
+            org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(auth);
+            try {
+                mockMvc.perform(get(BASE_URL + "/exists")
+                                .param("productCode", "P-001"))
+                        .andExpect(status().isTooManyRequests());
+            } finally {
+                org.springframework.security.core.context.SecurityContextHolder.clearContext();
+            }
         }
     }
 }

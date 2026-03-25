@@ -125,7 +125,8 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductDetail> getProduct(@PathVariable Long id) {
         Product product = productService.findById(id);
-        return ResponseEntity.ok(toDetail(product));
+        boolean hasInventory = productService.hasInventory(id);
+        return ResponseEntity.ok(toDetail(product).hasInventory(hasInventory));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
@@ -190,6 +191,7 @@ public class ProductController {
                 .expiryManageFlag(p.getExpiryManageFlag())
                 .shipmentStopFlag(p.getShipmentStopFlag())
                 .isActive(p.getIsActive())
+                .hasInventory(false)
                 .version(p.getVersion())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt());
