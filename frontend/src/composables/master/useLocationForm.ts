@@ -29,14 +29,19 @@ export function useLocationForm() {
 
   const areas = ref<AreaListItem[]>([])
 
-  const locationSchema = z.object({
-    areaId: z.number({ required_error: t('master.location.validation.areaRequired') }),
-    locationCode: z
-      .string()
-      .min(1, t('master.location.validation.codeRequired'))
-      .max(30, t('master.location.validation.codeMaxLength')),
-    locationName: z.string().max(200, t('master.location.validation.nameMaxLength')).optional(),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        areaId: z.number({ required_error: t('master.location.validation.areaRequired') }),
+        locationCode: z
+          .string()
+          .min(1, t('master.location.validation.codeRequired'))
+          .max(30, t('master.location.validation.codeMaxLength')),
+        locationName: z.string().max(200, t('master.location.validation.nameMaxLength')).optional(),
+      }),
+    ),
+  )
 
   const {
     errors,
@@ -46,7 +51,7 @@ export function useLocationForm() {
     defineField,
     meta,
   } = useForm({
-    validationSchema: toTypedSchema(locationSchema),
+    validationSchema,
     initialValues: {
       areaId: undefined as number | undefined,
       locationCode: '',

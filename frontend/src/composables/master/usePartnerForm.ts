@@ -31,46 +31,50 @@ export function usePartnerForm() {
   })
   const isEdit = computed(() => partnerId.value !== null)
 
-  // --- Zod スキーマ ---
-  const partnerSchema = z.object({
-    partnerCode: z
-      .string()
-      .min(1, t('master.partner.validation.codeRequired'))
-      .max(50, t('master.partner.validation.codeMaxLength'))
-      .regex(PARTNER_CODE_REGEX, t('master.partner.validation.codeFormat')),
-    partnerName: z
-      .string()
-      .min(1, t('master.partner.validation.nameRequired'))
-      .max(200, t('master.partner.validation.nameMaxLength')),
-    partnerNameKana: z
-      .string()
-      .min(1, t('master.partner.validation.kanaRequired'))
-      .max(200, t('master.partner.validation.kanaMaxLength'))
-      .regex(KATAKANA_REGEX, t('master.partner.validation.kanaFormat')),
-    partnerType: z.enum([PartnerType.Supplier, PartnerType.Customer, PartnerType.Both]),
-    address: z
-      .string()
-      .max(200, t('master.partner.validation.addressMaxLength'))
-      .optional()
-      .or(z.literal('')),
-    phone: z
-      .string()
-      .max(20, t('master.partner.validation.phoneMaxLength'))
-      .regex(PHONE_REGEX, t('master.partner.validation.phoneFormat'))
-      .optional()
-      .or(z.literal('')),
-    contactPerson: z
-      .string()
-      .max(50, t('master.partner.validation.contactPersonMaxLength'))
-      .optional()
-      .or(z.literal('')),
-    email: z
-      .string()
-      .max(254, t('master.partner.validation.emailMaxLength'))
-      .email(t('master.partner.validation.emailFormat'))
-      .optional()
-      .or(z.literal('')),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        partnerCode: z
+          .string()
+          .min(1, t('master.partner.validation.codeRequired'))
+          .max(50, t('master.partner.validation.codeMaxLength'))
+          .regex(PARTNER_CODE_REGEX, t('master.partner.validation.codeFormat')),
+        partnerName: z
+          .string()
+          .min(1, t('master.partner.validation.nameRequired'))
+          .max(200, t('master.partner.validation.nameMaxLength')),
+        partnerNameKana: z
+          .string()
+          .min(1, t('master.partner.validation.kanaRequired'))
+          .max(200, t('master.partner.validation.kanaMaxLength'))
+          .regex(KATAKANA_REGEX, t('master.partner.validation.kanaFormat')),
+        partnerType: z.enum([PartnerType.Supplier, PartnerType.Customer, PartnerType.Both]),
+        address: z
+          .string()
+          .max(200, t('master.partner.validation.addressMaxLength'))
+          .optional()
+          .or(z.literal('')),
+        phone: z
+          .string()
+          .max(20, t('master.partner.validation.phoneMaxLength'))
+          .regex(PHONE_REGEX, t('master.partner.validation.phoneFormat'))
+          .optional()
+          .or(z.literal('')),
+        contactPerson: z
+          .string()
+          .max(50, t('master.partner.validation.contactPersonMaxLength'))
+          .optional()
+          .or(z.literal('')),
+        email: z
+          .string()
+          .max(254, t('master.partner.validation.emailMaxLength'))
+          .email(t('master.partner.validation.emailFormat'))
+          .optional()
+          .or(z.literal('')),
+      }),
+    ),
+  )
 
   // --- VeeValidate ---
   const {
@@ -80,7 +84,7 @@ export function usePartnerForm() {
     setValues,
     defineField,
   } = useForm({
-    validationSchema: toTypedSchema(partnerSchema),
+    validationSchema,
     initialValues: {
       partnerCode: '',
       partnerName: '',

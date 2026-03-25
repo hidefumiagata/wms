@@ -31,20 +31,25 @@ export function useAreaForm() {
 
   const buildings = ref<BuildingListItem[]>([])
 
-  const areaSchema = z.object({
-    buildingId: z.number({ required_error: t('master.area.validation.buildingRequired') }),
-    areaCode: z
-      .string()
-      .min(1, t('master.area.validation.codeRequired'))
-      .max(20, t('master.area.validation.codeMaxLength'))
-      .regex(AREA_CODE_REGEX, t('master.area.validation.codeFormat')),
-    areaName: z
-      .string()
-      .min(1, t('master.area.validation.nameRequired'))
-      .max(200, t('master.area.validation.nameMaxLength')),
-    storageCondition: z.string().min(1, t('master.area.validation.storageConditionRequired')),
-    areaType: z.string().min(1, t('master.area.validation.areaTypeRequired')),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        buildingId: z.number({ required_error: t('master.area.validation.buildingRequired') }),
+        areaCode: z
+          .string()
+          .min(1, t('master.area.validation.codeRequired'))
+          .max(20, t('master.area.validation.codeMaxLength'))
+          .regex(AREA_CODE_REGEX, t('master.area.validation.codeFormat')),
+        areaName: z
+          .string()
+          .min(1, t('master.area.validation.nameRequired'))
+          .max(200, t('master.area.validation.nameMaxLength')),
+        storageCondition: z.string().min(1, t('master.area.validation.storageConditionRequired')),
+        areaType: z.string().min(1, t('master.area.validation.areaTypeRequired')),
+      }),
+    ),
+  )
 
   const {
     errors,
@@ -54,7 +59,7 @@ export function useAreaForm() {
     defineField,
     meta,
   } = useForm({
-    validationSchema: toTypedSchema(areaSchema),
+    validationSchema,
     initialValues: {
       buildingId: undefined as number | undefined,
       areaCode: '',

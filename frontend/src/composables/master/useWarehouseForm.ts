@@ -26,26 +26,29 @@ export function useWarehouseForm() {
   })
   const isEdit = computed(() => warehouseId.value !== null)
 
-  // --- Zod スキーマ ---
-  // t() は setup() コンテキスト内で実行されるため、初期化時に正しい翻訳が取得できる
-  const warehouseSchema = z.object({
-    warehouseCode: z
-      .string()
-      .min(1, t('master.warehouse.validation.codeRequired'))
-      .regex(WAREHOUSE_CODE_REGEX, t('master.warehouse.validation.codeFormat')),
-    warehouseName: z
-      .string()
-      .min(1, t('master.warehouse.validation.nameRequired'))
-      .max(200, t('master.warehouse.validation.nameMaxLength')),
-    warehouseNameKana: z
-      .string()
-      .min(1, t('master.warehouse.validation.kanaRequired'))
-      .max(200, t('master.warehouse.validation.kanaMaxLength'))
-      .regex(KATAKANA_REGEX, t('master.warehouse.validation.kanaFormat')),
-    address: z
-      .string()
-      .max(500, t('master.warehouse.validation.addressMaxLength')),
-  })
+  // --- Zod スキーマ（ロケール変更時に自動再生成） ---
+  const validationSchema = computed(() =>
+    toTypedSchema(
+      z.object({
+        warehouseCode: z
+          .string()
+          .min(1, t('master.warehouse.validation.codeRequired'))
+          .regex(WAREHOUSE_CODE_REGEX, t('master.warehouse.validation.codeFormat')),
+        warehouseName: z
+          .string()
+          .min(1, t('master.warehouse.validation.nameRequired'))
+          .max(200, t('master.warehouse.validation.nameMaxLength')),
+        warehouseNameKana: z
+          .string()
+          .min(1, t('master.warehouse.validation.kanaRequired'))
+          .max(200, t('master.warehouse.validation.kanaMaxLength'))
+          .regex(KATAKANA_REGEX, t('master.warehouse.validation.kanaFormat')),
+        address: z
+          .string()
+          .max(500, t('master.warehouse.validation.addressMaxLength')),
+      }),
+    ),
+  )
 
   // --- VeeValidate ---
   const {
@@ -55,7 +58,7 @@ export function useWarehouseForm() {
     setValues,
     defineField,
   } = useForm({
-    validationSchema: toTypedSchema(warehouseSchema),
+    validationSchema,
     initialValues: { warehouseCode: '', warehouseName: '', warehouseNameKana: '', address: '' },
   })
 
