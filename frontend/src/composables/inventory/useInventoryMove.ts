@@ -66,7 +66,7 @@ export function useInventoryMove() {
       // ロケーションID取得
       const locRes = await apiClient.get('/master/locations', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: fromLocationCode.value.trim(),
           page: 0, size: 1,
         },
@@ -84,7 +84,7 @@ export function useInventoryMove() {
 
       const res = await apiClient.get('/inventory', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCodePrefix: fromLocationCode.value.trim(),
           viewType: 'LOCATION',
           page: 0,
@@ -146,7 +146,7 @@ export function useInventoryMove() {
       // ロケーション検索（コード完全一致を期待）
       const locRes = await apiClient.get('/master/locations', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: toLocationCode.value.trim(),
           page: 0,
           size: 1,
@@ -165,7 +165,7 @@ export function useInventoryMove() {
       if (selectedProductId.value && selectedUnitType.value) {
         const invRes = await apiClient.get('/inventory', {
           params: {
-            warehouseId: warehouseStore.currentWarehouseId,
+            warehouseId: warehouseStore.selectedWarehouseId,
             locationCodePrefix: toLocationCode.value.trim(),
             productId: selectedProductId.value,
             unitType: selectedUnitType.value,

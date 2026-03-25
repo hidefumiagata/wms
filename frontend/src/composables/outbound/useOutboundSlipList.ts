@@ -80,7 +80,7 @@ export function useOutboundSlipList() {
     selectedIds.value = []
     try {
       const params: Record<string, unknown> = {
-        warehouseId: warehouseStore.currentWarehouseId,
+        warehouseId: warehouseStore.selectedWarehouseId,
         page: page.value - 1,
         size: pageSize.value,
         sort: 'plannedDate,desc',

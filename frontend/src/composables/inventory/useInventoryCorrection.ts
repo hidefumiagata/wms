@@ -84,7 +84,7 @@ export function useInventoryCorrection() {
       // ロケーションID取得
       const locRes = await apiClient.get('/master/locations', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: locationCode.value.trim(),
           page: 0, size: 1,
         },
@@ -102,7 +102,7 @@ export function useInventoryCorrection() {
       // 在庫取得
       const res = await apiClient.get('/inventory', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           locationCodePrefix: locationCode.value.trim(),
           viewType: 'LOCATION',
           page: 0, size: 100,

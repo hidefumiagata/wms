@@ -59,7 +59,7 @@ export function useStocktakeList() {
     loading.value = true
     try {
       const params: Record<string, unknown> = {
-        warehouseId: warehouseStore.currentWarehouseId,
+        warehouseId: warehouseStore.selectedWarehouseId,
         page: page.value - 1,
         size: pageSize.value,
         sort: 'startedAt,desc',

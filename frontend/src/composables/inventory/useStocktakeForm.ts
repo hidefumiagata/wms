@@ -45,7 +45,7 @@ export function useStocktakeForm() {
     try {
       const res = await apiClient.get('/master/buildings', {
         params: {
-          warehouseId: warehouseStore.currentWarehouseId,
+          warehouseId: warehouseStore.selectedWarehouseId,
           page: 0,
           size: 1000,
           isActive: true,
@@ -105,7 +105,7 @@ export function useStocktakeForm() {
     abortController = new AbortController()
     try {
       const params: Record<string, unknown> = {
-        warehouseId: warehouseStore.currentWarehouseId,
+        warehouseId: warehouseStore.selectedWarehouseId,
         buildingId: selectedBuildingId.value,
         isActive: true,
         page: 0,
@@ -154,7 +154,7 @@ export function useStocktakeForm() {
     submitting.value = true
     try {
       const res = await apiClient.post('/inventory/stocktakes', {
-        warehouseId: warehouseStore.currentWarehouseId,
+        warehouseId: warehouseStore.selectedWarehouseId,
         buildingId: selectedBuildingId.value,
         areaId: selectedAreaId.value ?? null,
         stocktakeDate: stocktakeDate.value,
