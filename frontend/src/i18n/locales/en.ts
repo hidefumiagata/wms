@@ -769,6 +769,15 @@ export default {
     stocktakeBackToInput: 'Back to Count Entry',
     stocktakeResultReport: 'Stocktake Result Report',
   },
+  dashboard: {
+    welcome: 'Welcome, {name}',
+    role: {
+      SYSTEM_ADMIN: 'System Administrator',
+      WAREHOUSE_MANAGER: 'Warehouse Manager',
+      WAREHOUSE_STAFF: 'Warehouse Staff',
+      VIEWER: 'Viewer',
+    },
+  },
   error: {
     network: 'Network error. Please check your connection.',
     server: 'Server error. Please try again later.',

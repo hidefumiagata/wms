@@ -13,6 +13,12 @@
       <span v-else class="app-sidebar__logo-mini">W</span>
     </div>
 
+    <!-- ダッシュボード -->
+    <el-menu-item index="/dashboard">
+      <el-icon><HomeFilled /></el-icon>
+      <span>{{ t('nav.dashboard') }}</span>
+    </el-menu-item>
+
     <!-- マスタ管理 -->
     <el-sub-menu index="master">
       <template #title>
@@ -126,7 +132,7 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen, Notebook } from '@element-plus/icons-vue'
+import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen, Notebook, HomeFilled } from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean

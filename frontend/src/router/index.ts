@@ -46,7 +46,13 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/master/warehouses',
+          redirect: '/dashboard',
+        },
+        // ダッシュボード — 全ロール共通ランディングページ
+        {
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/pages/DashboardPage.vue'),
         },
         // 403 Forbidden（認証済みでも権限なし）—— DefaultLayout 下でナビゲーションを維持
         {

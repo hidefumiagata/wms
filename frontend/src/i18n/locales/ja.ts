@@ -772,6 +772,15 @@ export default {
     stocktakeBackToInput: '実数入力へ戻る',
     stocktakeResultReport: '棚卸結果レポート出力',
   },
+  dashboard: {
+    welcome: 'ようこそ、{name} さん',
+    role: {
+      SYSTEM_ADMIN: 'システム管理者',
+      WAREHOUSE_MANAGER: '倉庫管理者',
+      WAREHOUSE_STAFF: '倉庫スタッフ',
+      VIEWER: '閲覧者',
+    },
+  },
   error: {
     network: '通信エラーが発生しました。ネットワーク接続をご確認ください。',
     server: 'サーバーエラーが発生しました。時間をおいて再度お試しください。',
