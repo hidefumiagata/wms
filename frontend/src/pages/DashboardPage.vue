@@ -5,7 +5,7 @@
         <el-icon :size="48" color="var(--el-color-primary)"><HomeFilled /></el-icon>
         <div class="dashboard-page__text">
           <h2>{{ t('dashboard.welcome', { name: auth.user?.fullName ?? '' }) }}</h2>
-          <p class="dashboard-page__role">{{ t(`dashboard.role.${auth.user?.role ?? 'VIEWER'}`) }}</p>
+          <p v-if="auth.user" class="dashboard-page__role">{{ t(`dashboard.role.${auth.user.role}`) }}</p>
         </div>
       </div>
     </el-card>
