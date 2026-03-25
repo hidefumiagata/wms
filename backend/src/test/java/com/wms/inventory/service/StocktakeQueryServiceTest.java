@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.wms.inventory.entity.StocktakeLine;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -96,5 +98,45 @@ class StocktakeQueryServiceTest {
         when(lineRepository.countCountedByHeaderId(1L)).thenReturn(7L);
         assertThat(service.countTotalLines(1L)).isEqualTo(10);
         assertThat(service.countCountedLines(1L)).isEqualTo(7);
+    }
+
+    @Test
+    @DisplayName("findById: 正常系")
+    void findById_success() {
+        StocktakeHeader h = StocktakeHeader.builder().stocktakeNumber("ST-002").build();
+        when(headerRepository.findById(2L)).thenReturn(Optional.of(h));
+        assertThat(service.findById(2L).getStocktakeNumber()).isEqualTo("ST-002");
+    }
+
+    @Test
+    @DisplayName("findById: 不存在の場合ResourceNotFoundException")
+    void findById_notFound() {
+        when(headerRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.findById(999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("棚卸が見つかりません");
+    }
+
+    @Test
+    @DisplayName("searchLines: 正常系")
+    void searchLines_success() {
+        Page<StocktakeLine> page = new PageImpl<>(List.of());
+        when(lineRepository.searchByHeader(eq(1L), eq(true), eq("A-"), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<StocktakeLine> result = service.searchLines(1L, true, "A-", PageRequest.of(0, 20));
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("searchLines: フィルタなしで全件検索")
+    void searchLines_noFilter() {
+        Page<StocktakeLine> page = new PageImpl<>(List.of());
+        when(lineRepository.searchByHeader(eq(1L), eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(page);
+
+        Page<StocktakeLine> result = service.searchLines(1L, null, null, PageRequest.of(0, 20));
+        assertThat(result).isNotNull();
     }
 }

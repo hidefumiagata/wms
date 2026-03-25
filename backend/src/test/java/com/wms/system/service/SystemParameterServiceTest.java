@@ -96,6 +96,59 @@ class SystemParameterServiceTest {
     }
 
     @Test
+    void updateValue_versionMismatch_throwsOptimisticLockConflictException() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("KEY1").paramValue("V1").build();
+        param.setVersion(5);
+        when(systemParameterRepository.findByParamKey("KEY1"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("KEY1", "V2", 3))
+                .isInstanceOf(OptimisticLockConflictException.class)
+                .hasMessageContaining("KEY1");
+    }
+
+    @Test
+    void updateValue_integerType_invalidValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "not_a_number", 0))
+                .isInstanceOf(com.wms.shared.exception.BusinessRuleViolationException.class)
+                .hasMessageContaining("not_a_number");
+    }
+
+    @Test
+    void updateValue_integerType_validValue_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("TIMEOUT", "30", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("30");
+    }
+
+    @Test
+    void updateValue_nonIntegerType_skipsValidation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("NAME", "new_value", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("new_value");
+    }
+
+    @Test
     void updateValue_optimisticLockConflict_throwsException() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("KEY1").paramValue("V1").build();

@@ -279,6 +279,72 @@ class InventoryBreakdownServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
+
+        @Test
+        @DisplayName("ばらし元在庫が存在しない場合ResourceNotFoundException")
+        void breakdown_fromInventoryNotFound_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, 12, 6));
+
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 1, "BALL", 1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("ばらし元在庫のロック取得失敗でResourceNotFoundException")
+        void breakdown_fromLockFailed_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, 12, 6));
+
+            Inventory fromInv = createInventory(10L, 1L, 100L, "CASE", 5, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 1, "BALL", 1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("ばらし先在庫のロック取得失敗でResourceNotFoundException")
+        void breakdown_toLockFailed_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, 12, 6));
+
+            Inventory fromInv = createInventory(10L, 1L, 100L, "CASE", 5, 0);
+            Inventory toInv = createInventory(20L, 1L, 100L, "BALL", 10, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "BALL", null, null)).thenReturn(Optional.of(toInv));
+            when(inventoryRepository.findByIdForUpdate(20L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 1, "BALL", 1L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("同一荷姿（CASE→CASE）は荷姿順序エラー")
+        void breakdown_sameUnitType_throws() {
+            assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 1, "CASE", 1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("不明な荷姿のunitRankはデフォルト0を返す")
+        void breakdown_unknownUnitType_throws() {
+            assertThatThrownBy(() -> service.breakdown(1L, 100L, "UNKNOWN", 1, "PIECE", 1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
     }
 
     @Nested

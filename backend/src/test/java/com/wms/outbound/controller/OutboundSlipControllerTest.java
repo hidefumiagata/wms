@@ -380,6 +380,62 @@ class OutboundSlipControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("Stub endpoints (未実装)")
+    class StubTests {
+
+        @Test
+        @DisplayName("GET /api/v1/outbound/picking -> 500 (UnsupportedOperation)")
+        void listPickingInstructions_throwsUnsupported() throws Exception {
+            mockMvc.perform(get("/api/v1/outbound/picking")
+                            .param("warehouseId", "1"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/outbound/picking -> 500 (UnsupportedOperation)")
+        void createPickingInstruction_throwsUnsupported() throws Exception {
+            mockMvc.perform(post("/api/v1/outbound/picking")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"slipIds\": [1]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/outbound/picking/{id} -> 500 (UnsupportedOperation)")
+        void getPickingInstruction_throwsUnsupported() throws Exception {
+            mockMvc.perform(get("/api/v1/outbound/picking/1"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("PUT /api/v1/outbound/picking/{id}/complete -> 500 (UnsupportedOperation)")
+        void completePickingInstruction_throwsUnsupported() throws Exception {
+            mockMvc.perform(put("/api/v1/outbound/picking/1/complete")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\": [{\"lineId\": 1, \"qtyPicked\": 10}]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/outbound/slips/{id}/inspect -> 500 (UnsupportedOperation)")
+        void inspectOutboundSlip_throwsUnsupported() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/inspect")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"lines\": [{\"lineId\": 1, \"inspectedQty\": 10}]}"))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/outbound/slips/{id}/ship -> 500 (UnsupportedOperation)")
+        void shipOutboundSlip_throwsUnsupported() throws Exception {
+            mockMvc.perform(post(SLIPS_URL + "/1/ship")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"shippedDate\": \"2026-03-25\"}"))
+                    .andExpect(status().isInternalServerError());
+        }
+    }
+
     private static void setField(Object obj, String fieldName, Object value) {
         try {
             java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);

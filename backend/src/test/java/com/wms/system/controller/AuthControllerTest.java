@@ -208,6 +208,18 @@ class AuthControllerTest {
 
             verify(authService).logout(isNull(), any());
         }
+
+        @Test
+        @DisplayName("正常系: access_tokenクッキーがある場合、トークン値をAuthServiceに渡す")
+        void logout_withAccessTokenCookie_passesTokenToService() throws Exception {
+            doNothing().when(authService).logout(eq("my-access-token"), any());
+
+            mockMvc.perform(post("/api/v1/auth/logout")
+                            .cookie(new Cookie("access_token", "my-access-token")))
+                    .andExpect(status().isNoContent());
+
+            verify(authService).logout(eq("my-access-token"), any());
+        }
     }
 
     // ========== refreshToken ==========

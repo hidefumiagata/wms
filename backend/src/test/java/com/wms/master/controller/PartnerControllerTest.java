@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -455,13 +456,22 @@ class PartnerControllerTest {
     class ExistsTests {
 
         @Test
-        @DisplayName("存在するコードでexists=trueを返す")
+        @DisplayName("存在するコードでexists=trueを返す（認証あり・レートリミットOK）")
         void exists_true() throws Exception {
-            when(partnerService.existsByCode("SUP-001")).thenReturn(true);
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", null, List.of());
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
-            mockMvc.perform(get(BASE_URL + "/exists").param("partnerCode", "SUP-001"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.exists").value(true));
+            try {
+                when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(true);
+                when(partnerService.existsByCode("SUP-001")).thenReturn(true);
+
+                mockMvc.perform(get(BASE_URL + "/exists").param("partnerCode", "SUP-001"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.exists").value(true));
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
         }
 
         @Test
@@ -479,6 +489,34 @@ class PartnerControllerTest {
         void exists_missingParam_returns400() throws Exception {
             mockMvc.perform(get(BASE_URL + "/exists"))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("レートリミット超過で429を返す")
+        void exists_rateLimitExceeded_returns429() throws Exception {
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", null, List.of());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+
+            try {
+                when(rateLimiterService.tryConsumeCodeExists("admin")).thenReturn(false);
+
+                mockMvc.perform(get(BASE_URL + "/exists").param("partnerCode", "SUP-001"))
+                        .andExpect(status().isTooManyRequests());
+            } finally {
+                SecurityContextHolder.clearContext();
+            }
+        }
+
+        @Test
+        @DisplayName("認証情報がnullの場合はレートリミットチェックをスキップ")
+        void exists_noAuth_skipsRateLimit() throws Exception {
+            SecurityContextHolder.clearContext();
+            when(partnerService.existsByCode("SUP-001")).thenReturn(true);
+
+            mockMvc.perform(get(BASE_URL + "/exists").param("partnerCode", "SUP-001"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.exists").value(true));
         }
     }
 
