@@ -249,7 +249,7 @@ describe('useWarehouseList', () => {
     await result.handleToggleActive(row)
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.patch).toHaveBeenCalledWith('/master/warehouses/1/deactivate', {
+    expect(apiClient.patch).toHaveBeenCalledWith('/master/warehouses/1/toggle-active', {
       isActive: false,
       version: 1,
     })

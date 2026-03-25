@@ -88,6 +88,12 @@ export interface AreaListItem {
     'isActive': boolean;
     /**
      * 
+     * @type {number}
+     * @memberof AreaListItem
+     */
+    'version': number;
+    /**
+     * 
      * @type {string}
      * @memberof AreaListItem
      */

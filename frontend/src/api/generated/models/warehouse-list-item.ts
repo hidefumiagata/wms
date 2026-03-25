@@ -58,6 +58,12 @@ export interface WarehouseListItem {
     'isActive': boolean;
     /**
      * 
+     * @type {number}
+     * @memberof WarehouseListItem
+     */
+    'version': number;
+    /**
+     * 
      * @type {string}
      * @memberof WarehouseListItem
      */

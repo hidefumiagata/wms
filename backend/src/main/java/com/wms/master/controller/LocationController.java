@@ -194,6 +194,7 @@ public class LocationController implements MasterLocationApi {
                 .areaCode(a != null ? a.getAreaCode() : null)
                 .areaType(a != null ? AreaType.fromValue(a.getAreaType()) : null)
                 .isActive(l.getIsActive())
+                .version(l.getVersion())
                 .createdAt(l.getCreatedAt())
                 .updatedAt(l.getUpdatedAt());
     }

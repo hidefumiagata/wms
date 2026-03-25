@@ -6,7 +6,6 @@ import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import type { AreaListItem } from '@/api/generated/models/area-list-item'
-import type { AreaDetail } from '@/api/generated/models/area-detail'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
 import type { PageResponse } from '@/api/types'
 
@@ -132,10 +131,9 @@ export function useAreaList() {
 
     loading.value = true
     try {
-      const detail = await apiClient.get<AreaDetail>(`/master/areas/${row.id}`)
       await apiClient.patch(`/master/areas/${row.id}/toggle-active`, {
         isActive: !row.isActive,
-        version: detail.data.version,
+        version: row.version,
       })
       ElMessage.success(
         isDeactivating ? t('master.area.deactivateSuccess') : t('master.area.activateSuccess'),

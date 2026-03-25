@@ -79,6 +79,12 @@ export interface LocationListItem {
     'isActive': boolean;
     /**
      * 
+     * @type {number}
+     * @memberof LocationListItem
+     */
+    'version': number;
+    /**
+     * 
      * @type {string}
      * @memberof LocationListItem
      */
