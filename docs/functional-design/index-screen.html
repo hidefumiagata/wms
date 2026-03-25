@@ -578,7 +578,7 @@ Content-Type: application/json
 <tr><td>WAREHOUSE-CODE</td><td>倉庫コード</td><td>表示</td><td>○</td><td>選択中倉庫</td><td>—</td><td>ヘッダーで選択中の倉庫を表示（変更不可）</td></tr>
 <tr><td>BUILDING-CODE</td><td>棟コード</td><td>テキスト</td><td>○</td><td>—</td><td>必須・最大10文字・英数字・倉庫内一意</td><td>登録後変更不可の注釈あり</td></tr>
 <tr><td>BUILDING-NAME</td><td>棟名称</td><td>テキスト</td><td>○</td><td>—</td><td>必須・最大200文字</td><td></td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>有効（固定）</td><td>—</td><td>登録時は有効（ON）固定。変更は MST-033（編集）で行う</td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>有効（固定）</td><td>—</td><td>登録時は有効（ON）固定。変更は一覧画面（MST-031）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>MST-031 へ戻る（確認ダイアログあり）</td></tr>
 <tr><td>BTN-REGISTER</td><td>登録</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>バリデーション後 API 呼び出し</td></tr>
 <p></tbody><br></table></p>
@@ -615,7 +615,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>棟編集</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/master/buildings/:id/edit</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><strong>概要</strong></td><td>登録済み棟の名称・有効/無効を編集する。棟コードは変更不可（読み取り専用表示）。</td></tr>
+<tr><td><strong>概要</strong></td><td>登録済み棟の名称を編集する。棟コード・有効/無効は変更不可（読み取り専用表示）。有効/無効の切り替えは一覧画面（MST-031）の有効化/無効化ボタンで行う。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -631,7 +631,7 @@ Content-Type: application/json
 │          │  倉庫コード    [東京DC (WH001)]（読み取り専用）   │
 │          │  棟コード      [A]（読み取り専用）                │
 │          │  棟名称 *      [A棟______________]               │
-│          │  有効/無効     ◉ 有効  ○ 無効                    │
+│          │  有効/無効     [有効]（読み取り専用）             │
 │          │──────────────────────────────────────────────────│
 │          │                      [キャンセル]  [更新]         │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
@@ -643,7 +643,7 @@ Content-Type: application/json
 <tr><td>WAREHOUSE-CODE</td><td>倉庫コード</td><td>表示</td><td>—</td><td>対象棟の倉庫コード</td><td>—</td><td>読み取り専用</td></tr>
 <tr><td>BUILDING-CODE</td><td>棟コード</td><td>表示</td><td>—</td><td>対象棟のコード</td><td>—</td><td>読み取り専用（変更不可）</td></tr>
 <tr><td>BUILDING-NAME</td><td>棟名称</td><td>テキスト</td><td>○</td><td>現在の棟名称</td><td>必須・最大200文字</td><td></td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>ラジオ</td><td>○</td><td>現在の状態</td><td>—</td><td>有効 / 無効</td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>現在の状態</td><td>—</td><td>読み取り専用。変更は一覧画面（MST-031）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>MST-031 へ戻る（確認ダイアログあり）</td></tr>
 <tr><td>BTN-UPDATE</td><td>更新</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>バリデーション後 API 呼び出し</td></tr>
 <p></tbody><br></table></p>
@@ -775,7 +775,7 @@ Content-Type: application/json
 │          │  エリア名称 *  [____________________]             │
 │          │  保管条件 *    ◉ 常温  ○ 冷蔵  ○ 冷凍           │
 │          │  エリア種別 *  [在庫エリア▼]                      │
-│          │  有効/無効     ◉ 有効  ○ 無効                    │
+│          │  ※ 登録時は有効（ON）固定                         │
 │          │──────────────────────────────────────────────────│
 │          │                      [キャンセル]  [登録]         │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
@@ -790,7 +790,7 @@ Content-Type: application/json
 <tr><td>AREA-NAME</td><td>エリア名称</td><td>テキスト</td><td>○</td><td>—</td><td>必須・最大200文字</td><td></td></tr>
 <tr><td>STORAGE-CONDITION</td><td>保管条件</td><td>ラジオ</td><td>○</td><td>常温</td><td>必須</td><td>常温 / 冷蔵 / 冷凍</td></tr>
 <tr><td>AREA-TYPE</td><td>エリア種別</td><td>セレクト</td><td>○</td><td>在庫エリア</td><td>必須</td><td>在庫エリア / 入荷エリア / 出荷エリア / 返品エリア</td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>ラジオ</td><td>○</td><td>有効</td><td>—</td><td></td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>有効（固定）</td><td>—</td><td>登録時は有効（ON）固定。変更は一覧画面（MST-041）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>MST-041 へ</td></tr>
 <tr><td>BTN-REGISTER</td><td>登録</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <p></tbody><br></table></p>
@@ -830,7 +830,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>エリア編集</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/master/areas/:id/edit</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><strong>概要</strong></td><td>登録済みエリアの名称・保管条件・エリア種別・有効/無効を編集する。エリアコードは変更不可（読み取り専用表示）。</td></tr>
+<tr><td><strong>概要</strong></td><td>登録済みエリアの名称・保管条件・エリア種別を編集する。エリアコード・有効/無効は変更不可（読み取り専用表示）。有効/無効の切り替えは一覧画面（MST-041）の有効化/無効化ボタンで行う。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -849,7 +849,7 @@ Content-Type: application/json
 │          │  エリア名称 *  [A-01-A（常温）__________]        │
 │          │  保管条件 *    ◉ 常温  ○ 冷蔵  ○ 冷凍           │
 │          │  エリア種別 *  [在庫エリア▼]                      │
-│          │  有効/無効     ◉ 有効  ○ 無効                    │
+│          │  有効/無効     [有効]（読み取り専用）             │
 │          │──────────────────────────────────────────────────│
 │          │                      [キャンセル]  [更新]         │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
@@ -864,7 +864,7 @@ Content-Type: application/json
 <tr><td>AREA-NAME</td><td>エリア名称</td><td>テキスト</td><td>○</td><td>現在の名称</td><td>必須・最大200文字</td><td></td></tr>
 <tr><td>STORAGE-CONDITION</td><td>保管条件</td><td>ラジオ</td><td>○</td><td>現在の保管条件</td><td>必須</td><td>常温 / 冷蔵 / 冷凍</td></tr>
 <tr><td>AREA-TYPE</td><td>エリア種別</td><td>セレクト</td><td>○</td><td>現在の種別</td><td>必須</td><td></td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>ラジオ</td><td>○</td><td>現在の状態</td><td>—</td><td></td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>現在の状態</td><td>—</td><td>読み取り専用。変更は一覧画面（MST-041）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <tr><td>BTN-UPDATE</td><td>更新</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <p></tbody><br></table></p>
@@ -997,7 +997,7 @@ Content-Type: application/json
 │          │                     ※登録後変更不可              │
 │          │                     在庫エリア: 棟-フロア-エリア-棚-段-並び│
 │          │  ロケーション名称 [______________________]        │
-│          │  有効/無効        ◉ 有効  ○ 無効                 │
+│          │  ※ 登録時は有効（ON）固定                         │
 │          │──────────────────────────────────────────────────│
 │          │                      [キャンセル]  [登録]         │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
@@ -1010,7 +1010,7 @@ Content-Type: application/json
 <tr><td>AREA-CODE</td><td>エリアコード</td><td>セレクト</td><td>○</td><td>—</td><td>必須</td><td>選択中倉庫の有効エリア一覧（エリア名称・保管条件・種別表示）</td></tr>
 <tr><td>LOCATION-CODE</td><td>ロケーションコード</td><td>テキスト</td><td>○</td><td>—</td><td>必須・最大30文字・倉庫内一意・形式チェック（在庫エリアは <code>^[A-Z]-\d{2}-[A-Z]-\d{2}-\d{2}-\d{2}$</code>）</td><td>登録後変更不可注釈あり。エリア選択時に棟・フロア・エリア部分を自動補完</td></tr>
 <tr><td>LOCATION-NAME</td><td>ロケーション名称</td><td>テキスト</td><td>—</td><td>—</td><td>最大200文字</td><td>任意入力</td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>ラジオ</td><td>○</td><td>有効</td><td>—</td><td></td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>有効（固定）</td><td>—</td><td>登録時は有効（ON）固定。変更は一覧画面（MST-051）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <tr><td>BTN-REGISTER</td><td>登録</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <p></tbody><br></table></p>
@@ -1050,7 +1050,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>ロケーション編集</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/master/locations/:id/edit</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><strong>概要</strong></td><td>登録済みロケーションの名称・有効/無効を編集する。ロケーションコード・エリアコードは変更不可（読み取り専用表示）。</td></tr>
+<tr><td><strong>概要</strong></td><td>登録済みロケーションの名称を編集する。ロケーションコード・エリアコード・有効/無効は変更不可（読み取り専用表示）。有効/無効の切り替えは一覧画面（MST-051）の有効化/無効化ボタンで行う。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -1067,7 +1067,7 @@ Content-Type: application/json
 │          │  エリアコード      [A-01-A（常温・在庫）]（読み取り専用）│
 │          │  ロケーションコード [A-01-A-01-01-01]（読み取り専用）│
 │          │  ロケーション名称  [1番棚1段1列___________]       │
-│          │  有効/無効         ◉ 有効  ○ 無効                │
+│          │  有効/無効         [有効]（読み取り専用）         │
 │          │──────────────────────────────────────────────────│
 │          │                      [キャンセル]  [更新]         │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
@@ -1080,7 +1080,7 @@ Content-Type: application/json
 <tr><td>AREA-CODE</td><td>エリアコード</td><td>表示</td><td>—</td><td>対象のエリア</td><td>—</td><td>読み取り専用</td></tr>
 <tr><td>LOCATION-CODE</td><td>ロケーションコード</td><td>表示</td><td>—</td><td>対象のコード</td><td>—</td><td>読み取り専用（変更不可）</td></tr>
 <tr><td>LOCATION-NAME</td><td>ロケーション名称</td><td>テキスト</td><td>—</td><td>現在の名称</td><td>最大200文字</td><td>任意</td></tr>
-<tr><td>STATUS</td><td>有効/無効</td><td>ラジオ</td><td>○</td><td>現在の状態</td><td>—</td><td></td></tr>
+<tr><td>STATUS</td><td>有効/無効</td><td>表示</td><td>—</td><td>現在の状態</td><td>—</td><td>読み取り専用。変更は一覧画面（MST-051）の有効化/無効化ボタンで行う</td></tr>
 <tr><td>BTN-CANCEL</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <tr><td>BTN-UPDATE</td><td>更新</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <p></tbody><br></table></p>
@@ -2397,7 +2397,7 @@ Content-Type: application/json
 <tr><td>INB003-BTN01</td><td>一覧に戻るボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>INB-001へ遷移</td></tr>
 <tr><td>INB003-BTN02</td><td>入荷確認ボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ステータス「入荷予定」時のみ表示。VIEWER非表示</td></tr>
 <tr><td>INB003-BTN03</td><td>キャンセルボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ステータス「入庫完了」「キャンセル」以外で表示。VIEWER非表示</td></tr>
-<tr><td>INB003-BTN04</td><td>検品へボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ステータス「入荷確認済」「検品中」時に表示。VIEWER非表示</td></tr>
+<tr><td>INB003-BTN04</td><td>検品へボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ステータス「入荷確認済」「検品中」「一部入庫」時に表示。VIEWER非表示</td></tr>
 <tr><td>INB003-BTN05</td><td>入庫確定へボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ステータス「検品中」「一部入庫」時に表示。VIEWER非表示</td></tr>
 <tr><td>INB003-BTN06</td><td>検品レポートボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>常時表示</td></tr>
 <p></tbody><br></table></p>
@@ -2439,7 +2439,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>入荷検品</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/inbound/slips/:id/inspect</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><strong>概要</strong></td><td>到着した荷物を明細単位で検品し、実際の入荷数を入力・確定する画面。入荷数の初期値は入荷予定数と同数にプリセットされており、差異がある明細のみ修正して確定できる。最初の保存操作でステータスが「検品中」に遷移する。</td></tr>
+<tr><td><strong>概要</strong></td><td>到着した荷物を明細単位で検品し、実際の入荷数を入力・確定する画面。入荷数の初期値は入荷予定数と同数にプリセットされており、差異がある明細のみ修正して確定できる。最初の保存操作でステータスが「検品中」に遷移する。ステータスが「一部入庫」（PARTIAL_STORED）の場合は、入庫済み明細（STORED）は読み取り専用で入荷数変更不可となり、未入庫の残明細（PENDING / INSPECTED）のみ検品可能。この場合ヘッダーステータスは「一部入庫」のまま維持される。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -2492,7 +2492,7 @@ Content-Type: application/json
 <tbody>
 <tr><td><code>EVT-INB004-001</code></td><td>画面初期表示</td><td>GET /api/v1/inbound/slips/:id で伝票・明細情報を取得。各明細の入荷数に予定数量をプリセット</td><td>—</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <tr><td><code>EVT-INB004-002</code></td><td>入荷数（数値）変更</td><td>差異数（=入荷数 - 予定数量）をリアルタイム計算して差異数セルを更新。差異あり行は行背景を淡黄色にハイライト</td><td>同行差異数更新</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><code>EVT-INB004-003</code></td><td>「検品内容を保存する」ボタンクリック</td><td>入荷数0以上のバリデーション実行。OK後 POST /api/v1/inbound/slips/:id/inspect を呼び出し。初回保存時はステータスが「検品中」に遷移。成功後INB-003へ遷移し成功メッセージ表示</td><td>INB-003</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-INB004-003</code></td><td>「検品内容を保存する」ボタンクリック</td><td>入荷数0以上のバリデーション実行。OK後 POST /api/v1/inbound/slips/:id/inspect を呼び出し。初回保存時はステータスが「検品中」に遷移。ステータスが「一部入庫」の場合はステータス変更なし。成功後INB-003へ遷移し成功メッセージ表示。入庫済み明細を指定した場合は 409 INBOUND_LINE_ALREADY_STORED エラーを表示</td><td>INB-003</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <tr><td><code>EVT-INB004-004</code></td><td>「← 詳細に戻る」クリック</td><td>INB-003へ遷移</td><td>INB-003</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <p></tbody><br></table></p>
 <hr>
