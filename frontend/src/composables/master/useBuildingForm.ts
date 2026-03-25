@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
@@ -64,14 +65,22 @@ export function useBuildingForm() {
   const version = ref(0)
   const warehouseCode = ref('')
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   async function fetchBuilding() {
     if (!buildingId.value) {
       router.push({ name: 'building-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<BuildingDetail>(`/master/buildings/${buildingId.value}`)
+      const res = await apiClient.get<BuildingDetail>(`/master/buildings/${buildingId.value}`, { signal })
       setValues({
         buildingCode: res.data.buildingCode,
         buildingName: res.data.buildingName,
@@ -79,6 +88,7 @@ export function useBuildingForm() {
       version.value = res.data.version
       warehouseCode.value = res.data.warehouseCode
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.building.notFound'))
@@ -87,7 +97,9 @@ export function useBuildingForm() {
         ElMessage.error(t('error.network'))
       }
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 

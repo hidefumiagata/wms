@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
@@ -90,6 +91,10 @@ export function useAreaForm() {
   const warehouseCode = ref('')
   const buildingCode = ref('')
 
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
+
   async function fetchBuildings() {
     if (!warehouseStore.selectedWarehouseId) return
     try {
@@ -107,9 +112,13 @@ export function useAreaForm() {
       router.push({ name: 'area-list' })
       return
     }
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     initialLoading.value = true
     try {
-      const res = await apiClient.get<AreaDetail>(`/master/areas/${areaId.value}`)
+      const res = await apiClient.get<AreaDetail>(`/master/areas/${areaId.value}`, { signal })
       setValues({
         buildingId: res.data.buildingId,
         areaCode: res.data.areaCode,
@@ -121,6 +130,7 @@ export function useAreaForm() {
       warehouseCode.value = res.data.warehouseCode
       buildingCode.value = res.data.buildingCode
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (error.response?.status === 404) {
         ElMessage.error(t('master.area.notFound'))
@@ -129,7 +139,9 @@ export function useAreaForm() {
         ElMessage.error(t('error.network'))
       }
     } finally {
-      initialLoading.value = false
+      if (!signal.aborted) {
+        initialLoading.value = false
+      }
     }
   }
 

@@ -1,7 +1,8 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import type { InboundSlipDetail } from '@/api/generated/models/inbound-slip-detail'
@@ -18,6 +19,10 @@ export function useInboundSlipDetail() {
   const slip = ref<InboundSlipDetail | null>(null)
   const loading = ref(false)
   const actionLoading = ref(false)
+
+  // --- 並行リクエスト制御 ---
+  let abortController: AbortController | null = null
+  onUnmounted(() => { abortController?.abort() })
 
   const slipId = computed(() => {
     const id = route.params.id
@@ -52,11 +57,16 @@ export function useInboundSlipDetail() {
   // --- API呼び出し ---
   async function fetchDetail() {
     if (!slipId.value) return
+    abortController?.abort()
+    abortController = new AbortController()
+    const signal = abortController.signal
+
     loading.value = true
     try {
-      const res = await apiClient.get<InboundSlipDetail>(`/inbound/slips/${slipId.value}`)
+      const res = await apiClient.get<InboundSlipDetail>(`/inbound/slips/${slipId.value}`, { signal })
       slip.value = res.data
     } catch (err: unknown) {
+      if (axios.isCancel(err)) return
       const error = toApiError(err)
       if (!error.response) {
         ElMessage.error(t('error.network'))
@@ -66,7 +76,9 @@ export function useInboundSlipDetail() {
       }
       // 403/500 はインターセプターが処理済み
     } finally {
-      loading.value = false
+      if (!signal.aborted) {
+        loading.value = false
+      }
     }
   }
 
