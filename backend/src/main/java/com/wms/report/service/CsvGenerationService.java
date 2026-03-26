@@ -29,6 +29,9 @@ public class CsvGenerationService {
     private static final String EM_DASH = "\u2014";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    /** NumberFormat はスレッドセーフでないため ThreadLocal で保持 */
+    private static final ThreadLocal<NumberFormat> INTEGER_FMT =
+            ThreadLocal.withInitial(() -> NumberFormat.getIntegerInstance(Locale.JAPAN));
 
     /**
      * データリストを CSV バイト配列に変換する。
@@ -96,12 +99,12 @@ public class CsvGenerationService {
 
     public static String fmtInteger(Integer value) {
         if (value == null) return EM_DASH;
-        return NumberFormat.getIntegerInstance(Locale.JAPAN).format(value);
+        return INTEGER_FMT.get().format(value);
     }
 
     public static String fmtLong(Long value) {
         if (value == null) return EM_DASH;
-        return NumberFormat.getIntegerInstance(Locale.JAPAN).format(value);
+        return INTEGER_FMT.get().format(value);
     }
 
     public static String fmtPercent(Double value) {

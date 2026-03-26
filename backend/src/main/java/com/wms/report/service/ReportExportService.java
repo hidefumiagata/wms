@@ -53,6 +53,9 @@ public class ReportExportService {
                     "レポートの最大件数（10,000件）を超えています。条件を絞り込んでください。");
         }
 
+        // CSV/PDF では byte[] を返すが、生成インターフェースの戻り型は ResponseEntity<List<T>>。
+        // Java の型消去により実行時は ResponseEntity であり、Spring の ByteArrayHttpMessageConverter が
+        // Content-Type に基づいて byte[] body を正しくシリアライズするため、このキャストは安全。
         return switch (format) {
             case JSON -> ResponseEntity.ok(data);
             case CSV -> {

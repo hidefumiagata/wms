@@ -106,6 +106,17 @@ class ReportExportServiceTest {
                     .contains("attachment")
                     .contains("test_20260327.csv");
         }
+
+        @Test
+        @DisplayName("空リストでも CSV が正常に生成される")
+        void shouldHandleEmptyListForCsv() {
+            when(csvGenerationService.generate(anyList(), eq(testMeta))).thenReturn(new byte[0]);
+
+            ResponseEntity<List<String>> response = service.export(
+                    List.of(), ReportFormat.CSV, testMeta);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+        }
     }
 
     @Nested
@@ -139,6 +150,18 @@ class ReportExportServiceTest {
             assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
                     .contains("attachment")
                     .contains("test_20260327.pdf");
+        }
+
+        @Test
+        @DisplayName("空リストでも PDF が正常に生成される")
+        void shouldHandleEmptyListForPdf() {
+            when(pdfGenerationService.generatePdf(eq("test-template"), any(Map.class)))
+                    .thenReturn(new byte[0]);
+
+            ResponseEntity<List<String>> response = service.export(
+                    List.of(), ReportFormat.PDF, testMeta);
+
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
         }
     }
 

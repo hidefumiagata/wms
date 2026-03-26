@@ -12,6 +12,7 @@
   <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
 */-->
 <th:block th:fragment="common-styles(pageSize, orientation)">
+<!-- SECURITY: pageSize と orientation はハードコード定数のみ許可。ユーザー入力由来の値を渡さないこと -->
 <style th:inline="text">
     @page {
         size: [[${pageSize}]] [[${orientation}]];

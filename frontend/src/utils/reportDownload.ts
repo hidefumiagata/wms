@@ -51,11 +51,14 @@ export async function downloadReport<T = unknown>(options: DownloadOptions): Pro
 
   const blob = new Blob([response.data], { type: mimeType })
   const url = window.URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filenameBase + extension
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  window.URL.revokeObjectURL(url)
+  try {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filenameBase + extension
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } finally {
+    window.URL.revokeObjectURL(url)
+  }
 }
