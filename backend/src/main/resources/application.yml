@@ -21,6 +21,14 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # Thymeleaf（レポート PDF 生成用）
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    check-template-location: true
+
   # Jackson
   jackson:
     default-property-inclusion: non_null

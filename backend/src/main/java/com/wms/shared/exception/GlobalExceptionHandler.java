@@ -145,6 +145,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(body);
     }
 
+    // --- ResponseStatusException（HTTP ステータスをそのまま返す） ---
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatus(
+            org.springframework.web.server.ResponseStatusException ex) {
+        ErrorResponse body = ErrorResponse.of(
+                ex.getStatusCode().toString(), ex.getReason(),
+                TraceContext.getCurrentTraceId());
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
+    }
+
     // --- その他すべての例外 ---
 
     @ExceptionHandler(Exception.class)
