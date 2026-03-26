@@ -7,5 +7,5 @@ CREATE INDEX idx_unpack_instructions_source_inventory ON unpack_instructions (so
 
 -- FIFO引当用: inventory_movementsのINBOUND入庫日時集約クエリ高速化
 CREATE INDEX idx_inventory_movements_inbound_fifo
-    ON inventory_movements (product_id, location_id, unit_type, lot_number, expiry_date, executed_at)
+    ON inventory_movements (warehouse_id, product_id, location_id, unit_type, lot_number, expiry_date, executed_at)
     WHERE movement_type = 'INBOUND';

@@ -38,6 +38,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                 FROM inventory_movements im
                 WHERE im.movement_type = 'INBOUND'
                   AND im.product_id = :productId
+                  AND im.warehouse_id = :warehouseId
                 GROUP BY im.product_id, im.location_id, im.unit_type, im.lot_number, im.expiry_date
             ) m ON i.product_id = m.product_id
                 AND i.location_id = m.location_id
