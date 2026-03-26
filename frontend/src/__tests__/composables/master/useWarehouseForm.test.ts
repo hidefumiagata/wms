@@ -4,7 +4,6 @@ import { withSetup, mockAxiosResponse, createAxiosError } from '../../helpers'
 import { useWarehouseForm } from '@/composables/master/useWarehouseForm'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
-import { mockRouter } from '../../setup'
 
 // vue-router のモックを上書き（route.params.id を制御するため）
 let mockRouteParams: Record<string, string> = {}

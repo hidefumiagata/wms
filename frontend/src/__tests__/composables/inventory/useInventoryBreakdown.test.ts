@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useInventoryBreakdown } from '@/composables/inventory/useInventoryBreakdown'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/inventory-location-item', () => ({}))
 vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {

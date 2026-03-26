@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, createAxiosError, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse, createAxiosError } from '../../helpers'
 import { useOutboundSlipDetail } from '@/composables/outbound/useOutboundSlipDetail'
 import { mockRoute, mockRouter } from '../../setup'
 import axios from 'axios'

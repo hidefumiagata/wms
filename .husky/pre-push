@@ -28,7 +28,7 @@ fi
 
 if [ -n "$FE_CHANGED" ]; then
   echo "[pre-push] Running ESLint on frontend..."
-  cd frontend && npx eslint . --quiet
+  cd frontend && npx eslint . --max-warnings 0
   ESLINT_EXIT=$?
   cd ..
   if [ $ESLINT_EXIT -ne 0 ]; then

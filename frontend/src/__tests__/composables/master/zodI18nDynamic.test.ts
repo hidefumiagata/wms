@@ -125,6 +125,7 @@ function mountWithI18n() {
   const i18n = createTestI18n('ja')
   let result!: ReturnType<typeof useWarehouseForm>
 
+  // eslint-disable-next-line vue/one-component-per-file
   const TestComponent = defineComponent({
     setup() {
       result = useWarehouseForm()
@@ -211,6 +212,7 @@ function mountUserFormWithI18n(params: Record<string, string> = {}) {
   const i18n = createTestI18n('ja')
   let result!: ReturnType<typeof useUserForm>
 
+  // eslint-disable-next-line vue/one-component-per-file
   const TestComponent = defineComponent({
     setup() {
       result = useUserForm()

@@ -3,7 +3,6 @@ import apiClient from '@/api/client'
 import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useInventoryList } from '@/composables/inventory/useInventoryList'
 import { useWarehouseStore } from '@/stores/warehouse'
-import { useAuthStore } from '@/stores/auth'
 import axios from 'axios'
 
 vi.mock('@/api/generated/models/inventory-location-item', () => ({}))

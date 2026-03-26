@@ -5,7 +5,6 @@ import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useOutboundSlipList } from '@/composables/outbound/useOutboundSlipList'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/outbound-slip-summary', () => ({}))
 vi.mock('@/api/generated/models/outbound-slip-page-response', () => ({}))

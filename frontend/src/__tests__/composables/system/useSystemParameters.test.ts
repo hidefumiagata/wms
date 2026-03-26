@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useSystemParameters } from '@/composables/system/useSystemParameters'
-import type { ParameterRow } from '@/composables/system/useSystemParameters'
 import axios from 'axios'
 
 vi.mock('@/api/generated/models/system-parameter-detail', () => ({}))
