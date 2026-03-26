@@ -243,7 +243,9 @@ flowchart TD
 | `404` | `PARTNER_NOT_FOUND` | 指定の仕入先が存在しない |
 | `404` | `PRODUCT_NOT_FOUND` | 明細内の商品が存在しない |
 | `409` | `DUPLICATE_PRODUCT_IN_LINES` | 同一伝票内に同じ商品IDが重複 |
+| `422` | `INBOUND_PARTNER_REQUIRED` | `slipType=NORMAL` で仕入先IDが未指定 |
 | `422` | `INBOUND_PARTNER_NOT_SUPPLIER` | `partnerId` の取引先種別が `SUPPLIER` または `BOTH` でない |
+| `422` | `PRODUCT_INACTIVE` | 無効な商品が指定されている |
 | `422` | `PLANNED_DATE_TOO_EARLY` | `plannedDate` が現在営業日より前 |
 | `422` | `LOT_NUMBER_REQUIRED` | ロット管理フラグONの商品に `lotNumber` が未指定 |
 | `422` | `EXPIRY_DATE_REQUIRED` | 期限管理フラグONの商品に `expiryDate` が未指定 |
@@ -288,13 +290,13 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | `slipType=NORMAL` の場合、`partnerId` は必須 | `VALIDATION_ERROR` |
+| 1 | `slipType=NORMAL` の場合、`partnerId` は必須 | `INBOUND_PARTNER_REQUIRED` |
 | 2 | 仕入先の `partner_type` が `SUPPLIER` または `BOTH` でなければならない | `INBOUND_PARTNER_NOT_SUPPLIER` |
 | 3 | `plannedDate` は現在営業日（`business_dates.business_date`）以降でなければならない | `PLANNED_DATE_TOO_EARLY` |
 | 4 | 同一伝票内に同じ `productId` を持つ明細は登録不可 | `DUPLICATE_PRODUCT_IN_LINES` |
 | 5 | 商品の `lot_manage_flag=true` の場合、`lotNumber` 必須 | `LOT_NUMBER_REQUIRED` |
 | 6 | 商品の `expiry_manage_flag=true` の場合、`expiryDate` 必須 | `EXPIRY_DATE_REQUIRED` |
-| 7 | 商品の `is_active=false` は明細登録不可 | `VALIDATION_ERROR` (details: productId) |
+| 7 | 商品の `is_active=false` は明細登録不可 | `PRODUCT_INACTIVE` |
 
 **伝票番号採番ルール**:
 
@@ -1106,7 +1108,9 @@ flowchart TD
 | `INBOUND_LINE_NOT_FOUND` | 404 | 指定IDの入荷明細が当該伝票に存在しない |
 | `INBOUND_INVALID_STATUS` | 409 | 現在のステータスではその操作は実行不可 |
 | `INBOUND_LINE_NOT_INSPECTED` | 409 | 対象明細が検品済（INSPECTED）でないため入庫確定不可 |
+| `INBOUND_PARTNER_REQUIRED` | 422 | 通常入荷で仕入先IDが未指定 |
 | `INBOUND_PARTNER_NOT_SUPPLIER` | 422 | 取引先種別が仕入先（SUPPLIER/BOTH）でない |
+| `PRODUCT_INACTIVE` | 422 | 無効な商品が指定されている |
 | `INBOUND_LOCATION_AREA_MISMATCH` | 422 | 指定ロケーションが入荷エリアに属さない |
 | `LOCATION_PRODUCT_MISMATCH` | 422 | 入庫先ロケーションに既に別商品の在庫が存在する（同一ロケーション単一商品制約） |
 | `DUPLICATE_PRODUCT_IN_LINES` | 409 | 同一伝票内に同じ商品IDの明細が重複 |

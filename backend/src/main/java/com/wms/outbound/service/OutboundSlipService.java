@@ -103,7 +103,7 @@ public class OutboundSlipService {
         Partner partner = null;
         if (request.getSlipType() == OutboundSlipType.NORMAL) {
             if (request.getPartnerId() == null) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("OUTBOUND_PARTNER_REQUIRED",
                         "通常出荷の場合、出荷先IDは必須です");
             }
             partner = partnerService.findById(request.getPartnerId());
@@ -121,7 +121,7 @@ public class OutboundSlipService {
             Product product = productService.findById(lineReq.getProductId());
 
             if (!Boolean.TRUE.equals(product.getIsActive())) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("PRODUCT_INACTIVE",
                         "無効な商品が指定されています (productId=" + product.getId() + ")");
             }
 

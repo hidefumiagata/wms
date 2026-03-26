@@ -350,7 +350,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.create(request))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("OUTBOUND_PARTNER_REQUIRED");
         }
 
         @Test
@@ -429,7 +429,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.create(buildRequest()))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("PRODUCT_INACTIVE");
         }
 
         @Test
