@@ -792,6 +792,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -812,8 +813,6 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
@@ -846,6 +845,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -879,8 +879,6 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
@@ -901,14 +899,15 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("ばらし元在庫が直接見つからない場合フォールバック検索する")
-        void completeUnpack_sourceInventoryFallback() {
+        @DisplayName("sourceInventoryIdで直接ばらし元在庫を取得する")
+        void completeUnpack_sourceInventoryById() {
             setUpSecurityContext(10L);
 
             UnpackInstruction unpack = UnpackInstruction.builder()
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -924,17 +923,11 @@ class AllocationServiceTest {
             location.setLocationCode("A-01-01");
             location.setLocationName("棚A-01-01");
 
-            // 直接検索では見つからない
             Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
 
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            // 直接検索 → empty
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
-            // フォールバック検索
-            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
@@ -946,6 +939,7 @@ class AllocationServiceTest {
             UnpackCompletionInfo result = allocationService.completeUnpackInstruction(500L);
 
             assertThat(result.status()).isEqualTo("COMPLETED");
+            verify(inventoryRepository).findByIdForUpdate(200L);
         }
 
         @Test
@@ -955,6 +949,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -977,7 +972,7 @@ class AllocationServiceTest {
             setUpSecurityContext(10L);
 
             UnpackInstruction unpack = UnpackInstruction.builder()
-                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .outboundSlipId(1L).locationId(50L).productId(10L).sourceInventoryId(200L)
                     .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
                     .status("INSTRUCTED").warehouseId(1L).build();
             setField(unpack, "id", 500L);
@@ -1000,7 +995,7 @@ class AllocationServiceTest {
             setUpSecurityContext(10L);
 
             UnpackInstruction unpack = UnpackInstruction.builder()
-                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .outboundSlipId(1L).locationId(50L).productId(10L).sourceInventoryId(200L)
                     .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
                     .status("INSTRUCTED").warehouseId(1L).build();
             setField(unpack, "id", 500L);
@@ -1011,13 +1006,9 @@ class AllocationServiceTest {
             location.setLocationCode("A-01-01");
             location.setLocationName("棚A-01-01");
 
-            Inventory sourceInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
-
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
@@ -1031,7 +1022,7 @@ class AllocationServiceTest {
             setUpSecurityContext(10L);
 
             UnpackInstruction unpack = UnpackInstruction.builder()
-                    .outboundSlipId(1L).locationId(50L).productId(10L)
+                    .outboundSlipId(1L).locationId(50L).productId(10L).sourceInventoryId(200L)
                     .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
                     .status("INSTRUCTED").warehouseId(1L).build();
             setField(unpack, "id", 500L);
@@ -1048,8 +1039,6 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
@@ -1062,49 +1051,7 @@ class AllocationServiceTest {
         }
 
         @Test
-        @DisplayName("フォールバック検索で異なるunitTypeの在庫はフィルタされる")
-        void completeUnpack_sourceInventoryFallback_filtersUnitType() {
-            setUpSecurityContext(10L);
-
-            UnpackInstruction unpack = UnpackInstruction.builder()
-                    .outboundSlipId(1L).locationId(50L).productId(10L)
-                    .fromUnitType("CASE").fromQty(1).toUnitType("PIECE").toQty(24)
-                    .status("INSTRUCTED").warehouseId(1L).build();
-            setField(unpack, "id", 500L);
-
-            Product product = createProduct(10L, "PRD-0001", 24, 6);
-            Location location = new Location();
-            setField(location, "id", 50L);
-            location.setLocationCode("A-01-01");
-            location.setLocationName("棚A-01-01");
-
-            // 同一ロケーション・同一unitTypeの在庫 → マッチ
-            Inventory matchingInv = createInventory(200L, 1L, 50L, 10L, "CASE", 5, 1);
-            // 同一ロケーションだがunitTypeが異なる → フィルタされる
-            Inventory nonMatchingInv = createInventory(201L, 1L, 50L, 10L, "PIECE", 100, 0);
-
-            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
-            when(productService.findById(10L)).thenReturn(product);
-            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
-            when(inventoryRepository.findAvailableStock(1L, 10L))
-                    .thenReturn(List.of(nonMatchingInv, matchingInv));
-            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(matchingInv));
-            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "PIECE", null, null)).thenReturn(Optional.empty());
-            when(allocationDetailRepository.findByOutboundSlipId(1L)).thenReturn(List.of());
-            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-            when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
-
-            UnpackCompletionInfo result = allocationService.completeUnpackInstruction(500L);
-
-            assertThat(result.status()).isEqualTo("COMPLETED");
-        }
-
-        @Test
-        @DisplayName("ばらし元在庫のフォールバック検索でも見つからない場合は例外")
+        @DisplayName("sourceInventoryIdで在庫が見つからない場合は例外")
         void completeUnpack_sourceInventoryNotFound_throws() {
             setUpSecurityContext(10L);
 
@@ -1112,6 +1059,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -1130,11 +1078,7 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.empty());
-            // フォールバックでも見つからない — 異なるロケーションの在庫のみ
-            Inventory otherLocationInv = createInventory(201L, 1L, 99L, 10L, "CASE", 5, 0);
-            when(inventoryRepository.findAvailableStock(1L, 10L)).thenReturn(List.of(otherLocationInv));
+            when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -1150,6 +1094,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -1185,8 +1130,6 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
@@ -1217,6 +1160,7 @@ class AllocationServiceTest {
                     .outboundSlipId(1L)
                     .locationId(50L)
                     .productId(10L)
+                    .sourceInventoryId(200L)
                     .fromUnitType("CASE")
                     .fromQty(1)
                     .toUnitType("PIECE")
@@ -1250,8 +1194,6 @@ class AllocationServiceTest {
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
-            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                    50L, 10L, "CASE", null, null)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.findByIdForUpdate(200L)).thenReturn(Optional.of(sourceInv));
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> {
                 Inventory inv = i.getArgument(0);

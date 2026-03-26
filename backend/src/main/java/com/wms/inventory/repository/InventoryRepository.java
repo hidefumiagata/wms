@@ -26,15 +26,27 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
 
     /**
      * 引当用在庫検索 — FEFO/FIFO順でソート。有効在庫（quantity - allocated_qty > 0）のみ対象。
-     * 同一荷姿を優先、異なる荷姿はケース→ボール→ピースの順。
+     * FIFO基準: inventory_movements の最古INBOUND入庫日時（executed_at）。
+     * 入庫履歴がない在庫は最後にソートされる。
      */
-    @Query("""
-            SELECT i FROM Inventory i
-            WHERE i.warehouseId = :warehouseId
-              AND i.productId = :productId
-              AND (i.quantity - i.allocatedQty) > 0
-            ORDER BY i.expiryDate ASC NULLS LAST, i.updatedAt ASC
-            """)
+    @Query(value = """
+            SELECT i.* FROM inventories i
+            LEFT JOIN (
+                SELECT im.product_id, im.location_id, im.unit_type, im.lot_number, im.expiry_date,
+                       MIN(im.executed_at) AS first_inbound_at
+                FROM inventory_movements im
+                WHERE im.movement_type = 'INBOUND'
+                GROUP BY im.product_id, im.location_id, im.unit_type, im.lot_number, im.expiry_date
+            ) m ON i.product_id = m.product_id
+                AND i.location_id = m.location_id
+                AND i.unit_type = m.unit_type
+                AND (i.lot_number = m.lot_number OR (i.lot_number IS NULL AND m.lot_number IS NULL))
+                AND (i.expiry_date = m.expiry_date OR (i.expiry_date IS NULL AND m.expiry_date IS NULL))
+            WHERE i.warehouse_id = :warehouseId
+              AND i.product_id = :productId
+              AND (i.quantity - i.allocated_qty) > 0
+            ORDER BY i.expiry_date ASC NULLS LAST, m.first_inbound_at ASC NULLS LAST, i.id ASC
+            """, nativeQuery = true)
     List<Inventory> findAvailableStock(
             @Param("warehouseId") Long warehouseId,
             @Param("productId") Long productId);

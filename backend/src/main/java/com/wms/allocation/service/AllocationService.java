@@ -301,6 +301,7 @@ public class AllocationService {
                     .outboundSlipId(slip.getId())
                     .locationId(locked.getLocationId())
                     .productId(locked.getProductId())
+                    .sourceInventoryId(locked.getId())
                     .fromUnitType(stockUnitType)
                     .fromQty(fromQty)
                     .toUnitType(requestedUnitType)
@@ -379,11 +380,9 @@ public class AllocationService {
         OffsetDateTime now = OffsetDateTime.now();
 
         // Step1-2: ばらし元在庫のallocated_qtyとquantityを減算
-        final Inventory sourceInventory = findSourceInventory(unpack);
-
-        Inventory lockedSource = inventoryRepository.findByIdForUpdate(sourceInventory.getId())
+        Inventory lockedSource = inventoryRepository.findByIdForUpdate(unpack.getSourceInventoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "ばらし元在庫が見つかりません (id=" + sourceInventory.getId() + ")"));
+                        "ばらし元在庫が見つかりません (id=" + unpack.getSourceInventoryId() + ")"));
 
         lockedSource.setAllocatedQty(lockedSource.getAllocatedQty() - unpack.getFromQty());
         lockedSource.setQuantity(lockedSource.getQuantity() - unpack.getFromQty());
@@ -563,28 +562,6 @@ public class AllocationService {
         }
 
         return new AllocationReleaseInfo(releasedSlips.size(), releasedSlips);
-    }
-
-    private Inventory findSourceInventory(UnpackInstruction unpack) {
-        Inventory source = inventoryRepository
-                .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
-                        unpack.getLocationId(), unpack.getProductId(),
-                        unpack.getFromUnitType(), null, null)
-                .orElse(null);
-
-        if (source != null) {
-            return source;
-        }
-
-        // ばらし元在庫がlot/expiryで見つからない場合は全在庫から探す
-        List<Inventory> sources = inventoryRepository.findAvailableStock(
-                unpack.getWarehouseId(), unpack.getProductId());
-        return sources.stream()
-                .filter(i -> i.getLocationId().equals(unpack.getLocationId())
-                        && i.getUnitType().equals(unpack.getFromUnitType()))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "ばらし元在庫が見つかりません"));
     }
 
     private Long getCurrentUserId() {
