@@ -22,7 +22,8 @@
 
 export const SystemParameterValueType = {
     Integer: 'INTEGER',
-    String: 'STRING'
+    String: 'STRING',
+    Boolean: 'BOOLEAN'
 } as const;
 
 export type SystemParameterValueType = typeof SystemParameterValueType[keyof typeof SystemParameterValueType];

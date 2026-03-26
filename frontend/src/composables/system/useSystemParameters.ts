@@ -101,6 +101,10 @@ export function useSystemParameters() {
       if (val.length > 500) {
         return t('system.parameters.validation.stringMaxLength')
       }
+    } else if (valueType === SystemParameterValueType.Boolean) {
+      if (val !== 'true' && val !== 'false') {
+        return t('system.parameters.validation.booleanFormat')
+      }
     }
     return null
   }

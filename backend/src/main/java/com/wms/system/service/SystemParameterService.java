@@ -66,6 +66,12 @@ public class SystemParameterService {
                         "INVALID_PARAM_VALUE",
                         "INTEGER型パラメータに不正な値: " + newValue);
             }
+        } else if ("BOOLEAN".equals(param.getValueType())) {
+            if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
+                throw new com.wms.shared.exception.BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "BOOLEAN型パラメータに不正な値: " + newValue);
+            }
         }
     }
 }

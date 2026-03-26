@@ -8,7 +8,7 @@ import axios from 'axios'
 
 vi.mock('@/api/generated/models/system-parameter-detail', () => ({}))
 vi.mock('@/api/generated/models/system-parameter-value-type', () => ({
-  SystemParameterValueType: { Integer: 'INTEGER', String: 'STRING' },
+  SystemParameterValueType: { Integer: 'INTEGER', String: 'STRING', Boolean: 'BOOLEAN' },
 }))
 vi.mock('@/api/generated/models/system-parameter-category', () => ({
   SystemParameterCategory: {
@@ -25,6 +25,7 @@ describe('useSystemParameters', () => {
     { paramKey: 'p1', paramValue: '10', category: 'INVENTORY', valueType: 'INTEGER', displayName: 'Param1', version: 1 },
     { paramKey: 'p2', paramValue: 'hello', category: 'INVENTORY', valueType: 'STRING', displayName: 'Param2', version: 1 },
     { paramKey: 'p3', paramValue: '5', category: 'OUTBOUND', valueType: 'INTEGER', displayName: 'Param3', version: 1 },
+    { paramKey: 'p4', paramValue: 'true', category: 'SYSTEM', valueType: 'BOOLEAN', displayName: 'FeatureFlag', version: 1 },
   ]
 
   beforeEach(() => {
@@ -35,11 +36,13 @@ describe('useSystemParameters', () => {
     const { result } = withSetup(() => useSystemParameters())
     await result.fetchParameters()
 
-    expect(result.groups.value).toHaveLength(2)
+    expect(result.groups.value).toHaveLength(3)
     expect(result.groups.value[0].category).toBe('INVENTORY')
     expect(result.groups.value[0].items).toHaveLength(2)
     expect(result.groups.value[1].category).toBe('OUTBOUND')
     expect(result.groups.value[1].items).toHaveLength(1)
+    expect(result.groups.value[2].category).toBe('SYSTEM')
+    expect(result.groups.value[2].items).toHaveLength(1)
   })
 
   it('fetchParameters が signal を渡す', async () => {
@@ -67,14 +70,14 @@ describe('useSystemParameters', () => {
   it('キャンセル時に state が更新されない', async () => {
     const { result } = withSetup(() => useSystemParameters())
     await result.fetchParameters()
-    expect(result.groups.value).toHaveLength(2)
+    expect(result.groups.value).toHaveLength(3)
 
     const cancelError = new Error('canceled')
     vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
     vi.mocked(axios.isCancel).mockReturnValueOnce(true)
 
     await result.fetchParameters()
-    expect(result.groups.value).toHaveLength(2)
+    expect(result.groups.value).toHaveLength(3)
   })
 
   it('toggleCategory が collapsed を切り替える', async () => {
@@ -130,6 +133,30 @@ describe('useSystemParameters', () => {
 
     row.editValue = 'valid string'
     expect(result.validateValue(row)).toBeNull()
+  })
+
+  it('validateValue がBOOLEAN型のtrue/falseを許可する', async () => {
+    const { result } = withSetup(() => useSystemParameters())
+    await result.fetchParameters()
+
+    const row = result.groups.value[2].items[0] // BOOLEAN type
+    row.editValue = 'true'
+    expect(result.validateValue(row)).toBeNull()
+
+    row.editValue = 'false'
+    expect(result.validateValue(row)).toBeNull()
+  })
+
+  it('validateValue がBOOLEAN型の不正値を拒否する', async () => {
+    const { result } = withSetup(() => useSystemParameters())
+    await result.fetchParameters()
+
+    const row = result.groups.value[2].items[0] // BOOLEAN type
+    row.editValue = 'yes'
+    expect(result.validateValue(row)).toBe('system.parameters.validation.booleanFormat')
+
+    row.editValue = '1'
+    expect(result.validateValue(row)).toBe('system.parameters.validation.booleanFormat')
   })
 
   it('handleSave が確認後にPUTリクエストを送信する', async () => {

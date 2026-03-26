@@ -74,4 +74,8 @@ public class SystemParameter {
     public int getIntValue() {
         return Integer.parseInt(paramValue);
     }
+
+    public boolean getBooleanValue() {
+        return Boolean.parseBoolean(paramValue);
+    }
 }

@@ -8882,6 +8882,7 @@ components:
       enum:
         - INTEGER
         - STRING
+        - BOOLEAN
       description: パラメータ値の型
 
     SystemParameterDetail:
