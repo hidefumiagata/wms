@@ -4,6 +4,7 @@ import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.service.SystemParameterService;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,6 +37,9 @@ class SystemParameterControllerTest {
 
     @MockitoBean
     private SystemParameterService systemParameterService;
+
+    @MockitoBean
+    private UserService userService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -61,16 +67,33 @@ class SystemParameterControllerTest {
     class GetSystemParameters {
 
         @Test
-        @DisplayName("パラメータ一覧を返す")
+        @DisplayName("パラメータ一覧を返す（updatedByName含む）")
         void getSystemParameters_returns200() throws Exception {
             SystemParameter p = createParam("SESSION_TIMEOUT_MINUTES", "60", "SECURITY", "INTEGER");
+            p.setUpdatedBy(1L);
             when(systemParameterService.findAll()).thenReturn(List.of(p));
+            when(userService.getUserFullNameMap(Set.of(1L)))
+                    .thenReturn(Map.of(1L, "管理者 太郎"));
 
             mockMvc.perform(get(BASE_URL))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].paramKey").value("SESSION_TIMEOUT_MINUTES"))
                     .andExpect(jsonPath("$[0].paramValue").value("60"))
-                    .andExpect(jsonPath("$[0].category").value("SECURITY"));
+                    .andExpect(jsonPath("$[0].category").value("SECURITY"))
+                    .andExpect(jsonPath("$[0].updatedByName").value("管理者 太郎"));
+        }
+
+        @Test
+        @DisplayName("updatedByがnullの場合updatedByNameもnull")
+        void getSystemParameters_updatedByNull_returns200() throws Exception {
+            SystemParameter p = createParam("TIMEOUT", "60", "SECURITY", "INTEGER");
+            // updatedBy is null by default
+            when(systemParameterService.findAll()).thenReturn(List.of(p));
+            when(userService.getUserFullNameMap(Set.of())).thenReturn(Map.of());
+
+            mockMvc.perform(get(BASE_URL))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].updatedByName").doesNotExist());
         }
 
         @Test
@@ -89,18 +112,21 @@ class SystemParameterControllerTest {
     class UpdateSystemParameter {
 
         @Test
-        @DisplayName("パラメータ値を更新して200を返す")
+        @DisplayName("パラメータ値を更新して200を返す（updatedByName含む）")
         void updateSystemParameter_returns200() throws Exception {
             SystemParameter updated = createParam("SESSION_TIMEOUT_MINUTES", "30", "SECURITY", "INTEGER");
+            updated.setUpdatedBy(1L);
             when(systemParameterService.updateValue(eq("SESSION_TIMEOUT_MINUTES"), eq("30"), any()))
                     .thenReturn(updated);
+            when(userService.getUserFullName(1L)).thenReturn("管理者 太郎");
 
             mockMvc.perform(put(BASE_URL + "/SESSION_TIMEOUT_MINUTES")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"paramValue\":\"30\",\"version\":0}"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.paramKey").value("SESSION_TIMEOUT_MINUTES"))
-                    .andExpect(jsonPath("$.paramValue").value("30"));
+                    .andExpect(jsonPath("$.paramValue").value("30"))
+                    .andExpect(jsonPath("$.updatedByName").value("管理者 太郎"));
         }
 
         @Test

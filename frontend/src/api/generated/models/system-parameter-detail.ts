@@ -81,6 +81,12 @@ export interface SystemParameterDetail {
      */
     'updatedBy'?: number;
     /**
+     * 最終更新者名
+     * @type {string}
+     * @memberof SystemParameterDetail
+     */
+    'updatedByName'?: string;
+    /**
      * 楽観ロック用バージョン
      * @type {number}
      * @memberof SystemParameterDetail

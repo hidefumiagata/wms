@@ -8915,6 +8915,9 @@ components:
           type: integer
           format: int64
           description: 最終更新者ID
+        updatedByName:
+          type: string
+          description: 最終更新者名
         version:
           type: integer
           description: 楽観ロック用バージョン

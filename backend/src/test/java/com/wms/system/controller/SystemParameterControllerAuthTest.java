@@ -4,6 +4,7 @@ import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.service.SystemParameterService;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,9 @@ class SystemParameterControllerAuthTest {
 
     @MockitoBean
     private SystemParameterService systemParameterService;
+
+    @MockitoBean
+    private UserService userService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
