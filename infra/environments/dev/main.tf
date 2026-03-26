@@ -61,12 +61,13 @@ module "acr" {
 }
 
 module "storage" {
-  source              = "../../modules/storage"
-  environment         = var.environment
-  location            = var.location
-  resource_group_name = azurerm_resource_group.main.name
-  storage_replication = var.storage_replication
-  common_tags         = local.common_tags
+  source               = "../../modules/storage"
+  environment          = var.environment
+  location             = var.location
+  resource_group_name  = azurerm_resource_group.main.name
+  storage_replication  = var.storage_replication
+  cors_allowed_origins = ["*"] # dev: Static Website自身へのアクセスのため全許可
+  common_tags          = local.common_tags
 }
 
 module "communication_services" {

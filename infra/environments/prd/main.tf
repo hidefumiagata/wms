@@ -125,12 +125,13 @@ module "acr" {
 # --- Storage (single instance in East, GRS) ---
 
 module "storage" {
-  source              = "../../modules/storage"
-  environment         = "prdeast"
-  location            = var.location_primary
-  resource_group_name = azurerm_resource_group.east.name
-  storage_replication = var.storage_replication
-  common_tags         = local.common_tags
+  source               = "../../modules/storage"
+  environment          = "prdeast"
+  location             = var.location_primary
+  resource_group_name  = azurerm_resource_group.east.name
+  storage_replication  = var.storage_replication
+  cors_allowed_origins = ["https://${module.front_door.frontdoor_endpoint_hostname}"]
+  common_tags          = local.common_tags
 }
 
 # --- Communication Services ---

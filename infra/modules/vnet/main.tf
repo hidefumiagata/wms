@@ -54,7 +54,9 @@ resource "azurerm_network_security_group" "pg" {
 
 # --- snet-ca NSG rules ---
 
+# Front Door無効時: Internet全体からHTTPSを許可（dev環境）
 resource "azurerm_network_security_rule" "ca_inbound_https" {
+  count                       = var.enable_front_door ? 0 : 1
   name                        = "Allow-HTTPS-Inbound"
   priority                    = 100
   direction                   = "Inbound"
@@ -68,10 +70,11 @@ resource "azurerm_network_security_rule" "ca_inbound_https" {
   network_security_group_name = azurerm_network_security_group.ca.name
 }
 
+# Front Door有効時: Front Doorからのみ許可（prd環境）
 resource "azurerm_network_security_rule" "ca_inbound_frontdoor" {
   count                       = var.enable_front_door ? 1 : 0
   name                        = "Allow-FrontDoor-Inbound"
-  priority                    = 110
+  priority                    = 100
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"

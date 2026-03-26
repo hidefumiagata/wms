@@ -18,6 +18,11 @@ variable "storage_replication" {
   type        = string
 }
 
+variable "cors_allowed_origins" {
+  description = "CORS allowed origins for static website"
+  type        = list(string)
+}
+
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)
