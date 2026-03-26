@@ -35,9 +35,12 @@ describe('useWarehouseList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/warehouses', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, size: 20 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/warehouses',
+      expect.objectContaining({
+        params: expect.objectContaining({ page: 0, size: 20 }),
+      }),
+    )
     expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
@@ -109,7 +112,9 @@ describe('useWarehouseList', () => {
     // 1回目のfetchListを遅延させ、その間に2回目を呼ぶことで1回目をキャンセル
     let resolveFirst!: (value: unknown) => void
     vi.mocked(apiClient.get).mockImplementationOnce(() => {
-      return new Promise((resolve) => { resolveFirst = resolve })
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
     })
 
     // 1回目開始（pending状態）
@@ -191,13 +196,16 @@ describe('useWarehouseList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/warehouses', expect.objectContaining({
-      params: expect.objectContaining({
-        warehouseCode: 'WHSA',
-        warehouseName: 'テスト',
-        isActive: true,
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/warehouses',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          warehouseCode: 'WHSA',
+          warehouseName: 'テスト',
+          isActive: true,
+        }),
       }),
-    }))
+    )
   })
 
   // --- エラーハンドリング ---
@@ -244,7 +252,15 @@ describe('useWarehouseList', () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = withSetup(() => useWarehouseList())
-    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      warehouseCode: 'WHSA',
+      warehouseName: 'テスト',
+      warehouseNameKana: 'テスト',
+      address: null,
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row)
 
@@ -260,7 +276,15 @@ describe('useWarehouseList', () => {
     vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
 
     const { result } = withSetup(() => useWarehouseList())
-    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      warehouseCode: 'WHSA',
+      warehouseName: 'テスト',
+      warehouseNameKana: 'テスト',
+      address: null,
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row)
 
@@ -271,7 +295,15 @@ describe('useWarehouseList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = withSetup(() => useWarehouseList())
-    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      warehouseCode: 'WHSA',
+      warehouseName: 'テスト',
+      warehouseNameKana: 'テスト',
+      address: null,
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row)
 
@@ -282,7 +314,15 @@ describe('useWarehouseList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422))
 
     const { result } = withSetup(() => useWarehouseList())
-    const row = { id: 1, warehouseCode: 'WHSA', warehouseName: 'テスト', warehouseNameKana: 'テスト', address: null, isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      warehouseCode: 'WHSA',
+      warehouseName: 'テスト',
+      warehouseNameKana: 'テスト',
+      address: null,
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row)
 

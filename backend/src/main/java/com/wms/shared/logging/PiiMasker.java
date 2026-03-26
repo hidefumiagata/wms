@@ -38,7 +38,9 @@ public final class PiiMasker {
             "(?i)(password|passwd|pwd|secret|token)(\"\\s*:\\s*\")([^\"]*)\"");
 
     public static String mask(String message) {
-        if (message == null) return null;
+        if (message == null) {
+            return null;
+        }
 
         // fast-path: PIIを含まない可能性が高いメッセージをスキップ
         // 注意: 新しいパターン追加時はこのチェックも更新すること
@@ -66,13 +68,21 @@ public final class PiiMasker {
      * <p>注意: 新しいマスキングパターン追加時はこのメソッドも更新すること。</p>
      */
     static boolean mayContainSensitiveData(String message) {
-        if (message.isEmpty()) return false;
+        if (message.isEmpty()) {
+            return false;
+        }
         // Email check
-        if (message.indexOf('@') >= 0) return true;
+        if (message.indexOf('@') >= 0) {
+            return true;
+        }
         // Phone check (0始まりの数字-ハイフンシーケンス)
-        if (message.indexOf('-') >= 0 && containsPhoneLikeSequence(message)) return true;
+        if (message.indexOf('-') >= 0 && containsPhoneLikeSequence(message)) {
+            return true;
+        }
         // JWT check
-        if (message.contains("eyJ")) return true;
+        if (message.contains("eyJ")) {
+            return true;
+        }
         // Password/Token KV check
         return containsPasswordKeyword(message);
     }

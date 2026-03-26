@@ -59,10 +59,7 @@ export function createMockResponseFactory<T>(data: T, status = 200) {
 /**
  * API エラーレスポンスを生成するヘルパー（axios.isAxiosError で認識される）
  */
-export function createAxiosError(
-  status: number,
-  data?: { errorCode?: string; message?: string },
-) {
+export function createAxiosError(status: number, data?: { errorCode?: string; message?: string }) {
   const error = new Error(`Request failed with status code ${status}`) as Error & {
     isAxiosError: boolean
     response: { status: number; data: typeof data }

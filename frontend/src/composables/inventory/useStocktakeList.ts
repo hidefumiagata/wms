@@ -16,8 +16,8 @@ export function useStocktakeList() {
   const warehouseStore = useWarehouseStore()
   const auth = useAuthStore()
 
-  const isManager = computed(() =>
-    auth.user?.role === 'WAREHOUSE_MANAGER' || auth.user?.role === 'SYSTEM_ADMIN'
+  const isManager = computed(
+    () => auth.user?.role === 'WAREHOUSE_MANAGER' || auth.user?.role === 'SYSTEM_ADMIN',
   )
   const isViewer = computed(() => auth.user?.role === 'VIEWER')
 
@@ -43,7 +43,9 @@ export function useStocktakeList() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   async function fetchList() {
     abortController?.abort()

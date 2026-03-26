@@ -129,7 +129,7 @@ export function useProductList() {
       ElMessage.success(
         isDeactivating
           ? t('master.product.deactivateSuccess')
-          : t('master.product.activateSuccess')
+          : t('master.product.activateSuccess'),
       )
       await fetchList()
     } catch (err: unknown) {
@@ -152,10 +152,14 @@ export function useProductList() {
 
   function storageConditionLabel(condition: string): string {
     switch (condition) {
-      case StorageCondition.Ambient: return t('master.product.storageAmbient')
-      case StorageCondition.Refrigerated: return t('master.product.storageRefrigerated')
-      case StorageCondition.Frozen: return t('master.product.storageFrozen')
-      default: return condition
+      case StorageCondition.Ambient:
+        return t('master.product.storageAmbient')
+      case StorageCondition.Refrigerated:
+        return t('master.product.storageRefrigerated')
+      case StorageCondition.Frozen:
+        return t('master.product.storageFrozen')
+      default:
+        return condition
     }
   }
 

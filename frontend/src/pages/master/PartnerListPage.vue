@@ -65,11 +65,7 @@
       </template>
 
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
-        <el-table-column
-          prop="partnerCode"
-          :label="t('master.partner.partnerCode')"
-          width="140"
-        >
+        <el-table-column prop="partnerCode" :label="t('master.partner.partnerCode')" width="140">
           <template #default="{ row }">
             <el-link
               type="primary"
@@ -92,7 +88,13 @@
         <el-table-column :label="t('master.partner.partnerType')" width="100" align="center">
           <template #default="{ row }">
             <el-tag
-              :type="row.partnerType === 'BOTH' ? 'warning' : row.partnerType === 'SUPPLIER' ? 'primary' : 'success'"
+              :type="
+                row.partnerType === 'BOTH'
+                  ? 'warning'
+                  : row.partnerType === 'SUPPLIER'
+                    ? 'primary'
+                    : 'success'
+              "
               size="small"
             >
               {{ partnerTypeLabel(row.partnerType) }}
@@ -106,12 +108,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          :label="t('common.actions')"
-          width="180"
-          align="center"
-          fixed="right"
-        >
+        <el-table-column :label="t('common.actions')" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               size="small"
@@ -180,10 +177,14 @@ const {
 
 function partnerTypeLabel(type: string): string {
   switch (type) {
-    case PartnerType.Supplier: return t('master.partner.typeSupplier')
-    case PartnerType.Customer: return t('master.partner.typeCustomer')
-    case PartnerType.Both: return t('master.partner.typeBoth')
-    default: return type
+    case PartnerType.Supplier:
+      return t('master.partner.typeSupplier')
+    case PartnerType.Customer:
+      return t('master.partner.typeCustomer')
+    case PartnerType.Both:
+      return t('master.partner.typeBoth')
+    default:
+      return type
   }
 }
 

@@ -26,11 +26,7 @@
         </el-button>
       </el-alert>
 
-      <el-form
-        label-width="200px"
-        style="max-width: 680px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="200px" style="max-width: 680px" @submit.prevent="handleSubmit">
         <!-- 基本情報セクション -->
         <el-divider content-position="left">{{ t('master.user.sectionBasicInfo') }}</el-divider>
 
@@ -115,10 +111,7 @@
             </el-input>
           </el-form-item>
 
-          <el-form-item
-            :label="t('master.user.confirmPassword')"
-            :error="errors.confirmPassword"
-          >
+          <el-form-item :label="t('master.user.confirmPassword')" :error="errors.confirmPassword">
             <el-input
               v-model="confirmPassword"
               v-bind="confirmPasswordAttrs"
@@ -135,7 +128,9 @@
 
         <!-- 登録情報（編集時のみ） -->
         <template v-if="isEdit">
-          <el-divider content-position="left">{{ t('master.user.sectionRegistrationInfo') }}</el-divider>
+          <el-divider content-position="left">
+            {{ t('master.user.sectionRegistrationInfo') }}
+          </el-divider>
 
           <el-form-item :label="t('master.user.createdAt')">
             <span class="readonly-value">{{ createdAt }}</span>
@@ -145,7 +140,11 @@
           </el-form-item>
           <el-form-item :label="t('master.user.passwordChangeRequired')">
             <span class="readonly-value">
-              {{ passwordChangeRequired ? t('master.user.passwordChangeNeeded') : t('master.user.passwordChangeCompleted') }}
+              {{
+                passwordChangeRequired
+                  ? t('master.user.passwordChangeNeeded')
+                  : t('master.user.passwordChangeCompleted')
+              }}
             </span>
           </el-form-item>
         </template>

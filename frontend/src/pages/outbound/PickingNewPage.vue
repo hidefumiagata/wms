@@ -13,10 +13,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-const { t } = useI18n({ messages: { ja: { stub: { title: 'ピッキング指示作成', subtitle: '後続Issueで実装予定' } }, en: { stub: { title: 'ピッキング指示作成', subtitle: 'Coming soon' } } } })
+const { t } = useI18n({
+  messages: {
+    ja: { stub: { title: 'ピッキング指示作成', subtitle: '後続Issueで実装予定' } },
+    en: { stub: { title: 'ピッキング指示作成', subtitle: 'Coming soon' } },
+  },
+})
 const router = useRouter()
 </script>
 
 <style scoped lang="scss">
-.wms-page { padding: 20px; }
+.wms-page {
+  padding: 20px;
+}
 </style>

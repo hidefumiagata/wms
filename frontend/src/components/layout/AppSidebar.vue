@@ -132,7 +132,30 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Grid, OfficeBuilding, Coordinate, Box, School, Place, Location, User, Setting, Operation, Download, Document, DataAnalysis, Upload, List, Coin, Search, Sort, Scissor, EditPen, Notebook, HomeFilled } from '@element-plus/icons-vue'
+import {
+  Grid,
+  OfficeBuilding,
+  Coordinate,
+  Box,
+  School,
+  Place,
+  Location,
+  User,
+  Setting,
+  Operation,
+  Download,
+  Document,
+  DataAnalysis,
+  Upload,
+  List,
+  Coin,
+  Search,
+  Sort,
+  Scissor,
+  EditPen,
+  Notebook,
+  HomeFilled,
+} from '@element-plus/icons-vue'
 
 defineProps<{
   collapsed: boolean

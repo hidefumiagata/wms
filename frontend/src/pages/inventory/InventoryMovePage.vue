@@ -35,7 +35,11 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('inventory.unitType')" required>
-          <el-select v-model="selectedUnitType" style="width: 160px" :placeholder="t('inventory.unitType')">
+          <el-select
+            v-model="selectedUnitType"
+            style="width: 160px"
+            :placeholder="t('inventory.unitType')"
+          >
             <el-option
               v-for="u in unitTypeOptions"
               :key="u.unitType"

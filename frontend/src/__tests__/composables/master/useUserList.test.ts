@@ -38,9 +38,12 @@ describe('useUserList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/users', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, size: 20 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/users',
+      expect.objectContaining({
+        params: expect.objectContaining({ page: 0, size: 20 }),
+      }),
+    )
     expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
@@ -104,7 +107,9 @@ describe('useUserList', () => {
 
     let resolveFirst!: (value: unknown) => void
     vi.mocked(apiClient.get).mockImplementationOnce(() => {
-      return new Promise((resolve) => { resolveFirst = resolve })
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
     })
 
     const firstFetch = result.fetchList()
@@ -181,13 +186,16 @@ describe('useUserList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/users', expect.objectContaining({
-      params: expect.objectContaining({
-        keyword: 'テスト',
-        role: 'ADMIN',
-        status: 'ACTIVE',
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/users',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          keyword: 'テスト',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        }),
       }),
-    }))
+    )
   })
 
   // --- エラーハンドリング ---
@@ -232,7 +240,15 @@ describe('useUserList', () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = withSetup(() => useUserList())
-    const row = { id: 1, userCode: 'USR001', fullName: 'テストユーザー', role: 'OPERATOR', isActive: true, isLocked: true, version: 1 }
+    const row = {
+      id: 1,
+      userCode: 'USR001',
+      fullName: 'テストユーザー',
+      role: 'OPERATOR',
+      isActive: true,
+      isLocked: true,
+      version: 1,
+    }
 
     await result.handleUnlock(row as never)
 
@@ -245,7 +261,15 @@ describe('useUserList', () => {
     vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
 
     const { result } = withSetup(() => useUserList())
-    const row = { id: 1, userCode: 'USR001', fullName: 'テストユーザー', role: 'OPERATOR', isActive: true, isLocked: true, version: 1 }
+    const row = {
+      id: 1,
+      userCode: 'USR001',
+      fullName: 'テストユーザー',
+      role: 'OPERATOR',
+      isActive: true,
+      isLocked: true,
+      version: 1,
+    }
 
     await result.handleUnlock(row as never)
 
@@ -256,7 +280,15 @@ describe('useUserList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(new Error('Network Error'))
 
     const { result } = withSetup(() => useUserList())
-    const row = { id: 1, userCode: 'USR001', fullName: 'テストユーザー', role: 'OPERATOR', isActive: true, isLocked: true, version: 1 }
+    const row = {
+      id: 1,
+      userCode: 'USR001',
+      fullName: 'テストユーザー',
+      role: 'OPERATOR',
+      isActive: true,
+      isLocked: true,
+      version: 1,
+    }
 
     await result.handleUnlock(row as never)
 
@@ -267,7 +299,15 @@ describe('useUserList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(500))
 
     const { result } = withSetup(() => useUserList())
-    const row = { id: 1, userCode: 'USR001', fullName: 'テストユーザー', role: 'OPERATOR', isActive: true, isLocked: true, version: 1 }
+    const row = {
+      id: 1,
+      userCode: 'USR001',
+      fullName: 'テストユーザー',
+      role: 'OPERATOR',
+      isActive: true,
+      isLocked: true,
+      version: 1,
+    }
 
     await result.handleUnlock(row as never)
 

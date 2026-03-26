@@ -41,10 +41,12 @@ export default {
     logoutLink: 'このアカウントでのログインをやめる場合はこちら',
     logoutConfirm: 'ログアウトしますか？',
     sessionWarningTitle: 'セッションタイムアウト警告',
-    sessionWarning: '操作がない状態が55分続いています。5分後に自動的にログアウトします。セッションを延長しますか？',
+    sessionWarning:
+      '操作がない状態が55分続いています。5分後に自動的にログアウトします。セッションを延長しますか？',
     continueSession: 'セッションを延長する',
     versionInfo: 'WMS v1.0 — ログインでお困りの場合はシステム管理者にお問い合わせください',
-    passwordChangeNotice: '初回ログインです。パスワードを変更してください。変更が完了するまで他の操作は行えません。',
+    passwordChangeNotice:
+      '初回ログインです。パスワードを変更してください。変更が完了するまで他の操作は行えません。',
     passwordPolicyInfo: '8〜128文字、英大文字・英小文字・数字を各1文字以上含めてください',
     resetRequestDescription: '登録済みのユーザーコードまたはメールアドレスを入力してください',
     strength: {
@@ -66,7 +68,8 @@ export default {
       resetConfirmFailed: 'パスワードの再設定に失敗しました。時間をおいて再度お試しください',
       passwordResetSuccess: 'パスワードを再設定しました。新しいパスワードでログインしてください',
       tokenMissing: 'リセットリンクが無効です。パスワードリセット申請からやり直してください',
-      rateLimitExceeded: '短時間に多くのリクエストが行われました。しばらく時間をおいてから再度お試しください',
+      rateLimitExceeded:
+        '短時間に多くのリクエストが行われました。しばらく時間をおいてから再度お試しください',
     },
     validation: {
       userCodeRequired: 'ユーザーコードは必須です',
@@ -77,7 +80,8 @@ export default {
       passwordSameAsCurrent: '現在のパスワードと異なるパスワードを設定してください',
       confirmPasswordRequired: 'パスワード（確認）は必須です',
       identifierRequired: 'ユーザーコードまたはメールアドレスを入力してください',
-      passwordPolicy: 'パスワードは8〜128文字で、英大文字・英小文字・数字を各1文字以上含めてください',
+      passwordPolicy:
+        'パスワードは8〜128文字で、英大文字・英小文字・数字を各1文字以上含めてください',
     },
   },
   nav: {
@@ -148,7 +152,8 @@ export default {
       notFound: '指定された取引先は存在しないか、削除されています。',
       cannotDeactivateHasActiveInbound: '処理中の入荷予定が存在するため無効化できません。',
       cannotDeactivateHasActiveOutbound: '処理中の受注が存在するため無効化できません。',
-      confirmDeactivate: 'この取引先を無効化しますか？無効化すると新規の入荷・出荷登録で選択できなくなります。',
+      confirmDeactivate:
+        'この取引先を無効化しますか？無効化すると新規の入荷・出荷登録で選択できなくなります。',
       confirmActivate: 'この取引先を有効化しますか？',
       validation: {
         codeRequired: '取引先コードは必須です',
@@ -208,7 +213,8 @@ export default {
       fetchError: 'データの取得に失敗しました。しばらくしてから再度お試しください。',
       notFound: '指定された商品は存在しないか、削除されています。',
       cannotDeactivateHasInventory: '在庫が存在するため無効化できません。',
-      confirmDeactivate: 'この商品を無効化します。無効化すると入荷・出荷・棚卸の新規登録で選択できなくなります。よろしいですか？',
+      confirmDeactivate:
+        'この商品を無効化します。無効化すると入荷・出荷・棚卸の新規登録で選択できなくなります。よろしいですか？',
       confirmActivate: 'この商品を有効化します。よろしいですか？',
       confirmCancel: '入力内容が失われます。キャンセルしてよろしいですか？',
       cannotChangeLotFlag: '在庫が存在するため、ロット管理フラグは変更できません。',
@@ -391,7 +397,8 @@ export default {
       notFound: '指定されたロケーションが見つかりません。',
       cannotDeactivateHasInventory: 'このロケーションには在庫が存在するため無効化できません。',
       cannotDeactivateStocktakeInProgress: 'このロケーションは棚卸中のため無効化できません。',
-      areaLocationLimitExceeded: 'このエリアにはロケーションが既に登録されています（入荷・出荷・返品エリアはロケーション1件のみ登録可能）。',
+      areaLocationLimitExceeded:
+        'このエリアにはロケーションが既に登録されています（入荷・出荷・返品エリアはロケーション1件のみ登録可能）。',
       confirmDeactivate: 'このロケーションを無効化してよろしいですか？',
       confirmActivate: 'このロケーションを有効化しますか？',
       confirmCancel: '入力内容が失われますが、キャンセルしてよろしいですか？',
@@ -553,7 +560,8 @@ export default {
       // メッセージ
       confirmMessage: '入荷確認します。よろしいですか？',
       cancelMessage: '入荷をキャンセルします。キャンセル後は修正できません。よろしいですか？',
-      cancelPartialStoredMessage: '一部の商品が既に入庫されています。キャンセルすると入庫済みの在庫がロールバックされます。キャンセルしてよろしいですか？',
+      cancelPartialStoredMessage:
+        '一部の商品が既に入庫されています。キャンセルすると入庫済みの在庫がロールバックされます。キャンセルしてよろしいですか？',
       confirmSuccess: '入荷確認しました',
       cancelSuccess: '入荷をキャンセルしました',
       fetchError: '入荷予定の取得に失敗しました',
@@ -685,14 +693,16 @@ export default {
     breakdownSuccess: 'ばらし登録が完了しました。',
     breakdownError: 'ばらし登録に失敗しました。時間をおいて再試行してください。',
     breakdownQtyExceedsAvailable: 'ばらし数量が有効在庫数を超えています。',
-    conversionRateNotSet: '商品マスタに変換レートが設定されていません。マスタ管理者に確認してください。',
+    conversionRateNotSet:
+      '商品マスタに変換レートが設定されていません。マスタ管理者に確認してください。',
     // INV-004 在庫訂正
     correctionTitle: '在庫訂正登録',
     newQty: '訂正後数量',
     diff: '差異',
     reason: '訂正理由',
     reasonPlaceholder: '訂正理由を入力してください（最大200文字）',
-    correctionConfirmMessage: '{loc} の {product}（{unitType}）を {current}個 → {newQty}個 に訂正しますか？（差異: {diff}個）',
+    correctionConfirmMessage:
+      '{loc} の {product}（{unitType}）を {current}個 → {newQty}個 に訂正しますか？（差異: {diff}個）',
     correctionConfirmZeroMessage: '訂正後数量が0です。在庫がゼロになりますが、よろしいですか？',
     correctionSuccess: '在庫訂正を登録しました。',
     correctionError: '在庫訂正の登録に失敗しました。時間をおいて再試行してください。',
@@ -726,17 +736,20 @@ export default {
     stocktakeDateRangeError: '実施日の期間指定が正しくありません。',
     // INV-012 棚卸開始
     stocktakeNewTitle: '棚卸開始',
-    stocktakeLockWarning: '棚卸中のロケーションへの入出庫は制限されます。開始前に入出庫作業が完了していることを確認してください。',
+    stocktakeLockWarning:
+      '棚卸中のロケーションへの入出庫は制限されます。開始前に入出庫作業が完了していることを確認してください。',
     stocktakeSelectBuilding: '棟を選択してください',
     stocktakeSelectArea: 'すべてのエリア',
     stocktakeTargetLocations: '対象ロケーション数',
     stocktakeTargetDescription: '対象範囲',
     stocktakeNote: '備考',
     stocktakeNotePlaceholder: '備考を入力してください（最大200文字）',
-    stocktakeStartConfirm: '対象 {count} ロケーションの棚卸を開始します。開始後、該当ロケーションへの入出庫は制限されます。よろしいですか？',
+    stocktakeStartConfirm:
+      '対象 {count} ロケーションの棚卸を開始します。開始後、該当ロケーションへの入出庫は制限されます。よろしいですか？',
     stocktakeStartSuccess: '棚卸を開始しました（棚卸ID: {number}）',
     stocktakeStartError: '棚卸開始に失敗しました。時間をおいて再度お試しください。',
-    stocktakeConflictError: '対象ロケーションに実施中の棚卸が存在します。確定後に再度開始してください。',
+    stocktakeConflictError:
+      '対象ロケーションに実施中の棚卸が存在します。確定後に再度開始してください。',
     stocktakeBuildingRequired: '棟は必須です。',
     stocktakeDateRequired: '実施日は必須です。',
     stocktakePrintList: '棚卸リスト出力',
@@ -767,10 +780,12 @@ export default {
     stocktakeDiffRate: '差異率',
     stocktakeDiffOnlyFilter: '差異ありのみ表示',
     stocktakeConfirmAction: '棚卸を確定する',
-    stocktakeConfirmMessage: '棚卸を確定します。在庫数が実数に更新されます。この操作は取り消せません。よろしいですか？',
+    stocktakeConfirmMessage:
+      '棚卸を確定します。在庫数が実数に更新されます。この操作は取り消せません。よろしいですか？',
     stocktakeConfirmSuccess: '棚卸を確定しました。在庫数を更新しました（棚卸ID: {number}）',
     stocktakeConfirmError: '棚卸確定に失敗しました。時間をおいて再度お試しください。',
-    stocktakeConfirmNotAllCounted: '実数が未入力の項目があります。実数入力画面で全項目を入力してください。',
+    stocktakeConfirmNotAllCounted:
+      '実数が未入力の項目があります。実数入力画面で全項目を入力してください。',
     stocktakeConfirmAlreadyDone: 'この棚卸は既に確定済みです。',
     stocktakeBackToInput: '実数入力へ戻る',
     stocktakeResultReport: '棚卸結果レポート出力',
@@ -791,6 +806,7 @@ export default {
     conflict: '既に登録されているデータと重複しています',
     optimisticLock: '他のユーザーにより更新されました。画面を再読み込みしてください。',
     forbidden: 'この操作を行う権限がありません',
-    forbiddenDescription: 'このページにアクセスする権限がありません。必要な場合はシステム管理者にお問い合わせください。',
+    forbiddenDescription:
+      'このページにアクセスする権限がありません。必要な場合はシステム管理者にお問い合わせください。',
   },
 }

@@ -8,12 +8,7 @@
       </template>
 
       <!-- 警告バナー -->
-      <el-alert
-        type="warning"
-        :closable="false"
-        show-icon
-        style="margin-bottom: 20px"
-      >
+      <el-alert type="warning" :closable="false" show-icon style="margin-bottom: 20px">
         {{ t('inventory.stocktakeLockWarning') }}
       </el-alert>
 
@@ -46,19 +41,19 @@
             :placeholder="t('inventory.stocktakeSelectArea')"
             @change="onAreaChange"
           >
-            <el-option
-              v-for="a in areaOptions"
-              :key="a.id"
-              :label="a.areaName"
-              :value="a.id"
-            />
+            <el-option v-for="a in areaOptions" :key="a.id" :label="a.areaName" :value="a.id" />
           </el-select>
         </el-form-item>
 
         <!-- プレビュー -->
-        <el-form-item v-if="targetLocationCount != null" :label="t('inventory.stocktakeTargetLocations')">
+        <el-form-item
+          v-if="targetLocationCount != null"
+          :label="t('inventory.stocktakeTargetLocations')"
+        >
           <el-card shadow="never" class="preview-card">
-            <div class="preview-count">{{ targetLocationCount }} {{ t('inventory.stocktakeTargetLocations') }}</div>
+            <div class="preview-count">
+              {{ targetLocationCount }} {{ t('inventory.stocktakeTargetLocations') }}
+            </div>
           </el-card>
         </el-form-item>
 

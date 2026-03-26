@@ -44,9 +44,12 @@ describe('useBuildingList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/buildings', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 1, page: 0, size: 20 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/buildings',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 1, page: 0, size: 20 }),
+      }),
+    )
     expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
@@ -120,7 +123,9 @@ describe('useBuildingList', () => {
 
     let resolveFirst!: (value: unknown) => void
     vi.mocked(apiClient.get).mockImplementationOnce(() => {
-      return new Promise((resolve) => { resolveFirst = resolve })
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
     })
 
     const firstFetch = result.fetchList()
@@ -191,12 +196,15 @@ describe('useBuildingList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/buildings', expect.objectContaining({
-      params: expect.objectContaining({
-        warehouseId: 1,
-        isActive: true,
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/buildings',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          warehouseId: 1,
+          isActive: true,
+        }),
       }),
-    }))
+    )
   })
 
   // --- エラーハンドリング ---
@@ -241,7 +249,13 @@ describe('useBuildingList', () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, buildingCode: 'BLD01', buildingName: 'テスト棟', isActive: true, version: 3 }
+    const row = {
+      id: 1,
+      buildingCode: 'BLD01',
+      buildingName: 'テスト棟',
+      isActive: true,
+      version: 3,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -268,7 +282,13 @@ describe('useBuildingList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, buildingCode: 'BLD01', buildingName: 'テスト棟', isActive: true, version: 3 }
+    const row = {
+      id: 1,
+      buildingCode: 'BLD01',
+      buildingName: 'テスト棟',
+      isActive: true,
+      version: 3,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -279,7 +299,13 @@ describe('useBuildingList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422))
 
     const { result } = setupWithWarehouse()
-    const row = { id: 1, buildingCode: 'BLD01', buildingName: 'テスト棟', isActive: true, version: 3 }
+    const row = {
+      id: 1,
+      buildingCode: 'BLD01',
+      buildingName: 'テスト棟',
+      isActive: true,
+      version: 3,
+    }
 
     await result.handleToggleActive(row as never)
 

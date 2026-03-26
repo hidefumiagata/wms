@@ -12,11 +12,7 @@
         </div>
       </template>
 
-      <el-form
-        label-width="200px"
-        style="max-width: 680px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="200px" style="max-width: 680px" @submit.prevent="handleSubmit">
         <!-- 倉庫コード -->
         <el-form-item :label="t('master.location.warehouseCode')">
           <span class="readonly-value">

@@ -14,8 +14,8 @@ import type { CreatePartnerRequest } from '@/api/generated/models/create-partner
 import type { UpdatePartnerRequest } from '@/api/generated/models/update-partner-request'
 
 // 全角カタカナ（長音・スペース含む）
-const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
-const PARTNER_CODE_REGEX = /^[A-Za-z0-9\-]+$/
+const KATAKANA_REGEX = /^[ァ-ヶー\u3000 ]*$/
+const PARTNER_CODE_REGEX = /^[A-Za-z0-9-]+$/
 const PHONE_REGEX = /^[\d\-()]*$/
 
 export function usePartnerForm() {
@@ -115,7 +115,9 @@ export function usePartnerForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // --- API呼び出し ---
   async function checkCodeExists() {
@@ -146,7 +148,9 @@ export function usePartnerForm() {
 
     initialLoading.value = true
     try {
-      const res = await apiClient.get<PartnerDetail>(`/master/partners/${partnerId.value}`, { signal })
+      const res = await apiClient.get<PartnerDetail>(`/master/partners/${partnerId.value}`, {
+        signal,
+      })
       setValues({
         partnerCode: res.data.partnerCode,
         partnerName: res.data.partnerName,
@@ -226,14 +230,22 @@ export function usePartnerForm() {
   }
 
   return {
-    partnerCode, partnerCodeAttrs,
-    partnerName, partnerNameAttrs,
-    partnerNameKana, partnerNameKanaAttrs,
-    partnerType, partnerTypeAttrs,
-    address, addressAttrs,
-    phone, phoneAttrs,
-    contactPerson, contactPersonAttrs,
-    email, emailAttrs,
+    partnerCode,
+    partnerCodeAttrs,
+    partnerName,
+    partnerNameAttrs,
+    partnerNameKana,
+    partnerNameKanaAttrs,
+    partnerType,
+    partnerTypeAttrs,
+    address,
+    addressAttrs,
+    phone,
+    phoneAttrs,
+    contactPerson,
+    contactPersonAttrs,
+    email,
+    emailAttrs,
     errors,
     loading,
     initialLoading,

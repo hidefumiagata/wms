@@ -60,11 +60,7 @@
       </template>
 
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
-        <el-table-column
-          prop="locationCode"
-          :label="t('master.location.locationCode')"
-          width="180"
-        >
+        <el-table-column prop="locationCode" :label="t('master.location.locationCode')" width="180">
           <template #default="{ row }">
             <el-link
               type="primary"
@@ -161,11 +157,14 @@ onMounted(() => {
   fetchList()
 })
 
-watch(() => warehouseStore.selectedWarehouseId, () => {
-  page.value = 1
-  fetchAreas()
-  fetchList()
-})
+watch(
+  () => warehouseStore.selectedWarehouseId,
+  () => {
+    page.value = 1
+    fetchAreas()
+    fetchList()
+  },
+)
 </script>
 
 <style scoped lang="scss">

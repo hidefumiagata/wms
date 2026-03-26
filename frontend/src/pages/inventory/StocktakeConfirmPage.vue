@@ -11,9 +11,19 @@
         </div>
         <div v-if="header" class="summary-bar">
           <span>{{ header.targetDescription }}</span>
-          <span style="margin-left: 16px">{{ t('inventory.stocktakeDate') }}: {{ formatDate(header.startedAt) }}</span>
-          <el-tag :type="header.status === 'CONFIRMED' ? 'success' : 'warning'" size="small" style="margin-left: 8px">
-            {{ header.status === 'CONFIRMED' ? t('inventory.stocktakeStatusConfirmed') : t('inventory.stocktakeStatusStarted') }}
+          <span style="margin-left: 16px">
+            {{ t('inventory.stocktakeDate') }}: {{ formatDate(header.startedAt) }}
+          </span>
+          <el-tag
+            :type="header.status === 'CONFIRMED' ? 'success' : 'warning'"
+            size="small"
+            style="margin-left: 8px"
+          >
+            {{
+              header.status === 'CONFIRMED'
+                ? t('inventory.stocktakeStatusConfirmed')
+                : t('inventory.stocktakeStatusStarted')
+            }}
           </el-tag>
         </div>
       </template>
@@ -43,7 +53,13 @@
       </div>
 
       <!-- 差異テーブル -->
-      <el-table :data="filteredLines" stripe border style="width: 100%" :row-class-name="rowClassName">
+      <el-table
+        :data="filteredLines"
+        stripe
+        border
+        style="width: 100%"
+        :row-class-name="rowClassName"
+      >
         <el-table-column prop="locationCode" :label="t('inventory.locationCode')" width="180" />
         <el-table-column prop="productName" :label="t('inventory.productName')" min-width="140" />
         <el-table-column :label="t('inventory.unitType')" width="80" align="center">
@@ -173,9 +189,15 @@ onMounted(() => {
   text-align: center;
   padding: 8px;
 }
-.summary-ok { border-left: 3px solid var(--el-color-success); }
-.summary-ng { border-left: 3px solid var(--el-color-warning); }
-.summary-total { border-left: 3px solid var(--el-color-info); }
+.summary-ok {
+  border-left: 3px solid var(--el-color-success);
+}
+.summary-ng {
+  border-left: 3px solid var(--el-color-warning);
+}
+.summary-total {
+  border-left: 3px solid var(--el-color-info);
+}
 .summary-label {
   font-size: 12px;
   color: var(--el-text-color-secondary);

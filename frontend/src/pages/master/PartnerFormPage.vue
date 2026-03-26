@@ -12,19 +12,12 @@
         </div>
       </template>
 
-      <el-form
-        label-width="160px"
-        style="max-width: 640px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="160px" style="max-width: 640px" @submit.prevent="handleSubmit">
         <!-- 基本情報 -->
         <el-divider content-position="left">{{ t('master.partner.sectionBasicInfo') }}</el-divider>
 
         <!-- 取引先コード -->
-        <el-form-item
-          :label="t('master.partner.partnerCode')"
-          :error="errors.partnerCode"
-        >
+        <el-form-item :label="t('master.partner.partnerCode')" :error="errors.partnerCode">
           <el-input
             v-if="!isEdit"
             v-model="partnerCode"
@@ -38,10 +31,7 @@
         </el-form-item>
 
         <!-- 取引先名 -->
-        <el-form-item
-          :label="t('master.partner.partnerName')"
-          :error="errors.partnerName"
-        >
+        <el-form-item :label="t('master.partner.partnerName')" :error="errors.partnerName">
           <el-input
             v-model="partnerName"
             v-bind="partnerNameAttrs"
@@ -52,10 +42,7 @@
         </el-form-item>
 
         <!-- 取引先名カナ -->
-        <el-form-item
-          :label="t('master.partner.partnerNameKana')"
-          :error="errors.partnerNameKana"
-        >
+        <el-form-item :label="t('master.partner.partnerNameKana')" :error="errors.partnerNameKana">
           <el-input
             v-model="partnerNameKana"
             v-bind="partnerNameKanaAttrs"
@@ -66,10 +53,7 @@
         </el-form-item>
 
         <!-- 種別 -->
-        <el-form-item
-          :label="t('master.partner.partnerType')"
-          :error="errors.partnerType"
-        >
+        <el-form-item :label="t('master.partner.partnerType')" :error="errors.partnerType">
           <el-radio-group v-model="partnerType" v-bind="partnerTypeAttrs">
             <el-radio value="SUPPLIER">{{ t('master.partner.typeSupplier') }}</el-radio>
             <el-radio value="CUSTOMER">{{ t('master.partner.typeCustomer') }}</el-radio>
@@ -78,13 +62,12 @@
         </el-form-item>
 
         <!-- 連絡先情報 -->
-        <el-divider content-position="left">{{ t('master.partner.sectionContactInfo') }}</el-divider>
+        <el-divider content-position="left">
+          {{ t('master.partner.sectionContactInfo') }}
+        </el-divider>
 
         <!-- 住所 -->
-        <el-form-item
-          :label="t('master.partner.address')"
-          :error="errors.address"
-        >
+        <el-form-item :label="t('master.partner.address')" :error="errors.address">
           <el-input
             v-model="address"
             v-bind="addressAttrs"
@@ -95,10 +78,7 @@
         </el-form-item>
 
         <!-- 電話番号 -->
-        <el-form-item
-          :label="t('master.partner.phone')"
-          :error="errors.phone"
-        >
+        <el-form-item :label="t('master.partner.phone')" :error="errors.phone">
           <el-input
             v-model="phone"
             v-bind="phoneAttrs"
@@ -109,10 +89,7 @@
         </el-form-item>
 
         <!-- 担当者名 -->
-        <el-form-item
-          :label="t('master.partner.contactPerson')"
-          :error="errors.contactPerson"
-        >
+        <el-form-item :label="t('master.partner.contactPerson')" :error="errors.contactPerson">
           <el-input
             v-model="contactPerson"
             v-bind="contactPersonAttrs"
@@ -123,10 +100,7 @@
         </el-form-item>
 
         <!-- メールアドレス -->
-        <el-form-item
-          :label="t('master.partner.email')"
-          :error="errors.email"
-        >
+        <el-form-item :label="t('master.partner.email')" :error="errors.email">
           <el-input
             v-model="email"
             v-bind="emailAttrs"
@@ -157,14 +131,22 @@ import { usePartnerForm } from '@/composables/master/usePartnerForm'
 const { t } = useI18n()
 
 const {
-  partnerCode, partnerCodeAttrs,
-  partnerName, partnerNameAttrs,
-  partnerNameKana, partnerNameKanaAttrs,
-  partnerType, partnerTypeAttrs,
-  address, addressAttrs,
-  phone, phoneAttrs,
-  contactPerson, contactPersonAttrs,
-  email, emailAttrs,
+  partnerCode,
+  partnerCodeAttrs,
+  partnerName,
+  partnerNameAttrs,
+  partnerNameKana,
+  partnerNameKanaAttrs,
+  partnerType,
+  partnerTypeAttrs,
+  address,
+  addressAttrs,
+  phone,
+  phoneAttrs,
+  contactPerson,
+  contactPersonAttrs,
+  email,
+  emailAttrs,
   errors,
   loading,
   initialLoading,

@@ -72,18 +72,24 @@
             {{ formatStocktakeDate(row.startedAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="targetDescription" :label="t('inventory.stocktakeBuilding')" min-width="160" />
+        <el-table-column
+          prop="targetDescription"
+          :label="t('inventory.stocktakeBuilding')"
+          min-width="160"
+        />
         <el-table-column :label="t('inventory.stocktakeStatus')" width="110" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'CONFIRMED' ? 'success' : 'warning'" size="small">
-              {{ row.status === 'CONFIRMED' ? t('inventory.stocktakeStatusConfirmed') : t('inventory.stocktakeStatusStarted') }}
+              {{
+                row.status === 'CONFIRMED'
+                  ? t('inventory.stocktakeStatusConfirmed')
+                  : t('inventory.stocktakeStatusStarted')
+              }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column :label="t('inventory.stocktakeProgress')" width="120" align="center">
-          <template #default="{ row }">
-            {{ row.countedLines }} / {{ row.totalLines }}
-          </template>
+          <template #default="{ row }">{{ row.countedLines }} / {{ row.totalLines }}</template>
         </el-table-column>
         <el-table-column prop="startedByName" :label="t('inventory.stocktakeStaff')" width="120" />
         <el-table-column :label="t('common.actions')" width="160" align="center">

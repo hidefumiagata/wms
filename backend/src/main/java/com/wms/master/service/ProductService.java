@@ -47,7 +47,9 @@ public class ProductService {
     }
 
     public List<Product> findAllByIds(java.util.Collection<Long> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
         return productRepository.findAllById(ids);
     }
 

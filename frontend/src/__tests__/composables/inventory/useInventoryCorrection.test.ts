@@ -17,7 +17,17 @@ describe('useInventoryCorrection', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
   const mockInventoryRes = {
     content: [
-      { productId: 1, productCode: 'P001', productName: 'Product 1', unitType: 'CASE', quantity: 10, allocatedQty: 3, availableQty: 7, lotNumber: null, expiryDate: null },
+      {
+        productId: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        unitType: 'CASE',
+        quantity: 10,
+        allocatedQty: 3,
+        availableQty: 7,
+        lotNumber: null,
+        expiryDate: null,
+      },
     ],
   }
 
@@ -101,7 +111,9 @@ describe('useInventoryCorrection', () => {
 
     await result.submitCorrection()
 
-    expect(ElMessage.error).toHaveBeenCalledWith(expect.stringContaining('inventory.correctionBelowAllocated'))
+    expect(ElMessage.error).toHaveBeenCalledWith(
+      expect.stringContaining('inventory.correctionBelowAllocated'),
+    )
     expect(apiClient.post).not.toHaveBeenCalled()
   })
 
@@ -148,13 +160,16 @@ describe('useInventoryCorrection', () => {
     await result.submitCorrection()
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.post).toHaveBeenCalledWith('/inventory/correction', expect.objectContaining({
-      locationId: 100,
-      productId: 1,
-      unitType: 'CASE',
-      newQty: 8,
-      reason: 'Counted mismatch',
-    }))
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/inventory/correction',
+      expect.objectContaining({
+        locationId: 100,
+        productId: 1,
+        unitType: 'CASE',
+        newQty: 8,
+        reason: 'Counted mismatch',
+      }),
+    )
     expect(ElMessage.success).toHaveBeenCalled()
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inventory-list' })
   })

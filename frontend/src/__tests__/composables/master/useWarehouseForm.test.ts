@@ -65,19 +65,24 @@ describe('useWarehouseForm', () => {
       const { result } = withSetup(() => useWarehouseForm())
       await result.fetchWarehouse()
 
-      expect(apiClient.get).toHaveBeenCalledWith('/master/warehouses/1', expect.objectContaining({
-        signal: expect.any(AbortSignal),
-      }))
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/warehouses/1',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        }),
+      )
     })
 
     it('fetchWarehouse が signal を渡す（AbortController対応）', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        warehouseCode: 'WHSA',
-        warehouseName: 'テスト',
-        warehouseNameKana: 'テスト',
-        address: '',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          warehouseCode: 'WHSA',
+          warehouseName: 'テスト',
+          warehouseNameKana: 'テスト',
+          address: '',
+          version: 1,
+        }),
+      )
 
       const { result } = withSetup(() => useWarehouseForm())
       await result.fetchWarehouse()
@@ -88,13 +93,15 @@ describe('useWarehouseForm', () => {
     })
 
     it('onUnmounted 時に進行中のリクエストがキャンセルされる', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        warehouseCode: 'WHSA',
-        warehouseName: 'テスト',
-        warehouseNameKana: 'テスト',
-        address: '',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          warehouseCode: 'WHSA',
+          warehouseName: 'テスト',
+          warehouseNameKana: 'テスト',
+          address: '',
+          version: 1,
+        }),
+      )
 
       const { result, wrapper } = withSetup(() => useWarehouseForm())
       const fetchPromise = result.fetchWarehouse()
@@ -193,23 +200,28 @@ describe('useWarehouseForm', () => {
 
       // バリデーションエラーがなければ POST が呼ばれる
       if (vi.mocked(apiClient.post).mock.calls.length > 0) {
-        expect(apiClient.post).toHaveBeenCalledWith('/master/warehouses', expect.objectContaining({
-          warehouseCode: 'WHSA',
-          warehouseName: 'テスト倉庫',
-        }))
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/master/warehouses',
+          expect.objectContaining({
+            warehouseCode: 'WHSA',
+            warehouseName: 'テスト倉庫',
+          }),
+        )
       }
     })
 
     it('編集時にPUT APIを呼ぶ', async () => {
       mockRouteParams = { id: '1' }
       vi.mocked(apiClient.put).mockResolvedValueOnce(mockAxiosResponse({}))
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        warehouseCode: 'WHSA',
-        warehouseName: 'テスト倉庫',
-        warehouseNameKana: 'テストソウコ',
-        address: '東京都',
-        version: 2,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          warehouseCode: 'WHSA',
+          warehouseName: 'テスト倉庫',
+          warehouseNameKana: 'テストソウコ',
+          address: '東京都',
+          version: 2,
+        }),
+      )
 
       const { result } = withSetup(() => useWarehouseForm())
       // まず既存データをロード
@@ -220,9 +232,12 @@ describe('useWarehouseForm', () => {
 
       // バリデーションが通れば PUT が呼ばれる
       if (vi.mocked(apiClient.put).mock.calls.length > 0) {
-        expect(apiClient.put).toHaveBeenCalledWith('/master/warehouses/1', expect.objectContaining({
-          version: 2,
-        }))
+        expect(apiClient.put).toHaveBeenCalledWith(
+          '/master/warehouses/1',
+          expect.objectContaining({
+            version: 2,
+          }),
+        )
       }
     })
   })

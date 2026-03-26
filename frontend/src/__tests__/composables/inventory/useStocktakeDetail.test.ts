@@ -20,8 +20,24 @@ describe('useStocktakeDetail', () => {
     status: 'IN_PROGRESS',
     lines: {
       content: [
-        { lineId: 1, locationCode: 'A-01', productCode: 'P001', quantityBefore: 10, quantityCounted: null, isCounted: false, quantityDiff: null },
-        { lineId: 2, locationCode: 'A-02', productCode: 'P002', quantityBefore: 5, quantityCounted: 5, isCounted: true, quantityDiff: 0 },
+        {
+          lineId: 1,
+          locationCode: 'A-01',
+          productCode: 'P001',
+          quantityBefore: 10,
+          quantityCounted: null,
+          isCounted: false,
+          quantityDiff: null,
+        },
+        {
+          lineId: 2,
+          locationCode: 'A-02',
+          productCode: 'P002',
+          quantityBefore: 5,
+          quantityCounted: 5,
+          isCounted: true,
+          quantityDiff: 0,
+        },
       ],
     },
   }
@@ -54,7 +70,15 @@ describe('useStocktakeDetail', () => {
       ...mockDetail,
       lines: {
         content: [
-          { lineId: 1, locationCode: 'A-01', productCode: 'P001', quantityBefore: 10, quantityCounted: 10, isCounted: true, quantityDiff: 0 },
+          {
+            lineId: 1,
+            locationCode: 'A-01',
+            productCode: 'P001',
+            quantityBefore: 10,
+            quantityCounted: 10,
+            isCounted: true,
+            quantityDiff: 0,
+          },
         ],
       },
     }

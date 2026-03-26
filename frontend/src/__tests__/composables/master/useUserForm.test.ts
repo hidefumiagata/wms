@@ -74,24 +74,29 @@ describe('useUserForm', () => {
       const { result } = withSetup(() => useUserForm())
       await result.fetchUser()
 
-      expect(apiClient.get).toHaveBeenCalledWith('/master/users/1', expect.objectContaining({
-        signal: expect.any(AbortSignal),
-      }))
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/users/1',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        }),
+      )
     })
 
     it('fetchUser が signal を渡す（AbortController対応）', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        userCode: 'USER001',
-        fullName: 'テスト',
-        email: 'test@example.com',
-        role: 'ADMIN',
-        isActive: true,
-        version: 1,
-        locked: false,
-        passwordChangeRequired: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          userCode: 'USER001',
+          fullName: 'テスト',
+          email: 'test@example.com',
+          role: 'ADMIN',
+          isActive: true,
+          version: 1,
+          locked: false,
+          passwordChangeRequired: false,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }),
+      )
 
       const { result } = withSetup(() => useUserForm())
       await result.fetchUser()
@@ -102,18 +107,20 @@ describe('useUserForm', () => {
     })
 
     it('onUnmounted 時に進行中のリクエストがキャンセルされる', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        userCode: 'USER001',
-        fullName: 'テスト',
-        email: 'test@example.com',
-        role: 'ADMIN',
-        isActive: true,
-        version: 1,
-        locked: false,
-        passwordChangeRequired: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          userCode: 'USER001',
+          fullName: 'テスト',
+          email: 'test@example.com',
+          role: 'ADMIN',
+          isActive: true,
+          version: 1,
+          locked: false,
+          passwordChangeRequired: false,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }),
+      )
 
       const { result, wrapper } = withSetup(() => useUserForm())
       const fetchPromise = result.fetchUser()
@@ -214,31 +221,36 @@ describe('useUserForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.post).mock.calls.length > 0) {
-        expect(apiClient.post).toHaveBeenCalledWith('/master/users', expect.objectContaining({
-          userCode: 'USER001',
-          fullName: 'テストユーザー',
-          email: 'test@example.com',
-          role: 'ADMIN',
-          initialPassword: 'Password123',
-        }))
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/master/users',
+          expect.objectContaining({
+            userCode: 'USER001',
+            fullName: 'テストユーザー',
+            email: 'test@example.com',
+            role: 'ADMIN',
+            initialPassword: 'Password123',
+          }),
+        )
       }
     })
 
     it('編集時にPUT APIを呼ぶ', async () => {
       mockRouteParams = { id: '1' }
       vi.mocked(apiClient.put).mockResolvedValueOnce(mockAxiosResponse({}))
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        userCode: 'USER001',
-        fullName: 'テストユーザー',
-        email: 'test@example.com',
-        role: 'ADMIN',
-        isActive: true,
-        version: 2,
-        locked: false,
-        passwordChangeRequired: false,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          userCode: 'USER001',
+          fullName: 'テストユーザー',
+          email: 'test@example.com',
+          role: 'ADMIN',
+          isActive: true,
+          version: 2,
+          locked: false,
+          passwordChangeRequired: false,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+        }),
+      )
 
       const { result } = withSetup(() => useUserForm())
       await result.fetchUser()
@@ -246,9 +258,12 @@ describe('useUserForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.put).mock.calls.length > 0) {
-        expect(apiClient.put).toHaveBeenCalledWith('/master/users/1', expect.objectContaining({
-          version: 2,
-        }))
+        expect(apiClient.put).toHaveBeenCalledWith(
+          '/master/users/1',
+          expect.objectContaining({
+            version: 2,
+          }),
+        )
       }
     })
   })

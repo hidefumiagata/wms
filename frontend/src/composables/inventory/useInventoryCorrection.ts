@@ -42,14 +42,18 @@ export function useInventoryCorrection() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // 選択中の在庫
   const selectedInventory = computed<InventoryOption | null>(() => {
     if (!selectedProductId.value || !selectedUnitType.value) return null
-    return inventoryOptions.value.find(
-      i => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value
-    ) ?? null
+    return (
+      inventoryOptions.value.find(
+        (i) => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value,
+      ) ?? null
+    )
   })
 
   // 差異（自動計算）
@@ -61,7 +65,7 @@ export function useInventoryCorrection() {
   // 商品選択肢
   const productOptions = computed(() => {
     const seen = new Set<number>()
-    return inventoryOptions.value.filter(i => {
+    return inventoryOptions.value.filter((i) => {
       if (seen.has(i.productId)) return false
       seen.add(i.productId)
       return true
@@ -71,7 +75,7 @@ export function useInventoryCorrection() {
   // 荷姿選択肢
   const unitTypeOptions = computed(() => {
     if (!selectedProductId.value) return []
-    return inventoryOptions.value.filter(i => i.productId === selectedProductId.value)
+    return inventoryOptions.value.filter((i) => i.productId === selectedProductId.value)
   })
 
   // --- ロケーション検索 ---
@@ -86,7 +90,8 @@ export function useInventoryCorrection() {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: locationCode.value.trim(),
-          page: 0, size: 1,
+          page: 0,
+          size: 1,
         },
         signal: abortController.signal,
       })
@@ -105,12 +110,13 @@ export function useInventoryCorrection() {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCodePrefix: locationCode.value.trim(),
           viewType: 'LOCATION',
-          page: 0, size: 100,
+          page: 0,
+          size: 100,
         },
         signal: abortController.signal,
       })
       const items: InventoryLocationItem[] = res.data.content ?? []
-      inventoryOptions.value = items.map(i => ({
+      inventoryOptions.value = items.map((i) => ({
         productId: i.productId,
         productCode: i.productCode,
         productName: i.productName,
@@ -154,7 +160,11 @@ export function useInventoryCorrection() {
       return
     }
     if (newQty.value < selectedInventory.value.allocatedQty) {
-      ElMessage.error(t('inventory.correctionBelowAllocated', { allocated: selectedInventory.value.allocatedQty }))
+      ElMessage.error(
+        t('inventory.correctionBelowAllocated', {
+          allocated: selectedInventory.value.allocatedQty,
+        }),
+      )
       return
     }
     if (!reason.value.trim() || reason.value.length > 200) {
@@ -172,9 +182,10 @@ export function useInventoryCorrection() {
       diff: diff.value,
     })
 
-    const fullMsg = newQty.value === 0
-      ? `${confirmMsg}\n\n${t('inventory.correctionConfirmZeroMessage')}`
-      : confirmMsg
+    const fullMsg =
+      newQty.value === 0
+        ? `${confirmMsg}\n\n${t('inventory.correctionConfirmZeroMessage')}`
+        : confirmMsg
 
     try {
       await ElMessageBox.confirm(fullMsg, t('common.confirm'), { type: 'warning' })

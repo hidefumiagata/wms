@@ -17,7 +17,6 @@ import com.wms.system.service.AuthService;
 import com.wms.system.service.PasswordService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -129,7 +128,9 @@ public class AuthController implements AuthApi {
     }
 
     private String extractCookie(HttpServletRequest request, String name) {
-        if (request.getCookies() == null) return null;
+        if (request.getCookies() == null) {
+            return null;
+        }
         for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
             if (name.equals(cookie.getName())) {
                 return cookie.getValue();
@@ -152,9 +153,13 @@ public class AuthController implements AuthApi {
     }
 
     private HttpServletResponse getHttpServletResponse() {
-        return Objects.requireNonNull(
-                ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes())
-                        .getResponse(),
-                "HttpServletResponse is not available in current request context");
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+        HttpServletResponse response = attrs.getResponse();
+        if (response == null) {
+            throw new IllegalStateException(
+                    "HttpServletResponse is not available in current request context");
+        }
+        return response;
     }
 }

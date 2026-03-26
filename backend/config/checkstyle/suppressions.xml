@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Test classes: relax rules for readability and test conventions -->
+    <suppress checks="MethodName" files=".*Test\.java$"/>
+    <suppress checks="FileLength" files=".*Test\.java$"/>
+    <suppress checks="AvoidStarImport" files=".*Test\.java$"/>
+    <suppress checks="UnusedImports" files=".*Test\.java$"/>
+    <suppress checks="RedundantImport" files=".*Test\.java$"/>
+    <suppress checks="NeedBraces" files=".*Test\.java$"/>
+    <suppress checks="OneStatementPerLine" files=".*Test\.java$"/>
+    <suppress checks="LeftCurly" files=".*Test\.java$"/>
+    <suppress checks="RightCurly" files=".*Test\.java$"/>
+    <suppress checks="WhitespaceAround" files=".*Test\.java$"/>
+    <!-- Complex business logic services that legitimately exceed 500 lines -->
+    <suppress checks="FileLength" files="AllocationService\.java$"/>
+    <suppress checks="FileLength" files="InboundSlipService\.java$"/>
+</suppressions>

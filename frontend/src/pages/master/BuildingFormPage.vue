@@ -12,11 +12,7 @@
         </div>
       </template>
 
-      <el-form
-        label-width="160px"
-        style="max-width: 640px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="160px" style="max-width: 640px" @submit.prevent="handleSubmit">
         <!-- 倉庫コード -->
         <el-form-item :label="t('master.building.warehouseCode')">
           <span class="readonly-value">
@@ -26,10 +22,7 @@
         </el-form-item>
 
         <!-- 棟コード -->
-        <el-form-item
-          :label="t('master.building.buildingCode')"
-          :error="errors.buildingCode"
-        >
+        <el-form-item :label="t('master.building.buildingCode')" :error="errors.buildingCode">
           <el-input
             v-if="!isEdit"
             v-model="buildingCode"
@@ -45,10 +38,7 @@
         </el-form-item>
 
         <!-- 棟名称 -->
-        <el-form-item
-          :label="t('master.building.buildingName')"
-          :error="errors.buildingName"
-        >
+        <el-form-item :label="t('master.building.buildingName')" :error="errors.buildingName">
           <el-input
             v-model="buildingName"
             v-bind="buildingNameAttrs"

@@ -21,7 +21,9 @@ export function useOutboundSlipDetail() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   const slipId = computed(() => {
     const id = route.params.id
@@ -33,29 +35,27 @@ export function useOutboundSlipDetail() {
   const isViewer = computed(() => auth.user?.role === 'VIEWER')
 
   // ステータス別ボタン表示
-  const canAllocate = computed(() =>
-    !isViewer.value && (
-      slip.value?.status === OutboundSlipStatus.Ordered ||
-      slip.value?.status === OutboundSlipStatus.PartialAllocated
-    )
+  const canAllocate = computed(
+    () =>
+      !isViewer.value &&
+      (slip.value?.status === OutboundSlipStatus.Ordered ||
+        slip.value?.status === OutboundSlipStatus.PartialAllocated),
   )
   // SCR-10: SHIPPED/CANCELLED以外でキャンセル可
-  const canCancel = computed(() =>
-    !isViewer.value &&
-    slip.value?.status !== OutboundSlipStatus.Shipped &&
-    slip.value?.status !== OutboundSlipStatus.Cancelled
+  const canCancel = computed(
+    () =>
+      !isViewer.value &&
+      slip.value?.status !== OutboundSlipStatus.Shipped &&
+      slip.value?.status !== OutboundSlipStatus.Cancelled,
   )
-  const canPickingNew = computed(() =>
-    !isViewer.value &&
-    slip.value?.status === OutboundSlipStatus.Allocated
+  const canPickingNew = computed(
+    () => !isViewer.value && slip.value?.status === OutboundSlipStatus.Allocated,
   )
-  const canInspect = computed(() =>
-    !isViewer.value &&
-    slip.value?.status === OutboundSlipStatus.PickingCompleted
+  const canInspect = computed(
+    () => !isViewer.value && slip.value?.status === OutboundSlipStatus.PickingCompleted,
   )
-  const canShip = computed(() =>
-    !isViewer.value &&
-    slip.value?.status === OutboundSlipStatus.Inspecting
+  const canShip = computed(
+    () => !isViewer.value && slip.value?.status === OutboundSlipStatus.Inspecting,
   )
 
   async function fetchDetail() {
@@ -69,7 +69,9 @@ export function useOutboundSlipDetail() {
 
     loading.value = true
     try {
-      const res = await apiClient.get<OutboundSlipDetail>(`/outbound/slips/${slipId.value}`, { signal })
+      const res = await apiClient.get<OutboundSlipDetail>(`/outbound/slips/${slipId.value}`, {
+        signal,
+      })
       slip.value = res.data
     } catch (err: unknown) {
       if (axios.isCancel(err)) return
@@ -90,12 +92,14 @@ export function useOutboundSlipDetail() {
 
   async function handleAllocate() {
     try {
-      await ElMessageBox.confirm(
-        t('outbound.slip.allocateSingleMessage'),
-        t('common.confirm'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
-      )
-    } catch { return }
+      await ElMessageBox.confirm(t('outbound.slip.allocateSingleMessage'), t('common.confirm'), {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
+    } catch {
+      return
+    }
 
     actionLoading.value = true
     try {
@@ -119,12 +123,14 @@ export function useOutboundSlipDetail() {
 
   async function handleCancel() {
     try {
-      await ElMessageBox.confirm(
-        t('outbound.slip.cancelMessage'),
-        t('common.confirm'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
-      )
-    } catch { return }
+      await ElMessageBox.confirm(t('outbound.slip.cancelMessage'), t('common.confirm'), {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
+    } catch {
+      return
+    }
 
     actionLoading.value = true
     try {
@@ -145,13 +151,32 @@ export function useOutboundSlipDetail() {
     }
   }
 
-  function goBack() { router.push({ name: 'outbound-slip-list' }) }
-  function goInspect() { router.push({ name: 'outbound-slip-inspect', params: { id: slipId.value } }) }
-  function goShip() { router.push({ name: 'outbound-slip-ship', params: { id: slipId.value } }) }
+  function goBack() {
+    router.push({ name: 'outbound-slip-list' })
+  }
+  function goInspect() {
+    router.push({ name: 'outbound-slip-inspect', params: { id: slipId.value } })
+  }
+  function goShip() {
+    router.push({ name: 'outbound-slip-ship', params: { id: slipId.value } })
+  }
 
   return {
-    slip, loading, actionLoading, slipId, isViewer,
-    canAllocate, canCancel, canPickingNew, canInspect, canShip,
-    fetchDetail, handleAllocate, handleCancel, goBack, goInspect, goShip,
+    slip,
+    loading,
+    actionLoading,
+    slipId,
+    isViewer,
+    canAllocate,
+    canCancel,
+    canPickingNew,
+    canInspect,
+    canShip,
+    fetchDetail,
+    handleAllocate,
+    handleCancel,
+    goBack,
+    goInspect,
+    goShip,
   }
 }

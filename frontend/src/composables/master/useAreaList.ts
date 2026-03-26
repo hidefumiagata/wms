@@ -68,7 +68,10 @@ export function useAreaList() {
       if (searchForm.areaType) params.areaType = searchForm.areaType
       if (searchForm.isActive !== null) params.isActive = searchForm.isActive
 
-      const res = await apiClient.get<PageResponse<AreaListItem>>('/master/areas', { params, signal })
+      const res = await apiClient.get<PageResponse<AreaListItem>>('/master/areas', {
+        params,
+        signal,
+      })
       items.value = res.data.content
       total.value = res.data.totalElements
     } catch (err: unknown) {

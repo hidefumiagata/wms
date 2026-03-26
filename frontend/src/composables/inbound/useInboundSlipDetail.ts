@@ -22,7 +22,9 @@ export function useInboundSlipDetail() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   const slipId = computed(() => {
     const id = route.params.id
@@ -32,26 +34,27 @@ export function useInboundSlipDetail() {
   const isViewer = computed(() => auth.user?.role === 'VIEWER')
 
   // ステータス別ボタン表示制御
-  const canConfirm = computed(() =>
-    !isViewer.value && slip.value?.status === InboundSlipStatus.Planned
+  const canConfirm = computed(
+    () => !isViewer.value && slip.value?.status === InboundSlipStatus.Planned,
   )
-  const canCancel = computed(() =>
-    !isViewer.value &&
-    slip.value?.status !== InboundSlipStatus.Stored &&
-    slip.value?.status !== InboundSlipStatus.Cancelled
+  const canCancel = computed(
+    () =>
+      !isViewer.value &&
+      slip.value?.status !== InboundSlipStatus.Stored &&
+      slip.value?.status !== InboundSlipStatus.Cancelled,
   )
-  const canInspect = computed(() =>
-    !isViewer.value && (
-      slip.value?.status === InboundSlipStatus.Confirmed ||
-      slip.value?.status === InboundSlipStatus.Inspecting ||
-      slip.value?.status === InboundSlipStatus.PartialStored
-    )
+  const canInspect = computed(
+    () =>
+      !isViewer.value &&
+      (slip.value?.status === InboundSlipStatus.Confirmed ||
+        slip.value?.status === InboundSlipStatus.Inspecting ||
+        slip.value?.status === InboundSlipStatus.PartialStored),
   )
-  const canStore = computed(() =>
-    !isViewer.value && (
-      slip.value?.status === InboundSlipStatus.Inspecting ||
-      slip.value?.status === InboundSlipStatus.PartialStored
-    )
+  const canStore = computed(
+    () =>
+      !isViewer.value &&
+      (slip.value?.status === InboundSlipStatus.Inspecting ||
+        slip.value?.status === InboundSlipStatus.PartialStored),
   )
 
   // --- API呼び出し ---
@@ -63,7 +66,9 @@ export function useInboundSlipDetail() {
 
     loading.value = true
     try {
-      const res = await apiClient.get<InboundSlipDetail>(`/inbound/slips/${slipId.value}`, { signal })
+      const res = await apiClient.get<InboundSlipDetail>(`/inbound/slips/${slipId.value}`, {
+        signal,
+      })
       slip.value = res.data
     } catch (err: unknown) {
       if (axios.isCancel(err)) return

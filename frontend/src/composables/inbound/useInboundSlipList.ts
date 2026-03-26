@@ -49,13 +49,28 @@ export function useInboundSlipList() {
     try {
       const [resSupplier, resBoth] = await Promise.all([
         apiClient.get('/master/partners', {
-          params: { page: 0, size: 1000, isActive: true, partnerType: 'SUPPLIER', sort: 'partnerName,asc' },
+          params: {
+            page: 0,
+            size: 1000,
+            isActive: true,
+            partnerType: 'SUPPLIER',
+            sort: 'partnerName,asc',
+          },
         }),
         apiClient.get('/master/partners', {
-          params: { page: 0, size: 1000, isActive: true, partnerType: 'BOTH', sort: 'partnerName,asc' },
+          params: {
+            page: 0,
+            size: 1000,
+            isActive: true,
+            partnerType: 'BOTH',
+            sort: 'partnerName,asc',
+          },
         }),
       ])
-      const toOption = (p: { id: number; partnerName: string }) => ({ id: p.id, partnerName: p.partnerName })
+      const toOption = (p: { id: number; partnerName: string }) => ({
+        id: p.id,
+        partnerName: p.partnerName,
+      })
       partnerOptions.value = [
         ...resSupplier.data.content.map(toOption),
         ...resBoth.data.content.map(toOption),

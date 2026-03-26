@@ -80,12 +80,12 @@ export function useLocationForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // 選択中のエリア情報
-  const selectedArea = computed(() =>
-    areas.value.find((a) => a.id === areaId.value) ?? null,
-  )
+  const selectedArea = computed(() => areas.value.find((a) => a.id === areaId.value) ?? null)
 
   // EVT-MST052-002: 在庫エリア選択時にロケーションコードの棟部分を自動補完
   watch(areaId, (newId) => {
@@ -123,7 +123,9 @@ export function useLocationForm() {
 
     initialLoading.value = true
     try {
-      const res = await apiClient.get<LocationFullDetail>(`/master/locations/${locationId.value}`, { signal })
+      const res = await apiClient.get<LocationFullDetail>(`/master/locations/${locationId.value}`, {
+        signal,
+      })
       setValues({
         areaId: res.data.areaId,
         locationCode: res.data.locationCode,

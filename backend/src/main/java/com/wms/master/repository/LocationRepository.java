@@ -1,6 +1,5 @@
 package com.wms.master.repository;
 
-import com.wms.master.entity.Area;
 import com.wms.master.entity.Location;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

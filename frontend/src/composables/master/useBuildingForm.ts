@@ -72,7 +72,9 @@ export function useBuildingForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   async function fetchBuilding() {
     if (!buildingId.value) {
@@ -85,7 +87,9 @@ export function useBuildingForm() {
 
     initialLoading.value = true
     try {
-      const res = await apiClient.get<BuildingDetail>(`/master/buildings/${buildingId.value}`, { signal })
+      const res = await apiClient.get<BuildingDetail>(`/master/buildings/${buildingId.value}`, {
+        signal,
+      })
       setValues({
         buildingCode: res.data.buildingCode,
         buildingName: res.data.buildingName,

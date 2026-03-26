@@ -1,7 +1,19 @@
 package com.wms.inbound.controller;
 
 import com.wms.generated.api.InboundApi;
-import com.wms.generated.model.*;
+import com.wms.generated.model.CreateInboundSlipRequest;
+import com.wms.generated.model.InboundLineStatus;
+import com.wms.generated.model.InboundResultItem;
+import com.wms.generated.model.InboundResultPageResponse;
+import com.wms.generated.model.InboundSlipDetail;
+import com.wms.generated.model.InboundSlipLineDetail;
+import com.wms.generated.model.InboundSlipStatus;
+import com.wms.generated.model.InboundSlipSummary;
+import com.wms.generated.model.InboundSlipSummaryPageResponse;
+import com.wms.generated.model.InboundSlipType;
+import com.wms.generated.model.InspectInboundRequest;
+import com.wms.generated.model.StoreInboundRequest;
+import com.wms.generated.model.UnitType;
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;

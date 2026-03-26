@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude OpenAPI generated code -->
+    <Match>
+        <Package name="~com\.wms\.generated\..*"/>
+    </Match>
+
+    <!-- Exclude Lombok-generated code (covered by @lombok.Generated) -->
+    <Match>
+        <Annotation name="lombok.Generated"/>
+    </Match>
+
+    <!-- Spring Boot application class -->
+    <Match>
+        <Class name="com.wms.WmsApplication"/>
+    </Match>
+
+    <!-- Suppress EI_EXPOSE_REP / EI_EXPOSE_REP2 globally.
+         Spring DI constructor injection and record-style DTOs
+         trigger these as false positives throughout the codebase. -->
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+</FindBugsFilter>

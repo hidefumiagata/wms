@@ -129,7 +129,7 @@ export function useWarehouseList() {
       ElMessage.success(
         isDeactivating
           ? t('master.warehouse.deactivateSuccess')
-          : t('master.warehouse.activateSuccess')
+          : t('master.warehouse.activateSuccess'),
       )
       await fetchList()
     } catch (err: unknown) {

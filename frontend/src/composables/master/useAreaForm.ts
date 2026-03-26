@@ -13,7 +13,7 @@ import type { AreaDetail } from '@/api/generated/models/area-detail'
 import type { BuildingListItem } from '@/api/generated/models/building-list-item'
 import type { PageResponse } from '@/api/types'
 
-const AREA_CODE_REGEX = /^[A-Za-z0-9\-]+$/
+const AREA_CODE_REGEX = /^[A-Za-z0-9-]+$/
 
 export function useAreaForm() {
   const { t } = useI18n()
@@ -98,7 +98,9 @@ export function useAreaForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   async function fetchBuildings() {
     if (!warehouseStore.selectedWarehouseId) return

@@ -54,20 +54,24 @@ export function useInventoryBreakdown() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // 選択中の在庫
   const fromInventory = computed<InventoryOption | null>(() => {
     if (!selectedProductId.value || !fromUnitType.value) return null
-    return fromInventoryOptions.value.find(
-      i => i.productId === selectedProductId.value && i.unitType === fromUnitType.value
-    ) ?? null
+    return (
+      fromInventoryOptions.value.find(
+        (i) => i.productId === selectedProductId.value && i.unitType === fromUnitType.value,
+      ) ?? null
+    )
   })
 
   // 商品選択肢
   const productOptions = computed(() => {
     const seen = new Set<number>()
-    return fromInventoryOptions.value.filter(i => {
+    return fromInventoryOptions.value.filter((i) => {
       if (seen.has(i.productId)) return false
       seen.add(i.productId)
       return true
@@ -77,8 +81,9 @@ export function useInventoryBreakdown() {
   // ばらし元荷姿選択肢（PIECEは不可）
   const fromUnitTypeOptions = computed(() => {
     if (!selectedProductId.value) return []
-    return fromInventoryOptions.value
-      .filter(i => i.productId === selectedProductId.value && i.unitType !== 'PIECE')
+    return fromInventoryOptions.value.filter(
+      (i) => i.productId === selectedProductId.value && i.unitType !== 'PIECE',
+    )
   })
 
   // ばらし先荷姿選択肢（ばらし元より小さい荷姿のみ）
@@ -94,7 +99,8 @@ export function useInventoryBreakdown() {
     if (!productInfo.value || !fromUnitType.value || !toUnitType.value) return null
     const p = productInfo.value
     if (fromUnitType.value === 'CASE' && toUnitType.value === 'BALL') return p.caseQuantity
-    if (fromUnitType.value === 'CASE' && toUnitType.value === 'PIECE') return p.caseQuantity * p.ballQuantity
+    if (fromUnitType.value === 'CASE' && toUnitType.value === 'PIECE')
+      return p.caseQuantity * p.ballQuantity
     if (fromUnitType.value === 'BALL' && toUnitType.value === 'PIECE') return p.ballQuantity
     return null
   })
@@ -117,7 +123,8 @@ export function useInventoryBreakdown() {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: fromLocationCode.value.trim(),
-          page: 0, size: 1,
+          page: 0,
+          size: 1,
         },
         signal: abortController.signal,
       })
@@ -136,12 +143,13 @@ export function useInventoryBreakdown() {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCodePrefix: fromLocationCode.value.trim(),
           viewType: 'LOCATION',
-          page: 0, size: 100,
+          page: 0,
+          size: 100,
         },
         signal: abortController.signal,
       })
       const items: InventoryLocationItem[] = res.data.content ?? []
-      fromInventoryOptions.value = items.map(i => ({
+      fromInventoryOptions.value = items.map((i) => ({
         productId: i.productId,
         productCode: i.productCode,
         productName: i.productName,
@@ -199,7 +207,8 @@ export function useInventoryBreakdown() {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: toLocationCode.value.trim(),
-          page: 0, size: 1,
+          page: 0,
+          size: 1,
         },
       })
       const locs = locRes.data.content ?? []
@@ -219,7 +228,8 @@ export function useInventoryBreakdown() {
             productId: selectedProductId.value,
             unitType: toUnitType.value,
             viewType: 'LOCATION',
-            page: 0, size: 1,
+            page: 0,
+            size: 1,
           },
         })
         const items: InventoryLocationItem[] = invRes.data.content ?? []
@@ -257,7 +267,7 @@ export function useInventoryBreakdown() {
           result: convertedQty.value,
         }),
         t('common.confirm'),
-        { type: 'warning' }
+        { type: 'warning' },
       )
     } catch {
       return

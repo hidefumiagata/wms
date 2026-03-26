@@ -13,7 +13,19 @@ vi.mock('@/api/generated/models/inventory-product-summary-page-response', () => 
 
 describe('useInventoryList', () => {
   const createLocationResponse = () => ({
-    content: [{ id: 1, locationCode: 'A-01', productId: 1, productCode: 'P001', productName: 'Product 1', unitType: 'CASE', quantity: 10, allocatedQty: 2, availableQty: 8 }],
+    content: [
+      {
+        id: 1,
+        locationCode: 'A-01',
+        productId: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        unitType: 'CASE',
+        quantity: 10,
+        allocatedQty: 2,
+        availableQty: 8,
+      },
+    ],
     totalElements: 1,
     totalPages: 1,
   })
@@ -37,10 +49,13 @@ describe('useInventoryList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/inventory', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 1, viewType: 'LOCATION' }),
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inventory',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 1, viewType: 'LOCATION' }),
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.locationItems.value).toHaveLength(1)
     expect(result.productSummaryItems.value).toHaveLength(0)
   })
@@ -57,9 +72,12 @@ describe('useInventoryList', () => {
     result.viewType.value = 'PRODUCT_SUMMARY'
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/inventory', expect.objectContaining({
-      params: expect.objectContaining({ viewType: 'PRODUCT_SUMMARY', sort: 'productCode,asc' }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inventory',
+      expect.objectContaining({
+        params: expect.objectContaining({ viewType: 'PRODUCT_SUMMARY', sort: 'productCode,asc' }),
+      }),
+    )
     expect(result.productSummaryItems.value).toHaveLength(1)
     expect(result.locationItems.value).toHaveLength(0)
   })
@@ -80,9 +98,11 @@ describe('useInventoryList', () => {
   })
 
   it('fetchProductOptions が商品オプションを取得する', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({
-      content: [{ id: 1, productCode: 'P001', productName: 'Product 1' }],
-    }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({
+        content: [{ id: 1, productCode: 'P001', productName: 'Product 1' }],
+      }),
+    )
 
     const { result } = withSetup(() => useInventoryList())
     await result.fetchProductOptions()

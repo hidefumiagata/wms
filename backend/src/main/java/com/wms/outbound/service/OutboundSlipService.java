@@ -1,6 +1,11 @@
 package com.wms.outbound.service;
 
-import com.wms.generated.model.*;
+import com.wms.generated.model.CancelOutboundRequest;
+import com.wms.generated.model.CreateOutboundLineRequest;
+import com.wms.generated.model.CreateOutboundSlipRequest;
+import com.wms.generated.model.OutboundLineStatus;
+import com.wms.generated.model.OutboundSlipStatus;
+import com.wms.generated.model.OutboundSlipType;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;

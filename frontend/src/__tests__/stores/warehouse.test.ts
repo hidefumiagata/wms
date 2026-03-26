@@ -45,9 +45,7 @@ describe('useWarehouseStore', () => {
 
   describe('fetchWarehouses', () => {
     it('sets warehouses on success', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA, warehouseB]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA, warehouseB]))
 
       await store.fetchWarehouses()
 
@@ -59,9 +57,7 @@ describe('useWarehouseStore', () => {
     })
 
     it('auto-selects when only one warehouse returned', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA]))
 
       await store.fetchWarehouses()
 
@@ -69,9 +65,7 @@ describe('useWarehouseStore', () => {
     })
 
     it('does not auto-select when multiple warehouses returned', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA, warehouseB]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA, warehouseB]))
 
       await store.fetchWarehouses()
 
@@ -83,9 +77,7 @@ describe('useWarehouseStore', () => {
       store.selectWarehouse(2)
 
       // Fetch returns only warehouse A (B is gone)
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA]))
 
       await store.fetchWarehouses()
 
@@ -96,9 +88,7 @@ describe('useWarehouseStore', () => {
     it('keeps selectedWarehouseId if selected warehouse still in list', async () => {
       store.selectWarehouse(2)
 
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA, warehouseB]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA, warehouseB]))
 
       await store.fetchWarehouses()
 
@@ -107,9 +97,7 @@ describe('useWarehouseStore', () => {
 
     it('clears warehouses on error', async () => {
       // Set initial data
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA]))
       await store.fetchWarehouses()
       vi.clearAllMocks()
 
@@ -133,9 +121,7 @@ describe('useWarehouseStore', () => {
 
   describe('selectedWarehouse computed', () => {
     it('returns matching warehouse', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA, warehouseB]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA, warehouseB]))
       await store.fetchWarehouses()
 
       store.selectWarehouse(2)
@@ -144,9 +130,7 @@ describe('useWarehouseStore', () => {
     })
 
     it('returns null when no match', async () => {
-      vi.mocked(apiClient.get).mockResolvedValue(
-        mockAxiosResponse([warehouseA]),
-      )
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse([warehouseA]))
       await store.fetchWarehouses()
 
       store.selectWarehouse(999)

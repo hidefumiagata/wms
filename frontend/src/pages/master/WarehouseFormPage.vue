@@ -12,16 +12,9 @@
         </div>
       </template>
 
-      <el-form
-        label-width="160px"
-        style="max-width: 640px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="160px" style="max-width: 640px" @submit.prevent="handleSubmit">
         <!-- 倉庫コード -->
-        <el-form-item
-          :label="t('master.warehouse.warehouseCode')"
-          :error="errors.warehouseCode"
-        >
+        <el-form-item :label="t('master.warehouse.warehouseCode')" :error="errors.warehouseCode">
           <el-input
             v-if="!isEdit"
             v-model="warehouseCode"
@@ -35,10 +28,7 @@
         </el-form-item>
 
         <!-- 倉庫名 -->
-        <el-form-item
-          :label="t('master.warehouse.warehouseName')"
-          :error="errors.warehouseName"
-        >
+        <el-form-item :label="t('master.warehouse.warehouseName')" :error="errors.warehouseName">
           <el-input
             v-model="warehouseName"
             v-bind="warehouseNameAttrs"
@@ -63,10 +53,7 @@
         </el-form-item>
 
         <!-- 住所 -->
-        <el-form-item
-          :label="t('master.warehouse.address')"
-          :error="errors.address"
-        >
+        <el-form-item :label="t('master.warehouse.address')" :error="errors.address">
           <el-input
             v-model="address"
             v-bind="addressAttrs"

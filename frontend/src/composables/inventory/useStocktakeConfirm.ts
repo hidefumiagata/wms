@@ -22,19 +22,25 @@ export function useStocktakeConfirm() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   const stocktakeId = computed(() => Number(route.params.id))
 
   // 差異サマリー
-  const diffCount = computed(() => lines.value.filter(l => l.quantityDiff != null && l.quantityDiff !== 0).length)
-  const noDiffCount = computed(() => lines.value.filter(l => l.quantityDiff != null && l.quantityDiff === 0).length)
+  const diffCount = computed(
+    () => lines.value.filter((l) => l.quantityDiff != null && l.quantityDiff !== 0).length,
+  )
+  const noDiffCount = computed(
+    () => lines.value.filter((l) => l.quantityDiff != null && l.quantityDiff === 0).length,
+  )
   const totalCount = computed(() => lines.value.length)
 
   // フィルタ済みリスト
   const filteredLines = computed(() => {
     if (!showDiffOnly.value) return lines.value
-    return lines.value.filter(l => l.quantityDiff != null && l.quantityDiff !== 0)
+    return lines.value.filter((l) => l.quantityDiff != null && l.quantityDiff !== 0)
   })
 
   // --- 明細取得 ---
@@ -46,7 +52,7 @@ export function useStocktakeConfirm() {
     try {
       const res = await apiClient.get<StocktakeDetail>(
         `/inventory/stocktakes/${stocktakeId.value}`,
-        { signal }
+        { signal },
       )
       header.value = res.data
       lines.value = res.data.lines?.content ?? []
@@ -79,11 +85,9 @@ export function useStocktakeConfirm() {
   // --- 棚卸確定 ---
   async function confirmStocktake() {
     try {
-      await ElMessageBox.confirm(
-        t('inventory.stocktakeConfirmMessage'),
-        t('common.confirm'),
-        { type: 'warning' }
-      )
+      await ElMessageBox.confirm(t('inventory.stocktakeConfirmMessage'), t('common.confirm'), {
+        type: 'warning',
+      })
     } catch {
       return
     }
@@ -91,14 +95,18 @@ export function useStocktakeConfirm() {
     confirming.value = true
     try {
       await apiClient.post(`/inventory/stocktakes/${stocktakeId.value}/confirm`)
-      ElMessage.success(t('inventory.stocktakeConfirmSuccess', {
-        number: header.value?.stocktakeNumber ?? ''
-      }))
+      ElMessage.success(
+        t('inventory.stocktakeConfirmSuccess', {
+          number: header.value?.stocktakeNumber ?? '',
+        }),
+      )
       router.push({ name: 'stocktake-list' })
     } catch (err) {
       const error = toApiError(err)
       if (error.response?.status === 409) {
-        ElMessage.error(error.response.data?.message ?? t('inventory.stocktakeConfirmNotAllCounted'))
+        ElMessage.error(
+          error.response.data?.message ?? t('inventory.stocktakeConfirmNotAllCounted'),
+        )
       } else if (error.response?.status === 422) {
         ElMessage.error(error.response.data?.message ?? t('inventory.stocktakeConfirmAlreadyDone'))
       } else {

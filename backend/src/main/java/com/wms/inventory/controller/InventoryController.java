@@ -1,7 +1,30 @@
 package com.wms.inventory.controller;
 
 import com.wms.generated.api.InventoryApi;
-import com.wms.generated.model.*;
+import com.wms.generated.model.BreakdownInventoryRequest;
+import com.wms.generated.model.BreakdownInventoryResponse;
+import com.wms.generated.model.ConfirmStocktakeResponse;
+import com.wms.generated.model.CorrectionInventoryRequest;
+import com.wms.generated.model.CorrectionInventoryResponse;
+import com.wms.generated.model.InventoryLocationItem;
+import com.wms.generated.model.InventoryLocationPageResponse;
+import com.wms.generated.model.InventoryProductSummaryItem;
+import com.wms.generated.model.InventoryProductSummaryPageResponse;
+import com.wms.generated.model.ListInventory200Response;
+import com.wms.generated.model.MoveInventoryRequest;
+import com.wms.generated.model.MoveInventoryResponse;
+import com.wms.generated.model.SaveStocktakeLinesRequest;
+import com.wms.generated.model.SaveStocktakeLinesResponse;
+import com.wms.generated.model.StartStocktakeRequest;
+import com.wms.generated.model.StartStocktakeResponse;
+import com.wms.generated.model.StocktakeDetail;
+import com.wms.generated.model.StocktakeDetailLines;
+import com.wms.generated.model.StocktakeLineItem;
+import com.wms.generated.model.StocktakeStatus;
+import com.wms.generated.model.StocktakeSummary;
+import com.wms.generated.model.StocktakeSummaryPageResponse;
+import com.wms.generated.model.StorageCondition;
+import com.wms.generated.model.UnitType;
 import com.wms.inventory.entity.Inventory;
 import com.wms.inventory.entity.StocktakeHeader;
 import com.wms.inventory.service.InventoryBreakdownService;
@@ -277,7 +300,9 @@ public class InventoryController implements InventoryApi {
         Set<Long> warehouseIds = new java.util.HashSet<>();
         for (StocktakeHeader h : resultPage.getContent()) {
             userIds.add(h.getStartedBy());
-            if (h.getConfirmedBy() != null) userIds.add(h.getConfirmedBy());
+            if (h.getConfirmedBy() != null) {
+                userIds.add(h.getConfirmedBy());
+            }
             warehouseIds.add(h.getWarehouseId());
         }
         Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
@@ -286,7 +311,9 @@ public class InventoryController implements InventoryApi {
             try {
                 Warehouse wh = warehouseService.findById(wId);
                 warehouseNameMap.put(wId, wh.getWarehouseName());
-            } catch (Exception ignored) { }
+            } catch (Exception e) {
+                log.warn("Failed to resolve warehouse name for warehouseId={}: {}", wId, e.getMessage());
+            }
         }
 
         List<StocktakeSummary> items = resultPage.getContent().stream()
@@ -337,7 +364,9 @@ public class InventoryController implements InventoryApi {
         // ユーザー名解決
         Set<Long> uIds = new java.util.HashSet<>();
         uIds.add(header.getStartedBy());
-        if (header.getConfirmedBy() != null) uIds.add(header.getConfirmedBy());
+        if (header.getConfirmedBy() != null) {
+            uIds.add(header.getConfirmedBy());
+        }
         linesPage.getContent().stream()
                 .filter(l -> l.getCountedBy() != null)
                 .forEach(l -> uIds.add(l.getCountedBy()));
@@ -345,8 +374,11 @@ public class InventoryController implements InventoryApi {
 
         // 倉庫名
         String whName = "";
-        try { whName = warehouseService.findById(header.getWarehouseId()).getWarehouseName(); }
-        catch (Exception e) { log.warn("Failed to resolve warehouse name for id={}", header.getWarehouseId(), e); }
+        try {
+            whName = warehouseService.findById(header.getWarehouseId()).getWarehouseName();
+        } catch (Exception e) {
+            log.warn("Failed to resolve warehouse name for id={}", header.getWarehouseId(), e);
+        }
 
         long totalLines = stocktakeQueryService.countTotalLines(id);
         long countedLines = stocktakeQueryService.countCountedLines(id);

@@ -12,19 +12,12 @@
         </div>
       </template>
 
-      <el-form
-        label-width="180px"
-        style="max-width: 720px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="180px" style="max-width: 720px" @submit.prevent="handleSubmit">
         <!-- 基本情報 -->
         <el-divider content-position="left">{{ t('master.product.sectionBasicInfo') }}</el-divider>
 
         <!-- 商品コード -->
-        <el-form-item
-          :label="t('master.product.productCode')"
-          :error="errors.productCode"
-        >
+        <el-form-item :label="t('master.product.productCode')" :error="errors.productCode">
           <el-input
             v-if="!isEdit"
             v-model="productCode"
@@ -38,10 +31,7 @@
         </el-form-item>
 
         <!-- 商品名 -->
-        <el-form-item
-          :label="t('master.product.productName')"
-          :error="errors.productName"
-        >
+        <el-form-item :label="t('master.product.productName')" :error="errors.productName">
           <el-input
             v-model="productName"
             v-bind="productNameAttrs"
@@ -52,10 +42,7 @@
         </el-form-item>
 
         <!-- 商品名カナ -->
-        <el-form-item
-          :label="t('master.product.productNameKana')"
-          :error="errors.productNameKana"
-        >
+        <el-form-item :label="t('master.product.productNameKana')" :error="errors.productNameKana">
           <el-input
             v-model="productNameKana"
             v-bind="productNameKanaAttrs"
@@ -66,10 +53,7 @@
         </el-form-item>
 
         <!-- バーコード -->
-        <el-form-item
-          :label="t('master.product.barcode')"
-          :error="errors.barcode"
-        >
+        <el-form-item :label="t('master.product.barcode')" :error="errors.barcode">
           <el-input
             v-model="barcode"
             v-bind="barcodeAttrs"
@@ -80,7 +64,9 @@
         </el-form-item>
 
         <!-- 保管・管理設定 -->
-        <el-divider content-position="left">{{ t('master.product.sectionStorageManagement') }}</el-divider>
+        <el-divider content-position="left">
+          {{ t('master.product.sectionStorageManagement') }}
+        </el-divider>
 
         <!-- 保管条件 -->
         <el-form-item
@@ -88,17 +74,20 @@
           :error="errors.storageCondition"
         >
           <el-radio-group v-model="storageCondition" v-bind="storageConditionAttrs">
-            <el-radio :value="StorageCondition.Ambient">{{ t('master.product.storageAmbient') }}</el-radio>
-            <el-radio :value="StorageCondition.Refrigerated">{{ t('master.product.storageRefrigerated') }}</el-radio>
-            <el-radio :value="StorageCondition.Frozen">{{ t('master.product.storageFrozen') }}</el-radio>
+            <el-radio :value="StorageCondition.Ambient">
+              {{ t('master.product.storageAmbient') }}
+            </el-radio>
+            <el-radio :value="StorageCondition.Refrigerated">
+              {{ t('master.product.storageRefrigerated') }}
+            </el-radio>
+            <el-radio :value="StorageCondition.Frozen">
+              {{ t('master.product.storageFrozen') }}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
 
         <!-- ケース入数 -->
-        <el-form-item
-          :label="t('master.product.caseQuantity')"
-          :error="errors.caseQuantity"
-        >
+        <el-form-item :label="t('master.product.caseQuantity')" :error="errors.caseQuantity">
           <el-input-number
             v-model="caseQuantity"
             v-bind="caseQuantityAttrs"
@@ -110,10 +99,7 @@
         </el-form-item>
 
         <!-- ボール入数 -->
-        <el-form-item
-          :label="t('master.product.ballQuantity')"
-          :error="errors.ballQuantity"
-        >
+        <el-form-item :label="t('master.product.ballQuantity')" :error="errors.ballQuantity">
           <el-input-number
             v-model="ballQuantity"
             v-bind="ballQuantityAttrs"
@@ -197,18 +183,30 @@ import { StorageCondition } from '@/api/generated/models/storage-condition'
 const { t } = useI18n()
 
 const {
-  productCode, productCodeAttrs,
-  productName, productNameAttrs,
-  productNameKana, productNameKanaAttrs,
-  barcode, barcodeAttrs,
-  storageCondition, storageConditionAttrs,
-  caseQuantity, caseQuantityAttrs,
-  ballQuantity, ballQuantityAttrs,
-  isHazardous, isHazardousAttrs,
-  lotManageFlag, lotManageFlagAttrs,
-  expiryManageFlag, expiryManageFlagAttrs,
-  shipmentStopFlag, shipmentStopFlagAttrs,
-  isActive, isActiveAttrs,
+  productCode,
+  productCodeAttrs,
+  productName,
+  productNameAttrs,
+  productNameKana,
+  productNameKanaAttrs,
+  barcode,
+  barcodeAttrs,
+  storageCondition,
+  storageConditionAttrs,
+  caseQuantity,
+  caseQuantityAttrs,
+  ballQuantity,
+  ballQuantityAttrs,
+  isHazardous,
+  isHazardousAttrs,
+  lotManageFlag,
+  lotManageFlagAttrs,
+  expiryManageFlag,
+  expiryManageFlagAttrs,
+  shipmentStopFlag,
+  shipmentStopFlagAttrs,
+  isActive,
+  isActiveAttrs,
   errors,
   loading,
   initialLoading,

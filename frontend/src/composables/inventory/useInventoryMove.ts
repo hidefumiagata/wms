@@ -38,9 +38,11 @@ export function useInventoryMove() {
   const selectedUnitType = ref<string | null>(null)
   const fromInventory = computed<InventoryOption | null>(() => {
     if (!selectedProductId.value || !selectedUnitType.value) return null
-    return fromInventoryOptions.value.find(
-      i => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value
-    ) ?? null
+    return (
+      fromInventoryOptions.value.find(
+        (i) => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value,
+      ) ?? null
+    )
   })
 
   // 移動先
@@ -53,7 +55,9 @@ export function useInventoryMove() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // --- 移動元ロケーション検索 ---
   async function fetchFromInventory() {
@@ -68,7 +72,8 @@ export function useInventoryMove() {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationCode: fromLocationCode.value.trim(),
-          page: 0, size: 1,
+          page: 0,
+          size: 1,
         },
         signal: abortController.signal,
       })
@@ -93,7 +98,7 @@ export function useInventoryMove() {
         signal: abortController.signal,
       })
       const items: InventoryLocationItem[] = res.data.content ?? []
-      fromInventoryOptions.value = items.map(i => ({
+      fromInventoryOptions.value = items.map((i) => ({
         productId: i.productId,
         productCode: i.productCode,
         productName: i.productName,
@@ -118,7 +123,7 @@ export function useInventoryMove() {
   // 商品選択肢（重複除去）
   const productOptions = computed(() => {
     const seen = new Set<number>()
-    return fromInventoryOptions.value.filter(i => {
+    return fromInventoryOptions.value.filter((i) => {
       if (seen.has(i.productId)) return false
       seen.add(i.productId)
       return true
@@ -128,7 +133,7 @@ export function useInventoryMove() {
   // 荷姿選択肢（選択された商品でフィルタ）
   const unitTypeOptions = computed(() => {
     if (!selectedProductId.value) return []
-    return fromInventoryOptions.value.filter(i => i.productId === selectedProductId.value)
+    return fromInventoryOptions.value.filter((i) => i.productId === selectedProductId.value)
   })
 
   function onProductChange() {
@@ -207,7 +212,7 @@ export function useInventoryMove() {
           qty: moveQty.value,
         }),
         t('common.confirm'),
-        { type: 'warning' }
+        { type: 'warning' },
       )
     } catch {
       return // cancelled

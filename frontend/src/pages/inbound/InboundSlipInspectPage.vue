@@ -16,5 +16,7 @@ const router = useRouter()
 </script>
 
 <style scoped lang="scss">
-.wms-page { padding: 20px; }
+.wms-page {
+  padding: 20px;
+}
 </style>

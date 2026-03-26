@@ -37,11 +37,7 @@
       </template>
 
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
-        <el-table-column
-          prop="buildingCode"
-          :label="t('master.building.buildingCode')"
-          width="120"
-        >
+        <el-table-column prop="buildingCode" :label="t('master.building.buildingCode')" width="120">
           <template #default="{ row }">
             <el-link
               type="primary"
@@ -68,12 +64,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          :label="t('common.actions')"
-          width="180"
-          align="center"
-          fixed="right"
-        >
+        <el-table-column :label="t('common.actions')" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               size="small"
@@ -143,10 +134,13 @@ const {
 
 onMounted(() => fetchList())
 
-watch(() => warehouseStore.selectedWarehouseId, () => {
-  page.value = 1
-  fetchList()
-})
+watch(
+  () => warehouseStore.selectedWarehouseId,
+  () => {
+    page.value = 1
+    fetchList()
+  },
+)
 </script>
 
 <style scoped lang="scss">

@@ -75,7 +75,9 @@
               @change="(val: string) => handleViewTypeChange(val as ViewType)"
             >
               <el-radio-button value="LOCATION">{{ t('inventory.locationView') }}</el-radio-button>
-              <el-radio-button value="PRODUCT_SUMMARY">{{ t('inventory.productSummaryView') }}</el-radio-button>
+              <el-radio-button value="PRODUCT_SUMMARY">
+                {{ t('inventory.productSummaryView') }}
+              </el-radio-button>
             </el-radio-group>
           </div>
           <div>
@@ -121,12 +123,7 @@
         </el-table-column>
         <el-table-column v-if="!isViewer" :label="t('common.actions')" width="80" align="center">
           <template #default="{ row }">
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click="handleMove(row)"
-            >
+            <el-button type="primary" link size="small" @click="handleMove(row)">
               {{ t('inventory.move') }}
             </el-button>
           </template>
@@ -202,7 +199,12 @@ import { useRouter } from 'vue-router'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { useInventoryList } from '@/composables/inventory/useInventoryList'
 import type { ViewType } from '@/composables/inventory/useInventoryList'
-import { unitTypeLabel, storageConditionLabel, storageConditionTagType, formatNumber } from '@/utils/inventoryFormatters'
+import {
+  unitTypeLabel,
+  storageConditionLabel,
+  storageConditionTagType,
+  formatNumber,
+} from '@/utils/inventoryFormatters'
 import type { InventoryLocationItem } from '@/api/generated/models/inventory-location-item'
 
 const { t } = useI18n()
@@ -236,7 +238,9 @@ function storageConditionLabelFn(condition: string): string {
   return storageConditionLabel(condition, t)
 }
 
-function storageConditionTagTypeFn(condition: string): '' | 'success' | 'warning' | 'danger' | 'info' {
+function storageConditionTagTypeFn(
+  condition: string,
+): '' | 'success' | 'warning' | 'danger' | 'info' {
   return storageConditionTagType(condition)
 }
 
