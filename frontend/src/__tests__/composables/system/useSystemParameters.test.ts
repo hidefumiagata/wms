@@ -22,10 +22,10 @@ vi.mock('@/api/generated/models/system-parameter-category', () => ({
 
 describe('useSystemParameters', () => {
   const mockParams = [
-    { paramKey: 'p1', paramValue: '10', category: 'INVENTORY', valueType: 'INTEGER', displayName: 'Param1', version: 1 },
-    { paramKey: 'p2', paramValue: 'hello', category: 'INVENTORY', valueType: 'STRING', displayName: 'Param2', version: 1 },
-    { paramKey: 'p3', paramValue: '5', category: 'OUTBOUND', valueType: 'INTEGER', displayName: 'Param3', version: 1 },
-    { paramKey: 'p4', paramValue: 'true', category: 'SYSTEM', valueType: 'BOOLEAN', displayName: 'FeatureFlag', version: 1 },
+    { paramKey: 'p1', paramValue: '10', category: 'INVENTORY', valueType: 'INTEGER', displayName: 'Param1', version: 1, updatedByName: '管理者' },
+    { paramKey: 'p2', paramValue: 'hello', category: 'INVENTORY', valueType: 'STRING', displayName: 'Param2', version: 1, updatedByName: null },
+    { paramKey: 'p3', paramValue: '5', category: 'OUTBOUND', valueType: 'INTEGER', displayName: 'Param3', version: 1, updatedByName: '管理者' },
+    { paramKey: 'p4', paramValue: 'true', category: 'SYSTEM', valueType: 'BOOLEAN', displayName: 'FeatureFlag', version: 1, updatedByName: null },
   ]
 
   beforeEach(() => {
@@ -43,6 +43,14 @@ describe('useSystemParameters', () => {
     expect(result.groups.value[1].items).toHaveLength(1)
     expect(result.groups.value[2].category).toBe('SYSTEM')
     expect(result.groups.value[2].items).toHaveLength(1)
+  })
+
+  it('fetchParameters がupdatedByNameをoriginalに保持する', async () => {
+    const { result } = withSetup(() => useSystemParameters())
+    await result.fetchParameters()
+
+    expect(result.groups.value[0].items[0].original.updatedByName).toBe('管理者')
+    expect(result.groups.value[0].items[1].original.updatedByName).toBeNull()
   })
 
   it('fetchParameters が signal を渡す', async () => {

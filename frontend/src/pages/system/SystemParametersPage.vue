@@ -82,7 +82,14 @@
 
           <el-table-column :label="t('system.parameters.updatedAt')" width="150">
             <template #default="{ row }">
-              {{ formatDateTime(row.original.updatedAt) }}
+              <el-tooltip
+                v-if="row.original.updatedByName"
+                :content="row.original.updatedByName"
+                placement="top"
+              >
+                <span>{{ formatDateTime(row.original.updatedAt) }}</span>
+              </el-tooltip>
+              <span v-else>{{ formatDateTime(row.original.updatedAt) }}</span>
             </template>
           </el-table-column>
 

@@ -7,12 +7,17 @@ import com.wms.generated.model.SystemParameterValueType;
 import com.wms.generated.model.UpdateSystemParameterRequest;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.service.SystemParameterService;
+import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * システムパラメータ管理 API コントローラー。
@@ -23,12 +28,22 @@ import java.util.List;
 public class SystemParameterController implements SystemParameterApi {
 
     private final SystemParameterService systemParameterService;
+    private final UserService userService;
 
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     @Override
     public ResponseEntity<List<SystemParameterDetail>> getSystemParameters() {
-        List<SystemParameterDetail> details = systemParameterService.findAll().stream()
-                .map(this::toDetail)
+        List<SystemParameter> params = systemParameterService.findAll();
+
+        // N+1回避: updatedBy のユーザーIDを一括取得
+        Set<Long> userIds = params.stream()
+                .map(SystemParameter::getUpdatedBy)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
+
+        List<SystemParameterDetail> details = params.stream()
+                .map(p -> toDetail(p, userNameMap))
                 .toList();
         return ResponseEntity.ok(details);
     }
@@ -41,12 +56,17 @@ public class SystemParameterController implements SystemParameterApi {
         SystemParameter updated = systemParameterService.updateValue(
                 paramKey, updateSystemParameterRequest.getParamValue(),
                 updateSystemParameterRequest.getVersion());
-        return ResponseEntity.ok(toDetail(updated));
+        String updatedByName = userService.getUserFullName(updated.getUpdatedBy());
+        return ResponseEntity.ok(toDetail(updated, updatedByName));
     }
 
     // --- Converter ---
 
-    private SystemParameterDetail toDetail(SystemParameter p) {
+    private SystemParameterDetail toDetail(SystemParameter p, Map<Long, String> userNameMap) {
+        return toDetail(p, p.getUpdatedBy() != null ? userNameMap.get(p.getUpdatedBy()) : null);
+    }
+
+    private SystemParameterDetail toDetail(SystemParameter p, String updatedByName) {
         return new SystemParameterDetail()
                 .paramKey(p.getParamKey())
                 .paramValue(p.getParamValue())
@@ -57,6 +77,7 @@ public class SystemParameterController implements SystemParameterApi {
                 .description(p.getDescription())
                 .updatedAt(p.getUpdatedAt())
                 .updatedBy(p.getUpdatedBy())
+                .updatedByName(updatedByName)
                 .version(p.getVersion());
     }
 }

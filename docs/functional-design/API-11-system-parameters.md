@@ -110,7 +110,7 @@ flowchart TD
 
 - 参照系APIのため読み取り専用トランザクションで処理する。
 - `paramValue` はすべて文字列型で返す。フロントエンドが `valueType` を参照して適切な型変換・入力コントロールの選択を行う。
-- `updatedBy` はユーザーIDのみを返す。フロントエンドで更新者名の表示が必要な場合は、ユーザー情報をキャッシュして名前解決する。
+- `updatedBy` はユーザーIDを返す。`updatedByName` にはサーバーサイドで解決した更新者名を含める（一覧取得時はN+1回避のため一括取得）。
 
 ---
 
@@ -276,3 +276,4 @@ flowchart TD
 | `description` | String | `description` | パラメータの説明文 |
 | `updatedAt` | String | `updated_at` | 最終更新日時（ISO 8601） |
 | `updatedBy` | Long | `updated_by` | 最終更新者のユーザーID |
+| `updatedByName` | String | — | 最終更新者名（サーバーサイドで解決） |
