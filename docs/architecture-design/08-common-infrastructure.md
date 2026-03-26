@@ -415,7 +415,7 @@ export interface ApiErrorResponse {
 ```typescript
 // composables/shared/useApiErrorHandler.ts
 import { ElMessage } from 'element-plus'
-import type { ApiErrorResponse } from '@/utils/api'
+import type { ApiErrorResponse } from '@/api/client'
 import type { AxiosError } from 'axios'
 
 /**
