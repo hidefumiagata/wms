@@ -41,6 +41,12 @@ variable "enable_front_door" {
   default     = false
 }
 
+variable "remote_pg_cidr" {
+  description = "Remote PostgreSQL subnet CIDR for cross-region access (prd-west only)"
+  type        = string
+  default     = ""
+}
+
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)

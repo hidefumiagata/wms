@@ -15,8 +15,6 @@ resource "azurerm_postgresql_flexible_server" "main" {
   delegated_subnet_id = var.snet_pg_id
   private_dns_zone_id = var.private_dns_zone_id
 
-  depends_on = [var.private_dns_zone_id]
-
   tags = var.common_tags
 }
 

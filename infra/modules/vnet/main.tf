@@ -114,6 +114,7 @@ resource "azurerm_network_security_rule" "ca_inbound_deny_all" {
   network_security_group_name = azurerm_network_security_group.ca.name
 }
 
+# Local PG subnet outbound (dev, prd-east)
 resource "azurerm_network_security_rule" "ca_outbound_pg" {
   count                       = var.create_pg_subnet ? 1 : 0
   name                        = "Allow-PostgreSQL-Outbound"
@@ -125,6 +126,22 @@ resource "azurerm_network_security_rule" "ca_outbound_pg" {
   destination_port_range      = "5432"
   source_address_prefix       = "*"
   destination_address_prefix  = azurerm_subnet.pg[0].address_prefixes[0]
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.ca.name
+}
+
+# Cross-region PG outbound (prd-west → prd-east PG via VNet Peering)
+resource "azurerm_network_security_rule" "ca_outbound_pg_remote" {
+  count                       = var.remote_pg_cidr != "" ? 1 : 0
+  name                        = "Allow-PostgreSQL-Remote-Outbound"
+  priority                    = 105
+  direction                   = "Outbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "5432"
+  source_address_prefix       = "*"
+  destination_address_prefix  = var.remote_pg_cidr
   resource_group_name         = var.resource_group_name
   network_security_group_name = azurerm_network_security_group.ca.name
 }

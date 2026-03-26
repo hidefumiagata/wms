@@ -78,6 +78,7 @@ module "vnet_west" {
   snet_pg_cidr        = ""
   create_pg_subnet    = false
   enable_front_door   = var.enable_front_door
+  remote_pg_cidr      = var.snet_pg_east_cidr # Cross-region DB access
   common_tags         = local.common_tags
 }
 

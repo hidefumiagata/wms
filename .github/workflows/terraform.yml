@@ -11,6 +11,8 @@ on:
 
 env:
   TF_VERSION: '1.7'
+  # ARM_SUBSCRIPTION_ID is used for Terraform backend (tfstate) access.
+  # Each environment's provider subscription_id is set in terraform.tfvars.
   ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
@@ -18,8 +20,9 @@ env:
 
 jobs:
   terraform:
-    name: Terraform
+    name: Terraform (${{ matrix.environment }})
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         environment: [dev, prd]
@@ -49,19 +52,25 @@ jobs:
         if: github.event_name == 'pull_request'
         id: plan
         run: terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
-        continue-on-error: true
 
       - name: Comment Plan on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const planOutput = fs.readFileSync('infra/environments/${{ matrix.environment }}/plan_output.txt', 'utf8');
+            const planExitCode = '${{ steps.plan.outcome }}';
+            const statusIcon = planExitCode === 'success' ? '✅' : '❌';
+            let planOutput = '';
+            try {
+              planOutput = fs.readFileSync('infra/environments/${{ matrix.environment }}/plan_output.txt', 'utf8');
+            } catch (e) {
+              planOutput = 'Plan output not available.';
+            }
             const truncated = planOutput.length > 60000
               ? planOutput.substring(0, 60000) + '\n... (truncated)'
               : planOutput;
-            const output = `#### Terraform Plan - ${{ matrix.environment }}
+            const output = `#### ${statusIcon} Terraform Plan - ${{ matrix.environment }}
             \`\`\`
             ${truncated}
             \`\`\``;
@@ -71,6 +80,10 @@ jobs:
               repo: context.repo.repo,
               body: output
             });
+
+      - name: Fail if Plan Failed
+        if: github.event_name == 'pull_request' && steps.plan.outcome == 'failure'
+        run: exit 1
 
       - name: Terraform Apply (dev)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.environment == 'dev'
@@ -82,6 +95,7 @@ jobs:
     needs: terraform
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production
 
     defaults:

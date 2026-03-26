@@ -107,9 +107,17 @@ echo "Next steps: Configure the following GitHub Actions Secrets"
 echo "in your repository (Settings > Secrets and variables > Actions):"
 echo ""
 echo "  ARM_CLIENT_ID       = ${CLIENT_ID}"
-echo "  ARM_CLIENT_SECRET   = ${CLIENT_SECRET}"
+echo "  ARM_CLIENT_SECRET   = (saved to ~/.azure/wms-sp-credentials.json)"
 echo "  ARM_TENANT_ID       = ${TENANT_ID}"
-echo "  ARM_SUBSCRIPTION_ID = ${DEV_SUB}"
+echo "  ARM_SUBSCRIPTION_ID = ${TERRAFORM_SUB}"
+echo ""
+echo "SP credentials saved to ~/.azure/wms-sp-credentials.json"
+echo "Retrieve ARM_CLIENT_SECRET from that file, then delete it."
+
+# Save credentials to file instead of printing to stdout
+mkdir -p ~/.azure
+echo "$SP_OUTPUT" > ~/.azure/wms-sp-credentials.json
+chmod 600 ~/.azure/wms-sp-credentials.json
 echo ""
 echo "For Terraform backend configuration, update the subscription_id"
 echo "in each environment's backend.tf:"
