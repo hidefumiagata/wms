@@ -142,6 +142,21 @@ prd環境: terraform apply（承認ゲート待ち）
 - **dev**: 自動適用（承認不要）
 - **prd**: `production` Environment の承認ゲートを通過後に適用
 
+### 手動でplan / applyを実行
+
+Actions画面から任意のタイミングでplan/applyを実行できる。
+
+1. リポジトリの **Actions** タブを開く
+2. 左メニューから **Terraform** を選択
+3. **Run workflow** をクリック
+4. アクション（`plan` / `apply`）と環境（`dev` / `prd`）を選択
+5. **Run workflow** を実行
+
+```
+plan選択時:  fmt check → validate → plan（結果をログに出力）
+apply選択時: fmt check → validate → plan → apply（prdは承認ゲート付き）
+```
+
 ---
 
 ## ローカルでの手動実行

@@ -8,6 +8,22 @@ on:
     branches: [main]
     paths:
       - 'infra/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '実行するアクション'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+      environment:
+        description: '対象環境'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prd
 
 env:
   TF_VERSION: '1.7'
@@ -23,9 +39,11 @@ jobs:
     name: Terraform (${{ matrix.environment }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    # PR/push: dev,prd両方  |  手動: 選択した環境のみ
     strategy:
       matrix:
-        environment: [dev, prd]
+        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.environment)) || fromJSON('["dev","prd"]') }}
 
     defaults:
       run:
@@ -48,8 +66,10 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      # --- Plan ---
+      # PR時: 常にplan  |  手動時: action=plan or action=apply
       - name: Terraform Plan
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
         id: plan
         run: terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
 
@@ -82,18 +102,26 @@ jobs:
             });
 
       - name: Fail if Plan Failed
-        if: github.event_name == 'pull_request' && steps.plan.outcome == 'failure'
+        if: (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') && steps.plan.outcome == 'failure'
         run: exit 1
 
-      - name: Terraform Apply (dev)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && matrix.environment == 'dev'
+      # --- Apply ---
+      # push時: devのみ自動apply  |  手動時: action=apply の場合
+      - name: Terraform Apply (auto - dev on push)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.environment == 'dev'
         run: terraform apply -auto-approve
 
-  # prd環境のTerraform Applyは安全のため別ジョブとし、GitHub Environment承認ゲートを設定
+      - name: Terraform Apply (manual - dev)
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && matrix.environment == 'dev'
+        run: terraform apply tfplan
+
+  # --- prd Apply (承認ゲート付き) ---
   terraform-apply-prd:
     name: Terraform Apply (prd)
     needs: terraform
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && inputs.environment == 'prd')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
