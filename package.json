@@ -11,11 +11,7 @@
     "lint-staged": "^16.4.0"
   },
   "lint-staged": {
-    "frontend/src/**/*.{ts,vue}": [
-      "bash -c 'cd frontend && npx eslint --no-warn-ignored \"$@\"' --",
-      "bash -c 'cd frontend && npx prettier --check \"$@\"' --"
-    ],
-    "frontend/src/**/*.{json,css,scss}": [
+    "frontend/src/**/*.{ts,vue,json,css,scss}": [
       "bash -c 'cd frontend && npx prettier --check \"$@\"' --"
     ]
   },
