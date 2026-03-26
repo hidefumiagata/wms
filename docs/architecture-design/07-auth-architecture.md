@@ -727,7 +727,7 @@ sequenceDiagram
 ### 6.4 フロントエンド Axios インターセプター設計
 
 ```typescript
-// src/utils/api.ts
+// src/api/client.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
@@ -1536,7 +1536,7 @@ app:
 ```typescript
 // composables/useSessionTimeout.ts
 import { ref, onMounted, onUnmounted } from 'vue'
-import apiClient from '@/utils/api'
+import apiClient from '@/api/client'
 
 const SESSION_WARNING_MS = 55 * 60 * 1000  // 55分
 let timeoutId: ReturnType<typeof setTimeout> | null = null

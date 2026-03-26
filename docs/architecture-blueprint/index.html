@@ -310,7 +310,7 @@ export function useWarehouseList() {
 }</code></pre>
 <blockquote><code>.vue</code> ファイルは表示とイベントバインディングに専念し、ロジックはComposableに委譲する。</blockquote>
 <h2>API通信・エラーハンドリング</h2>
-<h3>Axiosインスタンス設定（<code>src/utils/api.ts</code>）</h3>
+<h3>Axiosインスタンス設定（<code>src/api/client.ts</code>）</h3>
 <pre><code class="lang-typescript">const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   withCredentials: true,  // httpOnly Cookie を自動送信

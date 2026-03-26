@@ -223,7 +223,7 @@ import { ElMessage } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 import type { Warehouse } from '@/types/generated/api'
 
 export function useWarehouseForm() {
@@ -380,7 +380,7 @@ const { loading, values, onSubmit } = useWarehouseForm()
 // stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 
 interface UserInfo {
   userId: number        // OpenAPI LoginResponse: userId（SSOT: openapi/wms-api.yaml）
@@ -462,7 +462,7 @@ export const useAuthStore = defineStore('auth', () => {
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 
 interface Warehouse {
   id: number
@@ -1015,7 +1015,7 @@ flowchart TD
 ブループリント（[03-frontend-architecture.md](../architecture-blueprint/03-frontend-architecture.md)）で定義された仕様に基づき、実装詳細を記述する。
 
 ```typescript
-// utils/api.ts
+// api/client.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
@@ -1048,7 +1048,7 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 ブループリントの仕様に基づき、リフレッシュ中に他のリクエストが同時に401を受けた場合のキュー制御を実装する。
 
 ```typescript
-// utils/api.ts（続き）
+// api/client.ts（続き）
 
 let isRefreshing = false
 let failedQueue: Array<{
@@ -1471,7 +1471,7 @@ const label = computed(() => t(`common.status.${props.status}`))
 <!-- components/report/ReportExportDialog.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps<{

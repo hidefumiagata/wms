@@ -176,7 +176,7 @@ export function useWarehouseList() {
 
 ## API通信・エラーハンドリング
 
-### Axiosインスタンス設定（`src/utils/api.ts`）
+### Axiosインスタンス設定（`src/api/client.ts`）
 
 ```typescript
 const apiClient = axios.create({

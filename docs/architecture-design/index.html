@@ -1891,7 +1891,7 @@ import { ElMessage } from 'element-plus'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 import type { Warehouse } from '@/types/generated/api'
 
 export function useWarehouseForm() {
@@ -2035,7 +2035,7 @@ const { loading, values, onSubmit } = useWarehouseForm()
 <pre><code class="lang-typescript">// stores/auth.ts
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 
 interface UserInfo {
   userId: number        // OpenAPI LoginResponse: userId（SSOT: openapi/wms-api.yaml）
@@ -2113,7 +2113,7 @@ export const useAuthStore = defineStore('auth', () =&gt; {
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 
 interface Warehouse {
   id: number
@@ -2592,7 +2592,7 @@ router.beforeEach(async (to) =&gt; {
 <h2>7. API通信層設計</h2>
 <h3>7.1 Axiosインスタンス</h3>
 <p>ブループリント（<a href="../architecture-blueprint/03-frontend-architecture.md" target="_blank">03-frontend-architecture.md</a>）で定義された仕様に基づき、実装詳細を記述する。</p>
-<pre><code class="lang-typescript">// utils/api.ts
+<pre><code class="lang-typescript">// api/client.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
@@ -2620,7 +2620,7 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) =&gt; {
 })</code></pre>
 <h3>7.2 レスポンスインターセプター（401リフレッシュ対応）</h3>
 <p>ブループリントの仕様に基づき、リフレッシュ中に他のリクエストが同時に401を受けた場合のキュー制御を実装する。</p>
-<pre><code class="lang-typescript">// utils/api.ts（続き）
+<pre><code class="lang-typescript">// api/client.ts（続き）
 
 let isRefreshing = false
 let failedQueue: Array&lt;{
@@ -2973,7 +2973,7 @@ const label = computed(() =&gt; t(`common.status.${props.status}`))
 <pre><code class="lang-vue">&lt;!-- components/report/ReportExportDialog.vue --&gt;
 &lt;script setup lang=&quot;ts&quot;&gt;
 import { ref } from 'vue'
-import { apiClient } from '@/utils/api'
+import { apiClient } from '@/api/client'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps&lt;{
@@ -8432,7 +8432,7 @@ public class RefreshTokenService {
         end
     end</div>
 <h3>6.4 フロントエンド Axios インターセプター設計</h3>
-<pre><code class="lang-typescript">// src/utils/api.ts
+<pre><code class="lang-typescript">// src/api/client.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
@@ -9114,7 +9114,7 @@ app:
 <h3>13.3 フロントエンドタイマー設計</h3>
 <pre><code class="lang-typescript">// composables/useSessionTimeout.ts
 import { ref, onMounted, onUnmounted } from 'vue'
-import apiClient from '@/utils/api'
+import apiClient from '@/api/client'
 
 const SESSION_WARNING_MS = 55 * 60 * 1000  // 55分
 let timeoutId: ReturnType&lt;typeof setTimeout&gt; | null = null
@@ -9553,7 +9553,7 @@ public class InvalidStateTransitionException extends WmsException {
 }</code></pre>
 <h3>1.4 フロントエンド — Axiosインターセプターによる共通エラー処理</h3>
 <blockquote>レスポンスインターセプターの処理方針は <a href="../architecture-blueprint/03-frontend-architecture.md" target="_blank">architecture-blueprint/03-frontend-architecture.md</a> を参照。</blockquote>
-<pre><code class="lang-typescript">// src/utils/api.ts
+<pre><code class="lang-typescript">// src/api/client.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
@@ -9657,7 +9657,7 @@ export interface ApiErrorResponse {
 <h3>1.5 フロントエンド — Composableでの業務エラー処理パターン</h3>
 <pre><code class="lang-typescript">// composables/shared/useApiErrorHandler.ts
 import { ElMessage } from 'element-plus'
-import type { ApiErrorResponse } from '@/utils/api'
+import type { ApiErrorResponse } from '@/api/client'
 import type { AxiosError } from 'axios'
 
 /**

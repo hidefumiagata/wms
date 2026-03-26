@@ -307,7 +307,7 @@ public class InvalidStateTransitionException extends WmsException {
 > レスポンスインターセプターの処理方針は [architecture-blueprint/03-frontend-architecture.md](../architecture-blueprint/03-frontend-architecture.md) を参照。
 
 ```typescript
-// src/utils/api.ts
+// src/api/client.ts
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import router from '@/router'
@@ -415,7 +415,7 @@ export interface ApiErrorResponse {
 ```typescript
 // composables/shared/useApiErrorHandler.ts
 import { ElMessage } from 'element-plus'
-import type { ApiErrorResponse } from '@/utils/api'
+import type { ApiErrorResponse } from '@/api/client'
 import type { AxiosError } from 'axios'
 
 /**
