@@ -295,12 +295,16 @@ flowchart TD
 
 | HTTPステータス | エラーコード | 説明 |
 |-------------|------------|------|
-| `400` | `VALIDATION_ERROR` | 入力値バリデーションエラー |
+| `400` | `VALIDATION_ERROR` | 入力値バリデーションエラー（必須項目不足・型エラー・桁数超過） |
 | `404` | `WAREHOUSE_NOT_FOUND` | 倉庫が存在しない |
 | `404` | `PARTNER_NOT_FOUND` | 取引先が存在しない |
 | `404` | `PRODUCT_NOT_FOUND` | 商品が存在しない |
+| `409` | `DUPLICATE_PRODUCT_IN_LINES` | 同一伝票内に同じ商品が複数指定されている |
+| `422` | `OUTBOUND_PARTNER_REQUIRED` | `slipType=NORMAL` で出荷先IDが未指定 |
 | `422` | `OUTBOUND_PARTNER_NOT_CUSTOMER` | 取引先種別が出荷先（`CUSTOMER` / `BOTH`）でない |
+| `422` | `PRODUCT_INACTIVE` | 無効な商品が指定されている |
 | `422` | `OUTBOUND_PRODUCT_SHIPMENT_STOPPED` | 出荷禁止フラグが立っている商品を選択した |
+| `422` | `PLANNED_DATE_TOO_EARLY` | `plannedDate` が現在営業日より前 |
 
 ---
 
@@ -313,17 +317,21 @@ flowchart TD
     VALIDATE -->|OK| CHECK_WH[倉庫存在チェック]
     CHECK_WH -->|存在しない| ERR_WH[404 WAREHOUSE_NOT_FOUND]
     CHECK_WH -->|OK| CHECK_TYPE{slipType?}
-    CHECK_TYPE -->|NORMAL| CHECK_PARTNER[取引先存在チェック\npartnerIdが必須]
+    CHECK_TYPE -->|NORMAL| CHECK_PARTNER_ID{partnerId指定あり?}
     CHECK_TYPE -->|WAREHOUSE_TRANSFER| CHECK_DATE[plannedDate 営業日チェック]
+    CHECK_PARTNER_ID -->|null| ERR_PAR_REQ[422 OUTBOUND_PARTNER_REQUIRED]
+    CHECK_PARTNER_ID -->|OK| CHECK_PARTNER[取引先存在チェック]
     CHECK_PARTNER -->|存在しない| ERR_PAR[404 PARTNER_NOT_FOUND]
     CHECK_PARTNER -->|OK| CHECK_PARTNER_TYPE[partner_type チェック\nCUSTOMER or BOTH]
     CHECK_PARTNER_TYPE -->|NG| ERR_PAR_TYPE[422 OUTBOUND_PARTNER_NOT_CUSTOMER]
     CHECK_PARTNER_TYPE -->|OK| CHECK_DATE
-    CHECK_DATE -->|営業日前| ERR_DATE[400 VALIDATION_ERROR\nplannedDate]
+    CHECK_DATE -->|営業日前| ERR_DATE[422 PLANNED_DATE_TOO_EARLY]
     CHECK_DATE -->|OK| CHECK_PRODUCTS[各明細の商品存在チェック\n重複チェック]
     CHECK_PRODUCTS -->|存在しない| ERR_PRD[404 PRODUCT_NOT_FOUND]
-    CHECK_PRODUCTS -->|重複あり| ERR_DUP[400 VALIDATION_ERROR\n同一商品重複不可]
-    CHECK_PRODUCTS -->|OK| CHECK_SHIPMENT_STOP[shipment_stop_flag チェック]
+    CHECK_PRODUCTS -->|重複あり| ERR_DUP[409 DUPLICATE_PRODUCT_IN_LINES]
+    CHECK_PRODUCTS -->|OK| CHECK_ACTIVE[商品有効チェック\nis_active=true]
+    CHECK_ACTIVE -->|false| ERR_INACTIVE[422 PRODUCT_INACTIVE]
+    CHECK_ACTIVE -->|OK| CHECK_SHIPMENT_STOP[shipment_stop_flag チェック]
     CHECK_SHIPMENT_STOP -->|trueあり| ERR_STOP[422 OUTBOUND_PRODUCT_SHIPMENT_STOPPED]
     CHECK_SHIPMENT_STOP -->|OK| GEN_SLIP_NUM[伝票番号自動採番\nOUT-YYYYMMDD-NNNN]
     GEN_SLIP_NUM --> INSERT_SLIP[outbound_slips INSERT\nstatus=ORDERED\nwarehouse/partner/product情報をコピー]
@@ -336,13 +344,14 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | `slipType=NORMAL` の場合 `partnerId` は必須 | `VALIDATION_ERROR` |
+| 1 | `slipType=NORMAL` の場合 `partnerId` は必須 | `OUTBOUND_PARTNER_REQUIRED` |
 | 2 | `partnerId` が指定された場合、`partner_type` が `CUSTOMER` または `BOTH` でなければならない | `OUTBOUND_PARTNER_NOT_CUSTOMER` |
-| 3 | `shipment_stop_flag=true` の商品は明細に含められない | `OUTBOUND_PRODUCT_SHIPMENT_STOPPED` |
-| 4 | `plannedDate` は現在営業日（`system_business_date` テーブル参照）以降でなければならない | `VALIDATION_ERROR` |
-| 5 | `lines` に同一 `productId` の重複は不可 | `VALIDATION_ERROR` |
-| 6 | 伝票番号は `OUT-YYYYMMDD-NNNN`（4桁連番）形式で自動採番。`YYYYMMDD` は現在営業日（`current_business_date`）。採番はシーケンスまたはROWロックで重複排除する | — |
-| 7 | `warehouse_code`, `warehouse_name`, `partner_code`, `partner_name`, `product_code`, `product_name` は登録時点の値をコピーして保持する（マスタ変更の影響を受けない） | — |
+| 3 | 商品の `is_active=false` は明細登録不可 | `PRODUCT_INACTIVE` |
+| 4 | `shipment_stop_flag=true` の商品は明細に含められない | `OUTBOUND_PRODUCT_SHIPMENT_STOPPED` |
+| 5 | `plannedDate` は現在営業日（`system_business_date` テーブル参照）以降でなければならない | `PLANNED_DATE_TOO_EARLY` |
+| 6 | `lines` に同一 `productId` の重複は不可 | `DUPLICATE_PRODUCT_IN_LINES` |
+| 7 | 伝票番号は `OUT-YYYYMMDD-NNNN`（4桁連番）形式で自動採番。`YYYYMMDD` は現在営業日（`current_business_date`）。採番はシーケンスまたはROWロックで重複排除する | — |
+| 8 | `warehouse_code`, `warehouse_name`, `partner_code`, `partner_name`, `product_code`, `product_name` は登録時点の値をコピーして保持する（マスタ変更の影響を受けない） | — |
 
 ---
 
@@ -1352,8 +1361,12 @@ flowchart TD
 |-----------|-------------|------|--------|
 | `OUTBOUND_SLIP_NOT_FOUND` | 404 | 出荷伝票が見つからない | OUT-003, 004, cancel, OUT-021, OUT-022 |
 | `OUTBOUND_INVALID_STATUS` | 409 | 現在のステータスではその操作は不可 | OUT-004, cancel, OUT-014, OUT-021, OUT-022 |
+| `OUTBOUND_PARTNER_REQUIRED` | 422 | 通常出荷で出荷先IDが未指定 | OUT-002 |
 | `OUTBOUND_PARTNER_NOT_CUSTOMER` | 422 | 取引先種別が出荷先（CUSTOMER/BOTH）でない | OUT-002 |
+| `PRODUCT_INACTIVE` | 422 | 無効な商品が指定されている | OUT-002 |
 | `OUTBOUND_PRODUCT_SHIPMENT_STOPPED` | 422 | 出荷禁止フラグが設定された商品 | OUT-002 |
+| `PLANNED_DATE_TOO_EARLY` | 422 | 出荷予定日が現在営業日より前 | OUT-002 |
+| `DUPLICATE_PRODUCT_IN_LINES` | 409 | 同一伝票内に同じ商品が複数指定されている | OUT-002 |
 | `PICKING_NOT_FOUND` | 404 | ピッキング指示が見つからない | OUT-013, OUT-014 |
 | `UNPACK_NOT_COMPLETED` | 409 | 未完了のばらし指示が存在するためピッキング指示作成不可 | OUT-012 |
 | `ALLOCATION_INSUFFICIENT` | 422 | 在庫引当に必要な在庫が不足 | API-ALL-002（引当実行） |
@@ -1361,4 +1374,4 @@ flowchart TD
 
 ---
 
-*最終更新: 2026-03-13*
+*最終更新: 2026-03-26*
