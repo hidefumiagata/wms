@@ -380,6 +380,10 @@ public class AllocationService {
         OffsetDateTime now = OffsetDateTime.now();
 
         // Step1-2: ばらし元在庫のallocated_qtyとquantityを減算
+        if (unpack.getSourceInventoryId() == null) {
+            throw new BusinessRuleViolationException("SOURCE_INVENTORY_ID_MISSING",
+                    "ばらし指示に元在庫IDが設定されていません (unpackId=" + unpack.getId() + ")");
+        }
         Inventory lockedSource = inventoryRepository.findByIdForUpdate(unpack.getSourceInventoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
                         "ばらし元在庫が見つかりません (id=" + unpack.getSourceInventoryId() + ")"));

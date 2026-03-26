@@ -17,6 +17,7 @@ import com.wms.master.service.ProductService;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.entity.OutboundSlipLine;
 import com.wms.outbound.repository.OutboundSlipRepository;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
@@ -1083,6 +1084,40 @@ class AllocationServiceTest {
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("ばらし元在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("sourceInventoryIdがnullの場合BusinessRuleViolationExceptionをスローする")
+        void completeUnpack_sourceInventoryIdNull_throws() {
+            setUpSecurityContext(10L);
+
+            UnpackInstruction unpack = UnpackInstruction.builder()
+                    .outboundSlipId(1L)
+                    .locationId(50L)
+                    .productId(10L)
+                    .sourceInventoryId(null)
+                    .fromUnitType("CASE")
+                    .fromQty(1)
+                    .toUnitType("PIECE")
+                    .toQty(24)
+                    .status("INSTRUCTED")
+                    .warehouseId(1L)
+                    .build();
+            setField(unpack, "id", 500L);
+
+            Product product = createProduct(10L, "PRD-0001", 24, 6);
+            Location location = new Location();
+            setField(location, "id", 50L);
+            location.setLocationCode("A-01-01");
+            location.setLocationName("棚A-01-01");
+
+            when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
+            when(productService.findById(10L)).thenReturn(product);
+            when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
+
+            assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("ばらし指示に元在庫IDが設定されていません");
         }
 
         @Test

@@ -28,6 +28,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      * 引当用在庫検索 — FEFO/FIFO順でソート。有効在庫（quantity - allocated_qty > 0）のみ対象。
      * FIFO基準: inventory_movements の最古INBOUND入庫日時（executed_at）。
      * 入庫履歴がない在庫は最後にソートされる。
+     * 荷姿の優先順はService層で制御（Phase1: 同一荷姿、Phase2: 上位荷姿からばらし）。
      */
     @Query(value = """
             SELECT i.* FROM inventories i
@@ -36,6 +37,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                        MIN(im.executed_at) AS first_inbound_at
                 FROM inventory_movements im
                 WHERE im.movement_type = 'INBOUND'
+                  AND im.product_id = :productId
                 GROUP BY im.product_id, im.location_id, im.unit_type, im.lot_number, im.expiry_date
             ) m ON i.product_id = m.product_id
                 AND i.location_id = m.location_id
