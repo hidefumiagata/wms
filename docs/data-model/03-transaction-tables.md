@@ -25,6 +25,7 @@
 | `created_by` | bigint | NOT NULL | — | 作成者（FK → users.id） |
 | `updated_at` | timestamptz | NOT NULL | now() | 更新日時 |
 | `updated_by` | bigint | NOT NULL | — | 更新者（FK → users.id） |
+| `version` | int | NOT NULL | 0 | 楽観ロックバージョン |
 
 **制約・インデックス**:
 - `UNIQUE (slip_number)`
@@ -58,6 +59,7 @@
 | `stored_by` | bigint | NULL | — | 入庫確定者（FK → users.id） |
 | `created_at` | timestamptz | NOT NULL | now() | 作成日時 |
 | `updated_at` | timestamptz | NOT NULL | now() | 更新日時 |
+| `version` | int | NOT NULL | 0 | 楽観ロックバージョン |
 
 **制約**:
 - `UNIQUE (inbound_slip_id, line_no)`
@@ -90,10 +92,12 @@
 | `shipped_by` | bigint | NULL | — | 出荷完了者（FK → users.id） |
 | `cancelled_at` | timestamptz | NULL | — | キャンセル日時 |
 | `cancelled_by` | bigint | NULL | — | キャンセル者（FK → users.id） |
+| `cancel_reason` | text | NULL | — | キャンセル理由 |
 | `created_at` | timestamptz | NOT NULL | now() | 作成日時 |
 | `created_by` | bigint | NOT NULL | — | 作成者（FK → users.id） |
 | `updated_at` | timestamptz | NOT NULL | now() | 更新日時 |
 | `updated_by` | bigint | NOT NULL | — | 更新者（FK → users.id） |
+| `version` | int | NOT NULL | 0 | 楽観ロックバージョン |
 
 **制約・インデックス**:
 - `UNIQUE (slip_number)`
