@@ -111,7 +111,7 @@
 - **[RULE-FE-001]** `src/types/generated/`（OpenAPI自動生成）配下のファイルは手動編集禁止。型の拡張が必要な場合は別ファイルで `extends` する。
   → 詳細: [architecture-blueprint/03-frontend-architecture.md](architecture-blueprint/03-frontend-architecture.md)
 
-- **[RULE-FE-002]** AxiosインスタンスはAPIクライアント（`src/utils/api.ts`）を使用。`withCredentials: true` 設定（httpOnly Cookie自動送信のため）。直接 `axios.create()` を各Composableで呼ぶことは禁止。
+- **[RULE-FE-002]** AxiosインスタンスはAPIクライアント（`src/api/client.ts`）を使用。`withCredentials: true` 設定（httpOnly Cookie自動送信のため）。直接 `axios.create()` を各Composableで呼ぶことは禁止。
 
 ### Composable設計
 

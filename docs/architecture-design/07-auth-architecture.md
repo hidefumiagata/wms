@@ -727,7 +727,7 @@ sequenceDiagram
 ### 6.4 フロントエンド Axios インターセプター設計
 
 ```typescript
-// src/utils/api.ts
+// src/api/client.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
