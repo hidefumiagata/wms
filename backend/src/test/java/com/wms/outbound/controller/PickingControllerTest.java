@@ -17,6 +17,8 @@ import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
+
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -164,6 +166,77 @@ class PickingControllerTest {
         }
 
         @Test
+        @DisplayName("ステータスフィルタ付きで一覧を返す")
+        void list_withStatusFilter_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(1L, "PIC-20260320-001", "CREATED");
+
+            when(pickingService.search(
+                    eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(pi)));
+            when(pickingService.countLinesByInstructionId(1L)).thenReturn(1L);
+
+            Warehouse wh = createWarehouse();
+            when(warehouseService.findByIds(any())).thenReturn(Map.of(1L, wh));
+
+            User user = createUser();
+            when(userRepository.findAllById(any())).thenReturn(List.of(user));
+
+            mockMvc.perform(get(PICKING_URL)
+                            .param("warehouseId", "1")
+                            .param("status", "CREATED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(1)));
+        }
+
+        @Test
+        @DisplayName("倉庫やユーザーがマップに存在しない場合nullフィールドで返す")
+        void list_nullWarehouseAndUser_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(1L, "PIC-20260320-001", "CREATED");
+            // warehouseId=1L だがマップには含めない
+
+            when(pickingService.search(
+                    eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(pi)));
+            when(pickingService.countLinesByInstructionId(1L)).thenReturn(1L);
+
+            // warehouseマップとuserマップを空で返す
+            when(warehouseService.findByIds(any())).thenReturn(Map.of());
+            when(userRepository.findAllById(any())).thenReturn(List.of());
+
+            mockMvc.perform(get(PICKING_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].warehouseName").doesNotExist())
+                    .andExpect(jsonPath("$.content[0].createdByName").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("areaId付きの指示で一覧を返す")
+        void list_withArea_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(1L, "PIC-20260320-001", "CREATED");
+            setField(pi, "areaId", 5L);
+
+            when(pickingService.search(
+                    eq(1L), any(), any(), any(), any(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of(pi)));
+            when(pickingService.countLinesByInstructionId(1L)).thenReturn(1L);
+
+            Warehouse wh = createWarehouse();
+            when(warehouseService.findByIds(any())).thenReturn(Map.of(1L, wh));
+
+            Area area = new Area();
+            setField(area, "id", 5L);
+            area.setAreaName("A棟");
+            when(areaService.findByIds(Set.of(5L))).thenReturn(Map.of(5L, area));
+
+            User user = createUser();
+            when(userRepository.findAllById(any())).thenReturn(List.of(user));
+
+            mockMvc.perform(get(PICKING_URL).param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].areaName").value("A棟"));
+        }
+
+        @Test
         @DisplayName("倉庫が存在しない場合404を返す")
         void list_warehouseNotFound_returns404() throws Exception {
             when(pickingService.search(
@@ -280,6 +353,100 @@ class PickingControllerTest {
                     .andExpect(jsonPath("$.createdByName").value("担当 太郎"))
                     .andExpect(jsonPath("$.lines", hasSize(1)))
                     .andExpect(jsonPath("$.lines[0].locationCode").value("A-01-01"));
+        }
+
+        @Test
+        @DisplayName("areaId付きの場合エリア名を含めて返す")
+        void get_withArea_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(50L, "PIC-20260320-001", "CREATED");
+            setField(pi, "areaId", 5L);
+            PickingInstructionLine line = createLine(101L, pi, 1);
+            pi.getLines().add(line);
+
+            when(pickingService.findByIdWithLines(50L)).thenReturn(pi);
+
+            Warehouse wh = createWarehouse();
+            when(warehouseService.findById(1L)).thenReturn(wh);
+
+            Area area = new Area();
+            setField(area, "id", 5L);
+            area.setAreaName("A棟");
+            when(areaService.findById(5L)).thenReturn(area);
+
+            User user = createUser();
+            when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+
+            OutboundSlip slip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260320-0001")
+                    .slipType("NORMAL").warehouseId(1L).warehouseCode("WH-001").warehouseName("東京DC")
+                    .plannedDate(LocalDate.of(2026, 3, 20)).status("ALLOCATED").build();
+            setField(slip, "id", 1L);
+            setField(slip, "createdAt", OffsetDateTime.now());
+            setField(slip, "createdBy", 10L);
+            setField(slip, "updatedAt", OffsetDateTime.now());
+            setField(slip, "updatedBy", 10L);
+            when(outboundSlipService.findBySlipLineId(101L)).thenReturn(slip);
+
+            mockMvc.perform(get(PICKING_URL + "/50"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.areaName").value("A棟"));
+        }
+
+        @Test
+        @DisplayName("areaIdがnull、userが見つからない場合もnullフィールドで正常に返す")
+        void get_nullAreaAndUser_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(50L, "PIC-20260320-001", "CREATED");
+            // areaId = null (デフォルト)
+            PickingInstructionLine line = createLine(101L, pi, 1);
+            pi.getLines().add(line);
+
+            when(pickingService.findByIdWithLines(50L)).thenReturn(pi);
+
+            Warehouse wh = createWarehouse();
+            when(warehouseService.findById(1L)).thenReturn(wh);
+
+            // user not found
+            when(userRepository.findById(10L)).thenReturn(Optional.empty());
+
+            OutboundSlip slip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260320-0001")
+                    .slipType("NORMAL").warehouseId(1L).warehouseCode("WH-001").warehouseName("東京DC")
+                    .plannedDate(LocalDate.of(2026, 3, 20)).status("ALLOCATED").build();
+            setField(slip, "id", 1L);
+            setField(slip, "createdAt", OffsetDateTime.now());
+            setField(slip, "createdBy", 10L);
+            setField(slip, "updatedAt", OffsetDateTime.now());
+            setField(slip, "updatedBy", 10L);
+            when(outboundSlipService.findBySlipLineId(101L)).thenReturn(slip);
+
+            mockMvc.perform(get(PICKING_URL + "/50"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.areaName").doesNotExist())
+                    .andExpect(jsonPath("$.createdByName").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("buildSlipNumberMap内で例外が発生しても空文字で返す")
+        void get_slipNumberLookupFails_returns200() throws Exception {
+            PickingInstruction pi = createInstruction(50L, "PIC-20260320-001", "CREATED");
+            PickingInstructionLine line = createLine(101L, pi, 1);
+            pi.getLines().add(line);
+
+            when(pickingService.findByIdWithLines(50L)).thenReturn(pi);
+
+            Warehouse wh = createWarehouse();
+            when(warehouseService.findById(1L)).thenReturn(wh);
+
+            User user = createUser();
+            when(userRepository.findById(10L)).thenReturn(Optional.of(user));
+
+            // findBySlipLineId throws exception
+            when(outboundSlipService.findBySlipLineId(101L))
+                    .thenThrow(new ResourceNotFoundException("NOT_FOUND", "not found"));
+
+            mockMvc.perform(get(PICKING_URL + "/50"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.lines[0].outboundSlipNumber").value(""));
         }
 
         @Test

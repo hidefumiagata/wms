@@ -906,5 +906,23 @@ class PickingServiceTest {
             var result = pickingService.sumPickedQtyBySlipLineIds(null);
             assertThat(result).isEmpty();
         }
+
+        @Test
+        @DisplayName("集計値が0の明細はマップから除外される")
+        void sumPickedQty_zeroValue_excluded() {
+            PickingInstructionLine l1 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(10L).qtyPicked(0).build();
+            PickingInstructionLine l2 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(20L).qtyPicked(50).build();
+
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(10L, 20L)))
+                    .thenReturn(List.of(l1, l2));
+
+            var result = pickingService.sumPickedQtyBySlipLineIds(List.of(10L, 20L));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(20L)).isEqualTo(50);
+            assertThat(result.containsKey(10L)).isFalse();
+        }
     }
 }

@@ -1162,6 +1162,13 @@ class AllocationServiceTest {
                     .unitType("CASE").allocatedQty(3).warehouseId(1L).build();
             setField(nonMatchingDetail, "id", 1001L);
 
+            // 付け替え対象外の引当明細（inventoryIdが異なる）
+            AllocationDetail otherInventoryDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(102L)
+                    .inventoryId(999L).locationId(50L).productId(10L)
+                    .unitType("PIECE").allocatedQty(5).warehouseId(1L).build();
+            setField(otherInventoryDetail, "id", 1002L);
+
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
@@ -1171,7 +1178,7 @@ class AllocationServiceTest {
                     50L, 10L, "PIECE", null, null)).thenReturn(Optional.of(targetInv));
             when(inventoryRepository.findByIdForUpdate(300L)).thenReturn(Optional.of(targetInv));
             when(allocationDetailRepository.findByOutboundSlipId(1L))
-                    .thenReturn(List.of(matchingDetail, nonMatchingDetail));
+                    .thenReturn(List.of(matchingDetail, nonMatchingDetail, otherInventoryDetail));
             when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
             when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
@@ -1226,6 +1233,13 @@ class AllocationServiceTest {
                     .unitType("CASE").allocatedQty(5).warehouseId(1L).build();
             setField(nonMatchingDetail, "id", 1001L);
 
+            // inventoryIdが異なる → フィルタされる（短絡評価カバレッジ用）
+            AllocationDetail otherInventoryDetail = AllocationDetail.builder()
+                    .outboundSlipId(1L).outboundSlipLineId(102L)
+                    .inventoryId(999L).locationId(50L).productId(10L)
+                    .unitType("PIECE").allocatedQty(3).warehouseId(1L).build();
+            setField(otherInventoryDetail, "id", 1002L);
+
             when(unpackInstructionRepository.findById(500L)).thenReturn(Optional.of(unpack));
             when(productService.findById(10L)).thenReturn(product);
             when(locationRepository.findById(50L)).thenReturn(Optional.of(location));
@@ -1240,7 +1254,7 @@ class AllocationServiceTest {
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                     50L, 10L, "PIECE", null, null)).thenReturn(Optional.empty());
             when(allocationDetailRepository.findByOutboundSlipId(1L))
-                    .thenReturn(List.of(matchingDetail, nonMatchingDetail));
+                    .thenReturn(List.of(matchingDetail, nonMatchingDetail, otherInventoryDetail));
             when(allocationDetailRepository.save(any(AllocationDetail.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
             when(unpackInstructionRepository.save(any(UnpackInstruction.class))).thenAnswer(i -> i.getArgument(0));
@@ -1526,6 +1540,24 @@ class AllocationServiceTest {
             var result = allocationService.sumAllocatedQtyBySlipId(null);
 
             assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("集計値が0の明細はマップから除外される")
+        void sumAllocatedQty_zeroValue_excluded() {
+            AllocationDetail d1 = AllocationDetail.builder()
+                    .outboundSlipLineId(10L).allocatedQty(0).build();
+            AllocationDetail d2 = AllocationDetail.builder()
+                    .outboundSlipLineId(20L).allocatedQty(50).build();
+
+            when(allocationDetailRepository.findByOutboundSlipId(1L))
+                    .thenReturn(List.of(d1, d2));
+
+            var result = allocationService.sumAllocatedQtyBySlipId(1L);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(20L)).isEqualTo(50);
+            assertThat(result.containsKey(10L)).isFalse();
         }
     }
 }
