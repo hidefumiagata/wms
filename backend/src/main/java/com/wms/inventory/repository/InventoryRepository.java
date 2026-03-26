@@ -24,15 +24,27 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.productId = :productId AND i.quantity > 0")
     boolean existsByProductIdWithPositiveQty(@Param("productId") Long productId);
 
+    /**
+     * 引当用在庫検索 — FEFO/FIFO順でソート。有効在庫（quantity - allocated_qty > 0）のみ対象。
+     * 同一荷姿を優先、異なる荷姿はケース→ボール→ピースの順。
+     */
+    @Query("""
+            SELECT i FROM Inventory i
+            WHERE i.warehouseId = :warehouseId
+              AND i.productId = :productId
+              AND (i.quantity - i.allocatedQty) > 0
+            ORDER BY i.expiryDate ASC NULLS LAST, i.updatedAt ASC
+            """)
+    List<Inventory> findAvailableStock(
+            @Param("warehouseId") Long warehouseId,
+            @Param("productId") Long productId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Inventory i WHERE i.id = :id")
     Optional<Inventory> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT COALESCE(SUM(i.quantity), 0) FROM Inventory i WHERE i.locationId = :locationId AND i.unitType = :unitType")
     int sumQuantityByLocationAndUnitType(@Param("locationId") Long locationId, @Param("unitType") String unitType);
-
-    @Query("SELECT i FROM Inventory i WHERE i.warehouseId = :warehouseId AND i.productId = :productId AND (i.quantity - i.allocatedQty) > 0 ORDER BY i.expiryDate ASC NULLS LAST, i.id ASC")
-    List<Inventory> findAvailableStock(@Param("warehouseId") Long warehouseId, @Param("productId") Long productId);
 
     @Query("SELECT i FROM Inventory i WHERE i.locationId IN :locationIds AND i.quantity > 0")
     List<Inventory> findByLocationIdsWithPositiveQty(@Param("locationIds") List<Long> locationIds);

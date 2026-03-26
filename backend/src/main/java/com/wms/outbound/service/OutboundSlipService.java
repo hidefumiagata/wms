@@ -77,6 +77,13 @@ public class OutboundSlipService {
         return outboundSlipRepository.countLinesBySlipId(slipId);
     }
 
+    public OutboundSlip findBySlipLineId(Long slipLineId) {
+        return outboundSlipRepository.findBySlipLineId(slipLineId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "OUTBOUND_SLIP_NOT_FOUND",
+                        "出荷伝票が見つかりません (slipLineId=" + slipLineId + ")"));
+    }
+
     @Transactional
     public OutboundSlip create(CreateOutboundSlipRequest request) {
         LocalDate today = businessDateProvider.today();

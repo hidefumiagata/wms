@@ -52,4 +52,51 @@ public interface OutboundSlipRepository extends JpaRepository<OutboundSlip, Long
 
     @Query("SELECT COUNT(l) FROM OutboundSlipLine l WHERE l.outboundSlip.id = :slipId")
     long countLinesBySlipId(@Param("slipId") Long slipId);
+
+    /**
+     * 引当対象受注検索。partnerNameは部分一致。
+     */
+    @Query("""
+            SELECT s FROM OutboundSlip s
+            WHERE s.warehouseId = :warehouseId
+              AND (:statuses IS NULL OR s.status IN :statuses)
+              AND (CAST(:shippingDateFrom AS java.time.LocalDate) IS NULL OR s.plannedDate >= :shippingDateFrom)
+              AND (CAST(:shippingDateTo AS java.time.LocalDate) IS NULL OR s.plannedDate <= :shippingDateTo)
+              AND (:partnerName IS NULL OR s.partnerName LIKE CONCAT('%', :partnerName, '%') ESCAPE '\\')
+            """)
+    Page<OutboundSlip> searchForAllocation(
+            @Param("warehouseId") Long warehouseId,
+            @Param("statuses") List<String> statuses,
+            @Param("shippingDateFrom") LocalDate shippingDateFrom,
+            @Param("shippingDateTo") LocalDate shippingDateTo,
+            @Param("partnerName") String partnerName,
+            Pageable pageable);
+
+    /**
+     * 引当済み受注検索（ALLOCATED/PARTIAL_ALLOCATED）。
+     */
+    @Query("""
+            SELECT s FROM OutboundSlip s
+            WHERE s.status IN :statuses
+            """)
+    Page<OutboundSlip> findByStatusIn(
+            @Param("statuses") List<String> statuses,
+            Pageable pageable);
+
+    /**
+     * 引当済み明細数をカウント。
+     */
+    @Query("""
+            SELECT COUNT(l) FROM OutboundSlipLine l
+            WHERE l.outboundSlip.id = :slipId
+              AND l.lineStatus = 'ALLOCATED'
+            """)
+    long countAllocatedLinesBySlipId(@Param("slipId") Long slipId);
+
+    /**
+     * 出荷明細IDから親の出荷伝票をロード（明細含む）。
+     */
+    @EntityGraph(attributePaths = "lines")
+    @Query("SELECT s FROM OutboundSlip s JOIN s.lines l WHERE l.id = :slipLineId")
+    Optional<OutboundSlip> findBySlipLineId(@Param("slipLineId") Long slipLineId);
 }
