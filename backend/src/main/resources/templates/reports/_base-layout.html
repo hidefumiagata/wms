@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">レポート</title>
+</head>
+<body>
+
+<!-- ==================== 共通CSS fragment ==================== -->
+<!--/*
+  使い方: 各レポートテンプレートの <head> 内で
+  <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+*/-->
+<th:block th:fragment="common-styles(pageSize, orientation)">
+<style th:inline="text">
+    @page {
+        size: [[${pageSize}]] [[${orientation}]];
+        margin: 15mm 10mm;
+        @bottom-left {
+            content: "WMS ShowCase";
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 8pt;
+            color: #666;
+        }
+        @bottom-right {
+            content: "Page " counter(page) " / " counter(pages);
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 8pt;
+            color: #666;
+        }
+    }
+    body {
+        font-family: 'Noto Sans JP', sans-serif;
+        font-size: 9pt;
+        margin: 0;
+        color: #333;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #999;
+        padding: 1.5mm 2mm;
+        line-height: 6mm;
+    }
+    th {
+        background: #1a1a2e;
+        color: white;
+        font-size: 8pt;
+        font-weight: bold;
+        text-align: center;
+    }
+    td { vertical-align: top; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+
+    /* グループ・集計行 */
+    .group-header { background: #e8e8e8; font-weight: bold; }
+    .subtotal-row { background: #f4f4f4; font-weight: bold; }
+    .total-row { background: #1a1a2e; color: white; font-weight: bold; }
+
+    /* ステータス色 */
+    .highlight-pink { background: #FFF1F1; }      /* 差異・不一致 */
+    .highlight-yellow { background: #FFFDE7; }     /* 訂正・調整 */
+    .highlight-blue { background: #E3F2FD; }       /* 増加 */
+    .highlight-red { background: #FFEBEE; }        /* 減少 */
+    .highlight-gray { background: #F5F5F5; }       /* ゼロ在庫・無効 */
+    .text-bold { font-weight: bold; }
+    .text-strike { text-decoration: line-through; color: #999; }
+
+    /* ページ区切り */
+    .page-break { page-break-before: always; }
+
+    /* レポートヘッダー */
+    .report-header {
+        margin-bottom: 5mm;
+    }
+    .report-header h1 {
+        font-size: 14pt;
+        margin: 0 0 2mm 0;
+        color: #1a1a2e;
+    }
+    .report-header-table {
+        width: 100%;
+        border: none;
+        margin-bottom: 2mm;
+    }
+    .report-header-table td {
+        border: none;
+        padding: 0.5mm 0;
+        font-size: 8pt;
+        color: #555;
+    }
+    .report-header-table .label { font-weight: bold; width: 60mm; }
+    .report-header-table .value-right { text-align: right; }
+
+    /* データなし表示 */
+    .no-data {
+        text-align: center;
+        padding: 20mm;
+        font-size: 11pt;
+        color: #666;
+    }
+</style>
+</th:block>
+
+<!-- ==================== レポートヘッダー fragment ==================== -->
+<!--/*
+  使い方: <div th:replace="~{reports/_base-layout :: report-header}" />
+*/-->
+<div th:fragment="report-header">
+    <div class="report-header">
+        <h1 th:text="${reportTitle}">レポートタイトル</h1>
+        <table class="report-header-table">
+            <tr>
+                <td class="label">倉庫:</td>
+                <td th:text="${warehouseName}">東京第一倉庫 (WH-001)</td>
+                <td class="value-right">出力日時: <span th:text="${printDate}">2026-03-27 14:30</span></td>
+            </tr>
+            <tr>
+                <td class="label">出力者:</td>
+                <td th:text="${userName}">admin</td>
+                <td></td>
+            </tr>
+            <tr th:if="${conditionsSummary != null and !conditionsSummary.isEmpty()}">
+                <td class="label">条件:</td>
+                <td colspan="2" th:text="${conditionsSummary}">期間: 2026-03-01 ～ 2026-03-17</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- ==================== データなしメッセージ fragment ==================== -->
+<!--/*
+  使い方: <div th:replace="~{reports/_base-layout :: no-data-message}" />
+*/-->
+<div th:fragment="no-data-message">
+    <div class="no-data">該当データがありません</div>
+</div>
+
+</body>
+</html>
