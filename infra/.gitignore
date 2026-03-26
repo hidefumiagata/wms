@@ -1,0 +1,15 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# tfvars with secrets (actual secret values should use TF_VAR_* env vars)
+*.auto.tfvars
+*.auto.tfvars.json
