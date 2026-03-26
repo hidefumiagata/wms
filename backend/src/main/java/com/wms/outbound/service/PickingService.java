@@ -20,6 +20,7 @@ import com.wms.outbound.entity.OutboundSlipLine;
 import com.wms.outbound.entity.PickingInstruction;
 import com.wms.outbound.entity.PickingInstructionLine;
 import com.wms.outbound.repository.OutboundSlipRepository;
+import com.wms.outbound.repository.PickingInstructionLineRepository;
 import com.wms.outbound.repository.PickingInstructionRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.InvalidStateTransitionException;
@@ -52,6 +53,7 @@ public class PickingService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final PickingInstructionRepository pickingInstructionRepository;
+    private final PickingInstructionLineRepository pickingInstructionLineRepository;
     private final OutboundSlipRepository outboundSlipRepository;
     private final AllocationDetailRepository allocationDetailRepository;
     private final UnpackInstructionRepository unpackInstructionRepository;
@@ -97,6 +99,18 @@ public class PickingService {
      */
     public long countLinesByInstructionId(Long pickingInstructionId) {
         return pickingInstructionRepository.countLinesByInstructionId(pickingInstructionId);
+    }
+
+    public Map<Long, Integer> sumPickedQtyBySlipLineIds(List<Long> slipLineIds) {
+        if (slipLineIds == null || slipLineIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, Integer> result = pickingInstructionLineRepository.findByOutboundSlipLineIdIn(slipLineIds).stream()
+                .collect(Collectors.groupingBy(
+                        PickingInstructionLine::getOutboundSlipLineId,
+                        Collectors.summingInt(PickingInstructionLine::getQtyPicked)));
+        result.values().removeIf(v -> v == 0);
+        return result;
     }
 
     /**

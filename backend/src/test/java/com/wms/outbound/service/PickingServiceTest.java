@@ -22,6 +22,7 @@ import com.wms.outbound.entity.OutboundSlipLine;
 import com.wms.outbound.entity.PickingInstruction;
 import com.wms.outbound.entity.PickingInstructionLine;
 import com.wms.outbound.repository.OutboundSlipRepository;
+import com.wms.outbound.repository.PickingInstructionLineRepository;
 import com.wms.outbound.repository.PickingInstructionRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.InvalidStateTransitionException;
@@ -63,6 +64,9 @@ class PickingServiceTest {
 
     @Mock
     private PickingInstructionRepository pickingInstructionRepository;
+
+    @Mock
+    private PickingInstructionLineRepository pickingInstructionLineRepository;
 
     @Mock
     private OutboundSlipRepository outboundSlipRepository;
@@ -862,6 +866,63 @@ class PickingServiceTest {
             assertThatThrownBy(() -> pickingService.completePickingInstruction(999L, request))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("ピッキング指示が見つかりません");
+        }
+    }
+
+    @Nested
+    @DisplayName("sumPickedQtyBySlipLineIds")
+    class SumPickedQtyTests {
+
+        @Test
+        @DisplayName("明細ごとのピッキング数量合計を返す")
+        void sumPickedQty_returnsMapGroupedByLineId() {
+            PickingInstructionLine l1 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(10L).qtyPicked(30).build();
+            PickingInstructionLine l2 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(10L).qtyPicked(20).build();
+            PickingInstructionLine l3 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(20L).qtyPicked(50).build();
+
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(10L, 20L)))
+                    .thenReturn(List.of(l1, l2, l3));
+
+            var result = pickingService.sumPickedQtyBySlipLineIds(List.of(10L, 20L));
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(10L)).isEqualTo(50);
+            assertThat(result.get(20L)).isEqualTo(50);
+        }
+
+        @Test
+        @DisplayName("空リストの場合は空マップを返す")
+        void sumPickedQty_emptyList_returnsEmptyMap() {
+            var result = pickingService.sumPickedQtyBySlipLineIds(List.of());
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("nullの場合は空マップを返す")
+        void sumPickedQty_null_returnsEmptyMap() {
+            var result = pickingService.sumPickedQtyBySlipLineIds(null);
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("集計値が0の明細はマップから除外される")
+        void sumPickedQty_zeroValue_excluded() {
+            PickingInstructionLine l1 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(10L).qtyPicked(0).build();
+            PickingInstructionLine l2 = PickingInstructionLine.builder()
+                    .outboundSlipLineId(20L).qtyPicked(50).build();
+
+            when(pickingInstructionLineRepository.findByOutboundSlipLineIdIn(List.of(10L, 20L)))
+                    .thenReturn(List.of(l1, l2));
+
+            var result = pickingService.sumPickedQtyBySlipLineIds(List.of(10L, 20L));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(20L)).isEqualTo(50);
+            assertThat(result.containsKey(10L)).isFalse();
         }
     }
 }

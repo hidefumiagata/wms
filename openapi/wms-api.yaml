@@ -7781,6 +7781,12 @@ components:
         orderedQty:
           type: integer
           description: 受注数量
+        allocatedQty:
+          type: ['integer', 'null']
+          description: 引当数量
+        pickingQty:
+          type: ['integer', 'null']
+          description: ピッキング数量
         shippedQty:
           type: ['integer', 'null']
           description: 出荷数量

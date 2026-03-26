@@ -1,5 +1,6 @@
 package com.wms.outbound.controller;
 
+import com.wms.allocation.service.AllocationService;
 import com.wms.generated.model.CancelOutboundRequest;
 import com.wms.generated.model.CreateOutboundSlipRequest;
 import com.wms.master.service.AreaService;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -55,6 +57,9 @@ class OutboundSlipControllerTest {
 
     @MockitoBean
     private PickingService pickingService;
+
+    @MockitoBean
+    private AllocationService allocationService;
 
     @MockitoBean
     private WarehouseService warehouseService;
@@ -230,6 +235,8 @@ class OutboundSlipControllerTest {
 
             when(outboundSlipService.create(any(CreateOutboundSlipRequest.class))).thenReturn(created);
             when(outboundSlipService.findByIdWithLines(1L)).thenReturn(created);
+            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of());
+            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of());
 
             mockMvc.perform(post(SLIPS_URL)
                             .contentType(MediaType.APPLICATION_JSON)
@@ -275,6 +282,8 @@ class OutboundSlipControllerTest {
             slip.getLines().add(line);
 
             when(outboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of());
+            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of());
 
             mockMvc.perform(get(SLIPS_URL + "/1"))
                     .andExpect(status().isOk())
@@ -292,7 +301,43 @@ class OutboundSlipControllerTest {
                     .andExpect(jsonPath("$.lines[0].lineNo").value(1))
                     .andExpect(jsonPath("$.lines[0].productCode").value("PRD-0001"))
                     .andExpect(jsonPath("$.lines[0].orderedQty").value(100))
-                    .andExpect(jsonPath("$.lines[0].lineStatus").value("ORDERED"));
+                    .andExpect(jsonPath("$.lines[0].lineStatus").value("ORDERED"))
+                    .andExpect(jsonPath("$.lines[0].allocatedQty").doesNotExist())
+                    .andExpect(jsonPath("$.lines[0].pickingQty").doesNotExist());
+        }
+
+        @Test
+        @DisplayName("引当済み・ピッキング済みの数量が詳細に含まれる")
+        void getDetail_withAllocatedAndPickedQty_returns200() throws Exception {
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ALLOCATED");
+            OutboundSlipLine line = createLine(1L, slip, 1, "PRD-0001", 100);
+            slip.getLines().add(line);
+
+            when(outboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of(1L, 100));
+            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of(1L, 80));
+
+            mockMvc.perform(get(SLIPS_URL + "/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.lines[0].allocatedQty").value(100))
+                    .andExpect(jsonPath("$.lines[0].pickingQty").value(80));
+        }
+
+        @Test
+        @DisplayName("Serviceが0値を除外した空マップを返す場合はnullとして返す")
+        void getDetail_emptyMaps_returnsNull() throws Exception {
+            OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED");
+            OutboundSlipLine line = createLine(1L, slip, 1, "PRD-0001", 100);
+            slip.getLines().add(line);
+
+            when(outboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
+            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of());
+            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of());
+
+            mockMvc.perform(get(SLIPS_URL + "/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.lines[0].allocatedQty").doesNotExist())
+                    .andExpect(jsonPath("$.lines[0].pickingQty").doesNotExist());
         }
 
         @Test

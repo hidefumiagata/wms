@@ -6,6 +6,7 @@ import com.wms.master.entity.Area;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.service.AreaService;
 import com.wms.master.service.WarehouseService;
+import com.wms.allocation.service.AllocationService;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.entity.OutboundSlipLine;
 import com.wms.outbound.entity.PickingInstruction;
@@ -44,6 +45,7 @@ public class OutboundSlipController implements OutboundApi {
 
     private final OutboundSlipService outboundSlipService;
     private final PickingService pickingService;
+    private final AllocationService allocationService;
     private final WarehouseService warehouseService;
     private final AreaService areaService;
     private final UserRepository userRepository;
@@ -199,8 +201,14 @@ public class OutboundSlipController implements OutboundApi {
     }
 
     private OutboundSlipDetail toDetail(OutboundSlip s) {
+        Map<Long, Integer> allocatedQtyMap = allocationService.sumAllocatedQtyBySlipId(s.getId());
+
+        List<Long> lineIds = s.getLines().stream()
+                .map(OutboundSlipLine::getId).toList();
+        Map<Long, Integer> pickedQtyMap = pickingService.sumPickedQtyBySlipLineIds(lineIds);
+
         List<OutboundSlipLineDetail> lineDetails = s.getLines().stream()
-                .map(this::toLineDetail)
+                .map(l -> toLineDetail(l, allocatedQtyMap, pickedQtyMap))
                 .toList();
 
         return new OutboundSlipDetail()
@@ -230,7 +238,9 @@ public class OutboundSlipController implements OutboundApi {
                 .lines(lineDetails);
     }
 
-    private OutboundSlipLineDetail toLineDetail(OutboundSlipLine l) {
+    private OutboundSlipLineDetail toLineDetail(OutboundSlipLine l,
+                                                   Map<Long, Integer> allocatedQtyMap,
+                                                   Map<Long, Integer> pickedQtyMap) {
         return new OutboundSlipLineDetail()
                 .id(l.getId())
                 .lineNo(l.getLineNo())
@@ -239,6 +249,8 @@ public class OutboundSlipController implements OutboundApi {
                 .productName(l.getProductName())
                 .unitType(UnitType.fromValue(l.getUnitType()))
                 .orderedQty(l.getOrderedQty())
+                .allocatedQty(allocatedQtyMap.get(l.getId()))
+                .pickingQty(pickedQtyMap.get(l.getId()))
                 .inspectedQty(l.getInspectedQty())
                 .shippedQty(l.getShippedQty())
                 .lineStatus(OutboundLineStatus.fromValue(l.getLineStatus()));
