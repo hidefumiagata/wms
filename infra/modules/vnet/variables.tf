@@ -47,6 +47,12 @@ variable "remote_pg_cidr" {
   default     = ""
 }
 
+variable "remote_ca_cidr" {
+  description = "Remote Container Apps subnet CIDR for cross-region PG access (prd-east only)"
+  type        = string
+  default     = ""
+}
+
 variable "common_tags" {
   description = "Common tags for all resources"
   type        = map(string)

@@ -65,6 +65,7 @@ module "vnet_east" {
   snet_pg_cidr        = var.snet_pg_east_cidr
   create_pg_subnet    = true
   enable_front_door   = var.enable_front_door
+  remote_ca_cidr      = var.snet_ca_west_cidr # Allow West CA → East PG
   common_tags         = local.common_tags
 }
 
@@ -177,6 +178,7 @@ module "container_apps_east" {
   max_replicas                   = var.max_replicas_east
   spring_profile                 = "prd"
   log_level                      = var.log_level
+  db_username                    = "wmsadmin"
   db_connection_string           = module.postgresql.connection_string
   db_password                    = var.db_admin_password
   jwt_secret                     = var.jwt_secret
@@ -203,6 +205,7 @@ module "container_apps_west" {
   max_replicas                   = var.max_replicas_west
   spring_profile                 = "prd"
   log_level                      = var.log_level
+  db_username                    = "wmsadmin"
   db_connection_string           = module.postgresql.connection_string
   db_password                    = var.db_admin_password
   jwt_secret                     = var.jwt_secret
@@ -483,6 +486,78 @@ resource "azurerm_monitor_metric_alert" "ca_memory_east" {
   name                = "alert-ca-memory-prd-east"
   resource_group_name = azurerm_resource_group.east.name
   scopes              = [module.container_apps_east.container_app_id]
+  severity            = 2
+  frequency           = "PT5M"
+  window_size         = "PT5M"
+
+  criteria {
+    metric_namespace = "Microsoft.App/containerApps"
+    metric_name      = "WorkingSetBytes"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 858993459
+  }
+
+  action {
+    action_group_id = module.monitoring.action_group_id
+  }
+
+  tags = local.common_tags
+}
+
+# A-005: Container App restart (West)
+resource "azurerm_monitor_metric_alert" "ca_restart_west" {
+  name                = "alert-ca-restart-prd-west"
+  resource_group_name = azurerm_resource_group.west.name
+  scopes              = [module.container_apps_west.container_app_id]
+  severity            = 1
+  frequency           = "PT5M"
+  window_size         = "PT15M"
+
+  criteria {
+    metric_namespace = "Microsoft.App/containerApps"
+    metric_name      = "RestartCount"
+    aggregation      = "Total"
+    operator         = "GreaterThanOrEqual"
+    threshold        = 3
+  }
+
+  action {
+    action_group_id = module.monitoring.action_group_id
+  }
+
+  tags = local.common_tags
+}
+
+# A-006: CPU usage high (West)
+resource "azurerm_monitor_metric_alert" "ca_cpu_west" {
+  name                = "alert-ca-cpu-prd-west"
+  resource_group_name = azurerm_resource_group.west.name
+  scopes              = [module.container_apps_west.container_app_id]
+  severity            = 2
+  frequency           = "PT5M"
+  window_size         = "PT5M"
+
+  criteria {
+    metric_namespace = "Microsoft.App/containerApps"
+    metric_name      = "UsageNanoCores"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 400000000
+  }
+
+  action {
+    action_group_id = module.monitoring.action_group_id
+  }
+
+  tags = local.common_tags
+}
+
+# A-007: Memory usage high (West)
+resource "azurerm_monitor_metric_alert" "ca_memory_west" {
+  name                = "alert-ca-memory-prd-west"
+  resource_group_name = azurerm_resource_group.west.name
+  scopes              = [module.container_apps_west.container_app_id]
   severity            = 2
   frequency           = "PT5M"
   window_size         = "PT5M"

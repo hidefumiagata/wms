@@ -58,6 +58,12 @@ variable "log_level" {
   type        = string
 }
 
+variable "db_username" {
+  description = "Database username"
+  type        = string
+  sensitive   = true
+}
+
 variable "db_connection_string" {
   description = "JDBC connection string"
   type        = string

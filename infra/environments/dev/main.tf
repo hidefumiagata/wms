@@ -106,6 +106,7 @@ module "container_apps" {
   max_replicas                   = var.max_replicas
   spring_profile                 = var.environment
   log_level                      = var.log_level
+  db_username                    = "wmsadmin"
   db_connection_string           = module.postgresql.connection_string
   db_password                    = var.db_admin_password
   jwt_secret                     = var.jwt_secret

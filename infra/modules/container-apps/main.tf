@@ -23,6 +23,10 @@ resource "azurerm_container_app" "backend" {
   }
 
   secret {
+    name  = "spring-datasource-username"
+    value = var.db_username
+  }
+  secret {
     name  = "spring-datasource-url"
     value = var.db_connection_string
   }
@@ -62,8 +66,8 @@ resource "azurerm_container_app" "backend" {
         secret_name = "spring-datasource-url"
       }
       env {
-        name  = "SPRING_DATASOURCE_USERNAME"
-        value = "wmsadmin"
+        name        = "SPRING_DATASOURCE_USERNAME"
+        secret_name = "spring-datasource-username"
       }
       env {
         name        = "SPRING_DATASOURCE_PASSWORD"

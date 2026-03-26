@@ -191,6 +191,22 @@ resource "azurerm_network_security_rule" "pg_inbound_ca" {
   network_security_group_name = azurerm_network_security_group.pg[0].name
 }
 
+# Cross-region CA → PG inbound (prd-east: allow West CA via VNet Peering)
+resource "azurerm_network_security_rule" "pg_inbound_ca_remote" {
+  count                       = var.create_pg_subnet && var.remote_ca_cidr != "" ? 1 : 0
+  name                        = "Allow-CA-Remote-PostgreSQL-Inbound"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "5432"
+  source_address_prefix       = var.remote_ca_cidr
+  destination_address_prefix  = "*"
+  resource_group_name         = var.resource_group_name
+  network_security_group_name = azurerm_network_security_group.pg[0].name
+}
+
 resource "azurerm_network_security_rule" "pg_inbound_deny_all" {
   count                       = var.create_pg_subnet ? 1 : 0
   name                        = "Deny-All-Inbound"

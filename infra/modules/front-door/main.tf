@@ -104,16 +104,31 @@ resource "azurerm_cdn_frontdoor_route" "static" {
 
 # --- WAF Policy ---
 
+# Note: managed_rule (Microsoft_DefaultRuleSet) requires Premium SKU.
+# Standard SKU supports custom rules only. To use managed rules,
+# upgrade sku_name to "Premium_AzureFrontDoor" (~$330/month).
 resource "azurerm_cdn_frontdoor_firewall_policy" "main" {
   name                = "wafwmsprd"
   resource_group_name = var.resource_group_name
   sku_name            = azurerm_cdn_frontdoor_profile.main.sku_name
   mode                = "Prevention"
 
-  managed_rule {
-    type    = "Microsoft_DefaultRuleSet"
-    version = "2.1"
-    action  = "Block"
+  # Rate limiting: block IPs exceeding 100 requests/min
+  custom_rule {
+    name     = "RateLimitRule"
+    type     = "RateLimitRule"
+    action   = "Block"
+    priority = 100
+
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 100
+
+    match_condition {
+      match_variable     = "RemoteAddr"
+      operator           = "IPMatch"
+      match_values       = ["0.0.0.0/0"]
+      negation_condition = true
+    }
   }
 }
 
