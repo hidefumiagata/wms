@@ -50,6 +50,9 @@ public class UnpackInstruction {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    @Column(name = "source_inventory_id")
+    private Long sourceInventoryId;
+
     @Column(name = "warehouse_id", nullable = false)
     private Long warehouseId;
 
