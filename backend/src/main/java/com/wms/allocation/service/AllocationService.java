@@ -33,7 +33,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 
@@ -93,6 +95,15 @@ public class AllocationService {
 
     public long countAllocatedLinesBySlipId(Long slipId) {
         return outboundSlipRepository.countAllocatedLinesBySlipId(slipId);
+    }
+
+    // --- 引当数量集計 ---
+
+    public Map<Long, Integer> sumAllocatedQtyBySlipId(Long slipId) {
+        return allocationDetailRepository.findByOutboundSlipId(slipId).stream()
+                .collect(Collectors.groupingBy(
+                        AllocationDetail::getOutboundSlipLineId,
+                        Collectors.summingInt(AllocationDetail::getAllocatedQty)));
     }
 
     // --- 引当実行 ---

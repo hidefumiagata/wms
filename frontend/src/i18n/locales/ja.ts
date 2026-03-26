@@ -595,6 +595,8 @@ export default {
       productName: '商品名',
       unitType: '荷姿',
       orderedQty: '受注数量',
+      allocatedQty: '引当数',
+      pickingQty: 'ピッキング数',
       inspectedQty: '検品数',
       shippedQty: '出荷数',
       backToList: '一覧に戻る',

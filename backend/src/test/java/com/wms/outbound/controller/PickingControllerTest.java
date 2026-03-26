@@ -1,5 +1,6 @@
 package com.wms.outbound.controller;
 
+import com.wms.allocation.service.AllocationService;
 import com.wms.generated.model.CreatePickingInstructionRequest;
 import com.wms.master.entity.Area;
 import com.wms.master.entity.Warehouse;
@@ -56,6 +57,9 @@ class PickingControllerTest {
 
     @MockitoBean
     private PickingService pickingService;
+
+    @MockitoBean
+    private AllocationService allocationService;
 
     @MockitoBean
     private WarehouseService warehouseService;

@@ -1484,4 +1484,40 @@ class AllocationServiceTest {
             assertThat(result.getContent()).hasSize(1);
         }
     }
+
+    @Nested
+    @DisplayName("sumAllocatedQtyBySlipId")
+    class SumAllocatedQtyTests {
+
+        @Test
+        @DisplayName("明細ごとの引当数量合計を返す")
+        void sumAllocatedQty_returnsMapGroupedByLineId() {
+            AllocationDetail d1 = AllocationDetail.builder()
+                    .outboundSlipLineId(10L).allocatedQty(30).build();
+            AllocationDetail d2 = AllocationDetail.builder()
+                    .outboundSlipLineId(10L).allocatedQty(20).build();
+            AllocationDetail d3 = AllocationDetail.builder()
+                    .outboundSlipLineId(20L).allocatedQty(50).build();
+
+            when(allocationDetailRepository.findByOutboundSlipId(1L))
+                    .thenReturn(List.of(d1, d2, d3));
+
+            var result = allocationService.sumAllocatedQtyBySlipId(1L);
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(10L)).isEqualTo(50);
+            assertThat(result.get(20L)).isEqualTo(50);
+        }
+
+        @Test
+        @DisplayName("引当がない場合は空マップを返す")
+        void sumAllocatedQty_noAllocations_returnsEmptyMap() {
+            when(allocationDetailRepository.findByOutboundSlipId(1L))
+                    .thenReturn(List.of());
+
+            var result = allocationService.sumAllocatedQtyBySlipId(1L);
+
+            assertThat(result).isEmpty();
+        }
+    }
 }

@@ -69,6 +69,18 @@ export interface OutboundSlipLineDetail {
      */
     'orderedQty'?: number;
     /**
+     * 引当数量
+     * @type {number}
+     * @memberof OutboundSlipLineDetail
+     */
+    'allocatedQty'?: number | null;
+    /**
+     * ピッキング数量
+     * @type {number}
+     * @memberof OutboundSlipLineDetail
+     */
+    'pickingQty'?: number | null;
+    /**
      * 出荷数量
      * @type {number}
      * @memberof OutboundSlipLineDetail

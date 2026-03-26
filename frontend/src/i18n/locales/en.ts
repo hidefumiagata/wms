@@ -592,6 +592,8 @@ export default {
       productName: 'Product Name',
       unitType: 'Unit Type',
       orderedQty: 'Ordered Qty',
+      allocatedQty: 'Allocated Qty',
+      pickingQty: 'Picking Qty',
       inspectedQty: 'Inspected Qty',
       shippedQty: 'Shipped Qty',
       backToList: 'Back to List',

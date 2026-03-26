@@ -45,6 +45,12 @@
           <el-table-column prop="productName" :label="t('outbound.slip.productName')" min-width="160" />
           <el-table-column prop="unitType" :label="t('outbound.slip.unitType')" width="80" align="center" />
           <el-table-column prop="orderedQty" :label="t('outbound.slip.orderedQty')" width="90" align="right" />
+          <el-table-column :label="t('outbound.slip.allocatedQty')" width="90" align="right">
+            <template #default="{ row }">{{ row.allocatedQty != null ? row.allocatedQty : '—' }}</template>
+          </el-table-column>
+          <el-table-column :label="t('outbound.slip.pickingQty')" width="110" align="right">
+            <template #default="{ row }">{{ row.pickingQty != null ? row.pickingQty : '—' }}</template>
+          </el-table-column>
           <el-table-column :label="t('outbound.slip.inspectedQty')" width="90" align="right">
             <template #default="{ row }">{{ row.inspectedQty != null ? row.inspectedQty : '—' }}</template>
           </el-table-column>
