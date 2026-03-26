@@ -8,6 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import org.springframework.http.ContentDisposition;
+
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -53,7 +56,7 @@ public class ReportExportService {
                 yield (ResponseEntity<List<T>>) (ResponseEntity<?>) ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                         .header(HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"" + meta.fileSlug() + ".csv\"")
+                                buildContentDisposition(meta.fileSlug() + ".csv"))
                         .body(csvBytes);
             }
             case PDF -> {
@@ -62,9 +65,20 @@ public class ReportExportService {
                 yield (ResponseEntity<List<T>>) (ResponseEntity<?>) ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_PDF)
                         .header(HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"" + meta.fileSlug() + ".pdf\"")
+                                buildContentDisposition(meta.fileSlug() + ".pdf"))
                         .body(pdfBytes);
             }
         };
+    }
+
+    /**
+     * Content-Disposition ヘッダーを安全に構築する。
+     * Spring の ContentDisposition ビルダーを使用してヘッダーインジェクションを防止する。
+     */
+    static String buildContentDisposition(String filename) {
+        return ContentDisposition.attachment()
+                .filename(filename, StandardCharsets.UTF_8)
+                .build()
+                .toString();
     }
 }

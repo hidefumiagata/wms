@@ -126,6 +126,47 @@ class CsvGenerationServiceTest {
     }
 
     @Nested
+    @DisplayName("sanitizeFormulaInjection")
+    class SanitizeFormulaInjection {
+
+        @Test
+        @DisplayName("= で始まる値にシングルクォートが前置される")
+        void shouldSanitizeEquals() {
+            assertThat(service.sanitizeFormulaInjection("=SUM(A1:A10)")).isEqualTo("'=SUM(A1:A10)");
+        }
+
+        @Test
+        @DisplayName("+ で始まる値にシングルクォートが前置される")
+        void shouldSanitizePlus() {
+            assertThat(service.sanitizeFormulaInjection("+cmd|'/C calc'!A0")).isEqualTo("'+cmd|'/C calc'!A0");
+        }
+
+        @Test
+        @DisplayName("- で始まる値にシングルクォートが前置される")
+        void shouldSanitizeMinus() {
+            assertThat(service.sanitizeFormulaInjection("-1+1")).isEqualTo("'-1+1");
+        }
+
+        @Test
+        @DisplayName("@ で始まる値にシングルクォートが前置される")
+        void shouldSanitizeAt() {
+            assertThat(service.sanitizeFormulaInjection("@SUM(A1)")).isEqualTo("'@SUM(A1)");
+        }
+
+        @Test
+        @DisplayName("通常の値はそのまま返される")
+        void shouldNotSanitizePlainValue() {
+            assertThat(service.sanitizeFormulaInjection("normal value")).isEqualTo("normal value");
+        }
+
+        @Test
+        @DisplayName("空文字はそのまま返される")
+        void shouldNotSanitizeEmpty() {
+            assertThat(service.sanitizeFormulaInjection("")).isEqualTo("");
+        }
+    }
+
+    @Nested
     @DisplayName("escapeCsvRow")
     class EscapeCsvRow {
 

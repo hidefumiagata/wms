@@ -102,7 +102,8 @@ class ReportExportServiceTest {
                     List.of("item"), ReportFormat.CSV, testMeta);
 
             assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-                    .isEqualTo("attachment; filename=\"test_20260327.csv\"");
+                    .contains("attachment")
+                    .contains("test_20260327.csv");
         }
     }
 
@@ -135,7 +136,8 @@ class ReportExportServiceTest {
                     List.of("item"), ReportFormat.PDF, testMeta);
 
             assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-                    .isEqualTo("attachment; filename=\"test_20260327.pdf\"");
+                    .contains("attachment")
+                    .contains("test_20260327.pdf");
         }
     }
 

@@ -62,8 +62,23 @@ public class CsvGenerationService {
     }
 
     String escapeCsvField(String value) {
-        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
+        // CSV injection 対策: スプレッドシートで数式として解釈される先頭文字を無害化
+        String sanitized = sanitizeFormulaInjection(value);
+        if (sanitized.contains(",") || sanitized.contains("\"") || sanitized.contains("\n") || sanitized.contains("\r")) {
+            return "\"" + sanitized.replace("\"", "\"\"") + "\"";
+        }
+        return sanitized;
+    }
+
+    /**
+     * CSV injection (Formula injection) 対策。
+     * 先頭が =, +, -, @, \t, \r の場合、シングルクォートを前置して数式実行を防止する。
+     */
+    String sanitizeFormulaInjection(String value) {
+        if (value.isEmpty()) return value;
+        char first = value.charAt(0);
+        if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
+            return "'" + value;
         }
         return value;
     }
