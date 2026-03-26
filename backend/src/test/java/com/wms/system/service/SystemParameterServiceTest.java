@@ -177,7 +177,7 @@ class SystemParameterServiceTest {
 
         SystemParameter result = systemParameterService.updateValue("FEATURE_FLAG", "FALSE", 0);
 
-        assertThat(result.getParamValue()).isEqualTo("FALSE");
+        assertThat(result.getParamValue()).isEqualTo("false");
     }
 
     @Test

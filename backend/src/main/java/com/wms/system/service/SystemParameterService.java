@@ -1,5 +1,6 @@
 package com.wms.system.service;
 
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.SystemParameter;
@@ -44,7 +45,10 @@ public class SystemParameterService {
                     "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
         }
         validateParamValue(param, paramValue);
-        param.setParamValue(paramValue);
+        // BOOLEAN型は小文字に正規化（大文字小文字の揺れを防止）
+        String normalizedValue = "BOOLEAN".equals(param.getValueType())
+                ? paramValue.toLowerCase() : paramValue;
+        param.setParamValue(normalizedValue);
         param.setVersion(version);
         try {
             SystemParameter saved = systemParameterRepository.save(param);
@@ -62,13 +66,13 @@ public class SystemParameterService {
             try {
                 Integer.parseInt(newValue);
             } catch (NumberFormatException e) {
-                throw new com.wms.shared.exception.BusinessRuleViolationException(
+                throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "INTEGER型パラメータに不正な値: " + newValue);
             }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
-                throw new com.wms.shared.exception.BusinessRuleViolationException(
+                throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "BOOLEAN型パラメータに不正な値: " + newValue);
             }

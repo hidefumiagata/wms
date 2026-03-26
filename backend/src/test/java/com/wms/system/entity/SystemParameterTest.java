@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class SystemParameterTest {
 
@@ -32,5 +33,16 @@ class SystemParameterTest {
                 .paramValue("false").build();
 
         assertThat(param.getBooleanValue()).isFalse();
+    }
+
+    @Test
+    @DisplayName("getBooleanValue: 非boolean文字列でIllegalStateException")
+    void getBooleanValue_nonBooleanString_throwsException() {
+        SystemParameter param = SystemParameter.builder()
+                .paramValue("42").build();
+
+        assertThatThrownBy(param::getBooleanValue)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("42");
     }
 }
