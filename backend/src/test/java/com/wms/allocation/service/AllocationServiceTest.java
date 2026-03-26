@@ -4,7 +4,9 @@ import com.wms.allocation.entity.AllocationDetail;
 import com.wms.allocation.entity.UnpackInstruction;
 import com.wms.allocation.repository.AllocationDetailRepository;
 import com.wms.allocation.repository.UnpackInstructionRepository;
-import com.wms.allocation.service.AllocationService.*;
+import com.wms.allocation.service.AllocationService.AllocationReleaseInfo;
+import com.wms.allocation.service.AllocationService.AllocationResult;
+import com.wms.allocation.service.AllocationService.UnpackCompletionInfo;
 import com.wms.generated.model.ExecuteAllocationRequest;
 import com.wms.generated.model.ReleaseAllocationRequest;
 import com.wms.inventory.entity.Inventory;
@@ -47,7 +49,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AllocationService")

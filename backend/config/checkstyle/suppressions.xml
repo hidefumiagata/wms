@@ -4,12 +4,9 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-    <!-- Test classes: relax rules for readability and test conventions -->
+    <!-- Test classes: relax formatting rules for readability and test conventions -->
     <suppress checks="MethodName" files=".*Test\.java$"/>
     <suppress checks="FileLength" files=".*Test\.java$"/>
-    <suppress checks="AvoidStarImport" files=".*Test\.java$"/>
-    <suppress checks="UnusedImports" files=".*Test\.java$"/>
-    <suppress checks="RedundantImport" files=".*Test\.java$"/>
     <suppress checks="NeedBraces" files=".*Test\.java$"/>
     <suppress checks="OneStatementPerLine" files=".*Test\.java$"/>
     <suppress checks="LeftCurly" files=".*Test\.java$"/>

@@ -23,7 +23,6 @@ import com.wms.shared.exception.InvalidStateTransitionException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
-import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
