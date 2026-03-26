@@ -36,6 +36,16 @@ export async function downloadReport<T = unknown>(options: DownloadOptions): Pro
     responseType: 'blob',
   })
 
+  // エラーレスポンスが JSON として返された場合の検出
+  // （Blob モードではステータスコードが 2xx でないとき Axios が reject するが、
+  //   サーバーが 200 + JSON エラーを返すケースに備えて Content-Type をチェック）
+  const contentType = response.headers['content-type'] || ''
+  if (contentType.includes('application/json')) {
+    const text = await response.data.text()
+    const errorData = JSON.parse(text)
+    throw new Error(errorData.message || 'レポートのダウンロードに失敗しました')
+  }
+
   const extension = format === 'csv' ? '.csv' : '.pdf'
   const mimeType = format === 'csv' ? 'text/csv; charset=UTF-8' : 'application/pdf'
 

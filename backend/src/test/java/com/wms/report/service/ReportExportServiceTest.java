@@ -1,7 +1,6 @@
 package com.wms.report.service;
 
 import com.wms.generated.model.ReportFormat;
-import com.wms.shared.exception.BusinessRuleViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -10,8 +9,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -157,13 +158,15 @@ class ReportExportServiceTest {
         }
 
         @Test
-        @DisplayName("10,000 件超過の場合は BusinessRuleViolationException がスローされる")
+        @DisplayName("10,000 件超過の場合は 400 Bad Request がスローされる")
         void shouldThrowExceptionWhenExceedingMaxRecords() {
             List<String> data = new ArrayList<>(
                     IntStream.range(0, 10_001).mapToObj(String::valueOf).toList());
 
             assertThatThrownBy(() -> service.export(data, ReportFormat.JSON, testMeta))
-                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .isInstanceOf(ResponseStatusException.class)
+                    .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode())
+                            .isEqualTo(HttpStatus.BAD_REQUEST))
                     .hasMessageContaining("10,000件");
         }
     }

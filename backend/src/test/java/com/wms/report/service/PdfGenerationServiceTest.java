@@ -28,6 +28,8 @@ class PdfGenerationServiceTest {
     @BeforeEach
     void setUp() {
         service = new PdfGenerationService(templateEngine);
+        // @PostConstruct の代わりに手動でフォントを初期化
+        service.initFonts();
     }
 
     @Test
@@ -69,12 +71,27 @@ class PdfGenerationServiceTest {
     @Test
     @DisplayName("不正な HTML の場合 PdfGenerationException がスローされる")
     void shouldThrowPdfGenerationExceptionOnInvalidHtml() {
-        // Flying Saucer は不正な HTML で例外をスローする
         when(templateEngine.process(eq("reports/invalid"), any(Context.class)))
                 .thenReturn("this is not valid html at all <<<>>>");
 
         assertThatThrownBy(() -> service.generatePdf("invalid", Map.of()))
                 .isInstanceOf(PdfGenerationService.PdfGenerationException.class)
                 .hasMessageContaining("PDF生成に失敗しました");
+    }
+
+    @Test
+    @DisplayName("不正なテンプレート名は IllegalArgumentException がスローされる")
+    void shouldRejectInvalidTemplateName() {
+        assertThatThrownBy(() -> service.generatePdf("../etc/passwd", Map.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid template name");
+    }
+
+    @Test
+    @DisplayName("null テンプレート名は IllegalArgumentException がスローされる")
+    void shouldRejectNullTemplateName() {
+        assertThatThrownBy(() -> service.generatePdf(null, Map.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Invalid template name");
     }
 }

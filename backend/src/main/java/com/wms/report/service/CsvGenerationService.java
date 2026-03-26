@@ -1,5 +1,6 @@
 package com.wms.report.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * RFC 4180 準拠のエスケープ処理を行い、null 値は em ダッシュに変換する。
  */
 @Service
+@Slf4j
 public class CsvGenerationService {
 
     private static final byte[] UTF8_BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
@@ -35,19 +37,18 @@ public class CsvGenerationService {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
             baos.write(UTF8_BOM);
-            OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
-
-            // ヘッダー行
-            writer.write(escapeCsvRow(meta.csvHeaders()));
-            writer.write("\r\n");
-
-            // データ行
-            for (T item : data) {
-                String[] values = meta.csvRowMapper().apply(item);
-                writer.write(escapeCsvRow(values));
+            try (OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8)) {
+                // ヘッダー行
+                writer.write(escapeCsvRow(meta.csvHeaders()));
                 writer.write("\r\n");
+
+                // データ行
+                for (T item : data) {
+                    String[] values = meta.csvRowMapper().apply(item);
+                    writer.write(escapeCsvRow(values));
+                    writer.write("\r\n");
+                }
             }
-            writer.flush();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

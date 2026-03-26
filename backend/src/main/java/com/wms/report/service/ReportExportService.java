@@ -1,14 +1,16 @@
 package com.wms.report.service;
 
 import com.wms.generated.model.ReportFormat;
-import com.wms.shared.exception.BusinessRuleViolationException;
+import com.wms.shared.logging.TraceContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import org.springframework.http.ContentDisposition;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReportExportService {
 
     private final CsvGenerationService csvGenerationService;
@@ -44,8 +47,9 @@ public class ReportExportService {
             ReportMeta meta) {
 
         if (data.size() > MAX_RECORD_COUNT) {
-            throw new BusinessRuleViolationException(
-                    "REPORT_RECORD_LIMIT_EXCEEDED",
+            log.warn("Report record limit exceeded: count={}, report={}, traceId={}",
+                    data.size(), meta.reportTitle(), TraceContext.getCurrentTraceId());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "レポートの最大件数（10,000件）を超えています。条件を絞り込んでください。");
         }
 

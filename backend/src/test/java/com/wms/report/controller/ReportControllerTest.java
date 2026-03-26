@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -59,7 +60,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("VIEWERがレポートにアクセスすると500（未実装UnsupportedOperationException）")
+        @DisplayName("VIEWERがレポートにアクセスすると500（未実装スタブ）")
         void viewer_canAccess() throws Exception {
             // Phase 1 では UnsupportedOperationException を投げるため 500
             mockMvc.perform(get(REPORTS_BASE + "/inventory")
@@ -70,7 +71,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "WAREHOUSE_STAFF")
-        @DisplayName("WAREHOUSE_STAFFがレポートにアクセスすると500（未実装）")
+        @DisplayName("WAREHOUSE_STAFFがレポートにアクセスすると500（未実装スタブ）")
         void staff_canAccess() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory")
                             .param("warehouseId", "1")
@@ -80,7 +81,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "WAREHOUSE_MANAGER")
-        @DisplayName("WAREHOUSE_MANAGERがレポートにアクセスすると500（未実装）")
+        @DisplayName("WAREHOUSE_MANAGERがレポートにアクセスすると500（未実装スタブ）")
         void manager_canAccess() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory")
                             .param("warehouseId", "1")
@@ -90,7 +91,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "SYSTEM_ADMIN")
-        @DisplayName("SYSTEM_ADMINがレポートにアクセスすると500（未実装）")
+        @DisplayName("SYSTEM_ADMINがレポートにアクセスすると500（未実装スタブ）")
         void admin_canAccess() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory")
                             .param("warehouseId", "1")
