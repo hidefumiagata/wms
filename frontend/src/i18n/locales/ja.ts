@@ -495,6 +495,7 @@ export default {
         required: '値は必須です',
         integerFormat: '正の整数を入力してください',
         stringMaxLength: '500文字以内で入力してください',
+        booleanFormat: 'true または false を選択してください',
       },
     },
   },

@@ -1,9 +1,11 @@
 package com.wms.system.service;
 
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.repository.SystemParameterRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -146,6 +148,49 @@ class SystemParameterServiceTest {
         SystemParameter result = systemParameterService.updateValue("NAME", "new_value", 0);
 
         assertThat(result.getParamValue()).isEqualTo("new_value");
+    }
+
+    @Test
+    @DisplayName("updateValue: BOOLEAN型 — trueで更新成功")
+    void updateValue_booleanType_trueValue_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("FEATURE_FLAG").paramValue("false").valueType("BOOLEAN").build();
+        when(systemParameterRepository.findByParamKey("FEATURE_FLAG"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("FEATURE_FLAG", "true", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("true");
+    }
+
+    @Test
+    @DisplayName("updateValue: BOOLEAN型 — FALSE（大文字）で更新成功")
+    void updateValue_booleanType_uppercaseValue_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("FEATURE_FLAG").paramValue("true").valueType("BOOLEAN").build();
+        when(systemParameterRepository.findByParamKey("FEATURE_FLAG"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("FEATURE_FLAG", "FALSE", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("false");
+    }
+
+    @Test
+    @DisplayName("updateValue: BOOLEAN型 — 不正値でBusinessRuleViolationException")
+    void updateValue_booleanType_invalidValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("FEATURE_FLAG").paramValue("true").valueType("BOOLEAN").build();
+        when(systemParameterRepository.findByParamKey("FEATURE_FLAG"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("FEATURE_FLAG", "yes", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("yes");
     }
 
     @Test

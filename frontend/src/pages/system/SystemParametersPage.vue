@@ -48,6 +48,11 @@
                   style="width: 100%"
                   @change="(val: number | undefined) => { row.editValue = String(val ?? 0); handleValueChange(row) }"
                 />
+                <el-switch
+                  v-else-if="row.original.valueType === SystemParameterValueType.Boolean"
+                  :model-value="row.editValue === 'true'"
+                  @change="(val: boolean) => { row.editValue = String(val); handleValueChange(row) }"
+                />
                 <el-input
                   v-else
                   v-model="row.editValue"

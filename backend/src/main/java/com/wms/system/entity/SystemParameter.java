@@ -74,4 +74,11 @@ public class SystemParameter {
     public int getIntValue() {
         return Integer.parseInt(paramValue);
     }
+
+    public boolean getBooleanValue() {
+        if (!"true".equalsIgnoreCase(paramValue) && !"false".equalsIgnoreCase(paramValue)) {
+            throw new IllegalStateException("Cannot parse as boolean: " + paramValue);
+        }
+        return Boolean.parseBoolean(paramValue);
+    }
 }

@@ -495,6 +495,7 @@ export default {
         required: 'Value is required',
         integerFormat: 'Please enter a positive integer',
         stringMaxLength: 'Must be 500 characters or less',
+        booleanFormat: 'Please select true or false',
       },
     },
   },

@@ -72,7 +72,7 @@
 | `defaultValue` | String | デフォルト値 |
 | `displayName` | String | パラメータの表示名 |
 | `category` | String | カテゴリ（`INVENTORY` / `OUTBOUND` / `INBOUND` / `SYSTEM` 等） |
-| `valueType` | String | 値の型（`INTEGER` / `STRING`） |
+| `valueType` | String | 値の型（`INTEGER` / `STRING` / `BOOLEAN`） |
 | `description` | String | パラメータの説明文 |
 | `updatedAt` | String (ISO 8601) | 最終更新日時 |
 | `updatedBy` | Long | 最終更新者のユーザーID |
@@ -161,6 +161,7 @@ flowchart TD
 |-----------|-------------------|
 | `INTEGER` | 正の整数（`^[1-9][0-9]*$` または `0`）。負の値・小数・空文字は不可 |
 | `STRING` | 1文字以上500文字以内。空文字は不可 |
+| `BOOLEAN` | `true` または `false`（大文字小文字を区別しない）。空文字は不可 |
 
 ---
 
@@ -233,6 +234,7 @@ flowchart TD
 | 1 | 指定された `paramKey` に一致するパラメータが存在しない場合は404を返す | `PARAM_NOT_FOUND` |
 | 2 | `valueType = INTEGER` の場合、`paramValue` は正の整数（0以上の整数）であること | `VALIDATION_ERROR` |
 | 3 | `valueType = STRING` の場合、`paramValue` は1文字以上500文字以内であること | `VALIDATION_ERROR` |
+| 3a | `valueType = BOOLEAN` の場合、`paramValue` は `true` または `false`（大文字小文字を区別しない）であること | `VALIDATION_ERROR` |
 | 4 | `paramKey`・`defaultValue`・`displayName`・`category`・`valueType`・`description` は更新不可（`paramValue` のみ更新対象） | — |
 
 ---
