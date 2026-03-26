@@ -105,10 +105,12 @@ public class PickingService {
         if (slipLineIds == null || slipLineIds.isEmpty()) {
             return Map.of();
         }
-        return pickingInstructionLineRepository.findByOutboundSlipLineIdIn(slipLineIds).stream()
+        Map<Long, Integer> result = pickingInstructionLineRepository.findByOutboundSlipLineIdIn(slipLineIds).stream()
                 .collect(Collectors.groupingBy(
                         PickingInstructionLine::getOutboundSlipLineId,
                         Collectors.summingInt(PickingInstructionLine::getQtyPicked)));
+        result.values().removeIf(v -> v == 0);
+        return result;
     }
 
     /**

@@ -100,10 +100,15 @@ public class AllocationService {
     // --- 引当数量集計 ---
 
     public Map<Long, Integer> sumAllocatedQtyBySlipId(Long slipId) {
-        return allocationDetailRepository.findByOutboundSlipId(slipId).stream()
+        if (slipId == null) {
+            return Map.of();
+        }
+        Map<Long, Integer> result = allocationDetailRepository.findByOutboundSlipId(slipId).stream()
                 .collect(Collectors.groupingBy(
                         AllocationDetail::getOutboundSlipLineId,
                         Collectors.summingInt(AllocationDetail::getAllocatedQty)));
+        result.values().removeIf(v -> v == 0);
+        return result;
     }
 
     // --- 引当実行 ---

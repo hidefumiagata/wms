@@ -324,15 +324,15 @@ class OutboundSlipControllerTest {
         }
 
         @Test
-        @DisplayName("集計値が0の場合はnullとして返す")
-        void getDetail_zeroQty_returnsNull() throws Exception {
+        @DisplayName("Serviceが0値を除外した空マップを返す場合はnullとして返す")
+        void getDetail_emptyMaps_returnsNull() throws Exception {
             OutboundSlip slip = createSlip(1L, "OUT-20260320-0001", "ORDERED");
             OutboundSlipLine line = createLine(1L, slip, 1, "PRD-0001", 100);
             slip.getLines().add(line);
 
             when(outboundSlipService.findByIdWithLines(1L)).thenReturn(slip);
-            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of(1L, 0));
-            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of(1L, 0));
+            when(allocationService.sumAllocatedQtyBySlipId(1L)).thenReturn(Map.of());
+            when(pickingService.sumPickedQtyBySlipLineIds(List.of(1L))).thenReturn(Map.of());
 
             mockMvc.perform(get(SLIPS_URL + "/1"))
                     .andExpect(status().isOk())

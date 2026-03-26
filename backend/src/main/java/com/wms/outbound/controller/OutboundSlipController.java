@@ -241,12 +241,6 @@ public class OutboundSlipController implements OutboundApi {
     private OutboundSlipLineDetail toLineDetail(OutboundSlipLine l,
                                                    Map<Long, Integer> allocatedQtyMap,
                                                    Map<Long, Integer> pickedQtyMap) {
-        Integer allocatedQty = allocatedQtyMap.getOrDefault(l.getId(), null);
-        Integer pickedQty = pickedQtyMap.getOrDefault(l.getId(), null);
-        // 集計値が0の場合はnullとする（未引当・未ピッキング状態）
-        if (allocatedQty != null && allocatedQty == 0) allocatedQty = null;
-        if (pickedQty != null && pickedQty == 0) pickedQty = null;
-
         return new OutboundSlipLineDetail()
                 .id(l.getId())
                 .lineNo(l.getLineNo())
@@ -255,8 +249,8 @@ public class OutboundSlipController implements OutboundApi {
                 .productName(l.getProductName())
                 .unitType(UnitType.fromValue(l.getUnitType()))
                 .orderedQty(l.getOrderedQty())
-                .allocatedQty(allocatedQty)
-                .pickingQty(pickedQty)
+                .allocatedQty(allocatedQtyMap.get(l.getId()))
+                .pickingQty(pickedQtyMap.get(l.getId()))
                 .inspectedQty(l.getInspectedQty())
                 .shippedQty(l.getShippedQty())
                 .lineStatus(OutboundLineStatus.fromValue(l.getLineStatus()));

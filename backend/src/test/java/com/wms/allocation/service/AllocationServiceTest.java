@@ -1519,5 +1519,13 @@ class AllocationServiceTest {
 
             assertThat(result).isEmpty();
         }
+
+        @Test
+        @DisplayName("nullの場合は空マップを返す")
+        void sumAllocatedQty_null_returnsEmptyMap() {
+            var result = allocationService.sumAllocatedQtyBySlipId(null);
+
+            assertThat(result).isEmpty();
+        }
     }
 }
