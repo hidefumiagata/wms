@@ -1,0 +1,100 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '破棄する環境'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prd
+      confirm:
+        description: '環境名を再入力して確認（例: dev）'
+        required: true
+        type: string
+
+env:
+  TF_VERSION: '1.7'
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+jobs:
+  validate:
+    name: Validate Destroy Request
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm environment name matches
+        run: |
+          if [ "${{ inputs.environment }}" != "${{ inputs.confirm }}" ]; then
+            echo "::error::確認入力が一致しません。environment='${{ inputs.environment }}' confirm='${{ inputs.confirm }}'"
+            exit 1
+          fi
+          echo "✅ 確認OK: ${{ inputs.environment }} 環境を破棄します"
+
+  destroy-plan:
+    name: Terraform Destroy Plan (${{ inputs.environment }})
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment == 'prd' && 'production' || '' }}
+
+    defaults:
+      run:
+        working-directory: infra/environments/${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Destroy Plan
+        run: terraform plan -destroy -no-color -out=tfplan-destroy 2>&1 | tee destroy_plan_output.txt
+
+      - name: Upload Destroy Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-destroy-${{ inputs.environment }}
+          path: infra/environments/${{ inputs.environment }}/tfplan-destroy
+          retention-days: 1
+
+  destroy-apply:
+    name: Terraform Destroy Apply (${{ inputs.environment }})
+    needs: destroy-plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # prd環境は production Environment の承認ゲートで保護
+    environment: ${{ inputs.environment == 'prd' && 'production-destroy' || '' }}
+
+    defaults:
+      run:
+        working-directory: infra/environments/${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Destroy Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-destroy-${{ inputs.environment }}
+          path: infra/environments/${{ inputs.environment }}
+
+      - name: Terraform Destroy
+        run: terraform apply tfplan-destroy

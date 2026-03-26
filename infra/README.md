@@ -176,12 +176,42 @@ terraform apply
 
 dev環境は使わない時に破棄してコストをゼロにできる。
 
+### GitHub Actionsで破棄（推奨）
+
+ワークフロー: `.github/workflows/terraform-destroy.yml`
+
+1. リポジトリの **Actions** タブを開く
+2. 左メニューから **Terraform Destroy** を選択
+3. **Run workflow** をクリック
+4. 破棄する環境を選択（`dev` / `prd`）
+5. 確認欄に同じ環境名を入力（誤操作防止）
+6. **Run workflow** を実行
+
+```
+環境選択 + 確認入力
+  ↓
+terraform plan -destroy（破棄プラン表示）
+  ↓
+prd環境のみ: production-destroy Environment の承認ゲート待ち
+  ↓
+terraform apply（破棄実行）
+```
+
+- **dev**: 確認入力のみで実行
+- **prd**: `production-destroy` Environment の承認ゲートが必要（別途Environmentを作成すること）
+
+### ローカルで破棄
+
 ```bash
 cd infra/environments/dev
+export TF_VAR_db_admin_password="<パスワード>"
+export TF_VAR_jwt_secret="<JWT鍵>"
+terraform init
 terraform destroy
 ```
 
-**常設リソース**（destroyされない）:
+### 常設リソース（destroyされない）
+
 - ACR（`acrwms`） — `lifecycle { prevent_destroy = true }`
 - Terraform state Storage Account（`stwmsterraform`）
 
