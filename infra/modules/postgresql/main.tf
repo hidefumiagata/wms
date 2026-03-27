@@ -31,12 +31,6 @@ resource "azurerm_postgresql_flexible_server_configuration" "timezone" {
   value     = "Asia/Tokyo"
 }
 
-resource "azurerm_postgresql_flexible_server_configuration" "log_timezone" {
-  server_id = azurerm_postgresql_flexible_server.main.id
-  name      = "log_timezone"
-  value     = "Asia/Tokyo"
-}
-
 resource "azurerm_postgresql_flexible_server_configuration" "statement_timeout" {
   server_id = azurerm_postgresql_flexible_server.main.id
   name      = "statement_timeout"

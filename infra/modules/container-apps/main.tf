@@ -49,7 +49,7 @@ resource "azurerm_container_app" "backend" {
 
     container {
       name   = "wms-backend"
-      image  = "${var.acr_login_server}/wms-backend:${var.image_tag}"
+      image  = var.image_tag == "init" ? "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest" : "${var.acr_login_server}/wms-backend:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 

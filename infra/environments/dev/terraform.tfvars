@@ -6,7 +6,7 @@ location    = "japaneast"
 # Container Apps
 min_replicas = 0
 max_replicas = 3
-image_tag    = "sha-latest"
+image_tag    = "init"
 log_level    = "DEBUG"
 
 # PostgreSQL
