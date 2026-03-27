@@ -38,6 +38,28 @@ final class ReportServiceUtils {
             "CANCELLED", "キャンセル"
     );
 
+    /** 出荷ステータス → 日本語ラベル */
+    static final Map<String, String> OUTBOUND_STATUS_LABELS = Map.ofEntries(
+            Map.entry("DRAFT", "下書き"),
+            Map.entry("PENDING", "受注済"),
+            Map.entry("ORDERED", "受注"),
+            Map.entry("PARTIAL_ALLOCATED", "一部引当"),
+            Map.entry("ALLOCATED", "引当完了"),
+            Map.entry("PICKING", "ピッキング中"),
+            Map.entry("PICKING_COMPLETED", "ピッキング完了"),
+            Map.entry("INSPECTING", "出荷検品中"),
+            Map.entry("SHIPPED", "出荷完了"),
+            Map.entry("CANCELLED", "キャンセル")
+    );
+
+    /** ピッキング指示ステータス → 日本語ラベル */
+    static final Map<String, String> PICKING_STATUS_LABELS = Map.of(
+            "DRAFT", "作成済",
+            "ACTIVE", "作業中",
+            "COMPLETED", "完了",
+            "CANCELLED", "キャンセル"
+    );
+
     /** formatがnullの場合はJSONをデフォルトとする */
     static ReportFormat defaultFormat(ReportFormat format) {
         return format != null ? format : ReportFormat.JSON;

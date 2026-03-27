@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">未出荷リスト（リアルタイム）</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-slip { width: 35mm; }
+        .col-customer { width: 45mm; }
+        .col-date { width: 25mm; }
+        .col-delay { width: 18mm; }
+        .col-product-code { width: 30mm; }
+        .col-product-name { width: 50mm; }
+        .col-qty { width: 16mm; }
+        .col-status { width: 25mm; }
+        .col-severity { width: 25mm; }
+
+        .text-red { color: #D32F2F; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.customerName != null ? item.customerName : '（出荷先未設定）', T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-no">No.</th>
+                        <th class="col-slip">伝票番号</th>
+                        <th class="col-customer">出荷先名</th>
+                        <th class="col-date">出荷予定日</th>
+                        <th class="col-delay">遅延</th>
+                        <th class="col-product-code">商品コード</th>
+                        <th class="col-product-name">商品名</th>
+                        <th class="col-qty">数量</th>
+                        <th class="col-status">ステータス</th>
+                        <th class="col-severity">遅延度</th>
+                    </tr>
+                </thead>
+                <tbody th:each="entry : ${groups.entrySet()}">
+                    <!-- グループヘッダー -->
+                    <tr class="group-header">
+                        <td colspan="10" th:text="'■ 出荷先: ' + ${entry.key}">■ 出荷先: テスト出荷先A</td>
+                    </tr>
+                    <!-- 明細行 -->
+                    <tr th:each="item, stat : ${entry.value}"
+                        th:classappend="${item.delayDays >= 4} ? 'highlight-pink' : (${item.delayDays >= 2} ? 'highlight-yellow' : '')">
+                        <td class="text-right" th:text="${stat.count}">1</td>
+                        <td th:text="${item.slipNumber}">OUT-00040</td>
+                        <td th:text="${item.customerName != null ? item.customerName : '—'}">出荷先A</td>
+                        <td class="text-center" th:text="${item.plannedDate != null ? #temporals.format(item.plannedDate, 'yyyy-MM-dd') : '—'}">2026-03-12</td>
+                        <td class="text-right" th:text="${item.delayDays}">5</td>
+                        <td th:text="${item.productCode}">P-001</td>
+                        <td th:text="${item.productName}">商品A</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(item.orderedQty, 1, 'COMMA')}">3</td>
+                        <td class="text-center" th:text="${item.statusLabel}">受注済み</td>
+                        <td class="text-center"
+                            th:classappend="${item.delayDays >= 4} ? 'text-red' : ''"
+                            th:text="${item.delayDays >= 4 ? '★★★' : (item.delayDays >= 2 ? '★★' : '★')}">★★★</td>
+                    </tr>
+                    <!-- 小計行 -->
+                    <tr class="subtotal-row">
+                        <td colspan="6"></td>
+                        <td th:text="'小計（' + ${entry.value.size()} + '件）'">小計（3件）</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![orderedQty]), 1, 'COMMA')}">10</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6"></td>
+                        <td th:text="'合計（' + ${items.size()} + '件）'">合計（4件）</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![orderedQty]), 1, 'COMMA')}">13</td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>

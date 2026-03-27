@@ -1,15 +1,20 @@
 package com.wms.report.controller;
 
+import com.wms.report.service.DeliveryListReportService;
 import com.wms.report.service.InventoryCorrectionReportService;
 import com.wms.report.service.InventoryReportService;
 import com.wms.report.service.InventoryTransitionReportService;
 import com.wms.report.service.InboundInspectionReportService;
 import com.wms.report.service.InboundPlanReportService;
 import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.PickingInstructionReportService;
+import com.wms.report.service.ShippingInspectionReportService;
 import com.wms.report.service.StocktakeListReportService;
 import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
+import com.wms.report.service.UnshippedConfirmedReportService;
+import com.wms.report.service.UnshippedRealtimeReportService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -78,6 +83,21 @@ class ReportControllerTest {
 
     @MockitoBean
     private StocktakeResultReportService stocktakeResultReportService;
+
+    @MockitoBean
+    private PickingInstructionReportService pickingInstructionReportService;
+
+    @MockitoBean
+    private ShippingInspectionReportService shippingInspectionReportService;
+
+    @MockitoBean
+    private DeliveryListReportService deliveryListReportService;
+
+    @MockitoBean
+    private UnshippedRealtimeReportService unshippedRealtimeReportService;
+
+    @MockitoBean
+    private UnshippedConfirmedReportService unshippedConfirmedReportService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;

@@ -12,10 +12,15 @@ import com.wms.report.service.InboundResultReportService;
 import com.wms.report.service.InventoryCorrectionReportService;
 import com.wms.report.service.InventoryReportService;
 import com.wms.report.service.InventoryTransitionReportService;
+import com.wms.report.service.DeliveryListReportService;
+import com.wms.report.service.PickingInstructionReportService;
+import com.wms.report.service.ShippingInspectionReportService;
 import com.wms.report.service.StocktakeListReportService;
 import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
+import com.wms.report.service.UnshippedConfirmedReportService;
+import com.wms.report.service.UnshippedRealtimeReportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,6 +72,21 @@ class ReportControllerUnitTest {
 
     @Mock
     private StocktakeResultReportService stocktakeResultReportService;
+
+    @Mock
+    private PickingInstructionReportService pickingInstructionReportService;
+
+    @Mock
+    private ShippingInspectionReportService shippingInspectionReportService;
+
+    @Mock
+    private DeliveryListReportService deliveryListReportService;
+
+    @Mock
+    private UnshippedRealtimeReportService unshippedRealtimeReportService;
+
+    @Mock
+    private UnshippedConfirmedReportService unshippedConfirmedReportService;
 
     @InjectMocks
     private ReportController controller;
@@ -278,19 +298,106 @@ class ReportControllerUnitTest {
         verify(stocktakeResultReportService).generate(eq(10L), eq(ReportFormat.JSON));
     }
 
+    // --- RPT-12 ---
+    @Test
+    @DisplayName("RPT-12: format指定ありの場合はそのまま渡される")
+    void getPickingInstructionReport_withFormat_passesFormat() {
+        when(pickingInstructionReportService.generate(eq(1L), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getPickingInstructionReport(1L, ReportFormat.PDF);
+        verify(pickingInstructionReportService).generate(1L, ReportFormat.PDF);
+    }
+
+    @Test
+    @DisplayName("RPT-12: format未指定の場合はJSONがデフォルト")
+    void getPickingInstructionReport_nullFormat_defaultsToJson() {
+        when(pickingInstructionReportService.generate(eq(1L), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getPickingInstructionReport(1L, null);
+        verify(pickingInstructionReportService).generate(1L, ReportFormat.JSON);
+    }
+
+    // --- RPT-13 ---
+    @Test
+    @DisplayName("RPT-13: format指定ありの場合はそのまま渡される")
+    void getShippingInspectionReport_withFormat_passesFormat() {
+        when(shippingInspectionReportService.generate(eq(1L), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getShippingInspectionReport(1L, ReportFormat.CSV);
+        verify(shippingInspectionReportService).generate(1L, ReportFormat.CSV);
+    }
+
+    @Test
+    @DisplayName("RPT-13: format未指定の場合はJSONがデフォルト")
+    void getShippingInspectionReport_nullFormat_defaultsToJson() {
+        when(shippingInspectionReportService.generate(eq(1L), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getShippingInspectionReport(1L, null);
+        verify(shippingInspectionReportService).generate(1L, ReportFormat.JSON);
+    }
+
+    // --- RPT-14 ---
+    @Test
+    @DisplayName("RPT-14: format指定ありの場合はそのまま渡される")
+    void getDeliveryListReport_withFormat_passesFormat() {
+        when(deliveryListReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getDeliveryListReport(1L, null, null, null, null, ReportFormat.PDF);
+        verify(deliveryListReportService).generate(eq(1L), any(), any(), any(), any(), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-14: format未指定の場合はJSONがデフォルト")
+    void getDeliveryListReport_nullFormat_defaultsToJson() {
+        when(deliveryListReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getDeliveryListReport(1L, null, null, null, null, null);
+        verify(deliveryListReportService).generate(eq(1L), any(), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    // --- RPT-15 ---
+    @Test
+    @DisplayName("RPT-15: format指定ありの場合はそのまま渡される")
+    void getUnshippedRealtimeReport_withFormat_passesFormat() {
+        when(unshippedRealtimeReportService.generate(any(), any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getUnshippedRealtimeReport(1L, null, ReportFormat.CSV);
+        verify(unshippedRealtimeReportService).generate(eq(1L), any(), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-15: format未指定の場合はJSONがデフォルト")
+    void getUnshippedRealtimeReport_nullFormat_defaultsToJson() {
+        when(unshippedRealtimeReportService.generate(any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getUnshippedRealtimeReport(1L, null, null);
+        verify(unshippedRealtimeReportService).generate(eq(1L), any(), eq(ReportFormat.JSON));
+    }
+
+    // --- RPT-16 ---
+    @Test
+    @DisplayName("RPT-16: format指定ありの場合はそのまま渡される")
+    void getUnshippedConfirmedReport_withFormat_passesFormat() {
+        when(unshippedConfirmedReportService.generate(any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        LocalDate batchDate = LocalDate.of(2026, 3, 14);
+        controller.getUnshippedConfirmedReport(1L, batchDate, ReportFormat.PDF);
+        verify(unshippedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-16: format未指定の場合はJSONがデフォルト")
+    void getUnshippedConfirmedReport_nullFormat_defaultsToJson() {
+        when(unshippedConfirmedReportService.generate(any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        LocalDate batchDate = LocalDate.of(2026, 3, 14);
+        controller.getUnshippedConfirmedReport(1L, batchDate, null);
+        verify(unshippedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.JSON));
+    }
+
     @Test
     @DisplayName("未実装エンドポイントはUnsupportedOperationExceptionをスロー")
     void unimplementedEndpoints_throwUnsupportedOperationException() {
-        assertThatThrownBy(() -> controller.getPickingInstructionReport(null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getShippingInspectionReport(null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getDeliveryListReport(null, null, null, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getUnshippedRealtimeReport(null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getUnshippedConfirmedReport(null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getDailySummaryReport(null, null))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getReturnsReport(null, null, null, null, null, null, null, null))

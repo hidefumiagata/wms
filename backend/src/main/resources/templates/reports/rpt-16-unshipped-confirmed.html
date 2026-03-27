@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">未出荷リスト（確定）</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 10mm; }
+        .col-slip { width: 40mm; }
+        .col-customer { width: 55mm; }
+        .col-date { width: 28mm; }
+        .col-product-code { width: 30mm; }
+        .col-product-name { width: 55mm; }
+        .col-qty { width: 25mm; }
+        .col-status { width: 34mm; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-no">No.</th>
+                    <th class="col-slip">伝票番号</th>
+                    <th class="col-customer">出荷先名</th>
+                    <th class="col-date">出荷予定日</th>
+                    <th class="col-product-code">商品コード</th>
+                    <th class="col-product-name">商品名</th>
+                    <th class="col-qty">数量</th>
+                    <th class="col-status">ステータス</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item, stat : ${items}"
+                    th:with="prevItem=${stat.index > 0 ? items[stat.index - 1] : null},
+                             isSameSlip=${prevItem != null and prevItem.slipNumber == item.slipNumber}"
+                    th:classappend="${item.plannedDate != null and item.batchBusinessDate != null and item.plannedDate.isBefore(item.batchBusinessDate)} ? 'highlight-pink' : ''">
+                    <td class="text-right" th:text="${stat.count}">1</td>
+                    <td th:text="${isSameSlip ? '〃' : item.slipNumber}">OUT-00045</td>
+                    <td th:text="${isSameSlip ? '〃' : (item.customerName != null ? item.customerName : '—')}">テスト出荷先B</td>
+                    <td class="text-center" th:text="${isSameSlip ? '〃' : (item.plannedDate != null ? #temporals.format(item.plannedDate, 'yyyy-MM-dd') : '—')}">2026-03-12</td>
+                    <td th:text="${item.productCode}">P-002</td>
+                    <td th:text="${item.productName}">商品B</td>
+                    <td class="text-right" th:text="${#numbers.formatInteger(item.orderedQty, 1, 'COMMA')}">3</td>
+                    <td class="text-center" th:text="${isSameSlip ? '〃' : item.statusAtBatch}">ピッキング中</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5"></td>
+                    <td>合計</td>
+                    <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![orderedQty]), 1, 'COMMA')}">21</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </th:block>
+</body>
+</html>
