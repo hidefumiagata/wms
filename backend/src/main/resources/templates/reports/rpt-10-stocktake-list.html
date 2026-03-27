@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">棚卸リスト</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 10mm; }
+        .col-location { width: 42mm; }
+        .col-area { width: 35mm; }
+        .col-product-code { width: 30mm; }
+        .col-product-name { width: 55mm; }
+        .col-unit { width: 15mm; }
+        .col-lot { width: 30mm; }
+        .col-expiry { width: 25mm; }
+        .col-actual { width: 35mm; }
+
+        /* 実数記入欄: 行高さ8mm（手書き用スペース確保） */
+        .input-cell {
+            height: 8mm;
+            background: #FFFFFF;
+            border: 1px solid #000000;
+        }
+        /* ロケーション区切り: 太線 */
+        .location-break td {
+            border-top: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-no">No.</th>
+                    <th class="col-location">ロケーション</th>
+                    <th class="col-area">エリア名</th>
+                    <th class="col-product-code">商品コード</th>
+                    <th class="col-product-name">商品名</th>
+                    <th class="col-unit">荷姿</th>
+                    <th class="col-lot">ロット番号</th>
+                    <th class="col-expiry">期限日</th>
+                    <th class="col-actual">実数（記入欄）</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item, stat : ${items}"
+                    th:classappend="${stat.index > 0 and items[stat.index - 1].locationCode != null and !items[stat.index - 1].locationCode.equals(item.locationCode)} ? 'location-break' : ''">
+                    <td class="text-right" th:text="${stat.count}">1</td>
+                    <td th:text="${item.locationCode}">A-01-A-01</td>
+                    <td th:text="${item.areaName}">保管A</td>
+                    <td th:text="${item.productCode}">P-001</td>
+                    <td th:text="${item.productName}">商品AAAAA</td>
+                    <td class="text-center" th:text="${item.unitType}">CAS</td>
+                    <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
+                    <td class="text-center" th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'yyyy-MM-dd') : '—'}">2026-12-31</td>
+                    <td class="input-cell"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="4"></td>
+                    <td>合計行数</td>
+                    <td colspan="3"></td>
+                    <td class="text-right" th:text="${items.size() + ' 行'}">120 行</td>
+                </tr>
+            </tfoot>
+        </table>
+    </th:block>
+</body>
+</html>

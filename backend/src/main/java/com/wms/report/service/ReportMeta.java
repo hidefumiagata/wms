@@ -20,12 +20,24 @@ public record ReportMeta(
         String userName,
         String conditionsSummary,
         String[] csvHeaders,
-        Function<Object, String[]> csvRowMapper
+        Function<Object, String[]> csvRowMapper,
+        Map<String, Object> extraTemplateVars
 ) {
 
     private static final DateTimeFormatter PRINT_DATE_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
+
+    /**
+     * extraTemplateVars なしの既存互換コンストラクタ。
+     */
+    public ReportMeta(
+            String reportTitle, String templateName, String fileSlug,
+            String warehouseName, String userName, String conditionsSummary,
+            String[] csvHeaders, Function<Object, String[]> csvRowMapper) {
+        this(reportTitle, templateName, fileSlug, warehouseName, userName,
+                conditionsSummary, csvHeaders, csvRowMapper, Map.of());
+    }
 
     /**
      * Thymeleaf テンプレートに渡す変数 Map を生成する。
@@ -38,6 +50,9 @@ public record ReportMeta(
         vars.put("userName", userName);
         vars.put("conditionsSummary", conditionsSummary);
         vars.put("items", data);
+        if (extraTemplateVars != null) {
+            vars.putAll(extraTemplateVars);
+        }
         return vars;
     }
 }

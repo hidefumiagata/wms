@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">棚卸結果レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 10mm; }
+        .col-location { width: 40mm; }
+        .col-product-code { width: 30mm; }
+        .col-product-name { width: 52mm; }
+        .col-unit { width: 15mm; }
+        .col-lot { width: 30mm; }
+        .col-qty { width: 25mm; }
+
+        .diff-summary {
+            margin-top: 3mm;
+            padding: 2mm 5mm;
+            font-size: 9pt;
+            border: 1px solid #999;
+            background: #f9f9f9;
+        }
+        .diff-summary p {
+            margin: 1mm 0;
+        }
+
+        /* 棚卸ヘッダー情報 */
+        .stocktake-header {
+            margin-bottom: 3mm;
+            font-size: 8pt;
+            color: #555;
+        }
+        .stocktake-header span {
+            margin-right: 10mm;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- 棚卸固有ヘッダー情報 -->
+    <div class="stocktake-header">
+        <span>棚卸番号: <b th:text="${stocktakeNumber}">ST-2026-00042</b></span>
+        <span>ステータス: <b th:text="${status}">確定済</b></span>
+        <br/>
+        <span>棚卸開始: <span th:text="${startedAt}">2026-03-15 09:00</span></span>
+        <span>棚卸確定: <span th:text="${confirmedAt}">2026-03-17 12:00</span></span>
+    </div>
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.locationCode, T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-no">No.</th>
+                        <th class="col-location">ロケーション</th>
+                        <th class="col-product-code">商品コード</th>
+                        <th class="col-product-name">商品名</th>
+                        <th class="col-unit">荷姿</th>
+                        <th class="col-lot">ロット番号</th>
+                        <th class="col-qty">帳簿数</th>
+                        <th class="col-qty">実数</th>
+                        <th class="col-qty">差異数</th>
+                        <th class="col-qty">差異率</th>
+                    </tr>
+                </thead>
+                <tbody th:each="entry : ${groups.entrySet()}">
+                    <tr th:each="item, stat : ${entry.value}"
+                        th:classappend="${item.diffQuantity != null and item.diffQuantity != 0} ? 'highlight-pink' : ''">
+                        <td class="text-right" th:text="${stat.count}">1</td>
+                        <td th:text="${item.locationCode}">A-01-A-01</td>
+                        <td th:text="${item.productCode}">P-001</td>
+                        <td th:text="${item.productName}">商品AAAAA</td>
+                        <td class="text-center" th:text="${item.unitType}">CASE</td>
+                        <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(item.systemQuantity, 1, 'COMMA')}">10</td>
+                        <td class="text-right" th:text="${item.actualQuantity != null ? #numbers.formatInteger(item.actualQuantity, 1, 'COMMA') : '—'}">10</td>
+                        <td class="text-right" th:text="${item.diffQuantity != null ? (item.diffQuantity > 0 ? '+' + #numbers.formatInteger(item.diffQuantity, 1, 'COMMA') : #numbers.formatInteger(item.diffQuantity, 1, 'COMMA')) : '—'}">0</td>
+                        <td class="text-right" th:text="${item.diffRate != null ? #numbers.formatDecimal(item.diffRate, 1, 1) + '%' : '—'}">0.0%</td>
+                    </tr>
+                    <!-- 小計行 -->
+                    <tr class="subtotal-row">
+                        <td colspan="3"></td>
+                        <td>小計</td>
+                        <td colspan="2"></td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![systemQuantity]), 1, 'COMMA')}">60</td>
+                        <td class="text-right" th:with="countedItems=${entry.value.stream().filter(i -> i.actualQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                            th:text="${countedItems.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(countedItems.![actualQuantity]), 1, 'COMMA')}">57</td>
+                        <td class="text-right" th:with="diffItems=${entry.value.stream().filter(i -> i.diffQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                            th:text="${diffItems.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(diffItems.![diffQuantity]), 1, 'COMMA')}">-3</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3"></td>
+                        <td>総合計</td>
+                        <td colspan="2"></td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![systemQuantity]), 1, 'COMMA')}">110</td>
+                        <td class="text-right" th:with="allCounted=${items.stream().filter(i -> i.actualQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                            th:text="${allCounted.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(allCounted.![actualQuantity]), 1, 'COMMA')}">109</td>
+                        <td class="text-right" th:with="allDiff=${items.stream().filter(i -> i.diffQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                            th:text="${allDiff.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(allDiff.![diffQuantity]), 1, 'COMMA')}">-1</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <!-- 差異サマリー -->
+            <div class="diff-summary">
+                <p th:text="'過剰（プラス差異）合計: +' + ${surplusTotal}">過剰（プラス差異）合計: +2</p>
+                <p th:text="'不足（マイナス差異）合計: ' + ${shortageTotal}">不足（マイナス差異）合計: -3</p>
+                <p th:text="'差異あり明細数: ' + ${diffCount} + ' / ' + ${totalCount} + ' 件'">差異あり明細数: 2 / 4 件</p>
+            </div>
+        </th:block>
+    </th:block>
+</body>
+</html>

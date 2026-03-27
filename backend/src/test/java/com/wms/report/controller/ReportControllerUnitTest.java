@@ -12,6 +12,8 @@ import com.wms.report.service.InboundResultReportService;
 import com.wms.report.service.InventoryCorrectionReportService;
 import com.wms.report.service.InventoryReportService;
 import com.wms.report.service.InventoryTransitionReportService;
+import com.wms.report.service.StocktakeListReportService;
+import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import org.junit.jupiter.api.DisplayName;
@@ -59,6 +61,12 @@ class ReportControllerUnitTest {
 
     @Mock
     private InventoryCorrectionReportService inventoryCorrectionReportService;
+
+    @Mock
+    private StocktakeListReportService stocktakeListReportService;
+
+    @Mock
+    private StocktakeResultReportService stocktakeResultReportService;
 
     @InjectMocks
     private ReportController controller;
@@ -232,13 +240,47 @@ class ReportControllerUnitTest {
         verify(inventoryCorrectionReportService).generate(any(), any(), any(), eq(ReportFormat.JSON));
     }
 
+    // --- RPT-10 ---
+    @Test
+    @DisplayName("RPT-10: format指定ありの場合はそのまま渡される")
+    void getStocktakeListReport_withFormat_passesFormat() {
+        when(stocktakeListReportService.generate(any(), any(), any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getStocktakeListReport(10L, null, null, null, ReportFormat.PDF);
+        verify(stocktakeListReportService).generate(eq(10L), any(), any(), any(), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-10: format未指定の場合はJSONがデフォルト")
+    void getStocktakeListReport_nullFormat_defaultsToJson() {
+        when(stocktakeListReportService.generate(any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getStocktakeListReport(10L, null, null, null, null);
+        verify(stocktakeListReportService).generate(eq(10L), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    // --- RPT-11 ---
+    @Test
+    @DisplayName("RPT-11: format指定ありの場合はそのまま渡される")
+    void getStocktakeResultReport_withFormat_passesFormat() {
+        when(stocktakeResultReportService.generate(any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getStocktakeResultReport(10L, ReportFormat.CSV);
+        verify(stocktakeResultReportService).generate(eq(10L), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-11: format未指定の場合はJSONがデフォルト")
+    void getStocktakeResultReport_nullFormat_defaultsToJson() {
+        when(stocktakeResultReportService.generate(any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getStocktakeResultReport(10L, null);
+        verify(stocktakeResultReportService).generate(eq(10L), eq(ReportFormat.JSON));
+    }
+
     @Test
     @DisplayName("未実装エンドポイントはUnsupportedOperationExceptionをスロー")
     void unimplementedEndpoints_throwUnsupportedOperationException() {
-        assertThatThrownBy(() -> controller.getStocktakeListReport(null, null, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getStocktakeResultReport(null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getPickingInstructionReport(null, null))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getShippingInspectionReport(null, null))

@@ -33,6 +33,36 @@ class ReportMetaTest {
     }
 
     @Test
+    @DisplayName("extraTemplateVars が設定されている場合、vars にマージされる")
+    void toTemplateVariables_withExtraVars_mergesIntoResult() {
+        Map<String, Object> extraVars = Map.of("stocktakeNumber", "ST-001", "diffCount", 3);
+        ReportMeta meta = new ReportMeta(
+                "テスト", "t", "f", "w", "u", null,
+                new String[]{}, obj -> new String[]{}, extraVars
+        );
+
+        Map<String, Object> vars = meta.toTemplateVariables(List.of());
+
+        assertThat(vars).containsEntry("stocktakeNumber", "ST-001");
+        assertThat(vars).containsEntry("diffCount", 3);
+        assertThat(vars).containsEntry("reportTitle", "テスト");
+    }
+
+    @Test
+    @DisplayName("extraTemplateVars が null の場合でもエラーにならない")
+    void toTemplateVariables_nullExtraVars_noError() {
+        ReportMeta meta = new ReportMeta(
+                "テスト", "t", "f", "w", "u", null,
+                new String[]{}, obj -> new String[]{}, null
+        );
+
+        Map<String, Object> vars = meta.toTemplateVariables(List.of());
+
+        assertThat(vars).containsEntry("reportTitle", "テスト");
+        assertThat(vars).containsKey("printDate");
+    }
+
+    @Test
     @DisplayName("toTemplateVariables の printDate が JST でフォーマットされる")
     void toTemplateVariables_printDateIsJst() {
         ReportMeta meta = new ReportMeta(
