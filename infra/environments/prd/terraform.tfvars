@@ -1,6 +1,7 @@
 # environments/prd/terraform.tfvars
 # subscription_id is set via environment variable: TF_VAR_subscription_id
 environment        = "prd"
+acr_name           = "acrwmsprdshowcase"
 location_primary   = "japaneast"
 location_secondary = "japanwest"
 

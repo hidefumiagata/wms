@@ -132,7 +132,7 @@ terraform destroy
 
 ### 常設リソース（destroyされない）
 
-- ACR（`acrwms`） — `lifecycle { prevent_destroy = true }`
+- ACR（`acrwmsdevshowcase`） — `lifecycle { prevent_destroy = true }`
 - Terraform state Storage Account（`stwmsterraform`）
 
 ---
