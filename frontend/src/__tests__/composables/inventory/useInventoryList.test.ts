@@ -161,6 +161,29 @@ describe('useInventoryList', () => {
     await fetchPromise
   })
 
+  it('倉庫切替時にページを1にリセットしてfetchListを呼ぶ', async () => {
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryList()
+    })
+
+    result.page.value = 3
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = 2
+    await flushPromises()
+
+    expect(result.page.value).toBe(1)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inventory',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 2 }),
+      }),
+    )
+  })
+
   it('キャンセル時に state が更新されない', async () => {
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()

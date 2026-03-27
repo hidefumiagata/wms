@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
@@ -129,6 +129,15 @@ export function useInboundSlipList() {
       }
     }
   }
+
+  // --- 倉庫切替時の自動リフェッチ ---
+  watch(
+    () => warehouseStore.selectedWarehouseId,
+    () => {
+      page.value = 1
+      fetchList()
+    },
+  )
 
   // --- 操作 ---
   function handleSearch() {

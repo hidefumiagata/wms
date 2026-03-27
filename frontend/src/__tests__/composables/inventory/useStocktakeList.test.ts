@@ -92,6 +92,29 @@ describe('useStocktakeList', () => {
     expect(result.isViewer.value).toBe(true)
   })
 
+  it('倉庫切替時にページを1にリセットしてfetchListを呼ぶ', async () => {
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useStocktakeList()
+    })
+
+    result.page.value = 3
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = 2
+    await flushPromises()
+
+    expect(result.page.value).toBe(1)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inventory/stocktakes',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 2 }),
+      }),
+    )
+  })
+
   it('handleSearch がページを1にリセットする', async () => {
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()

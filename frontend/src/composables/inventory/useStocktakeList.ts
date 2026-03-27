@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -92,6 +92,15 @@ export function useStocktakeList() {
       }
     }
   }
+
+  // --- 倉庫切替時の自動リフェッチ ---
+  watch(
+    () => warehouseStore.selectedWarehouseId,
+    () => {
+      page.value = 1
+      fetchList()
+    },
+  )
 
   function handleSearch() {
     page.value = 1
