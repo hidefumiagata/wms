@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +43,7 @@ public class StocktakeResultReportService {
 
     private static final DateTimeFormatter DATETIME_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
     // --- ネイティブクエリのカラムインデックス定数 ---
     private static final int COL_LOCATION_CODE = 0;
@@ -97,15 +100,26 @@ public class StocktakeResultReportService {
         return reportExportService.export(items, format, meta);
     }
 
+    private static String statusLabel(String status) {
+        return "CONFIRMED".equals(status) ? "確定済" : "棚卸中";
+    }
+
+    private static String formatJst(OffsetDateTime odt) {
+        if (odt == null) {
+            return "—";
+        }
+        return odt.atZoneSameInstant(JST).format(DATETIME_FMT);
+    }
+
     private String buildConditionsSummary(StocktakeHeader header) {
         StringBuilder sb = new StringBuilder();
         sb.append("棚卸番号: ").append(header.getStocktakeNumber());
-        sb.append(" / ステータス: ").append("CONFIRMED".equals(header.getStatus()) ? "確定済" : "棚卸中");
+        sb.append(" / ステータス: ").append(statusLabel(header.getStatus()));
         if (header.getStartedAt() != null) {
-            sb.append(" / 開始: ").append(header.getStartedAt().format(DATETIME_FMT));
+            sb.append(" / 開始: ").append(formatJst(header.getStartedAt()));
         }
         if (header.getConfirmedAt() != null) {
-            sb.append(" / 確定: ").append(header.getConfirmedAt().format(DATETIME_FMT));
+            sb.append(" / 確定: ").append(formatJst(header.getConfirmedAt()));
         }
         return sb.toString();
     }
@@ -114,11 +128,9 @@ public class StocktakeResultReportService {
                                                 List<StocktakeResultReportItem> items) {
         Map<String, Object> vars = new HashMap<>();
         vars.put("stocktakeNumber", header.getStocktakeNumber());
-        vars.put("status", "CONFIRMED".equals(header.getStatus()) ? "確定済" : "棚卸中");
-        vars.put("startedAt", header.getStartedAt() != null
-                ? header.getStartedAt().format(DATETIME_FMT) : "—");
-        vars.put("confirmedAt", header.getConfirmedAt() != null
-                ? header.getConfirmedAt().format(DATETIME_FMT) : "—");
+        vars.put("status", statusLabel(header.getStatus()));
+        vars.put("startedAt", formatJst(header.getStartedAt()));
+        vars.put("confirmedAt", formatJst(header.getConfirmedAt()));
 
         // 差異サマリー計算
         int surplusTotal = 0;

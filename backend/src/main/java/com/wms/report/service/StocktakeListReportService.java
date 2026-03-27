@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
@@ -61,8 +62,8 @@ public class StocktakeListReportService {
             Long stocktakeId, Long buildingId, Long areaId,
             Boolean hideBookQty, ReportFormat format) {
 
-        log.info("RPT-10 棚卸リスト生成開始: stocktakeId={}, buildingId={}, format={}",
-                stocktakeId, buildingId, format);
+        log.info("RPT-10 棚卸リスト生成開始: stocktakeId={}, buildingId={}, hideBookQty={}, format={}",
+                stocktakeId, buildingId, hideBookQty, format);
 
         if (stocktakeId == null && buildingId == null) {
             throw new BusinessRuleViolationException("VALIDATION_ERROR",
@@ -110,7 +111,8 @@ public class StocktakeListReportService {
                 getCurrentUserName(),
                 conditionsSummary,
                 CSV_HEADERS,
-                row -> csvRowMapper((StocktakeListReportItem) row)
+                row -> csvRowMapper((StocktakeListReportItem) row),
+                Map.of("hideBookQty", Boolean.TRUE.equals(hideBookQty))
         );
 
         log.info("RPT-10 棚卸リスト生成完了: 件数={}", items.size());

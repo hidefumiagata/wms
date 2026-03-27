@@ -49,7 +49,7 @@
             </thead>
             <tbody>
                 <tr th:each="item, stat : ${items}"
-                    th:classappend="${stat.index > 0 and !items[stat.index - 1].locationCode.equals(item.locationCode)} ? 'location-break' : ''">
+                    th:classappend="${stat.index > 0 and items[stat.index - 1].locationCode != null and !items[stat.index - 1].locationCode.equals(item.locationCode)} ? 'location-break' : ''">
                     <td class="text-right" th:text="${stat.count}">1</td>
                     <td th:text="${item.locationCode}">A-01-A-01</td>
                     <td th:text="${item.areaName}">保管A</td>
