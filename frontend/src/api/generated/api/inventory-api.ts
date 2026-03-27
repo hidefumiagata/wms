@@ -660,354 +660,114 @@ export const InventoryApiFactory = function (configuration?: Configuration, base
         /**
          * ケースをボール/バラへ、ボールをバラへ変換（ばらし）する。 変換レートは商品マスタのcase_quantity/ball_quantityを参照する。 
          * @summary ばらし登録
-         * @param {InventoryApiBreakdownInventoryRequest} requestParameters Request parameters.
+         * @param {BreakdownInventoryRequest} breakdownInventoryRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        breakdownInventory(requestParameters: InventoryApiBreakdownInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<BreakdownInventoryResponse> {
-            return localVarFp.breakdownInventory(requestParameters.breakdownInventoryRequest, options).then((request) => request(axios, basePath));
+        breakdownInventory(breakdownInventoryRequest: BreakdownInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<BreakdownInventoryResponse> {
+            return localVarFp.breakdownInventory(breakdownInventoryRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 棚卸（STARTED）を確定する。全明細の実数入力済みを確認した上で、 在庫数量を実数に更新し、差異をinventory_movementsに記録する。棚卸ロックを解除する。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
          * @summary 棚卸確定
-         * @param {InventoryApiConfirmStocktakeRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        confirmStocktake(requestParameters: InventoryApiConfirmStocktakeRequest, options?: RawAxiosRequestConfig): AxiosPromise<ConfirmStocktakeResponse> {
-            return localVarFp.confirmStocktake(requestParameters.id, options).then((request) => request(axios, basePath));
+        confirmStocktake(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ConfirmStocktakeResponse> {
+            return localVarFp.confirmStocktake(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定した在庫の数量を直接指定の数量に訂正する。訂正理由の記録が必須。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
          * @summary 在庫訂正登録
-         * @param {InventoryApiCorrectInventoryRequest} requestParameters Request parameters.
+         * @param {CorrectionInventoryRequest} correctionInventoryRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        correctInventory(requestParameters: InventoryApiCorrectInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<CorrectionInventoryResponse> {
-            return localVarFp.correctInventory(requestParameters.correctionInventoryRequest, options).then((request) => request(axios, basePath));
+        correctInventory(correctionInventoryRequest: CorrectionInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<CorrectionInventoryResponse> {
+            return localVarFp.correctInventory(correctionInventoryRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
          * @summary 棚卸詳細取得
-         * @param {InventoryApiGetStocktakeRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {boolean} [isCounted] 実数入力済み絞り込み（true&#x3D;入力済み, false&#x3D;未入力）
+         * @param {string} [locationCodePrefix] ロケーションコード前方一致
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] 1ページあたりの件数
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getStocktake(requestParameters: InventoryApiGetStocktakeRequest, options?: RawAxiosRequestConfig): AxiosPromise<StocktakeDetail> {
-            return localVarFp.getStocktake(requestParameters.id, requestParameters.isCounted, requestParameters.locationCodePrefix, requestParameters.page, requestParameters.size, options).then((request) => request(axios, basePath));
+        getStocktake(id: number, isCounted?: boolean, locationCodePrefix?: string, page?: number, size?: number, options?: RawAxiosRequestConfig): AxiosPromise<StocktakeDetail> {
+            return localVarFp.getStocktake(id, isCounted, locationCodePrefix, page, size, options).then((request) => request(axios, basePath));
         },
         /**
          * 倉庫の在庫を多軸条件で絞り込んで一覧取得する。 ロケーション別明細表示（LOCATION）と商品別集計表示（PRODUCT_SUMMARY）の2モードを提供する。 
          * @summary 在庫一覧照会
-         * @param {InventoryApiListInventoryRequest} requestParameters Request parameters.
+         * @param {number} warehouseId 倉庫ID
+         * @param {string} [locationCodePrefix] ロケーションコード前方一致フィルタ
+         * @param {number} [productId] 商品ID
+         * @param {UnitType} [unitType] 荷姿
+         * @param {StorageCondition} [storageCondition] 保管条件
+         * @param {ListInventoryViewTypeEnum} [viewType] 表示モード
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート指定
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listInventory(requestParameters: InventoryApiListInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<ListInventory200Response> {
-            return localVarFp.listInventory(requestParameters.warehouseId, requestParameters.locationCodePrefix, requestParameters.productId, requestParameters.unitType, requestParameters.storageCondition, requestParameters.viewType, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listInventory(warehouseId: number, locationCodePrefix?: string, productId?: number, unitType?: UnitType, storageCondition?: StorageCondition, viewType?: ListInventoryViewTypeEnum, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<ListInventory200Response> {
+            return localVarFp.listInventory(warehouseId, locationCodePrefix, productId, unitType, storageCondition, viewType, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 棚卸の一覧を取得する。ステータスや倉庫で絞り込み可能。
          * @summary 棚卸一覧取得
-         * @param {InventoryApiListStocktakesRequest} requestParameters Request parameters.
+         * @param {number} warehouseId 倉庫ID
+         * @param {StocktakeStatus} [status] ステータス絞り込み
+         * @param {string} [dateFrom] 棚卸開始日From
+         * @param {string} [dateTo] 棚卸開始日To
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート指定
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listStocktakes(requestParameters: InventoryApiListStocktakesRequest, options?: RawAxiosRequestConfig): AxiosPromise<StocktakeSummaryPageResponse> {
-            return localVarFp.listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listStocktakes(warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<StocktakeSummaryPageResponse> {
+            return localVarFp.listStocktakes(warehouseId, status, dateFrom, dateTo, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定した在庫を移動元ロケーションから移動先ロケーションへ移動する。
          * @summary 在庫移動登録
-         * @param {InventoryApiMoveInventoryRequest} requestParameters Request parameters.
+         * @param {MoveInventoryRequest} moveInventoryRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        moveInventory(requestParameters: InventoryApiMoveInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<MoveInventoryResponse> {
-            return localVarFp.moveInventory(requestParameters.moveInventoryRequest, options).then((request) => request(axios, basePath));
+        moveInventory(moveInventoryRequest: MoveInventoryRequest, options?: RawAxiosRequestConfig): AxiosPromise<MoveInventoryResponse> {
+            return localVarFp.moveInventory(moveInventoryRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 棚卸実施中（STARTED）の棚卸に対して、実測した在庫数（実数）を入力・保存する。 複数明細を一括保存可能。確定（API-INV-015）までは在庫数量は変更されない。 
          * @summary 棚卸実数入力・一時保存
-         * @param {InventoryApiSaveStocktakeLinesRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {SaveStocktakeLinesRequest} saveStocktakeLinesRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        saveStocktakeLines(requestParameters: InventoryApiSaveStocktakeLinesRequest, options?: RawAxiosRequestConfig): AxiosPromise<SaveStocktakeLinesResponse> {
-            return localVarFp.saveStocktakeLines(requestParameters.id, requestParameters.saveStocktakeLinesRequest, options).then((request) => request(axios, basePath));
+        saveStocktakeLines(id: number, saveStocktakeLinesRequest: SaveStocktakeLinesRequest, options?: RawAxiosRequestConfig): AxiosPromise<SaveStocktakeLinesResponse> {
+            return localVarFp.saveStocktakeLines(id, saveStocktakeLinesRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定した棟・エリア範囲の在庫スナップショットを取得して棚卸を開始する。 棚卸開始と同時に対象ロケーションに棚卸ロックをかける。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
          * @summary 棚卸開始
-         * @param {InventoryApiStartStocktakeRequest} requestParameters Request parameters.
+         * @param {StartStocktakeRequest} startStocktakeRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        startStocktake(requestParameters: InventoryApiStartStocktakeRequest, options?: RawAxiosRequestConfig): AxiosPromise<StartStocktakeResponse> {
-            return localVarFp.startStocktake(requestParameters.startStocktakeRequest, options).then((request) => request(axios, basePath));
+        startStocktake(startStocktakeRequest: StartStocktakeRequest, options?: RawAxiosRequestConfig): AxiosPromise<StartStocktakeResponse> {
+            return localVarFp.startStocktake(startStocktakeRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for breakdownInventory operation in InventoryApi.
- * @export
- * @interface InventoryApiBreakdownInventoryRequest
- */
-export interface InventoryApiBreakdownInventoryRequest {
-    /**
-     * 
-     * @type {BreakdownInventoryRequest}
-     * @memberof InventoryApiBreakdownInventory
-     */
-    readonly breakdownInventoryRequest: BreakdownInventoryRequest
-}
-
-/**
- * Request parameters for confirmStocktake operation in InventoryApi.
- * @export
- * @interface InventoryApiConfirmStocktakeRequest
- */
-export interface InventoryApiConfirmStocktakeRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof InventoryApiConfirmStocktake
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for correctInventory operation in InventoryApi.
- * @export
- * @interface InventoryApiCorrectInventoryRequest
- */
-export interface InventoryApiCorrectInventoryRequest {
-    /**
-     * 
-     * @type {CorrectionInventoryRequest}
-     * @memberof InventoryApiCorrectInventory
-     */
-    readonly correctionInventoryRequest: CorrectionInventoryRequest
-}
-
-/**
- * Request parameters for getStocktake operation in InventoryApi.
- * @export
- * @interface InventoryApiGetStocktakeRequest
- */
-export interface InventoryApiGetStocktakeRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof InventoryApiGetStocktake
-     */
-    readonly id: number
-
-    /**
-     * 実数入力済み絞り込み（true&#x3D;入力済み, false&#x3D;未入力）
-     * @type {boolean}
-     * @memberof InventoryApiGetStocktake
-     */
-    readonly isCounted?: boolean
-
-    /**
-     * ロケーションコード前方一致
-     * @type {string}
-     * @memberof InventoryApiGetStocktake
-     */
-    readonly locationCodePrefix?: string
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof InventoryApiGetStocktake
-     */
-    readonly page?: number
-
-    /**
-     * 1ページあたりの件数
-     * @type {number}
-     * @memberof InventoryApiGetStocktake
-     */
-    readonly size?: number
-}
-
-/**
- * Request parameters for listInventory operation in InventoryApi.
- * @export
- * @interface InventoryApiListInventoryRequest
- */
-export interface InventoryApiListInventoryRequest {
-    /**
-     * 倉庫ID
-     * @type {number}
-     * @memberof InventoryApiListInventory
-     */
-    readonly warehouseId: number
-
-    /**
-     * ロケーションコード前方一致フィルタ
-     * @type {string}
-     * @memberof InventoryApiListInventory
-     */
-    readonly locationCodePrefix?: string
-
-    /**
-     * 商品ID
-     * @type {number}
-     * @memberof InventoryApiListInventory
-     */
-    readonly productId?: number
-
-    /**
-     * 荷姿
-     * @type {UnitType}
-     * @memberof InventoryApiListInventory
-     */
-    readonly unitType?: UnitType
-
-    /**
-     * 保管条件
-     * @type {StorageCondition}
-     * @memberof InventoryApiListInventory
-     */
-    readonly storageCondition?: StorageCondition
-
-    /**
-     * 表示モード
-     * @type {'LOCATION' | 'PRODUCT_SUMMARY'}
-     * @memberof InventoryApiListInventory
-     */
-    readonly viewType?: ListInventoryViewTypeEnum
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof InventoryApiListInventory
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof InventoryApiListInventory
-     */
-    readonly size?: number
-
-    /**
-     * ソート指定
-     * @type {string}
-     * @memberof InventoryApiListInventory
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for listStocktakes operation in InventoryApi.
- * @export
- * @interface InventoryApiListStocktakesRequest
- */
-export interface InventoryApiListStocktakesRequest {
-    /**
-     * 倉庫ID
-     * @type {number}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly warehouseId: number
-
-    /**
-     * ステータス絞り込み
-     * @type {StocktakeStatus}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly status?: StocktakeStatus
-
-    /**
-     * 棚卸開始日From
-     * @type {string}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly dateFrom?: string
-
-    /**
-     * 棚卸開始日To
-     * @type {string}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly dateTo?: string
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly size?: number
-
-    /**
-     * ソート指定
-     * @type {string}
-     * @memberof InventoryApiListStocktakes
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for moveInventory operation in InventoryApi.
- * @export
- * @interface InventoryApiMoveInventoryRequest
- */
-export interface InventoryApiMoveInventoryRequest {
-    /**
-     * 
-     * @type {MoveInventoryRequest}
-     * @memberof InventoryApiMoveInventory
-     */
-    readonly moveInventoryRequest: MoveInventoryRequest
-}
-
-/**
- * Request parameters for saveStocktakeLines operation in InventoryApi.
- * @export
- * @interface InventoryApiSaveStocktakeLinesRequest
- */
-export interface InventoryApiSaveStocktakeLinesRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof InventoryApiSaveStocktakeLines
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {SaveStocktakeLinesRequest}
-     * @memberof InventoryApiSaveStocktakeLines
-     */
-    readonly saveStocktakeLinesRequest: SaveStocktakeLinesRequest
-}
-
-/**
- * Request parameters for startStocktake operation in InventoryApi.
- * @export
- * @interface InventoryApiStartStocktakeRequest
- */
-export interface InventoryApiStartStocktakeRequest {
-    /**
-     * 
-     * @type {StartStocktakeRequest}
-     * @memberof InventoryApiStartStocktake
-     */
-    readonly startStocktakeRequest: StartStocktakeRequest
-}
 
 /**
  * InventoryApi - object-oriented interface
@@ -1019,109 +779,128 @@ export class InventoryApi extends BaseAPI {
     /**
      * ケースをボール/バラへ、ボールをバラへ変換（ばらし）する。 変換レートは商品マスタのcase_quantity/ball_quantityを参照する。 
      * @summary ばらし登録
-     * @param {InventoryApiBreakdownInventoryRequest} requestParameters Request parameters.
+     * @param {BreakdownInventoryRequest} breakdownInventoryRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public breakdownInventory(requestParameters: InventoryApiBreakdownInventoryRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).breakdownInventory(requestParameters.breakdownInventoryRequest, options).then((request) => request(this.axios, this.basePath));
+    public breakdownInventory(breakdownInventoryRequest: BreakdownInventoryRequest, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).breakdownInventory(breakdownInventoryRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 棚卸（STARTED）を確定する。全明細の実数入力済みを確認した上で、 在庫数量を実数に更新し、差異をinventory_movementsに記録する。棚卸ロックを解除する。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
      * @summary 棚卸確定
-     * @param {InventoryApiConfirmStocktakeRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public confirmStocktake(requestParameters: InventoryApiConfirmStocktakeRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).confirmStocktake(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public confirmStocktake(id: number, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).confirmStocktake(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定した在庫の数量を直接指定の数量に訂正する。訂正理由の記録が必須。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
      * @summary 在庫訂正登録
-     * @param {InventoryApiCorrectInventoryRequest} requestParameters Request parameters.
+     * @param {CorrectionInventoryRequest} correctionInventoryRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public correctInventory(requestParameters: InventoryApiCorrectInventoryRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).correctInventory(requestParameters.correctionInventoryRequest, options).then((request) => request(this.axios, this.basePath));
+    public correctInventory(correctionInventoryRequest: CorrectionInventoryRequest, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).correctInventory(correctionInventoryRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
      * @summary 棚卸詳細取得
-     * @param {InventoryApiGetStocktakeRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {boolean} [isCounted] 実数入力済み絞り込み（true&#x3D;入力済み, false&#x3D;未入力）
+     * @param {string} [locationCodePrefix] ロケーションコード前方一致
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] 1ページあたりの件数
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public getStocktake(requestParameters: InventoryApiGetStocktakeRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).getStocktake(requestParameters.id, requestParameters.isCounted, requestParameters.locationCodePrefix, requestParameters.page, requestParameters.size, options).then((request) => request(this.axios, this.basePath));
+    public getStocktake(id: number, isCounted?: boolean, locationCodePrefix?: string, page?: number, size?: number, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).getStocktake(id, isCounted, locationCodePrefix, page, size, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 倉庫の在庫を多軸条件で絞り込んで一覧取得する。 ロケーション別明細表示（LOCATION）と商品別集計表示（PRODUCT_SUMMARY）の2モードを提供する。 
      * @summary 在庫一覧照会
-     * @param {InventoryApiListInventoryRequest} requestParameters Request parameters.
+     * @param {number} warehouseId 倉庫ID
+     * @param {string} [locationCodePrefix] ロケーションコード前方一致フィルタ
+     * @param {number} [productId] 商品ID
+     * @param {UnitType} [unitType] 荷姿
+     * @param {StorageCondition} [storageCondition] 保管条件
+     * @param {ListInventoryViewTypeEnum} [viewType] 表示モード
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート指定
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public listInventory(requestParameters: InventoryApiListInventoryRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).listInventory(requestParameters.warehouseId, requestParameters.locationCodePrefix, requestParameters.productId, requestParameters.unitType, requestParameters.storageCondition, requestParameters.viewType, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listInventory(warehouseId: number, locationCodePrefix?: string, productId?: number, unitType?: UnitType, storageCondition?: StorageCondition, viewType?: ListInventoryViewTypeEnum, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).listInventory(warehouseId, locationCodePrefix, productId, unitType, storageCondition, viewType, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 棚卸の一覧を取得する。ステータスや倉庫で絞り込み可能。
      * @summary 棚卸一覧取得
-     * @param {InventoryApiListStocktakesRequest} requestParameters Request parameters.
+     * @param {number} warehouseId 倉庫ID
+     * @param {StocktakeStatus} [status] ステータス絞り込み
+     * @param {string} [dateFrom] 棚卸開始日From
+     * @param {string} [dateTo] 棚卸開始日To
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート指定
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public listStocktakes(requestParameters: InventoryApiListStocktakesRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listStocktakes(warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).listStocktakes(warehouseId, status, dateFrom, dateTo, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定した在庫を移動元ロケーションから移動先ロケーションへ移動する。
      * @summary 在庫移動登録
-     * @param {InventoryApiMoveInventoryRequest} requestParameters Request parameters.
+     * @param {MoveInventoryRequest} moveInventoryRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public moveInventory(requestParameters: InventoryApiMoveInventoryRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).moveInventory(requestParameters.moveInventoryRequest, options).then((request) => request(this.axios, this.basePath));
+    public moveInventory(moveInventoryRequest: MoveInventoryRequest, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).moveInventory(moveInventoryRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 棚卸実施中（STARTED）の棚卸に対して、実測した在庫数（実数）を入力・保存する。 複数明細を一括保存可能。確定（API-INV-015）までは在庫数量は変更されない。 
      * @summary 棚卸実数入力・一時保存
-     * @param {InventoryApiSaveStocktakeLinesRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {SaveStocktakeLinesRequest} saveStocktakeLinesRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public saveStocktakeLines(requestParameters: InventoryApiSaveStocktakeLinesRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).saveStocktakeLines(requestParameters.id, requestParameters.saveStocktakeLinesRequest, options).then((request) => request(this.axios, this.basePath));
+    public saveStocktakeLines(id: number, saveStocktakeLinesRequest: SaveStocktakeLinesRequest, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).saveStocktakeLines(id, saveStocktakeLinesRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定した棟・エリア範囲の在庫スナップショットを取得して棚卸を開始する。 棚卸開始と同時に対象ロケーションに棚卸ロックをかける。 SYSTEM_ADMINまたはWAREHOUSE_MANAGERのみ実行可能。 
      * @summary 棚卸開始
-     * @param {InventoryApiStartStocktakeRequest} requestParameters Request parameters.
+     * @param {StartStocktakeRequest} startStocktakeRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InventoryApi
      */
-    public startStocktake(requestParameters: InventoryApiStartStocktakeRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).startStocktake(requestParameters.startStocktakeRequest, options).then((request) => request(this.axios, this.basePath));
+    public startStocktake(startStocktakeRequest: StartStocktakeRequest, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).startStocktake(startStocktakeRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

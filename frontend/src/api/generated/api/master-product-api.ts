@@ -428,219 +428,75 @@ export const MasterProductApiFactory = function (configuration?: Configuration, 
         /**
          * 指定された商品コードがすでに登録されているか確認する
          * @summary 商品コード存在確認
-         * @param {MasterProductApiCheckProductCodeExistsRequest} requestParameters Request parameters.
+         * @param {string} productCode チェック対象の商品コード
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkProductCodeExists(requestParameters: MasterProductApiCheckProductCodeExistsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
-            return localVarFp.checkProductCodeExists(requestParameters.productCode, options).then((request) => request(axios, basePath));
+        checkProductCodeExists(productCode: string, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
+            return localVarFp.checkProductCodeExists(productCode, options).then((request) => request(axios, basePath));
         },
         /**
          * 新規商品をマスタに登録する
          * @summary 商品登録
-         * @param {MasterProductApiCreateProductRequest} requestParameters Request parameters.
+         * @param {CreateProductRequest} createProductRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createProduct(requestParameters: MasterProductApiCreateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
-            return localVarFp.createProduct(requestParameters.createProductRequest, options).then((request) => request(axios, basePath));
+        createProduct(createProductRequest: CreateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
+            return localVarFp.createProduct(createProductRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの商品を1件取得する
          * @summary 商品取得
-         * @param {MasterProductApiGetProductRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getProduct(requestParameters: MasterProductApiGetProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
-            return localVarFp.getProduct(requestParameters.id, options).then((request) => request(axios, basePath));
+        getProduct(id: number, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
+            return localVarFp.getProduct(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 商品マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
          * @summary 商品一覧取得
-         * @param {MasterProductApiListProductsRequest} requestParameters Request parameters.
+         * @param {string} [productCode] 商品コード（前方一致）
+         * @param {string} [productName] 商品名（部分一致）
+         * @param {StorageCondition} [storageCondition] 保管条件フィルタ
+         * @param {boolean} [isActive] 有効/無効フィルタ
+         * @param {boolean} [shipmentStopFlag] 出荷禁止フラグフィルタ
+         * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート条件
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listProducts(requestParameters: MasterProductApiListProductsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ListProducts200Response> {
-            return localVarFp.listProducts(requestParameters.productCode, requestParameters.productName, requestParameters.storageCondition, requestParameters.isActive, requestParameters.shipmentStopFlag, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listProducts(productCode?: string, productName?: string, storageCondition?: StorageCondition, isActive?: boolean, shipmentStopFlag?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<ListProducts200Response> {
+            return localVarFp.listProducts(productCode, productName, storageCondition, isActive, shipmentStopFlag, all, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの商品の有効/無効を切り替える。在庫が存在する商品は無効化不可
          * @summary 商品無効化／有効化
-         * @param {MasterProductApiToggleProductActiveRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {ToggleActiveRequest} toggleActiveRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleProductActive(requestParameters: MasterProductApiToggleProductActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
-            return localVarFp.toggleProductActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleProductActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
+            return localVarFp.toggleProductActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの商品情報を更新する。商品コードは変更不可。在庫存在時はロット管理・期限管理フラグ変更不可
          * @summary 商品更新
-         * @param {MasterProductApiUpdateProductRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {UpdateProductRequest} updateProductRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateProduct(requestParameters: MasterProductApiUpdateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
-            return localVarFp.updateProduct(requestParameters.id, requestParameters.updateProductRequest, options).then((request) => request(axios, basePath));
+        updateProduct(id: number, updateProductRequest: UpdateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<ProductDetail> {
+            return localVarFp.updateProduct(id, updateProductRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for checkProductCodeExists operation in MasterProductApi.
- * @export
- * @interface MasterProductApiCheckProductCodeExistsRequest
- */
-export interface MasterProductApiCheckProductCodeExistsRequest {
-    /**
-     * チェック対象の商品コード
-     * @type {string}
-     * @memberof MasterProductApiCheckProductCodeExists
-     */
-    readonly productCode: string
-}
-
-/**
- * Request parameters for createProduct operation in MasterProductApi.
- * @export
- * @interface MasterProductApiCreateProductRequest
- */
-export interface MasterProductApiCreateProductRequest {
-    /**
-     * 
-     * @type {CreateProductRequest}
-     * @memberof MasterProductApiCreateProduct
-     */
-    readonly createProductRequest: CreateProductRequest
-}
-
-/**
- * Request parameters for getProduct operation in MasterProductApi.
- * @export
- * @interface MasterProductApiGetProductRequest
- */
-export interface MasterProductApiGetProductRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterProductApiGetProduct
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for listProducts operation in MasterProductApi.
- * @export
- * @interface MasterProductApiListProductsRequest
- */
-export interface MasterProductApiListProductsRequest {
-    /**
-     * 商品コード（前方一致）
-     * @type {string}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly productCode?: string
-
-    /**
-     * 商品名（部分一致）
-     * @type {string}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly productName?: string
-
-    /**
-     * 保管条件フィルタ
-     * @type {StorageCondition}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly storageCondition?: StorageCondition
-
-    /**
-     * 有効/無効フィルタ
-     * @type {boolean}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly isActive?: boolean
-
-    /**
-     * 出荷禁止フラグフィルタ
-     * @type {boolean}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly shipmentStopFlag?: boolean
-
-    /**
-     * trueの場合ページングなしで全件返却（プルダウン用）
-     * @type {boolean}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly all?: boolean
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly size?: number
-
-    /**
-     * ソート条件
-     * @type {string}
-     * @memberof MasterProductApiListProducts
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for toggleProductActive operation in MasterProductApi.
- * @export
- * @interface MasterProductApiToggleProductActiveRequest
- */
-export interface MasterProductApiToggleProductActiveRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterProductApiToggleProductActive
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {ToggleActiveRequest}
-     * @memberof MasterProductApiToggleProductActive
-     */
-    readonly toggleActiveRequest: ToggleActiveRequest
-}
-
-/**
- * Request parameters for updateProduct operation in MasterProductApi.
- * @export
- * @interface MasterProductApiUpdateProductRequest
- */
-export interface MasterProductApiUpdateProductRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterProductApiUpdateProduct
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {UpdateProductRequest}
-     * @memberof MasterProductApiUpdateProduct
-     */
-    readonly updateProductRequest: UpdateProductRequest
-}
 
 /**
  * MasterProductApi - object-oriented interface
@@ -652,73 +508,83 @@ export class MasterProductApi extends BaseAPI {
     /**
      * 指定された商品コードがすでに登録されているか確認する
      * @summary 商品コード存在確認
-     * @param {MasterProductApiCheckProductCodeExistsRequest} requestParameters Request parameters.
+     * @param {string} productCode チェック対象の商品コード
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public checkProductCodeExists(requestParameters: MasterProductApiCheckProductCodeExistsRequest, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).checkProductCodeExists(requestParameters.productCode, options).then((request) => request(this.axios, this.basePath));
+    public checkProductCodeExists(productCode: string, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).checkProductCodeExists(productCode, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 新規商品をマスタに登録する
      * @summary 商品登録
-     * @param {MasterProductApiCreateProductRequest} requestParameters Request parameters.
+     * @param {CreateProductRequest} createProductRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public createProduct(requestParameters: MasterProductApiCreateProductRequest, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).createProduct(requestParameters.createProductRequest, options).then((request) => request(this.axios, this.basePath));
+    public createProduct(createProductRequest: CreateProductRequest, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).createProduct(createProductRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの商品を1件取得する
      * @summary 商品取得
-     * @param {MasterProductApiGetProductRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public getProduct(requestParameters: MasterProductApiGetProductRequest, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).getProduct(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public getProduct(id: number, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).getProduct(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 商品マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
      * @summary 商品一覧取得
-     * @param {MasterProductApiListProductsRequest} requestParameters Request parameters.
+     * @param {string} [productCode] 商品コード（前方一致）
+     * @param {string} [productName] 商品名（部分一致）
+     * @param {StorageCondition} [storageCondition] 保管条件フィルタ
+     * @param {boolean} [isActive] 有効/無効フィルタ
+     * @param {boolean} [shipmentStopFlag] 出荷禁止フラグフィルタ
+     * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート条件
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public listProducts(requestParameters: MasterProductApiListProductsRequest = {}, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).listProducts(requestParameters.productCode, requestParameters.productName, requestParameters.storageCondition, requestParameters.isActive, requestParameters.shipmentStopFlag, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listProducts(productCode?: string, productName?: string, storageCondition?: StorageCondition, isActive?: boolean, shipmentStopFlag?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).listProducts(productCode, productName, storageCondition, isActive, shipmentStopFlag, all, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの商品の有効/無効を切り替える。在庫が存在する商品は無効化不可
      * @summary 商品無効化／有効化
-     * @param {MasterProductApiToggleProductActiveRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {ToggleActiveRequest} toggleActiveRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public toggleProductActive(requestParameters: MasterProductApiToggleProductActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).toggleProductActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleProductActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).toggleProductActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの商品情報を更新する。商品コードは変更不可。在庫存在時はロット管理・期限管理フラグ変更不可
      * @summary 商品更新
-     * @param {MasterProductApiUpdateProductRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {UpdateProductRequest} updateProductRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterProductApi
      */
-    public updateProduct(requestParameters: MasterProductApiUpdateProductRequest, options?: RawAxiosRequestConfig) {
-        return MasterProductApiFp(this.configuration).updateProduct(requestParameters.id, requestParameters.updateProductRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateProduct(id: number, updateProductRequest: UpdateProductRequest, options?: RawAxiosRequestConfig) {
+        return MasterProductApiFp(this.configuration).updateProduct(id, updateProductRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

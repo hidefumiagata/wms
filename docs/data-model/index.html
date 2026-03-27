@@ -461,6 +461,7 @@ product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
 <tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
 <tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
 <tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<tr><td><code>version</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>楽観ロックバージョン</td></tr>
 <p></tbody><br></table></p>
 <p><strong>制約・インデックス</strong>:</p>
 <ul><li style="margin-left:0px"><code>UNIQUE (slip_number)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, planned_date)</code> — 一覧検索用</li><li style="margin-left:0px"><code>INDEX (warehouse_id, status)</code></li><li style="margin-left:0px"><code>INDEX (transfer_slip_number)</code> — 振替伝票照会用</li></ul>
@@ -489,6 +490,7 @@ product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
 <tr><td><code>stored_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>入庫確定者（FK → users.id）</td></tr>
 <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
 <tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
+<tr><td><code>version</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>楽観ロックバージョン</td></tr>
 <p></tbody><br></table></p>
 <p><strong>制約</strong>:</p>
 <ul><li style="margin-left:0px"><code>UNIQUE (inbound_slip_id, line_no)</code></li><li style="margin-left:0px"><code>unit_type IN ('CASE', 'BALL', 'PIECE')</code></li></ul>
@@ -517,10 +519,12 @@ product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
 <tr><td><code>shipped_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>出荷完了者（FK → users.id）</td></tr>
 <tr><td><code>cancelled_at</code></td><td>timestamptz</td><td>NULL</td><td>—</td><td>キャンセル日時</td></tr>
 <tr><td><code>cancelled_by</code></td><td>bigint</td><td>NULL</td><td>—</td><td>キャンセル者（FK → users.id）</td></tr>
+<tr><td><code>cancel_reason</code></td><td>text</td><td>NULL</td><td>—</td><td>キャンセル理由</td></tr>
 <tr><td><code>created_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>作成日時</td></tr>
 <tr><td><code>created_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>作成者（FK → users.id）</td></tr>
 <tr><td><code>updated_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>更新日時</td></tr>
 <tr><td><code>updated_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>更新者（FK → users.id）</td></tr>
+<tr><td><code>version</code></td><td>int</td><td>NOT NULL</td><td>0</td><td>楽観ロックバージョン</td></tr>
 <p></tbody><br></table></p>
 <p><strong>制約・インデックス</strong>:</p>
 <ul><li style="margin-left:0px"><code>UNIQUE (slip_number)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, planned_date)</code></li><li style="margin-left:0px"><code>INDEX (warehouse_id, status)</code></li><li style="margin-left:0px"><code>INDEX (transfer_slip_number)</code></li></ul>

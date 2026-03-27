@@ -1,6 +1,5 @@
 .gitignore
 .npmignore
-README.md
 api.ts
 api/allocation-api.ts
 api/auth-api.ts
@@ -211,6 +210,3 @@ models/warehouse-list-item.ts
 models/warehouse-page-response.ts
 models/warehouse-simple.ts
 models/warehouse-toggle-response.ts
-package.json
-tsconfig.esm.json
-tsconfig.json
