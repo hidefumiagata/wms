@@ -21,6 +21,8 @@ import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import com.wms.report.service.UnshippedConfirmedReportService;
 import com.wms.report.service.UnshippedRealtimeReportService;
+import com.wms.report.service.DailySummaryReportService;
+import com.wms.report.service.ReturnsReportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,6 +89,12 @@ class ReportControllerUnitTest {
 
     @Mock
     private UnshippedConfirmedReportService unshippedConfirmedReportService;
+
+    @Mock
+    private DailySummaryReportService dailySummaryReportService;
+
+    @Mock
+    private ReturnsReportService returnsReportService;
 
     @InjectMocks
     private ReportController controller;
@@ -395,12 +403,43 @@ class ReportControllerUnitTest {
         verify(unshippedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.JSON));
     }
 
+    // --- RPT-17 ---
     @Test
-    @DisplayName("未実装エンドポイントはUnsupportedOperationExceptionをスロー")
-    void unimplementedEndpoints_throwUnsupportedOperationException() {
-        assertThatThrownBy(() -> controller.getDailySummaryReport(null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getReturnsReport(null, null, null, null, null, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
+    @DisplayName("RPT-17: format指定ありの場合はそのまま渡される")
+    void getDailySummaryReport_withFormat_passesFormat() {
+        LocalDate targetDate = LocalDate.of(2026, 3, 14);
+        when(dailySummaryReportService.generate(eq(targetDate), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getDailySummaryReport(targetDate, ReportFormat.PDF);
+        verify(dailySummaryReportService).generate(targetDate, ReportFormat.PDF);
+    }
+
+    @Test
+    @DisplayName("RPT-17: format未指定の場合はJSONがデフォルト")
+    void getDailySummaryReport_nullFormat_defaultsToJson() {
+        LocalDate targetDate = LocalDate.of(2026, 3, 14);
+        when(dailySummaryReportService.generate(eq(targetDate), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getDailySummaryReport(targetDate, null);
+        verify(dailySummaryReportService).generate(targetDate, ReportFormat.JSON);
+    }
+
+    // --- RPT-18 ---
+    @Test
+    @DisplayName("RPT-18: format指定ありの場合はそのまま渡される")
+    void getReturnsReport_withFormat_passesFormat() {
+        when(returnsReportService.generate(any(), any(), any(), any(), any(), any(), any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getReturnsReport(1L, null, null, null, null, null, null, ReportFormat.CSV);
+        verify(returnsReportService).generate(eq(1L), any(), any(), any(), any(), any(), any(), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-18: format未指定の場合はJSONがデフォルト")
+    void getReturnsReport_nullFormat_defaultsToJson() {
+        when(returnsReportService.generate(any(), any(), any(), any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getReturnsReport(1L, null, null, null, null, null, null, null);
+        verify(returnsReportService).generate(eq(1L), any(), any(), any(), any(), any(), any(), eq(ReportFormat.JSON));
     }
 }

@@ -15,6 +15,8 @@ import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import com.wms.report.service.UnshippedConfirmedReportService;
 import com.wms.report.service.UnshippedRealtimeReportService;
+import com.wms.report.service.DailySummaryReportService;
+import com.wms.report.service.ReturnsReportService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -98,6 +100,12 @@ class ReportControllerTest {
 
     @MockitoBean
     private UnshippedConfirmedReportService unshippedConfirmedReportService;
+
+    @MockitoBean
+    private DailySummaryReportService dailySummaryReportService;
+
+    @MockitoBean
+    private ReturnsReportService returnsReportService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
