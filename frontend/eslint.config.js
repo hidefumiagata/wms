@@ -43,7 +43,6 @@ export default [
 
       // Vue
       'vue/multi-word-component-names': 'off',
-      'vue/no-v-html': 'off',
 
       // General
       'no-console': ['warn', { allow: ['warn', 'error'] }],
