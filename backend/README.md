@@ -102,6 +102,74 @@ dropdb wms && createdb wms
 - **日付動的生成**: デモ用伝票番号は `CURRENT_DATE` ベースで生成。いつ実行しても「直近5日分」のデータになる
 - **loadtest は git 管理外**: 生成物は `.gitignore` で除外。`./gradlew generateLoadTestData` で再生成
 
+## ビルド & デプロイ（Azure）
+
+### 前提条件
+
+- Azure CLI (`az`) インストール済み & ログイン済み
+- Docker インストール済み
+- Terraform で dev 環境が構築済み
+
+### 1. JAR ビルド
+
+```bash
+./gradlew clean bootJar
+# 出力: build/libs/wms-backend-*.jar
+```
+
+### 2. Docker イメージ作成 & ACR に Push
+
+```bash
+# コミットハッシュからタグを生成
+SHORT_HASH=$(git rev-parse --short HEAD)
+IMAGE_TAG="sha-${SHORT_HASH}"
+ACR_NAME="acrwmsdevshowcase"  # prd の場合: acrwmsprdshowcase
+
+# ACR にログイン
+az acr login --name $ACR_NAME
+
+# イメージビルド & Push
+docker build -t ${ACR_NAME}.azurecr.io/wms-backend:${IMAGE_TAG} .
+docker push ${ACR_NAME}.azurecr.io/wms-backend:${IMAGE_TAG}
+```
+
+### 3. Container Apps にデプロイ
+
+```bash
+# dev 環境
+az containerapp update \
+  --resource-group rg-wms-dev \
+  --name ca-wms-backend-dev \
+  --image ${ACR_NAME}.azurecr.io/wms-backend:${IMAGE_TAG}
+```
+
+### prd 環境へのリリース
+
+```bash
+# dev で動作確認後、SemVer タグを付けて prd にデプロイ
+RELEASE_VERSION="v1.0.0"
+ACR_NAME_PRD="acrwmsprdshowcase"
+
+docker tag ${ACR_NAME}.azurecr.io/wms-backend:${IMAGE_TAG} \
+           ${ACR_NAME_PRD}.azurecr.io/wms-backend:${RELEASE_VERSION}
+az acr login --name $ACR_NAME_PRD
+docker push ${ACR_NAME_PRD}.azurecr.io/wms-backend:${RELEASE_VERSION}
+
+az containerapp update \
+  --resource-group rg-wms-prd-east \
+  --name ca-wms-backend-prd-east \
+  --image ${ACR_NAME_PRD}.azurecr.io/wms-backend:${RELEASE_VERSION}
+```
+
+### イメージタグ規約
+
+| 環境 | 形式 | 例 |
+|------|------|-----|
+| dev | `sha-{commitHash}` | `sha-a1b2c3d` |
+| prd | `v{major}.{minor}.{patch}` | `v1.0.0` |
+
+`latest` タグは使用しない。
+
 ## Gradle タスク一覧
 
 | タスク | 説明 |
