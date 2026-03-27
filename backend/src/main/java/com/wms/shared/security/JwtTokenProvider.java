@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
+// final to satisfy SpotBugs CT_CONSTRUCTOR_THROW (non-final class with throwing constructor).
+// Spring Boot 3.x inline mock maker can mock final classes, so testability is unaffected.
 public final class JwtTokenProvider {
 
     private final SecretKey secretKey;

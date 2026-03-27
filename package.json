@@ -12,7 +12,7 @@
   },
   "lint-staged": {
     "frontend/src/**/*.{ts,vue,json,css,scss}": [
-      "bash -c 'cd frontend && npx prettier --check \"$@\"' --"
+      "prettier --write --config frontend/.prettierrc.json --ignore-path frontend/.prettierignore"
     ]
   },
   "repository": {

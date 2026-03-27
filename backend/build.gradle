@@ -107,9 +107,8 @@ dependencies {
 checkstyle {
     toolVersion = '10.21.4'
     configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
-    configProperties = ['suppressionFile': "${rootDir}/config/checkstyle/suppressions.xml"]
     ignoreFailures = false
-    maxWarnings = 0
+    maxErrors = 0
 }
 
 // Exclude generated sources from Checkstyle

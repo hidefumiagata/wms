@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
+set -e
 
 # --- Java: Checkstyle (run only when backend Java files are staged) ---
 JAVA_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- 'backend/src/main/**/*.java' | head -1)
 if [ -n "$JAVA_STAGED" ]; then
   echo "[pre-commit] Running Checkstyle on backend..."
-  cd backend && ./gradlew checkstyleMain --quiet
+  (cd backend && ./gradlew checkstyleMain --quiet)
   CHECKSTYLE_EXIT=$?
-  cd ..
   if [ $CHECKSTYLE_EXIT -ne 0 ]; then
     echo "[pre-commit] Checkstyle failed. Please fix the violations before committing."
     exit 1
