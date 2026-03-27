@@ -8,6 +8,7 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.ReturnsReportRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -63,6 +64,11 @@ class ReturnsReportServiceTest {
         setWarehouseId(warehouse, 1L);
         warehouse.setWarehouseCode("WH-001");
         warehouse.setWarehouseName("東京第一倉庫");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     private void setWarehouseId(Warehouse wh, Long id) {

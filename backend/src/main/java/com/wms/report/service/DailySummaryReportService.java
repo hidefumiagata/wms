@@ -50,6 +50,8 @@ public class DailySummaryReportService {
     private static final int COL_UNRECEIVED_COUNT = 12;
     private static final int COL_UNSHIPPED_COUNT = 13;
 
+    static final String BATCH_STATUS_SUCCESS = "SUCCESS";
+
     private static final String[] CSV_HEADERS = {
             "対象営業日", "倉庫ID", "倉庫名",
             "入荷件数", "入荷明細行数", "入荷数量合計",
@@ -66,7 +68,7 @@ public class DailySummaryReportService {
 
         // 日替処理の SUCCESS 完了チェック
         boolean batchCompleted = batchExecutionLogRepository
-                .existsByTargetBusinessDateAndStatus(targetBusinessDate, "SUCCESS");
+                .existsByTargetBusinessDateAndStatus(targetBusinessDate, BATCH_STATUS_SUCCESS);
         if (!batchCompleted) {
             throw new ResourceNotFoundException("BATCH_EXECUTION_NOT_FOUND",
                     "指定日の日替処理が完了していません: targetBusinessDate=" + targetBusinessDate);

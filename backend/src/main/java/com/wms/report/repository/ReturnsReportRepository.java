@@ -1,6 +1,6 @@
 package com.wms.report.repository;
 
-import com.wms.report.entity.DailySummaryRecord;
+import com.wms.report.entity.BatchExecutionLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +12,7 @@ import java.util.List;
  * RPT-18: 返品レポート用リポジトリ。
  * return_slips テーブルを products, partners と結合して返品明細を取得する。
  */
-public interface ReturnsReportRepository extends JpaRepository<DailySummaryRecord, Long> {
+public interface ReturnsReportRepository extends JpaRepository<BatchExecutionLog, Long> {
 
     /**
      * 返品レポートデータ取得。

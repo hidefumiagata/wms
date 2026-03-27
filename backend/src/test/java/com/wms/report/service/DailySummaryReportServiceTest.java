@@ -5,6 +5,7 @@ import com.wms.generated.model.ReportFormat;
 import com.wms.report.repository.BatchExecutionLogRepository;
 import com.wms.report.repository.DailySummaryRecordRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,6 +54,11 @@ class DailySummaryReportServiceTest {
                 new UsernamePasswordAuthenticationToken("testUser", "password"));
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     @SafeVarargs
     private static List<Object[]> listOf(Object[]... rows) {
         return Arrays.asList(rows);
@@ -88,7 +94,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("正常にレポートデータが生成される（複数倉庫）")
         void generate_success_returnsItemsForMultipleWarehouses() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
                     .thenReturn(listOf(
@@ -126,7 +132,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("データが空の場合は空リストが返される")
         void generate_emptyData_returnsEmptyList() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
                     .thenReturn(List.of());
@@ -142,7 +148,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("ReportMetaが正しく設定される")
         void generate_success_reportMetaFields() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
                     .thenReturn(List.of());
@@ -163,7 +169,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("null値のフィールドは0に変換される")
         void generate_nullValues_defaultToZero() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             Object[] row = new Object[]{
                     Date.valueOf(TARGET_DATE), 1L, "東京DC",
@@ -194,7 +200,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("businessDateがnullの行はnullのまま返される")
         void generate_nullBusinessDate_setsNull() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             Object[] row = new Object[]{
                     null, 1L, "東京DC",
@@ -214,7 +220,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("warehouseIdがnullの行はnullのまま返される")
         void generate_nullWarehouseId_setsNull() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             Object[] row = new Object[]{
                     Date.valueOf(TARGET_DATE), null, "東京DC",
@@ -239,7 +245,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("CSVヘッダーが期待通り")
         void generate_csvHeaders_matchExpected() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
                     .thenReturn(List.of());
@@ -261,7 +267,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("csvRowMapperが正しくフォーマットする")
         void generate_csvRowMapper_formatsCorrectly() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
                     .thenReturn(listOf(
@@ -290,7 +296,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("日替処理が完了していない場合はResourceNotFoundException")
         void generate_batchNotCompleted_throwsException() {
-            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, "SUCCESS"))
+            when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(false);
 
             assertThatThrownBy(() -> service.generate(TARGET_DATE, ReportFormat.JSON))
