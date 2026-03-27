@@ -30,6 +30,8 @@ import com.wms.report.service.InventoryCorrectionReportService;
 import com.wms.report.service.InventoryReportService;
 import com.wms.report.service.InventoryTransitionReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
+import com.wms.report.service.StocktakeListReportService;
+import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +45,8 @@ import java.util.List;
 /**
  * レポート API コントローラー。
  * 入荷系帳票（RPT-01, RPT-03, RPT-04, RPT-05, RPT-06）および
- * 在庫系帳票（RPT-07, RPT-08, RPT-09）は本格実装済み。
+ * 在庫系帳票（RPT-07, RPT-08, RPT-09）および
+ * 棚卸系帳票（RPT-10, RPT-11）は本格実装済み。
  * その他のレポートは後続Issueで順次実装する。
  */
 @RestController
@@ -60,6 +63,8 @@ public class ReportController implements ReportApi {
     private final InventoryReportService inventoryReportService;
     private final InventoryTransitionReportService inventoryTransitionReportService;
     private final InventoryCorrectionReportService inventoryCorrectionReportService;
+    private final StocktakeListReportService stocktakeListReportService;
+    private final StocktakeResultReportService stocktakeResultReportService;
 
     private static ReportFormat defaultFormat(ReportFormat format) {
         return format != null ? format : ReportFormat.JSON;
@@ -136,14 +141,15 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<StocktakeListReportItem>> getStocktakeListReport(
             Long stocktakeId, Long buildingId, Long areaId,
             Boolean hideBookQty, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return stocktakeListReportService.generate(
+                stocktakeId, buildingId, areaId, hideBookQty, defaultFormat(format));
     }
 
     // --- RPT-11: 棚卸結果レポート ---
     @Override
     public ResponseEntity<List<StocktakeResultReportItem>> getStocktakeResultReport(
             Long stocktakeId, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return stocktakeResultReportService.generate(stocktakeId, defaultFormat(format));
     }
 
     // --- RPT-12: ピッキング指示書 ---

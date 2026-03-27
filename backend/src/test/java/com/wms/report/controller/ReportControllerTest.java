@@ -6,6 +6,8 @@ import com.wms.report.service.InventoryTransitionReportService;
 import com.wms.report.service.InboundInspectionReportService;
 import com.wms.report.service.InboundPlanReportService;
 import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.StocktakeListReportService;
+import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import com.wms.shared.security.JwtAuthenticationFilter;
@@ -70,6 +72,12 @@ class ReportControllerTest {
 
     @MockitoBean
     private InventoryCorrectionReportService inventoryCorrectionReportService;
+
+    @MockitoBean
+    private StocktakeListReportService stocktakeListReportService;
+
+    @MockitoBean
+    private StocktakeResultReportService stocktakeResultReportService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
