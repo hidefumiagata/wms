@@ -49,6 +49,7 @@ export function useInventoryMove() {
   const toLocationCode = ref('')
   const toLocationId = ref<number | null>(null)
   const toCurrentQty = ref<number | null>(null)
+  const toMaxQty = ref<number | null>(null)
 
   // 移動数量
   const moveQty = ref(1)
@@ -145,6 +146,7 @@ export function useInventoryMove() {
     if (!toLocationCode.value.trim()) {
       toLocationId.value = null
       toCurrentQty.value = null
+      toMaxQty.value = null
       return
     }
     try {
@@ -161,30 +163,38 @@ export function useInventoryMove() {
       if (locs.length === 0) {
         toLocationId.value = null
         toCurrentQty.value = null
+        toMaxQty.value = null
         ElMessage.warning(t('inventory.locationNotFound'))
         return
       }
       toLocationId.value = locs[0].id
 
-      // 移動先在庫数取得
+      // 移動先在庫数取得 + ロケーション上限取得
       if (selectedProductId.value && selectedUnitType.value) {
-        const invRes = await apiClient.get('/inventory', {
-          params: {
-            warehouseId: warehouseStore.selectedWarehouseId,
-            locationCodePrefix: toLocationCode.value.trim(),
-            productId: selectedProductId.value,
-            unitType: selectedUnitType.value,
-            viewType: 'LOCATION',
-            page: 0,
-            size: 1,
-          },
-        })
+        const [invRes, capRes] = await Promise.all([
+          apiClient.get('/inventory', {
+            params: {
+              warehouseId: warehouseStore.selectedWarehouseId,
+              locationCodePrefix: toLocationCode.value.trim(),
+              productId: selectedProductId.value,
+              unitType: selectedUnitType.value,
+              viewType: 'LOCATION',
+              page: 0,
+              size: 1,
+            },
+          }),
+          apiClient.get('/inventory/location-capacity', {
+            params: { unitType: selectedUnitType.value },
+          }),
+        ])
         const items: InventoryLocationItem[] = invRes.data.content ?? []
         toCurrentQty.value = items.length > 0 ? items[0].quantity : 0
+        toMaxQty.value = capRes.data.maxQuantity ?? null
       }
     } catch {
       toLocationId.value = null
       toCurrentQty.value = null
+      toMaxQty.value = null
     }
   }
 
@@ -200,6 +210,20 @@ export function useInventoryMove() {
     if (moveQty.value < 1 || moveQty.value > fromInventory.value.availableQty) {
       ElMessage.error(t('inventory.moveQtyExceedsAvailable'))
       return
+    }
+    if (toMaxQty.value != null && toCurrentQty.value != null) {
+      const afterQty = toCurrentQty.value + moveQty.value
+      if (afterQty > toMaxQty.value) {
+        const utLabel = unitTypeLabel(fromInventory.value.unitType, t)
+        ElMessage.error(
+          t('inventory.capacityExceeded', {
+            max: toMaxQty.value,
+            after: afterQty,
+            pkg: utLabel,
+          }),
+        )
+        return
+      }
     }
 
     const utLabel = unitTypeLabel(fromInventory.value.unitType, t)
@@ -270,6 +294,7 @@ export function useInventoryMove() {
     toLocationCode,
     toLocationId,
     toCurrentQty,
+    toMaxQty,
     moveQty,
     productOptions,
     unitTypeOptions,

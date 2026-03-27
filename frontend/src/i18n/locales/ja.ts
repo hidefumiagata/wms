@@ -675,6 +675,9 @@ export default {
     moveSuccess: '在庫移動を登録しました。',
     moveError: '在庫移動の登録に失敗しました。時間をおいて再試行してください。',
     moveQtyExceedsAvailable: '移動数量が有効在庫数を超えています。',
+    capacityExceeded:
+      '移動先ロケーションの収容上限を超えます。（上限: {max}{pkg}、移動後: {after}{pkg}）',
+    locationCapacity: 'ロケーション上限',
     sameLocationError: '移動元と移動先に同じロケーションは指定できません。',
     locationNotFound: '指定されたロケーションコードが見つかりません。',
     stocktakeLocked: '指定のロケーションは棚卸中のため操作できません。',

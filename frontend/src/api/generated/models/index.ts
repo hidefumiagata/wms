@@ -86,6 +86,7 @@ export * from './list-inventory200-response';
 export * from './list-partners200-response';
 export * from './list-products200-response';
 export * from './list-warehouses200-response';
+export * from './location-capacity-response';
 export * from './location-detail';
 export * from './location-full-detail';
 export * from './location-list-item';

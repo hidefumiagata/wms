@@ -950,4 +950,45 @@ class InventoryControllerTest {
                     .andExpect(status().isOk());
         }
     }
+
+    @Nested
+    @DisplayName("getLocationCapacity")
+    class GetLocationCapacityTests {
+
+        @Test
+        @DisplayName("正常系: CASE の収容上限を取得")
+        void getCapacity_case_success() throws Exception {
+            when(inventoryMoveService.getLocationCapacity("CASE")).thenReturn(10);
+
+            mockMvc.perform(get("/api/v1/inventory/location-capacity")
+                            .param("unitType", "CASE"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.unitType").value("CASE"))
+                    .andExpect(jsonPath("$.maxQuantity").value(10));
+        }
+
+        @Test
+        @DisplayName("正常系: BALL の収容上限を取得")
+        void getCapacity_ball_success() throws Exception {
+            when(inventoryMoveService.getLocationCapacity("BALL")).thenReturn(6);
+
+            mockMvc.perform(get("/api/v1/inventory/location-capacity")
+                            .param("unitType", "BALL"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.unitType").value("BALL"))
+                    .andExpect(jsonPath("$.maxQuantity").value(6));
+        }
+
+        @Test
+        @DisplayName("正常系: PIECE の収容上限を取得")
+        void getCapacity_piece_success() throws Exception {
+            when(inventoryMoveService.getLocationCapacity("PIECE")).thenReturn(100);
+
+            mockMvc.perform(get("/api/v1/inventory/location-capacity")
+                            .param("unitType", "PIECE"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.unitType").value("PIECE"))
+                    .andExpect(jsonPath("$.maxQuantity").value(100));
+        }
+    }
 }

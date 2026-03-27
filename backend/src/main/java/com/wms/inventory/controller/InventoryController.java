@@ -4,6 +4,7 @@ import com.wms.generated.api.InventoryApi;
 import com.wms.generated.model.BreakdownInventoryRequest;
 import com.wms.generated.model.BreakdownInventoryResponse;
 import com.wms.generated.model.ConfirmStocktakeResponse;
+import com.wms.generated.model.LocationCapacityResponse;
 import com.wms.generated.model.CorrectionInventoryRequest;
 import com.wms.generated.model.CorrectionInventoryResponse;
 import com.wms.generated.model.InventoryLocationItem;
@@ -234,6 +235,16 @@ public class InventoryController implements InventoryApi {
                 .fromQuantityAfter(result.fromQuantityAfter())
                 .toQuantityAfter(result.toQuantityAfter());
 
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF', 'VIEWER')")
+    @Override
+    public ResponseEntity<LocationCapacityResponse> getLocationCapacity(String unitType) {
+        int maxQty = inventoryMoveService.getLocationCapacity(unitType);
+        LocationCapacityResponse response = new LocationCapacityResponse()
+                .unitType(UnitType.fromValue(unitType))
+                .maxQuantity(maxQty);
         return ResponseEntity.ok(response);
     }
 

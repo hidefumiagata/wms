@@ -11,6 +11,7 @@ import com.wms.master.service.ProductService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
+import com.wms.system.service.SystemParameterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +30,7 @@ public class InventoryMoveService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final LocationService locationService;
     private final ProductService productService;
+    private final SystemParameterService systemParameterService;
 
     public record MoveResult(
             Long fromInventoryId, Long toInventoryId,
@@ -112,8 +114,15 @@ public class InventoryMoveService {
                     "移動先ロケーションに既に別商品の在庫が存在します");
         }
 
-        // 収容上限チェック (E-CRT-01) — 簡易実装: 上限チェックなし（system_parameters連携は後続対応）
-        // TODO: system_parameters から LOCATION_CAPACITY_CASE/BALL/PIECE を取得してチェック
+        // 収容上限チェック (E-CRT-01)
+        int capacityLimit = getLocationCapacity(unitType);
+        int currentToQty = inventoryRepository.sumQuantityByLocationAndUnitType(toLocationId, unitType);
+        int afterQty = currentToQty + moveQty;
+        if (afterQty > capacityLimit) {
+            throw new BusinessRuleViolationException("INVENTORY_CAPACITY_EXCEEDED",
+                    String.format("移動先ロケーションの収容上限を超えます。（上限: %d、移動後: %d）",
+                            capacityLimit, afterQty));
+        }
 
         // 移動元更新
         lockedFrom.setQuantity(lockedFrom.getQuantity() - moveQty);
@@ -181,6 +190,17 @@ public class InventoryMoveService {
                 fromLocation.getLocationCode(), toLocation.getLocationCode(),
                 product.getProductCode(), product.getProductName(), unitType,
                 moveQty, lockedFrom.getQuantity(), toInv.getQuantity());
+    }
+
+    public int getLocationCapacity(String unitType) {
+        String paramKey = switch (unitType) {
+            case "CASE" -> "LOCATION_CAPACITY_CASE";
+            case "BALL" -> "LOCATION_CAPACITY_BALL";
+            case "PIECE" -> "LOCATION_CAPACITY_PIECE";
+            default -> throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                    "不正な荷姿: " + unitType);
+        };
+        return systemParameterService.getIntValue(paramKey);
     }
 
     private Inventory lockInventory(Long id) {
