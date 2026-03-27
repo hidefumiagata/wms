@@ -8842,10 +8842,17 @@ components:
     ReturnsReportItem:
       type: object
       properties:
-        slipNumber:
+        returnNumber:
           type: string
+          description: 返品伝票番号
         returnType:
           $ref: '#/components/schemas/ReturnType'
+        returnTypeLabel:
+          type: string
+          description: 返品種別ラベル（入荷返品/出荷返品/在庫返品）
+        returnDate:
+          type: string
+          format: date
         productCode:
           type: string
         productName:
@@ -8854,21 +8861,19 @@ components:
           type: integer
         unitType:
           type: string
-        locationCode:
-          type: ['string', 'null']
-        partnerCode:
-          type: ['string', 'null']
-        partnerName:
-          type: ['string', 'null']
         returnReason:
           $ref: '#/components/schemas/ReturnReason'
+        returnReasonLabel:
+          type: string
+          description: 返品理由ラベル（日本語）
         returnReasonNote:
           type: ['string', 'null']
-        returnDate:
-          type: string
-          format: date
-        createdByName:
-          type: string
+        relatedSlipNumber:
+          type: ['string', 'null']
+          description: 関連伝票番号（入荷伝票番号 or 出荷伝票番号）
+        partnerName:
+          type: ['string', 'null']
+          description: 仕入先名（入荷返品）/ 届け先パートナー名（出荷返品）
 
     # ----------------------------------------------------------
     # システムパラメータ (System Parameter) schemas

@@ -38,6 +38,8 @@ import com.wms.report.service.StocktakeResultReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import com.wms.report.service.UnshippedConfirmedReportService;
 import com.wms.report.service.UnshippedRealtimeReportService;
+import com.wms.report.service.DailySummaryReportService;
+import com.wms.report.service.ReturnsReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -52,8 +54,8 @@ import java.util.List;
  * 入荷系帳票（RPT-01, RPT-03, RPT-04, RPT-05, RPT-06）、
  * 在庫系帳票（RPT-07, RPT-08, RPT-09）、
  * 棚卸系帳票（RPT-10, RPT-11）、
- * 出荷系帳票（RPT-12, RPT-13, RPT-14, RPT-15, RPT-16）は本格実装済み。
- * その他のレポートは後続Issueで順次実装する。
+ * 出荷系帳票（RPT-12, RPT-13, RPT-14, RPT-15, RPT-16）、
+ * 共通・返品帳票（RPT-17, RPT-18）は本格実装済み。
  */
 @RestController
 @RequiredArgsConstructor
@@ -76,6 +78,8 @@ public class ReportController implements ReportApi {
     private final DeliveryListReportService deliveryListReportService;
     private final UnshippedRealtimeReportService unshippedRealtimeReportService;
     private final UnshippedConfirmedReportService unshippedConfirmedReportService;
+    private final DailySummaryReportService dailySummaryReportService;
+    private final ReturnsReportService returnsReportService;
 
     private static ReportFormat defaultFormat(ReportFormat format) {
         return format != null ? format : ReportFormat.JSON;
@@ -204,7 +208,7 @@ public class ReportController implements ReportApi {
     @Override
     public ResponseEntity<List<DailySummaryReportItem>> getDailySummaryReport(
             LocalDate targetBusinessDate, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return dailySummaryReportService.generate(targetBusinessDate, defaultFormat(format));
     }
 
     // --- RPT-18: 返品レポート ---
@@ -213,6 +217,8 @@ public class ReportController implements ReportApi {
             Long warehouseId, ReturnType returnType, LocalDate returnDateFrom,
             LocalDate returnDateTo, Long productId, Long partnerId,
             ReturnReason returnReason, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return returnsReportService.generate(
+                warehouseId, returnType, returnDateFrom, returnDateTo,
+                productId, partnerId, returnReason, defaultFormat(format));
     }
 }

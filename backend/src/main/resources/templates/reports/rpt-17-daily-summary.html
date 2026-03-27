@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">日次集計レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'portrait')}" />
+    <style>
+        .warehouse-header {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin: 4mm 0 2mm 0;
+            padding-bottom: 1mm;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .section-title {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #333;
+            margin: 3mm 0 1mm 0;
+            padding-bottom: 0.5mm;
+            border-bottom: 1px solid #999;
+        }
+        .alert-section .section-title {
+            background: #FFF8E1;
+            padding: 1mm 2mm;
+        }
+        .kv-table {
+            width: 100%;
+            margin-bottom: 2mm;
+        }
+        .kv-table td {
+            border: none;
+            padding: 1mm 2mm;
+            line-height: 5mm;
+            font-size: 9pt;
+        }
+        .kv-table .kv-label {
+            width: 95mm;
+            text-align: left;
+        }
+        .kv-table .kv-value {
+            width: 95mm;
+            text-align: right;
+        }
+        .text-red-bold {
+            color: #D32F2F;
+            font-weight: bold;
+        }
+        .warehouse-block {
+            page-break-inside: avoid;
+            margin-bottom: 5mm;
+        }
+        .separator {
+            border-top: 2px solid #1a1a2e;
+            margin: 5mm 0;
+        }
+        .total-block {
+            page-break-inside: avoid;
+        }
+        .total-header {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin: 2mm 0;
+            padding-top: 2mm;
+            border-top: 2px solid #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <!-- 倉庫別ブロック -->
+        <div th:each="item : ${items}" class="warehouse-block">
+            <div class="warehouse-header"
+                 th:text="'■ ' + ${item.warehouseName} + '（倉庫ID: ' + ${item.warehouseId} + '）'">
+                ■ 東京DC（倉庫ID: 1）
+            </div>
+
+            <!-- 入荷実績 -->
+            <div class="section-title">入荷実績</div>
+            <table class="kv-table">
+                <tr>
+                    <td class="kv-label">入荷件数</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.inboundCount, 1, 'COMMA')}">12</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">入荷明細行数</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.inboundLineCount, 1, 'COMMA')}">45</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">入荷数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.inboundQuantityTotal, 1, 'COMMA')}">1,230</td>
+                </tr>
+            </table>
+
+            <!-- 出荷実績 -->
+            <div class="section-title">出荷実績</div>
+            <table class="kv-table">
+                <tr>
+                    <td class="kv-label">出荷件数</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.outboundCount, 1, 'COMMA')}">8</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">出荷明細行数</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.outboundLineCount, 1, 'COMMA')}">30</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">出荷数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.outboundQuantityTotal, 1, 'COMMA')}">870</td>
+                </tr>
+            </table>
+
+            <!-- 返品実績 -->
+            <div class="section-title">返品実績</div>
+            <table class="kv-table">
+                <tr>
+                    <td class="kv-label">返品件数</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.returnCount, 1, 'COMMA')}">2</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">返品数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.returnQuantityTotal, 1, 'COMMA')}">150</td>
+                </tr>
+            </table>
+
+            <!-- 在庫状況 -->
+            <div class="section-title">在庫状況</div>
+            <table class="kv-table">
+                <tr>
+                    <td class="kv-label">在庫総数量（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(item.inventoryQuantityTotal, 1, 'COMMA')}">5,600</td>
+                </tr>
+            </table>
+
+            <!-- 未処理アラート -->
+            <div class="alert-section">
+                <div class="section-title">未処理アラート</div>
+                <table class="kv-table">
+                    <tr>
+                        <td class="kv-label">未入荷件数</td>
+                        <td class="kv-value"
+                            th:classappend="${item.unreceivedCount > 0} ? 'text-red-bold' : ''"
+                            th:text="${#numbers.formatInteger(item.unreceivedCount, 1, 'COMMA')}">3</td>
+                    </tr>
+                    <tr>
+                        <td class="kv-label">未出荷件数</td>
+                        <td class="kv-value"
+                            th:classappend="${item.unshippedCount > 0} ? 'text-red-bold' : ''"
+                            th:text="${#numbers.formatInteger(item.unshippedCount, 1, 'COMMA')}">1</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 全倉庫合計 -->
+        <div class="total-block">
+            <div class="total-header">■ 全倉庫合計</div>
+            <table class="kv-table">
+                <tr>
+                    <td class="kv-label">入荷件数合計</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![inboundCount]), 1, 'COMMA')}">17</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">入荷数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![inboundQuantityTotal]), 1, 'COMMA')}">1,750</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">出荷件数合計</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![outboundCount]), 1, 'COMMA')}">11</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">出荷数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![outboundQuantityTotal]), 1, 'COMMA')}">1,210</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">返品件数合計</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![returnCount]), 1, 'COMMA')}">3</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">返品数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![returnQuantityTotal]), 1, 'COMMA')}">210</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">在庫総数量合計（バラ換算）</td>
+                    <td class="kv-value" th:text="${#numbers.formatInteger(#aggregates.sum(items.![inventoryQuantityTotal]), 1, 'COMMA')}">8,800</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">未入荷件数合計</td>
+                    <td class="kv-value"
+                        th:classappend="${#aggregates.sum(items.![unreceivedCount]) > 0} ? 'text-red-bold' : ''"
+                        th:text="${#numbers.formatInteger(#aggregates.sum(items.![unreceivedCount]), 1, 'COMMA')}">3</td>
+                </tr>
+                <tr>
+                    <td class="kv-label">未出荷件数合計</td>
+                    <td class="kv-value"
+                        th:classappend="${#aggregates.sum(items.![unshippedCount]) > 0} ? 'text-red-bold' : ''"
+                        th:text="${#numbers.formatInteger(#aggregates.sum(items.![unshippedCount]), 1, 'COMMA')}">3</td>
+                </tr>
+            </table>
+        </div>
+    </th:block>
+</body>
+</html>
