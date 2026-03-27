@@ -1,0 +1,44 @@
+spring:
+  # DataSource (same as dev, override via env vars if needed)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/wms}
+    username: ${DATABASE_USERNAME:wms}
+    password: ${DATABASE_PASSWORD:wms}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+
+  # JPA (dev: show SQL)
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Flyway: schema migration + common master + demo transaction data
+  flyway:
+    clean-disabled: false
+    locations:
+      - classpath:db/migration
+      - classpath:db/testdata/common
+      - classpath:db/testdata/demo
+
+# JWT
+jwt:
+  secret-key: ${JWT_SECRET_KEY:dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+
+# Cookie
+cookie:
+  secure: false
+
+# CORS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+# Logging
+logging:
+  level:
+    com.wms: DEBUG
+    org.springframework.security: DEBUG
