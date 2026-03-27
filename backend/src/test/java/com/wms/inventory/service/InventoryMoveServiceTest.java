@@ -11,6 +11,7 @@ import com.wms.master.service.ProductService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
+import com.wms.system.service.SystemParameterService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +43,7 @@ class InventoryMoveServiceTest {
     @Mock private InventoryMovementRepository inventoryMovementRepository;
     @Mock private LocationService locationService;
     @Mock private ProductService productService;
+    @Mock private SystemParameterService systemParameterService;
 
     @InjectMocks private InventoryMoveService inventoryMoveService;
 
@@ -69,10 +72,15 @@ class InventoryMoveServiceTest {
     }
 
     private Location createLocation(Long id, String code, boolean locked) {
+        return createLocation(id, code, locked, 1L);
+    }
+
+    private Location createLocation(Long id, String code, boolean locked, Long warehouseId) {
         Location loc = new Location();
         setField(loc, "id", id);
         loc.setLocationCode(code);
         loc.setIsStocktakingLocked(locked);
+        loc.setWarehouseId(warehouseId);
         return loc;
     }
 
@@ -115,6 +123,9 @@ class InventoryMoveServiceTest {
                     2L, 100L, "CASE", null, null)).thenReturn(Optional.of(toInv));
             when(inventoryRepository.findByIdForUpdate(20L)).thenReturn(Optional.of(toInv));
 
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(100);
+            when(inventoryRepository.sumQuantityByLocationAndUnitType(2L, "CASE")).thenReturn(3);
+
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -140,6 +151,9 @@ class InventoryMoveServiceTest {
                     1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
             when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(fromInv));
             when(inventoryRepository.existsByLocationIdAndProductIdNot(2L, 100L)).thenReturn(false);
+
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(100);
+            when(inventoryRepository.sumQuantityByLocationAndUnitType(2L, "CASE")).thenReturn(0);
 
             when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                     2L, 100L, "CASE", null, null)).thenReturn(Optional.empty());
@@ -185,6 +199,9 @@ class InventoryMoveServiceTest {
             when(inventoryRepository.findByIdForUpdate(30L)).thenReturn(Optional.of(fromInv));
             when(inventoryRepository.existsByLocationIdAndProductIdNot(2L, 100L)).thenReturn(false);
 
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(100);
+            when(inventoryRepository.sumQuantityByLocationAndUnitType(2L, "CASE")).thenReturn(3);
+
             when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
             when(inventoryMovementRepository.save(any(InventoryMovement.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -201,6 +218,18 @@ class InventoryMoveServiceTest {
         void move_sameLocation_throws() {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
                     1L, 100L, "CASE", null, null, 1L, 5))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("移動元と移動先が異なる倉庫の場合エラー")
+        void move_crossWarehouse_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false, 1L));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false, 2L));
+
+            assertThatThrownBy(() -> inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
         }
@@ -299,6 +328,98 @@ class InventoryMoveServiceTest {
                     1L, 100L, "CASE", null, null, 2L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("LOCATION_PRODUCT_MISMATCH");
+        }
+
+        @Test
+        @DisplayName("収容上限超過の場合エラー")
+        void move_capacityExceeded_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, "P-001"));
+
+            Inventory fromInv = createInventory(10L, 1L, 100L, 10, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    2L, 100L, "CASE", null, null)).thenReturn(Optional.empty());
+            when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.existsByLocationIdAndProductIdNot(2L, 100L)).thenReturn(false);
+
+            // 上限1、現在0、移動5 → 超過
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(1);
+            when(inventoryRepository.sumQuantityByLocationAndUnitType(2L, "CASE")).thenReturn(0);
+
+            assertThatThrownBy(() -> inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 5))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("INVENTORY_CAPACITY_EXCEEDED");
+        }
+
+        @Test
+        @DisplayName("収容上限ちょうどの場合は成功")
+        void move_capacityExact_success() {
+            setUpSecurityContext();
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false));
+            when(productService.findById(100L)).thenReturn(createProduct(100L, "P-001"));
+
+            Inventory fromInv = createInventory(10L, 1L, 100L, 10, 0);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    1L, 100L, "CASE", null, null)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                    2L, 100L, "CASE", null, null)).thenReturn(Optional.empty());
+            when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(fromInv));
+            when(inventoryRepository.existsByLocationIdAndProductIdNot(2L, 100L)).thenReturn(false);
+
+            // 上限5、現在2、移動3 → ちょうど5 = OK
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(5);
+            when(inventoryRepository.sumQuantityByLocationAndUnitType(2L, "CASE")).thenReturn(2);
+
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> {
+                Inventory inv = i.getArgument(0);
+                if (inv.getId() == null) setField(inv, "id", 30L);
+                return inv;
+            });
+            when(inventoryMovementRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            InventoryMoveService.MoveResult result = inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 3);
+
+            assertThat(result.movedQty()).isEqualTo(3);
+        }
+    }
+
+    @Nested
+    @DisplayName("getLocationCapacity")
+    class GetLocationCapacityTests {
+
+        @Test
+        @DisplayName("CASE の収容上限を取得できる")
+        void getCapacity_case() {
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_CASE")).thenReturn(10);
+            assertThat(inventoryMoveService.getLocationCapacity("CASE")).isEqualTo(10);
+        }
+
+        @Test
+        @DisplayName("BALL の収容上限を取得できる")
+        void getCapacity_ball() {
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_BALL")).thenReturn(6);
+            assertThat(inventoryMoveService.getLocationCapacity("BALL")).isEqualTo(6);
+        }
+
+        @Test
+        @DisplayName("PIECE の収容上限を取得できる")
+        void getCapacity_piece() {
+            when(systemParameterService.getIntValue("LOCATION_CAPACITY_PIECE")).thenReturn(100);
+            assertThat(inventoryMoveService.getLocationCapacity("PIECE")).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("不正な荷姿の場合エラー")
+        void getCapacity_invalidUnitType_throws() {
+            assertThatThrownBy(() -> inventoryMoveService.getLocationCapacity("INVALID"))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
         }
     }
 }

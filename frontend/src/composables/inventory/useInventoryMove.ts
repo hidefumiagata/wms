@@ -49,14 +49,17 @@ export function useInventoryMove() {
   const toLocationCode = ref('')
   const toLocationId = ref<number | null>(null)
   const toCurrentQty = ref<number | null>(null)
+  const toMaxQty = ref<number | null>(null)
 
   // 移動数量
   const moveQty = ref(1)
 
   // --- AbortController ---
   let abortController: AbortController | null = null
+  let toAbortController: AbortController | null = null
   onUnmounted(() => {
     abortController?.abort()
+    toAbortController?.abort()
   })
 
   // --- 移動元ロケーション検索 ---
@@ -145,8 +148,12 @@ export function useInventoryMove() {
     if (!toLocationCode.value.trim()) {
       toLocationId.value = null
       toCurrentQty.value = null
+      toMaxQty.value = null
       return
     }
+    toAbortController?.abort()
+    toAbortController = new AbortController()
+
     try {
       // ロケーション検索（コード完全一致を期待）
       const locRes = await apiClient.get('/master/locations', {
@@ -156,35 +163,47 @@ export function useInventoryMove() {
           page: 0,
           size: 1,
         },
+        signal: toAbortController.signal,
       })
       const locs = locRes.data.content ?? []
       if (locs.length === 0) {
         toLocationId.value = null
         toCurrentQty.value = null
+        toMaxQty.value = null
         ElMessage.warning(t('inventory.locationNotFound'))
         return
       }
       toLocationId.value = locs[0].id
 
-      // 移動先在庫数取得
+      // 移動先在庫数取得（同一荷姿の合計） + ロケーション上限取得
       if (selectedProductId.value && selectedUnitType.value) {
-        const invRes = await apiClient.get('/inventory', {
-          params: {
-            warehouseId: warehouseStore.selectedWarehouseId,
-            locationCodePrefix: toLocationCode.value.trim(),
-            productId: selectedProductId.value,
-            unitType: selectedUnitType.value,
-            viewType: 'LOCATION',
-            page: 0,
-            size: 1,
-          },
-        })
+        const [invRes, capRes] = await Promise.all([
+          apiClient.get('/inventory', {
+            params: {
+              warehouseId: warehouseStore.selectedWarehouseId,
+              locationCodePrefix: toLocationCode.value.trim(),
+              unitType: selectedUnitType.value,
+              viewType: 'LOCATION',
+              page: 0,
+              size: 100,
+            },
+            signal: toAbortController.signal,
+          }),
+          apiClient.get('/inventory/location-capacity', {
+            params: { unitType: selectedUnitType.value },
+            signal: toAbortController.signal,
+          }),
+        ])
         const items: InventoryLocationItem[] = invRes.data.content ?? []
-        toCurrentQty.value = items.length > 0 ? items[0].quantity : 0
+        toCurrentQty.value = items.reduce((sum, i) => sum + i.quantity, 0)
+        toMaxQty.value = capRes.data.maxQuantity ?? null
       }
-    } catch {
+    } catch (err) {
+      if (axios.isCancel(err)) return
       toLocationId.value = null
       toCurrentQty.value = null
+      toMaxQty.value = null
+      ElMessage.error(t('inventory.fetchError'))
     }
   }
 
@@ -200,6 +219,20 @@ export function useInventoryMove() {
     if (moveQty.value < 1 || moveQty.value > fromInventory.value.availableQty) {
       ElMessage.error(t('inventory.moveQtyExceedsAvailable'))
       return
+    }
+    if (toMaxQty.value != null && toCurrentQty.value != null) {
+      const afterQty = toCurrentQty.value + moveQty.value
+      if (afterQty > toMaxQty.value) {
+        const utLabel = unitTypeLabel(fromInventory.value.unitType, t)
+        ElMessage.error(
+          t('inventory.capacityExceeded', {
+            max: toMaxQty.value,
+            after: afterQty,
+            pkg: utLabel,
+          }),
+        )
+        return
+      }
     }
 
     const utLabel = unitTypeLabel(fromInventory.value.unitType, t)
@@ -270,6 +303,7 @@ export function useInventoryMove() {
     toLocationCode,
     toLocationId,
     toCurrentQty,
+    toMaxQty,
     moveQty,
     productOptions,
     unitTypeOptions,

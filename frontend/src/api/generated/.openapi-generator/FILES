@@ -112,6 +112,7 @@ models/list-inventory200-response.ts
 models/list-partners200-response.ts
 models/list-products200-response.ts
 models/list-warehouses200-response.ts
+models/location-capacity-response.ts
 models/location-detail.ts
 models/location-full-detail.ts
 models/location-list-item.ts

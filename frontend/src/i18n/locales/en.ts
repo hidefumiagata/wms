@@ -679,6 +679,8 @@ export default {
     moveSuccess: 'Inventory moved successfully.',
     moveError: 'Failed to move inventory. Please try again later.',
     moveQtyExceedsAvailable: 'Move quantity exceeds available stock.',
+    capacityExceeded: 'Exceeds location capacity. (Max: {max}{pkg}, After move: {after}{pkg})',
+    locationCapacity: 'Location Capacity',
     sameLocationError: 'From and To locations must be different.',
     locationNotFound: 'Location code not found.',
     stocktakeLocked: 'Location is locked for stocktake.',

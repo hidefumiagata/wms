@@ -2766,6 +2766,32 @@ paths:
                     errorCode: LOCATION_PRODUCT_MISMATCH
                     message: 移動先ロケーションに既に別商品の在庫が存在します
 
+  /api/v1/inventory/location-capacity:
+    get:
+      operationId: getLocationCapacity
+      summary: ロケーション収容上限取得
+      description: 指定した荷姿のロケーション収容上限をシステムパラメータから取得する。
+      tags: [inventory]
+      parameters:
+        - name: unitType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [CASE, BALL, PIECE]
+          description: 荷姿
+      responses:
+        '200':
+          description: 収容上限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationCapacityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /api/v1/inventory/breakdown:
     post:
       operationId: breakdownInventory
@@ -7071,6 +7097,16 @@ components:
         toQuantityAfter:
           type: integer
           description: 移動後の移動先在庫数
+
+    LocationCapacityResponse:
+      type: object
+      required: [unitType, maxQuantity]
+      properties:
+        unitType:
+          $ref: '#/components/schemas/UnitType'
+        maxQuantity:
+          type: integer
+          description: ロケーション収容上限数
 
     BreakdownInventoryRequest:
       type: object

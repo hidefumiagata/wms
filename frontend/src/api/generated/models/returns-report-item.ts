@@ -27,17 +27,29 @@ import type { ReturnType } from './return-type';
  */
 export interface ReturnsReportItem {
     /**
-     * 
+     * 返品伝票番号
      * @type {string}
      * @memberof ReturnsReportItem
      */
-    'slipNumber'?: string;
+    'returnNumber'?: string;
     /**
      * 
      * @type {ReturnType}
      * @memberof ReturnsReportItem
      */
     'returnType'?: ReturnType;
+    /**
+     * 返品種別ラベル（入荷返品/出荷返品/在庫返品）
+     * @type {string}
+     * @memberof ReturnsReportItem
+     */
+    'returnTypeLabel'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ReturnsReportItem
+     */
+    'returnDate'?: string;
     /**
      * 
      * @type {string}
@@ -64,28 +76,16 @@ export interface ReturnsReportItem {
     'unitType'?: string;
     /**
      * 
-     * @type {string}
-     * @memberof ReturnsReportItem
-     */
-    'locationCode'?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof ReturnsReportItem
-     */
-    'partnerCode'?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof ReturnsReportItem
-     */
-    'partnerName'?: string | null;
-    /**
-     * 
      * @type {ReturnReason}
      * @memberof ReturnsReportItem
      */
     'returnReason'?: ReturnReason;
+    /**
+     * 返品理由ラベル（日本語）
+     * @type {string}
+     * @memberof ReturnsReportItem
+     */
+    'returnReasonLabel'?: string;
     /**
      * 
      * @type {string}
@@ -93,17 +93,17 @@ export interface ReturnsReportItem {
      */
     'returnReasonNote'?: string | null;
     /**
-     * 
+     * 関連伝票番号（入荷伝票番号 or 出荷伝票番号）
      * @type {string}
      * @memberof ReturnsReportItem
      */
-    'returnDate'?: string;
+    'relatedSlipNumber'?: string | null;
     /**
-     * 
+     * 仕入先名（入荷返品）/ 届け先パートナー名（出荷返品）
      * @type {string}
      * @memberof ReturnsReportItem
      */
-    'createdByName'?: string;
+    'partnerName'?: string | null;
 }
 
 

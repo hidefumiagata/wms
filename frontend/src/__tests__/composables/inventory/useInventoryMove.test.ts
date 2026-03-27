@@ -51,11 +51,15 @@ describe('useInventoryMove', () => {
     expect(result.selectedUnitType.value).toBeNull()
   })
 
-  it('fetchToLocationInfo が移動先ロケーション情報を取得する', async () => {
+  it('fetchToLocationInfo が移動先ロケーション情報と上限を取得する', async () => {
     vi.mocked(apiClient.get).mockReset()
     const toLocRes = mockAxiosResponse({ content: [{ id: 200 }], totalElements: 1 })
     const toInvRes = mockAxiosResponse({ content: [{ quantity: 3 }] })
-    vi.mocked(apiClient.get).mockResolvedValueOnce(toLocRes).mockResolvedValueOnce(toInvRes)
+    const toCapRes = mockAxiosResponse({ unitType: 'CASE', maxQuantity: 10 })
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(toLocRes)
+      .mockResolvedValueOnce(toInvRes)
+      .mockResolvedValueOnce(toCapRes)
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -70,6 +74,7 @@ describe('useInventoryMove', () => {
 
     expect(result.toLocationId.value).toBe(200)
     expect(result.toCurrentQty.value).toBe(3)
+    expect(result.toMaxQty.value).toBe(10)
   })
 
   it('fetchToLocationInfo が空コードでリセットする', async () => {
@@ -84,6 +89,7 @@ describe('useInventoryMove', () => {
 
     expect(result.toLocationId.value).toBeNull()
     expect(result.toCurrentQty.value).toBeNull()
+    expect(result.toMaxQty.value).toBeNull()
   })
 
   it('submitMove が同一ロケーションでエラーする', async () => {
@@ -127,6 +133,30 @@ describe('useInventoryMove', () => {
     await result.submitMove()
 
     expect(ElMessage.error).toHaveBeenCalledWith('inventory.moveQtyExceedsAvailable')
+    expect(apiClient.post).not.toHaveBeenCalled()
+  })
+
+  it('submitMove が収容上限超過でエラーする', async () => {
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove()
+    })
+
+    result.fromLocationCode.value = 'A-01'
+    await result.fetchFromInventory()
+
+    result.selectedProductId.value = 1
+    result.selectedUnitType.value = 'CASE'
+    result.toLocationCode.value = 'B-01'
+    result.toLocationId.value = 200
+    result.toCurrentQty.value = 8
+    result.toMaxQty.value = 10
+    result.moveQty.value = 5 // 8 + 5 = 13 > 10
+
+    await result.submitMove()
+
+    expect(ElMessage.error).toHaveBeenCalled()
     expect(apiClient.post).not.toHaveBeenCalled()
   })
 

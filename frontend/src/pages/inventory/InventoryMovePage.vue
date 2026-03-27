@@ -75,6 +75,9 @@
         <el-form-item v-if="toCurrentQty != null" :label="t('inventory.currentQty')">
           <span>{{ formatNumber(toCurrentQty) }}</span>
         </el-form-item>
+        <el-form-item v-if="toMaxQty != null" :label="t('inventory.locationCapacity')">
+          <span>{{ formatNumber(toMaxQty) }}</span>
+        </el-form-item>
       </el-form>
 
       <!-- 移動数量 -->
@@ -122,6 +125,7 @@ const {
   toLocationCode,
   toLocationId,
   toCurrentQty,
+  toMaxQty,
   moveQty,
   submitting,
   productOptions,

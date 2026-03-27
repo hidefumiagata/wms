@@ -36,6 +36,8 @@ import type { ErrorResponse } from '../models';
 // @ts-ignore
 import type { ListInventory200Response } from '../models';
 // @ts-ignore
+import type { LocationCapacityResponse } from '../models';
+// @ts-ignore
 import type { MoveInventoryRequest } from '../models';
 // @ts-ignore
 import type { MoveInventoryResponse } from '../models';
@@ -169,6 +171,45 @@ export const InventoryApiAxiosParamCreator = function (configuration?: Configura
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(correctionInventoryRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 指定した荷姿のロケーション収容上限をシステムパラメータから取得する。
+         * @summary ロケーション収容上限取得
+         * @param {GetLocationCapacityUnitTypeEnum} unitType 荷姿
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLocationCapacity: async (unitType: GetLocationCapacityUnitTypeEnum, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'unitType' is not null or undefined
+            assertParamExists('getLocationCapacity', 'unitType', unitType)
+            const localVarPath = `/api/v1/inventory/location-capacity`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication cookieAuth required
+
+            if (unitType !== undefined) {
+                localVarQueryParameter['unitType'] = unitType;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -551,6 +592,19 @@ export const InventoryApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * 指定した荷姿のロケーション収容上限をシステムパラメータから取得する。
+         * @summary ロケーション収容上限取得
+         * @param {GetLocationCapacityUnitTypeEnum} unitType 荷姿
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getLocationCapacity(unitType: GetLocationCapacityUnitTypeEnum, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<LocationCapacityResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getLocationCapacity(unitType, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['InventoryApi.getLocationCapacity']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
          * @summary 棚卸詳細取得
          * @param {number} id リソースID
@@ -688,6 +742,16 @@ export const InventoryApiFactory = function (configuration?: Configuration, base
             return localVarFp.correctInventory(correctionInventoryRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * 指定した荷姿のロケーション収容上限をシステムパラメータから取得する。
+         * @summary ロケーション収容上限取得
+         * @param {GetLocationCapacityUnitTypeEnum} unitType 荷姿
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLocationCapacity(unitType: GetLocationCapacityUnitTypeEnum, options?: RawAxiosRequestConfig): AxiosPromise<LocationCapacityResponse> {
+            return localVarFp.getLocationCapacity(unitType, options).then((request) => request(axios, basePath));
+        },
+        /**
          * 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
          * @summary 棚卸詳細取得
          * @param {number} id リソースID
@@ -813,6 +877,18 @@ export class InventoryApi extends BaseAPI {
     }
 
     /**
+     * 指定した荷姿のロケーション収容上限をシステムパラメータから取得する。
+     * @summary ロケーション収容上限取得
+     * @param {GetLocationCapacityUnitTypeEnum} unitType 荷姿
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof InventoryApi
+     */
+    public getLocationCapacity(unitType: GetLocationCapacityUnitTypeEnum, options?: RawAxiosRequestConfig) {
+        return InventoryApiFp(this.configuration).getLocationCapacity(unitType, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * 指定した棚卸のヘッダ情報と明細一覧（ページング付き）を返す。
      * @summary 棚卸詳細取得
      * @param {number} id リソースID
@@ -904,6 +980,15 @@ export class InventoryApi extends BaseAPI {
     }
 }
 
+/**
+ * @export
+ */
+export const GetLocationCapacityUnitTypeEnum = {
+    Case: 'CASE',
+    Ball: 'BALL',
+    Piece: 'PIECE'
+} as const;
+export type GetLocationCapacityUnitTypeEnum = typeof GetLocationCapacityUnitTypeEnum[keyof typeof GetLocationCapacityUnitTypeEnum];
 /**
  * @export
  */
