@@ -88,6 +88,55 @@
         </el-form>
       </template>
 
+      <!-- 訂正履歴（直近5件） -->
+      <template v-if="selectedInventory">
+        <el-divider content-position="left">{{ t('inventory.correctionHistory') }}</el-divider>
+        <el-table
+          v-if="correctionHistory.length > 0"
+          :data="correctionHistory"
+          size="small"
+          stripe
+          style="max-width: 700px"
+        >
+          <el-table-column
+            :label="t('inventory.correctionHistoryDate')"
+            prop="correctedAt"
+            width="170"
+          >
+            <template #default="{ row }">
+              {{ formatDateTime(row.correctedAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="t('inventory.correctionHistoryBefore')"
+            prop="quantityBefore"
+            width="90"
+            align="right"
+          >
+            <template #default="{ row }">{{ formatNumber(row.quantityBefore) }}</template>
+          </el-table-column>
+          <el-table-column
+            :label="t('inventory.correctionHistoryAfter')"
+            prop="quantityAfter"
+            width="90"
+            align="right"
+          >
+            <template #default="{ row }">{{ formatNumber(row.quantityAfter) }}</template>
+          </el-table-column>
+          <el-table-column
+            :label="t('inventory.correctionHistoryReason')"
+            prop="reason"
+            min-width="150"
+          />
+          <el-table-column
+            :label="t('inventory.correctionHistoryExecutor')"
+            prop="executedByName"
+            width="120"
+          />
+        </el-table>
+        <p v-else class="history-empty">{{ t('inventory.correctionHistoryEmpty') }}</p>
+      </template>
+
       <!-- ボタン -->
       <div class="form-actions">
         <el-button @click="goBack">{{ t('common.cancel') }}</el-button>
@@ -123,12 +172,24 @@ const {
   submitting,
   productOptions,
   unitTypeOptions,
+  correctionHistory,
   fetchInventory,
   onProductChange,
   onUnitTypeChange,
   submitCorrection,
   goBack,
 } = useInventoryCorrection()
+
+function formatDateTime(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 function unitTypeLabelFn(unitType: string): string {
   return unitTypeLabel(unitType, t)
@@ -171,5 +232,10 @@ const diffClass = computed(() => {
 }
 .diff-neutral {
   color: var(--el-text-color-secondary);
+}
+.history-empty {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  margin: 8px 0;
 }
 </style>

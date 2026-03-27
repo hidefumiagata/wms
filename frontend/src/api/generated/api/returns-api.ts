@@ -223,34 +223,116 @@ export const ReturnsApiFactory = function (configuration?: Configuration, basePa
         /**
          * 返品伝票を登録する。1伝票1商品。返品種別に応じて在庫操作（在庫返品の場合のみ即時減算）を行い、ステータスはCOMPLETEDで確定する
          * @summary 返品登録
-         * @param {CreateReturnRequest} createReturnRequest 
+         * @param {ReturnsApiCreateReturnRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createReturn(createReturnRequest: CreateReturnRequest, options?: RawAxiosRequestConfig): AxiosPromise<ReturnSlipDetail> {
-            return localVarFp.createReturn(createReturnRequest, options).then((request) => request(axios, basePath));
+        createReturn(requestParameters: ReturnsApiCreateReturnRequest, options?: RawAxiosRequestConfig): AxiosPromise<ReturnSlipDetail> {
+            return localVarFp.createReturn(requestParameters.createReturnRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定倉庫の返品伝票をページング形式で取得する。返品種別・返品日・商品・取引先・返品理由等の条件で絞り込みが可能
          * @summary 返品一覧取得
-         * @param {number} warehouseId 倉庫ID
-         * @param {ReturnType} [returnType] 返品種別
-         * @param {string} [returnDateFrom] 返品日From
-         * @param {string} [returnDateTo] 返品日To
-         * @param {number} [productId] 商品ID
-         * @param {number} [partnerId] 取引先ID
-         * @param {ReturnReason} [returnReason] 返品理由コード
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {ReturnsApiGetReturnsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getReturns(warehouseId: number, returnType?: ReturnType, returnDateFrom?: string, returnDateTo?: string, productId?: number, partnerId?: number, returnReason?: ReturnReason, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<ReturnSlipPageResponse> {
-            return localVarFp.getReturns(warehouseId, returnType, returnDateFrom, returnDateTo, productId, partnerId, returnReason, page, size, sort, options).then((request) => request(axios, basePath));
+        getReturns(requestParameters: ReturnsApiGetReturnsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ReturnSlipPageResponse> {
+            return localVarFp.getReturns(requestParameters.warehouseId, requestParameters.returnType, requestParameters.returnDateFrom, requestParameters.returnDateTo, requestParameters.productId, requestParameters.partnerId, requestParameters.returnReason, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for createReturn operation in ReturnsApi.
+ * @export
+ * @interface ReturnsApiCreateReturnRequest
+ */
+export interface ReturnsApiCreateReturnRequest {
+    /**
+     * 
+     * @type {CreateReturnRequest}
+     * @memberof ReturnsApiCreateReturn
+     */
+    readonly createReturnRequest: CreateReturnRequest
+}
+
+/**
+ * Request parameters for getReturns operation in ReturnsApi.
+ * @export
+ * @interface ReturnsApiGetReturnsRequest
+ */
+export interface ReturnsApiGetReturnsRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly warehouseId: number
+
+    /**
+     * 返品種別
+     * @type {ReturnType}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly returnType?: ReturnType
+
+    /**
+     * 返品日From
+     * @type {string}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly returnDateFrom?: string
+
+    /**
+     * 返品日To
+     * @type {string}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly returnDateTo?: string
+
+    /**
+     * 商品ID
+     * @type {number}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly productId?: number
+
+    /**
+     * 取引先ID
+     * @type {number}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly partnerId?: number
+
+    /**
+     * 返品理由コード
+     * @type {ReturnReason}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly returnReason?: ReturnReason
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof ReturnsApiGetReturns
+     */
+    readonly sort?: string
+}
 
 /**
  * ReturnsApi - object-oriented interface
@@ -262,34 +344,25 @@ export class ReturnsApi extends BaseAPI {
     /**
      * 返品伝票を登録する。1伝票1商品。返品種別に応じて在庫操作（在庫返品の場合のみ即時減算）を行い、ステータスはCOMPLETEDで確定する
      * @summary 返品登録
-     * @param {CreateReturnRequest} createReturnRequest 
+     * @param {ReturnsApiCreateReturnRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReturnsApi
      */
-    public createReturn(createReturnRequest: CreateReturnRequest, options?: RawAxiosRequestConfig) {
-        return ReturnsApiFp(this.configuration).createReturn(createReturnRequest, options).then((request) => request(this.axios, this.basePath));
+    public createReturn(requestParameters: ReturnsApiCreateReturnRequest, options?: RawAxiosRequestConfig) {
+        return ReturnsApiFp(this.configuration).createReturn(requestParameters.createReturnRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定倉庫の返品伝票をページング形式で取得する。返品種別・返品日・商品・取引先・返品理由等の条件で絞り込みが可能
      * @summary 返品一覧取得
-     * @param {number} warehouseId 倉庫ID
-     * @param {ReturnType} [returnType] 返品種別
-     * @param {string} [returnDateFrom] 返品日From
-     * @param {string} [returnDateTo] 返品日To
-     * @param {number} [productId] 商品ID
-     * @param {number} [partnerId] 取引先ID
-     * @param {ReturnReason} [returnReason] 返品理由コード
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {ReturnsApiGetReturnsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReturnsApi
      */
-    public getReturns(warehouseId: number, returnType?: ReturnType, returnDateFrom?: string, returnDateTo?: string, productId?: number, partnerId?: number, returnReason?: ReturnReason, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return ReturnsApiFp(this.configuration).getReturns(warehouseId, returnType, returnDateFrom, returnDateTo, productId, partnerId, returnReason, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public getReturns(requestParameters: ReturnsApiGetReturnsRequest, options?: RawAxiosRequestConfig) {
+        return ReturnsApiFp(this.configuration).getReturns(requestParameters.warehouseId, requestParameters.returnType, requestParameters.returnDateFrom, requestParameters.returnDateTo, requestParameters.productId, requestParameters.partnerId, requestParameters.returnReason, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

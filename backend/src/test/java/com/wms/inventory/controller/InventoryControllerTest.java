@@ -482,6 +482,58 @@ class InventoryControllerTest {
         }
     }
 
+    // ========== getCorrectionHistory ==========
+
+    @Nested
+    @DisplayName("GET /api/v1/inventory/correction-history")
+    class CorrectionHistoryTests {
+
+        @Test
+        @DisplayName("訂正履歴を取得し200を返す")
+        void getCorrectionHistory_returns200() throws Exception {
+            OffsetDateTime now = OffsetDateTime.parse("2026-03-20T10:00:00+09:00");
+            List<InventoryCorrectionService.CorrectionHistoryRecord> records = List.of(
+                    new InventoryCorrectionService.CorrectionHistoryRecord(
+                            now, 5, 3, "棚卸差異", "山田太郎"),
+                    new InventoryCorrectionService.CorrectionHistoryRecord(
+                            now.minusDays(1), 10, 5, "入荷漏れ", "鈴木花子"));
+
+            when(inventoryCorrectionService.getCorrectionHistory(1L, 10L, 100L, "CASE"))
+                    .thenReturn(records);
+
+            mockMvc.perform(get("/api/v1/inventory/correction-history")
+                            .param("warehouseId", "1")
+                            .param("locationId", "10")
+                            .param("productId", "100")
+                            .param("unitType", "CASE"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(2)))
+                    .andExpect(jsonPath("$[0].quantityBefore").value(5))
+                    .andExpect(jsonPath("$[0].quantityAfter").value(3))
+                    .andExpect(jsonPath("$[0].reason").value("棚卸差異"))
+                    .andExpect(jsonPath("$[0].executedByName").value("山田太郎"))
+                    .andExpect(jsonPath("$[1].quantityBefore").value(10))
+                    .andExpect(jsonPath("$[1].quantityAfter").value(5))
+                    .andExpect(jsonPath("$[1].reason").value("入荷漏れ"))
+                    .andExpect(jsonPath("$[1].executedByName").value("鈴木花子"));
+        }
+
+        @Test
+        @DisplayName("訂正履歴が空の場合は空配列を返す")
+        void getCorrectionHistory_empty_returns200() throws Exception {
+            when(inventoryCorrectionService.getCorrectionHistory(1L, 10L, 100L, "CASE"))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/api/v1/inventory/correction-history")
+                            .param("warehouseId", "1")
+                            .param("locationId", "10")
+                            .param("productId", "100")
+                            .param("unitType", "CASE"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$", hasSize(0)));
+        }
+    }
+
     // ========== listStocktakes ==========
 
     @Nested

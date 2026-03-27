@@ -165,16 +165,36 @@ export const SystemParameterApiFactory = function (configuration?: Configuration
         /**
          * 指定したパラメータキーの値を更新する。SYSTEM_ADMIN専用。
          * @summary パラメータ値更新
-         * @param {string} paramKey パラメータキー
-         * @param {UpdateSystemParameterRequest} updateSystemParameterRequest 
+         * @param {SystemParameterApiUpdateSystemParameterRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateSystemParameter(paramKey: string, updateSystemParameterRequest: UpdateSystemParameterRequest, options?: RawAxiosRequestConfig): AxiosPromise<SystemParameterDetail> {
-            return localVarFp.updateSystemParameter(paramKey, updateSystemParameterRequest, options).then((request) => request(axios, basePath));
+        updateSystemParameter(requestParameters: SystemParameterApiUpdateSystemParameterRequest, options?: RawAxiosRequestConfig): AxiosPromise<SystemParameterDetail> {
+            return localVarFp.updateSystemParameter(requestParameters.paramKey, requestParameters.updateSystemParameterRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for updateSystemParameter operation in SystemParameterApi.
+ * @export
+ * @interface SystemParameterApiUpdateSystemParameterRequest
+ */
+export interface SystemParameterApiUpdateSystemParameterRequest {
+    /**
+     * パラメータキー
+     * @type {string}
+     * @memberof SystemParameterApiUpdateSystemParameter
+     */
+    readonly paramKey: string
+
+    /**
+     * 
+     * @type {UpdateSystemParameterRequest}
+     * @memberof SystemParameterApiUpdateSystemParameter
+     */
+    readonly updateSystemParameterRequest: UpdateSystemParameterRequest
+}
 
 /**
  * SystemParameterApi - object-oriented interface
@@ -197,14 +217,13 @@ export class SystemParameterApi extends BaseAPI {
     /**
      * 指定したパラメータキーの値を更新する。SYSTEM_ADMIN専用。
      * @summary パラメータ値更新
-     * @param {string} paramKey パラメータキー
-     * @param {UpdateSystemParameterRequest} updateSystemParameterRequest 
+     * @param {SystemParameterApiUpdateSystemParameterRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof SystemParameterApi
      */
-    public updateSystemParameter(paramKey: string, updateSystemParameterRequest: UpdateSystemParameterRequest, options?: RawAxiosRequestConfig) {
-        return SystemParameterApiFp(this.configuration).updateSystemParameter(paramKey, updateSystemParameterRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateSystemParameter(requestParameters: SystemParameterApiUpdateSystemParameterRequest, options?: RawAxiosRequestConfig) {
+        return SystemParameterApiFp(this.configuration).updateSystemParameter(requestParameters.paramKey, requestParameters.updateSystemParameterRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

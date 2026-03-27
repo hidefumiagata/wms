@@ -712,6 +712,13 @@ export default {
     correctionBelowAllocated: '引当済み数量（{allocated}）を下回る訂正はできません。',
     correctionSameQty: '現在在庫数と同じ値が入力されています。',
     correctionReport: '訂正一覧レポート',
+    correctionHistory: '訂正履歴（直近5件）',
+    correctionHistoryDate: '訂正日時',
+    correctionHistoryBefore: '前数量',
+    correctionHistoryAfter: '後数量',
+    correctionHistoryReason: '理由',
+    correctionHistoryExecutor: '実施者',
+    correctionHistoryEmpty: '訂正履歴はありません。',
     backToList: '一覧に戻る',
     // INV-011 棚卸一覧
     stocktakeTitle: '棚卸一覧',

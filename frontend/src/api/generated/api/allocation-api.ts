@@ -447,77 +447,233 @@ export const AllocationApiFactory = function (configuration?: Configuration, bas
         /**
          * ばらし指示を完了し、在庫の荷姿変換を確定する。元荷姿の在庫を減算し、先荷姿の在庫を加算する
          * @summary ばらし完了
-         * @param {number} id リソースID
+         * @param {AllocationApiCompleteUnpackInstructionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        completeUnpackInstruction(id: number, options?: RawAxiosRequestConfig): AxiosPromise<UnpackCompletionResult> {
-            return localVarFp.completeUnpackInstruction(id, options).then((request) => request(axios, basePath));
+        completeUnpackInstruction(requestParameters: AllocationApiCompleteUnpackInstructionRequest, options?: RawAxiosRequestConfig): AxiosPromise<UnpackCompletionResult> {
+            return localVarFp.completeUnpackInstruction(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 選択された受注に対して在庫引当を実行する。FIFO/FEFO方式で在庫を引き当て、荷姿変換が必要な場合はばらし指示を自動生成する
          * @summary 引当実行
-         * @param {ExecuteAllocationRequest} executeAllocationRequest 
+         * @param {AllocationApiExecuteAllocationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        executeAllocation(executeAllocationRequest: ExecuteAllocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<AllocationExecutionResult> {
-            return localVarFp.executeAllocation(executeAllocationRequest, options).then((request) => request(axios, basePath));
+        executeAllocation(requestParameters: AllocationApiExecuteAllocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<AllocationExecutionResult> {
+            return localVarFp.executeAllocation(requestParameters.executeAllocationRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 引当済み（ALLOCATEDまたはPARTIAL_ALLOCATED）の受注一覧をページング形式で取得する
          * @summary 引当済み受注一覧取得
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {AllocationApiGetAllocatedOrdersRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getAllocatedOrders(page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<AllocatedOrderPageResponse> {
-            return localVarFp.getAllocatedOrders(page, size, sort, options).then((request) => request(axios, basePath));
+        getAllocatedOrders(requestParameters: AllocationApiGetAllocatedOrdersRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<AllocatedOrderPageResponse> {
+            return localVarFp.getAllocatedOrders(requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 引当対象となる受注（ステータスがORDEREDまたはPARTIAL_ALLOCATED）をページング形式で取得する
          * @summary 引当対象受注一覧取得
-         * @param {number} warehouseId 倉庫ID
-         * @param {Array<GetAllocationOrdersStatusEnum>} [status] ステータス（複数指定可）
-         * @param {string} [shippingDateFrom] 出荷予定日の開始日
-         * @param {string} [shippingDateTo] 出荷予定日の終了日
-         * @param {string} [partnerName] 出荷先名（部分一致）
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {AllocationApiGetAllocationOrdersRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getAllocationOrders(warehouseId: number, status?: Array<GetAllocationOrdersStatusEnum>, shippingDateFrom?: string, shippingDateTo?: string, partnerName?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<AllocationOrderPageResponse> {
-            return localVarFp.getAllocationOrders(warehouseId, status, shippingDateFrom, shippingDateTo, partnerName, page, size, sort, options).then((request) => request(axios, basePath));
+        getAllocationOrders(requestParameters: AllocationApiGetAllocationOrdersRequest, options?: RawAxiosRequestConfig): AxiosPromise<AllocationOrderPageResponse> {
+            return localVarFp.getAllocationOrders(requestParameters.warehouseId, requestParameters.status, requestParameters.shippingDateFrom, requestParameters.shippingDateTo, requestParameters.partnerName, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * ばらし指示の一覧を取得する。出荷伝票IDやステータスでの絞り込みが可能
          * @summary ばらし指示一覧取得
-         * @param {number} [outboundSlipId] 出荷伝票IDで絞り込み
-         * @param {GetUnpackInstructionsStatusEnum} [status] ステータス
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
+         * @param {AllocationApiGetUnpackInstructionsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUnpackInstructions(outboundSlipId?: number, status?: GetUnpackInstructionsStatusEnum, page?: number, size?: number, options?: RawAxiosRequestConfig): AxiosPromise<UnpackInstructionPageResponse> {
-            return localVarFp.getUnpackInstructions(outboundSlipId, status, page, size, options).then((request) => request(axios, basePath));
+        getUnpackInstructions(requestParameters: AllocationApiGetUnpackInstructionsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<UnpackInstructionPageResponse> {
+            return localVarFp.getUnpackInstructions(requestParameters.outboundSlipId, requestParameters.status, requestParameters.page, requestParameters.size, options).then((request) => request(axios, basePath));
         },
         /**
          * 引当済みの受注から引当を解放する。引当済み在庫を元に戻し、受注ステータスをORDEREDに戻す
          * @summary 引当解放
-         * @param {ReleaseAllocationRequest} releaseAllocationRequest 
+         * @param {AllocationApiReleaseAllocationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        releaseAllocation(releaseAllocationRequest: ReleaseAllocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<AllocationReleaseResult> {
-            return localVarFp.releaseAllocation(releaseAllocationRequest, options).then((request) => request(axios, basePath));
+        releaseAllocation(requestParameters: AllocationApiReleaseAllocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<AllocationReleaseResult> {
+            return localVarFp.releaseAllocation(requestParameters.releaseAllocationRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for completeUnpackInstruction operation in AllocationApi.
+ * @export
+ * @interface AllocationApiCompleteUnpackInstructionRequest
+ */
+export interface AllocationApiCompleteUnpackInstructionRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof AllocationApiCompleteUnpackInstruction
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for executeAllocation operation in AllocationApi.
+ * @export
+ * @interface AllocationApiExecuteAllocationRequest
+ */
+export interface AllocationApiExecuteAllocationRequest {
+    /**
+     * 
+     * @type {ExecuteAllocationRequest}
+     * @memberof AllocationApiExecuteAllocation
+     */
+    readonly executeAllocationRequest: ExecuteAllocationRequest
+}
+
+/**
+ * Request parameters for getAllocatedOrders operation in AllocationApi.
+ * @export
+ * @interface AllocationApiGetAllocatedOrdersRequest
+ */
+export interface AllocationApiGetAllocatedOrdersRequest {
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof AllocationApiGetAllocatedOrders
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof AllocationApiGetAllocatedOrders
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof AllocationApiGetAllocatedOrders
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for getAllocationOrders operation in AllocationApi.
+ * @export
+ * @interface AllocationApiGetAllocationOrdersRequest
+ */
+export interface AllocationApiGetAllocationOrdersRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly warehouseId: number
+
+    /**
+     * ステータス（複数指定可）
+     * @type {Array<'ORDERED' | 'PARTIAL_ALLOCATED'>}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly status?: Array<GetAllocationOrdersStatusEnum>
+
+    /**
+     * 出荷予定日の開始日
+     * @type {string}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly shippingDateFrom?: string
+
+    /**
+     * 出荷予定日の終了日
+     * @type {string}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly shippingDateTo?: string
+
+    /**
+     * 出荷先名（部分一致）
+     * @type {string}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly partnerName?: string
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof AllocationApiGetAllocationOrders
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for getUnpackInstructions operation in AllocationApi.
+ * @export
+ * @interface AllocationApiGetUnpackInstructionsRequest
+ */
+export interface AllocationApiGetUnpackInstructionsRequest {
+    /**
+     * 出荷伝票IDで絞り込み
+     * @type {number}
+     * @memberof AllocationApiGetUnpackInstructions
+     */
+    readonly outboundSlipId?: number
+
+    /**
+     * ステータス
+     * @type {'INSTRUCTED' | 'COMPLETED'}
+     * @memberof AllocationApiGetUnpackInstructions
+     */
+    readonly status?: GetUnpackInstructionsStatusEnum
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof AllocationApiGetUnpackInstructions
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof AllocationApiGetUnpackInstructions
+     */
+    readonly size?: number
+}
+
+/**
+ * Request parameters for releaseAllocation operation in AllocationApi.
+ * @export
+ * @interface AllocationApiReleaseAllocationRequest
+ */
+export interface AllocationApiReleaseAllocationRequest {
+    /**
+     * 
+     * @type {ReleaseAllocationRequest}
+     * @memberof AllocationApiReleaseAllocation
+     */
+    readonly releaseAllocationRequest: ReleaseAllocationRequest
+}
 
 /**
  * AllocationApi - object-oriented interface
@@ -529,85 +685,73 @@ export class AllocationApi extends BaseAPI {
     /**
      * ばらし指示を完了し、在庫の荷姿変換を確定する。元荷姿の在庫を減算し、先荷姿の在庫を加算する
      * @summary ばらし完了
-     * @param {number} id リソースID
+     * @param {AllocationApiCompleteUnpackInstructionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public completeUnpackInstruction(id: number, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).completeUnpackInstruction(id, options).then((request) => request(this.axios, this.basePath));
+    public completeUnpackInstruction(requestParameters: AllocationApiCompleteUnpackInstructionRequest, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).completeUnpackInstruction(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 選択された受注に対して在庫引当を実行する。FIFO/FEFO方式で在庫を引き当て、荷姿変換が必要な場合はばらし指示を自動生成する
      * @summary 引当実行
-     * @param {ExecuteAllocationRequest} executeAllocationRequest 
+     * @param {AllocationApiExecuteAllocationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public executeAllocation(executeAllocationRequest: ExecuteAllocationRequest, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).executeAllocation(executeAllocationRequest, options).then((request) => request(this.axios, this.basePath));
+    public executeAllocation(requestParameters: AllocationApiExecuteAllocationRequest, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).executeAllocation(requestParameters.executeAllocationRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 引当済み（ALLOCATEDまたはPARTIAL_ALLOCATED）の受注一覧をページング形式で取得する
      * @summary 引当済み受注一覧取得
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {AllocationApiGetAllocatedOrdersRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public getAllocatedOrders(page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).getAllocatedOrders(page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public getAllocatedOrders(requestParameters: AllocationApiGetAllocatedOrdersRequest = {}, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).getAllocatedOrders(requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 引当対象となる受注（ステータスがORDEREDまたはPARTIAL_ALLOCATED）をページング形式で取得する
      * @summary 引当対象受注一覧取得
-     * @param {number} warehouseId 倉庫ID
-     * @param {Array<GetAllocationOrdersStatusEnum>} [status] ステータス（複数指定可）
-     * @param {string} [shippingDateFrom] 出荷予定日の開始日
-     * @param {string} [shippingDateTo] 出荷予定日の終了日
-     * @param {string} [partnerName] 出荷先名（部分一致）
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {AllocationApiGetAllocationOrdersRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public getAllocationOrders(warehouseId: number, status?: Array<GetAllocationOrdersStatusEnum>, shippingDateFrom?: string, shippingDateTo?: string, partnerName?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).getAllocationOrders(warehouseId, status, shippingDateFrom, shippingDateTo, partnerName, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public getAllocationOrders(requestParameters: AllocationApiGetAllocationOrdersRequest, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).getAllocationOrders(requestParameters.warehouseId, requestParameters.status, requestParameters.shippingDateFrom, requestParameters.shippingDateTo, requestParameters.partnerName, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ばらし指示の一覧を取得する。出荷伝票IDやステータスでの絞り込みが可能
      * @summary ばらし指示一覧取得
-     * @param {number} [outboundSlipId] 出荷伝票IDで絞り込み
-     * @param {GetUnpackInstructionsStatusEnum} [status] ステータス
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
+     * @param {AllocationApiGetUnpackInstructionsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public getUnpackInstructions(outboundSlipId?: number, status?: GetUnpackInstructionsStatusEnum, page?: number, size?: number, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).getUnpackInstructions(outboundSlipId, status, page, size, options).then((request) => request(this.axios, this.basePath));
+    public getUnpackInstructions(requestParameters: AllocationApiGetUnpackInstructionsRequest = {}, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).getUnpackInstructions(requestParameters.outboundSlipId, requestParameters.status, requestParameters.page, requestParameters.size, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 引当済みの受注から引当を解放する。引当済み在庫を元に戻し、受注ステータスをORDEREDに戻す
      * @summary 引当解放
-     * @param {ReleaseAllocationRequest} releaseAllocationRequest 
+     * @param {AllocationApiReleaseAllocationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AllocationApi
      */
-    public releaseAllocation(releaseAllocationRequest: ReleaseAllocationRequest, options?: RawAxiosRequestConfig) {
-        return AllocationApiFp(this.configuration).releaseAllocation(releaseAllocationRequest, options).then((request) => request(this.axios, this.basePath));
+    public releaseAllocation(requestParameters: AllocationApiReleaseAllocationRequest, options?: RawAxiosRequestConfig) {
+        return AllocationApiFp(this.configuration).releaseAllocation(requestParameters.releaseAllocationRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

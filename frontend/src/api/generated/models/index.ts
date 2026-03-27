@@ -30,6 +30,7 @@ export * from './complete-picking-line-response';
 export * from './complete-picking-request';
 export * from './complete-picking-response';
 export * from './confirm-stocktake-response';
+export * from './correction-history-item';
 export * from './correction-inventory-request';
 export * from './correction-inventory-response';
 export * from './count-response';

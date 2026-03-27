@@ -751,134 +751,402 @@ export const OutboundApiFactory = function (configuration?: Configuration, baseP
         /**
          * ORDERED、PARTIAL_ALLOCATED、またはALLOCATED状態の受注をキャンセルする。 引当済みの場合は引当情報も取り消す。 
          * @summary 受注キャンセル
-         * @param {number} id リソースID
-         * @param {CancelOutboundRequest} [cancelOutboundRequest] 
+         * @param {OutboundApiCancelOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        cancelOutboundSlip(id: number, cancelOutboundRequest?: CancelOutboundRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundCancelResponse> {
-            return localVarFp.cancelOutboundSlip(id, cancelOutboundRequest, options).then((request) => request(axios, basePath));
+        cancelOutboundSlip(requestParameters: OutboundApiCancelOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundCancelResponse> {
+            return localVarFp.cancelOutboundSlip(requestParameters.id, requestParameters.cancelOutboundRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * ピッキング作業者がピッキングした数量を登録する。 全明細完了時に指示ステータスをCOMPLETEDに更新し、 関連する受注ステータスをPICKING_COMPLETEDに変更する。 
          * @summary ピッキング完了登録
-         * @param {number} id リソースID
-         * @param {CompletePickingRequest} completePickingRequest 
+         * @param {OutboundApiCompletePickingInstructionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        completePickingInstruction(id: number, completePickingRequest: CompletePickingRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
-            return localVarFp.completePickingInstruction(id, completePickingRequest, options).then((request) => request(axios, basePath));
+        completePickingInstruction(requestParameters: OutboundApiCompletePickingInstructionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
+            return localVarFp.completePickingInstruction(requestParameters.id, requestParameters.completePickingRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 新規の出荷受注を登録する。登録時のステータスはORDERED固定。 伝票番号は自動採番される。 
          * @summary 受注登録
-         * @param {CreateOutboundSlipRequest} createOutboundSlipRequest 
+         * @param {OutboundApiCreateOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createOutboundSlip(createOutboundSlipRequest: CreateOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
-            return localVarFp.createOutboundSlip(createOutboundSlipRequest, options).then((request) => request(axios, basePath));
+        createOutboundSlip(requestParameters: OutboundApiCreateOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
+            return localVarFp.createOutboundSlip(requestParameters.createOutboundSlipRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 在庫引当済みの受注（ALLOCATED状態）からピッキング指示書を作成する。 複数の受注を束ねて1つのピッキング指示にまとめることができる。 
          * @summary ピッキング指示作成
-         * @param {CreatePickingInstructionRequest} createPickingInstructionRequest 
+         * @param {OutboundApiCreatePickingInstructionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createPickingInstruction(createPickingInstructionRequest: CreatePickingInstructionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
-            return localVarFp.createPickingInstruction(createPickingInstructionRequest, options).then((request) => request(axios, basePath));
+        createPickingInstruction(requestParameters: OutboundApiCreatePickingInstructionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
+            return localVarFp.createPickingInstruction(requestParameters.createPickingInstructionRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * ORDERED状態の受注伝票を物理削除する。
          * @summary 受注削除
-         * @param {number} id リソースID
+         * @param {OutboundApiDeleteOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteOutboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.deleteOutboundSlip(id, options).then((request) => request(axios, basePath));
+        deleteOutboundSlip(requestParameters: OutboundApiDeleteOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteOutboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 出荷伝票IDを指定して受注ヘッダ・全明細を取得する。
          * @summary 受注詳細取得
-         * @param {number} id リソースID
+         * @param {OutboundApiGetOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getOutboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
-            return localVarFp.getOutboundSlip(id, options).then((request) => request(axios, basePath));
+        getOutboundSlip(requestParameters: OutboundApiGetOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
+            return localVarFp.getOutboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * ピッキング指示IDを指定してヘッダ・全明細を取得する。
          * @summary ピッキング指示詳細取得
-         * @param {number} id リソースID
+         * @param {OutboundApiGetPickingInstructionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getPickingInstruction(id: number, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
-            return localVarFp.getPickingInstruction(id, options).then((request) => request(axios, basePath));
+        getPickingInstruction(requestParameters: OutboundApiGetPickingInstructionRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionDetail> {
+            return localVarFp.getPickingInstruction(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * ピッキング完了済みまたは検品中の出荷伝票に対して出荷検品数量を登録する。 ステータスをINSPECTINGに更新する。 
          * @summary 出荷検品登録
-         * @param {number} id リソースID
-         * @param {InspectOutboundRequest} inspectOutboundRequest 
+         * @param {OutboundApiInspectOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        inspectOutboundSlip(id: number, inspectOutboundRequest: InspectOutboundRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
-            return localVarFp.inspectOutboundSlip(id, inspectOutboundRequest, options).then((request) => request(axios, basePath));
+        inspectOutboundSlip(requestParameters: OutboundApiInspectOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
+            return localVarFp.inspectOutboundSlip(requestParameters.id, requestParameters.inspectOutboundRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 出荷伝票（受注）の一覧をページング形式で取得する。倉庫ID必須。
          * @summary 受注一覧取得
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [slipNumber] 伝票番号（前方一致）
-         * @param {string} [plannedDateFrom] 出荷予定日From
-         * @param {string} [plannedDateTo] 出荷予定日To
-         * @param {number} [partnerId] 出荷先取引先ID
-         * @param {Array<OutboundSlipStatus>} [status] ステータス（複数指定可）
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {OutboundApiListOutboundSlipsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listOutboundSlips(warehouseId: number, slipNumber?: string, plannedDateFrom?: string, plannedDateTo?: string, partnerId?: number, status?: Array<OutboundSlipStatus>, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipPageResponse> {
-            return localVarFp.listOutboundSlips(warehouseId, slipNumber, plannedDateFrom, plannedDateTo, partnerId, status, page, size, sort, options).then((request) => request(axios, basePath));
+        listOutboundSlips(requestParameters: OutboundApiListOutboundSlipsRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipPageResponse> {
+            return localVarFp.listOutboundSlips(requestParameters.warehouseId, requestParameters.slipNumber, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.partnerId, requestParameters.status, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * ピッキング指示の一覧をページング形式で取得する。倉庫ID必須。
          * @summary ピッキング指示一覧取得
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [instructionNumber] 指示番号（前方一致）
-         * @param {Array<PickingInstructionStatus>} [status] ステータス（複数指定可）
-         * @param {string} [createdDateFrom] 作成日From
-         * @param {string} [createdDateTo] 作成日To
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {OutboundApiListPickingInstructionsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listPickingInstructions(warehouseId: number, instructionNumber?: string, status?: Array<PickingInstructionStatus>, createdDateFrom?: string, createdDateTo?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionPageResponse> {
-            return localVarFp.listPickingInstructions(warehouseId, instructionNumber, status, createdDateFrom, createdDateTo, page, size, sort, options).then((request) => request(axios, basePath));
+        listPickingInstructions(requestParameters: OutboundApiListPickingInstructionsRequest, options?: RawAxiosRequestConfig): AxiosPromise<PickingInstructionPageResponse> {
+            return localVarFp.listPickingInstructions(requestParameters.warehouseId, requestParameters.instructionNumber, requestParameters.status, requestParameters.createdDateFrom, requestParameters.createdDateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 出荷検品済みの伝票に対して出荷完了処理を行う。 在庫の実減算・移動履歴の記録・伝票ステータス更新をトランザクションで一括処理する。 
          * @summary 出荷完了登録
-         * @param {number} id リソースID
-         * @param {ShipOutboundRequest} shipOutboundRequest 
+         * @param {OutboundApiShipOutboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        shipOutboundSlip(id: number, shipOutboundRequest: ShipOutboundRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
-            return localVarFp.shipOutboundSlip(id, shipOutboundRequest, options).then((request) => request(axios, basePath));
+        shipOutboundSlip(requestParameters: OutboundApiShipOutboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<OutboundSlipDetail> {
+            return localVarFp.shipOutboundSlip(requestParameters.id, requestParameters.shipOutboundRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for cancelOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiCancelOutboundSlipRequest
+ */
+export interface OutboundApiCancelOutboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiCancelOutboundSlip
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {CancelOutboundRequest}
+     * @memberof OutboundApiCancelOutboundSlip
+     */
+    readonly cancelOutboundRequest?: CancelOutboundRequest
+}
+
+/**
+ * Request parameters for completePickingInstruction operation in OutboundApi.
+ * @export
+ * @interface OutboundApiCompletePickingInstructionRequest
+ */
+export interface OutboundApiCompletePickingInstructionRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiCompletePickingInstruction
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {CompletePickingRequest}
+     * @memberof OutboundApiCompletePickingInstruction
+     */
+    readonly completePickingRequest: CompletePickingRequest
+}
+
+/**
+ * Request parameters for createOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiCreateOutboundSlipRequest
+ */
+export interface OutboundApiCreateOutboundSlipRequest {
+    /**
+     * 
+     * @type {CreateOutboundSlipRequest}
+     * @memberof OutboundApiCreateOutboundSlip
+     */
+    readonly createOutboundSlipRequest: CreateOutboundSlipRequest
+}
+
+/**
+ * Request parameters for createPickingInstruction operation in OutboundApi.
+ * @export
+ * @interface OutboundApiCreatePickingInstructionRequest
+ */
+export interface OutboundApiCreatePickingInstructionRequest {
+    /**
+     * 
+     * @type {CreatePickingInstructionRequest}
+     * @memberof OutboundApiCreatePickingInstruction
+     */
+    readonly createPickingInstructionRequest: CreatePickingInstructionRequest
+}
+
+/**
+ * Request parameters for deleteOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiDeleteOutboundSlipRequest
+ */
+export interface OutboundApiDeleteOutboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiDeleteOutboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for getOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiGetOutboundSlipRequest
+ */
+export interface OutboundApiGetOutboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiGetOutboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for getPickingInstruction operation in OutboundApi.
+ * @export
+ * @interface OutboundApiGetPickingInstructionRequest
+ */
+export interface OutboundApiGetPickingInstructionRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiGetPickingInstruction
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for inspectOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiInspectOutboundSlipRequest
+ */
+export interface OutboundApiInspectOutboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiInspectOutboundSlip
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {InspectOutboundRequest}
+     * @memberof OutboundApiInspectOutboundSlip
+     */
+    readonly inspectOutboundRequest: InspectOutboundRequest
+}
+
+/**
+ * Request parameters for listOutboundSlips operation in OutboundApi.
+ * @export
+ * @interface OutboundApiListOutboundSlipsRequest
+ */
+export interface OutboundApiListOutboundSlipsRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly warehouseId: number
+
+    /**
+     * 伝票番号（前方一致）
+     * @type {string}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly slipNumber?: string
+
+    /**
+     * 出荷予定日From
+     * @type {string}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly plannedDateFrom?: string
+
+    /**
+     * 出荷予定日To
+     * @type {string}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly plannedDateTo?: string
+
+    /**
+     * 出荷先取引先ID
+     * @type {number}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly partnerId?: number
+
+    /**
+     * ステータス（複数指定可）
+     * @type {Array<OutboundSlipStatus>}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly status?: Array<OutboundSlipStatus>
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof OutboundApiListOutboundSlips
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for listPickingInstructions operation in OutboundApi.
+ * @export
+ * @interface OutboundApiListPickingInstructionsRequest
+ */
+export interface OutboundApiListPickingInstructionsRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly warehouseId: number
+
+    /**
+     * 指示番号（前方一致）
+     * @type {string}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly instructionNumber?: string
+
+    /**
+     * ステータス（複数指定可）
+     * @type {Array<PickingInstructionStatus>}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly status?: Array<PickingInstructionStatus>
+
+    /**
+     * 作成日From
+     * @type {string}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly createdDateFrom?: string
+
+    /**
+     * 作成日To
+     * @type {string}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly createdDateTo?: string
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof OutboundApiListPickingInstructions
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for shipOutboundSlip operation in OutboundApi.
+ * @export
+ * @interface OutboundApiShipOutboundSlipRequest
+ */
+export interface OutboundApiShipOutboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof OutboundApiShipOutboundSlip
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {ShipOutboundRequest}
+     * @memberof OutboundApiShipOutboundSlip
+     */
+    readonly shipOutboundRequest: ShipOutboundRequest
+}
 
 /**
  * OutboundApi - object-oriented interface
@@ -890,152 +1158,133 @@ export class OutboundApi extends BaseAPI {
     /**
      * ORDERED、PARTIAL_ALLOCATED、またはALLOCATED状態の受注をキャンセルする。 引当済みの場合は引当情報も取り消す。 
      * @summary 受注キャンセル
-     * @param {number} id リソースID
-     * @param {CancelOutboundRequest} [cancelOutboundRequest] 
+     * @param {OutboundApiCancelOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public cancelOutboundSlip(id: number, cancelOutboundRequest?: CancelOutboundRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).cancelOutboundSlip(id, cancelOutboundRequest, options).then((request) => request(this.axios, this.basePath));
+    public cancelOutboundSlip(requestParameters: OutboundApiCancelOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).cancelOutboundSlip(requestParameters.id, requestParameters.cancelOutboundRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ピッキング作業者がピッキングした数量を登録する。 全明細完了時に指示ステータスをCOMPLETEDに更新し、 関連する受注ステータスをPICKING_COMPLETEDに変更する。 
      * @summary ピッキング完了登録
-     * @param {number} id リソースID
-     * @param {CompletePickingRequest} completePickingRequest 
+     * @param {OutboundApiCompletePickingInstructionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public completePickingInstruction(id: number, completePickingRequest: CompletePickingRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).completePickingInstruction(id, completePickingRequest, options).then((request) => request(this.axios, this.basePath));
+    public completePickingInstruction(requestParameters: OutboundApiCompletePickingInstructionRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).completePickingInstruction(requestParameters.id, requestParameters.completePickingRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 新規の出荷受注を登録する。登録時のステータスはORDERED固定。 伝票番号は自動採番される。 
      * @summary 受注登録
-     * @param {CreateOutboundSlipRequest} createOutboundSlipRequest 
+     * @param {OutboundApiCreateOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public createOutboundSlip(createOutboundSlipRequest: CreateOutboundSlipRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).createOutboundSlip(createOutboundSlipRequest, options).then((request) => request(this.axios, this.basePath));
+    public createOutboundSlip(requestParameters: OutboundApiCreateOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).createOutboundSlip(requestParameters.createOutboundSlipRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 在庫引当済みの受注（ALLOCATED状態）からピッキング指示書を作成する。 複数の受注を束ねて1つのピッキング指示にまとめることができる。 
      * @summary ピッキング指示作成
-     * @param {CreatePickingInstructionRequest} createPickingInstructionRequest 
+     * @param {OutboundApiCreatePickingInstructionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public createPickingInstruction(createPickingInstructionRequest: CreatePickingInstructionRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).createPickingInstruction(createPickingInstructionRequest, options).then((request) => request(this.axios, this.basePath));
+    public createPickingInstruction(requestParameters: OutboundApiCreatePickingInstructionRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).createPickingInstruction(requestParameters.createPickingInstructionRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ORDERED状態の受注伝票を物理削除する。
      * @summary 受注削除
-     * @param {number} id リソースID
+     * @param {OutboundApiDeleteOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public deleteOutboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).deleteOutboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public deleteOutboundSlip(requestParameters: OutboundApiDeleteOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).deleteOutboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 出荷伝票IDを指定して受注ヘッダ・全明細を取得する。
      * @summary 受注詳細取得
-     * @param {number} id リソースID
+     * @param {OutboundApiGetOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public getOutboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).getOutboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public getOutboundSlip(requestParameters: OutboundApiGetOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).getOutboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ピッキング指示IDを指定してヘッダ・全明細を取得する。
      * @summary ピッキング指示詳細取得
-     * @param {number} id リソースID
+     * @param {OutboundApiGetPickingInstructionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public getPickingInstruction(id: number, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).getPickingInstruction(id, options).then((request) => request(this.axios, this.basePath));
+    public getPickingInstruction(requestParameters: OutboundApiGetPickingInstructionRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).getPickingInstruction(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ピッキング完了済みまたは検品中の出荷伝票に対して出荷検品数量を登録する。 ステータスをINSPECTINGに更新する。 
      * @summary 出荷検品登録
-     * @param {number} id リソースID
-     * @param {InspectOutboundRequest} inspectOutboundRequest 
+     * @param {OutboundApiInspectOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public inspectOutboundSlip(id: number, inspectOutboundRequest: InspectOutboundRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).inspectOutboundSlip(id, inspectOutboundRequest, options).then((request) => request(this.axios, this.basePath));
+    public inspectOutboundSlip(requestParameters: OutboundApiInspectOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).inspectOutboundSlip(requestParameters.id, requestParameters.inspectOutboundRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 出荷伝票（受注）の一覧をページング形式で取得する。倉庫ID必須。
      * @summary 受注一覧取得
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [slipNumber] 伝票番号（前方一致）
-     * @param {string} [plannedDateFrom] 出荷予定日From
-     * @param {string} [plannedDateTo] 出荷予定日To
-     * @param {number} [partnerId] 出荷先取引先ID
-     * @param {Array<OutboundSlipStatus>} [status] ステータス（複数指定可）
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {OutboundApiListOutboundSlipsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public listOutboundSlips(warehouseId: number, slipNumber?: string, plannedDateFrom?: string, plannedDateTo?: string, partnerId?: number, status?: Array<OutboundSlipStatus>, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).listOutboundSlips(warehouseId, slipNumber, plannedDateFrom, plannedDateTo, partnerId, status, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listOutboundSlips(requestParameters: OutboundApiListOutboundSlipsRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).listOutboundSlips(requestParameters.warehouseId, requestParameters.slipNumber, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.partnerId, requestParameters.status, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ピッキング指示の一覧をページング形式で取得する。倉庫ID必須。
      * @summary ピッキング指示一覧取得
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [instructionNumber] 指示番号（前方一致）
-     * @param {Array<PickingInstructionStatus>} [status] ステータス（複数指定可）
-     * @param {string} [createdDateFrom] 作成日From
-     * @param {string} [createdDateTo] 作成日To
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {OutboundApiListPickingInstructionsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public listPickingInstructions(warehouseId: number, instructionNumber?: string, status?: Array<PickingInstructionStatus>, createdDateFrom?: string, createdDateTo?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).listPickingInstructions(warehouseId, instructionNumber, status, createdDateFrom, createdDateTo, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listPickingInstructions(requestParameters: OutboundApiListPickingInstructionsRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).listPickingInstructions(requestParameters.warehouseId, requestParameters.instructionNumber, requestParameters.status, requestParameters.createdDateFrom, requestParameters.createdDateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 出荷検品済みの伝票に対して出荷完了処理を行う。 在庫の実減算・移動履歴の記録・伝票ステータス更新をトランザクションで一括処理する。 
      * @summary 出荷完了登録
-     * @param {number} id リソースID
-     * @param {ShipOutboundRequest} shipOutboundRequest 
+     * @param {OutboundApiShipOutboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof OutboundApi
      */
-    public shipOutboundSlip(id: number, shipOutboundRequest: ShipOutboundRequest, options?: RawAxiosRequestConfig) {
-        return OutboundApiFp(this.configuration).shipOutboundSlip(id, shipOutboundRequest, options).then((request) => request(this.axios, this.basePath));
+    public shipOutboundSlip(requestParameters: OutboundApiShipOutboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return OutboundApiFp(this.configuration).shipOutboundSlip(requestParameters.id, requestParameters.shipOutboundRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

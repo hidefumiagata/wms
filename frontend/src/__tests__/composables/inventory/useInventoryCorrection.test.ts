@@ -173,7 +173,7 @@ describe('useInventoryCorrection', () => {
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inventory-list' })
   })
 
-  it('onProductChange が selectedUnitType と newQty をリセットする', () => {
+  it('onProductChange が selectedUnitType と newQty と correctionHistory をリセットする', () => {
     const { result } = withSetup(() => useInventoryCorrection())
     result.selectedUnitType.value = 'CASE'
     result.newQty.value = 10
@@ -181,9 +181,19 @@ describe('useInventoryCorrection', () => {
     result.onProductChange()
     expect(result.selectedUnitType.value).toBeNull()
     expect(result.newQty.value).toBeNull()
+    expect(result.correctionHistory.value).toEqual([])
   })
 
-  it('onUnitTypeChange が現在数量を初期値に設定する', async () => {
+  it('onUnitTypeChange が現在数量を初期値に設定し履歴を取得する', async () => {
+    const mockHistory = [
+      {
+        correctedAt: '2026-03-20T10:00:00+09:00',
+        quantityBefore: 5,
+        quantityAfter: 3,
+        reason: '棚卸差異',
+        executedByName: '山田太郎',
+      },
+    ]
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
@@ -193,11 +203,38 @@ describe('useInventoryCorrection', () => {
     result.locationCode.value = 'A-01'
     await result.fetchInventory()
 
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse(mockHistory))
+
     result.selectedProductId.value = 1
     result.selectedUnitType.value = 'CASE'
-    result.onUnitTypeChange()
+    result.locationId.value = 100
+    await result.onUnitTypeChange()
 
-    expect(result.newQty.value).toBe(10) // current quantity
+    expect(result.newQty.value).toBe(10)
+    expect(result.correctionHistory.value).toHaveLength(1)
+    expect(result.correctionHistory.value[0].reason).toBe('棚卸差異')
+  })
+
+  it('onUnitTypeChange で履歴取得に失敗しても空配列になる', async () => {
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection()
+    })
+
+    result.locationCode.value = 'A-01'
+    await result.fetchInventory()
+
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network error'))
+
+    result.selectedProductId.value = 1
+    result.selectedUnitType.value = 'CASE'
+    result.locationId.value = 100
+    await result.onUnitTypeChange()
+
+    expect(result.correctionHistory.value).toEqual([])
   })
 
   it('goBack が在庫一覧に遷移する', () => {

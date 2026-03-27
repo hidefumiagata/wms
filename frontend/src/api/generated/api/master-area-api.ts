@@ -368,63 +368,181 @@ export const MasterAreaApiFactory = function (configuration?: Configuration, bas
         /**
          * エリアマスタに新規エリアを登録する
          * @summary エリア登録
-         * @param {CreateAreaRequest} createAreaRequest 
+         * @param {MasterAreaApiCreateAreaRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createArea(createAreaRequest: CreateAreaRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaDetail> {
-            return localVarFp.createArea(createAreaRequest, options).then((request) => request(axios, basePath));
+        createArea(requestParameters: MasterAreaApiCreateAreaRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaDetail> {
+            return localVarFp.createArea(requestParameters.createAreaRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのエリアマスタを1件取得する
          * @summary エリア取得
-         * @param {number} id リソースID
+         * @param {MasterAreaApiGetAreaRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getArea(id: number, options?: RawAxiosRequestConfig): AxiosPromise<AreaDetail> {
-            return localVarFp.getArea(id, options).then((request) => request(axios, basePath));
+        getArea(requestParameters: MasterAreaApiGetAreaRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaDetail> {
+            return localVarFp.getArea(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * エリアマスタの一覧を取得する
          * @summary エリア一覧取得
-         * @param {number} [warehouseId] 倉庫IDで絞り込み
-         * @param {number} [buildingId] 棟IDで絞り込み
-         * @param {StorageCondition} [storageCondition] 保管条件フィルタ
-         * @param {AreaType} [areaType] エリア種別フィルタ
-         * @param {boolean} [isActive] 有効/無効フィルタ
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
+         * @param {MasterAreaApiListAreasRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listAreas(warehouseId?: number, buildingId?: number, storageCondition?: StorageCondition, areaType?: AreaType, isActive?: boolean, page?: number, size?: number, options?: RawAxiosRequestConfig): AxiosPromise<AreaPageResponse> {
-            return localVarFp.listAreas(warehouseId, buildingId, storageCondition, areaType, isActive, page, size, options).then((request) => request(axios, basePath));
+        listAreas(requestParameters: MasterAreaApiListAreasRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<AreaPageResponse> {
+            return localVarFp.listAreas(requestParameters.warehouseId, requestParameters.buildingId, requestParameters.storageCondition, requestParameters.areaType, requestParameters.isActive, requestParameters.page, requestParameters.size, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可
          * @summary エリア無効化／有効化
-         * @param {number} id リソースID
-         * @param {ToggleActiveRequest} toggleActiveRequest 
+         * @param {MasterAreaApiToggleAreaActiveRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleAreaActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaToggleResponse> {
-            return localVarFp.toggleAreaActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleAreaActive(requestParameters: MasterAreaApiToggleAreaActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaToggleResponse> {
+            return localVarFp.toggleAreaActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのエリアマスタを更新する。エリアコード・棟ID・エリア種別は変更不可
          * @summary エリア更新
-         * @param {number} id リソースID
-         * @param {UpdateAreaRequest} updateAreaRequest 
+         * @param {MasterAreaApiUpdateAreaRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateArea(id: number, updateAreaRequest: UpdateAreaRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaUpdateResponse> {
-            return localVarFp.updateArea(id, updateAreaRequest, options).then((request) => request(axios, basePath));
+        updateArea(requestParameters: MasterAreaApiUpdateAreaRequest, options?: RawAxiosRequestConfig): AxiosPromise<AreaUpdateResponse> {
+            return localVarFp.updateArea(requestParameters.id, requestParameters.updateAreaRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for createArea operation in MasterAreaApi.
+ * @export
+ * @interface MasterAreaApiCreateAreaRequest
+ */
+export interface MasterAreaApiCreateAreaRequest {
+    /**
+     * 
+     * @type {CreateAreaRequest}
+     * @memberof MasterAreaApiCreateArea
+     */
+    readonly createAreaRequest: CreateAreaRequest
+}
+
+/**
+ * Request parameters for getArea operation in MasterAreaApi.
+ * @export
+ * @interface MasterAreaApiGetAreaRequest
+ */
+export interface MasterAreaApiGetAreaRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterAreaApiGetArea
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for listAreas operation in MasterAreaApi.
+ * @export
+ * @interface MasterAreaApiListAreasRequest
+ */
+export interface MasterAreaApiListAreasRequest {
+    /**
+     * 倉庫IDで絞り込み
+     * @type {number}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly warehouseId?: number
+
+    /**
+     * 棟IDで絞り込み
+     * @type {number}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly buildingId?: number
+
+    /**
+     * 保管条件フィルタ
+     * @type {StorageCondition}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly storageCondition?: StorageCondition
+
+    /**
+     * エリア種別フィルタ
+     * @type {AreaType}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly areaType?: AreaType
+
+    /**
+     * 有効/無効フィルタ
+     * @type {boolean}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly isActive?: boolean
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof MasterAreaApiListAreas
+     */
+    readonly size?: number
+}
+
+/**
+ * Request parameters for toggleAreaActive operation in MasterAreaApi.
+ * @export
+ * @interface MasterAreaApiToggleAreaActiveRequest
+ */
+export interface MasterAreaApiToggleAreaActiveRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterAreaApiToggleAreaActive
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {ToggleActiveRequest}
+     * @memberof MasterAreaApiToggleAreaActive
+     */
+    readonly toggleActiveRequest: ToggleActiveRequest
+}
+
+/**
+ * Request parameters for updateArea operation in MasterAreaApi.
+ * @export
+ * @interface MasterAreaApiUpdateAreaRequest
+ */
+export interface MasterAreaApiUpdateAreaRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterAreaApiUpdateArea
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {UpdateAreaRequest}
+     * @memberof MasterAreaApiUpdateArea
+     */
+    readonly updateAreaRequest: UpdateAreaRequest
+}
 
 /**
  * MasterAreaApi - object-oriented interface
@@ -436,69 +554,61 @@ export class MasterAreaApi extends BaseAPI {
     /**
      * エリアマスタに新規エリアを登録する
      * @summary エリア登録
-     * @param {CreateAreaRequest} createAreaRequest 
+     * @param {MasterAreaApiCreateAreaRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterAreaApi
      */
-    public createArea(createAreaRequest: CreateAreaRequest, options?: RawAxiosRequestConfig) {
-        return MasterAreaApiFp(this.configuration).createArea(createAreaRequest, options).then((request) => request(this.axios, this.basePath));
+    public createArea(requestParameters: MasterAreaApiCreateAreaRequest, options?: RawAxiosRequestConfig) {
+        return MasterAreaApiFp(this.configuration).createArea(requestParameters.createAreaRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのエリアマスタを1件取得する
      * @summary エリア取得
-     * @param {number} id リソースID
+     * @param {MasterAreaApiGetAreaRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterAreaApi
      */
-    public getArea(id: number, options?: RawAxiosRequestConfig) {
-        return MasterAreaApiFp(this.configuration).getArea(id, options).then((request) => request(this.axios, this.basePath));
+    public getArea(requestParameters: MasterAreaApiGetAreaRequest, options?: RawAxiosRequestConfig) {
+        return MasterAreaApiFp(this.configuration).getArea(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * エリアマスタの一覧を取得する
      * @summary エリア一覧取得
-     * @param {number} [warehouseId] 倉庫IDで絞り込み
-     * @param {number} [buildingId] 棟IDで絞り込み
-     * @param {StorageCondition} [storageCondition] 保管条件フィルタ
-     * @param {AreaType} [areaType] エリア種別フィルタ
-     * @param {boolean} [isActive] 有効/無効フィルタ
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
+     * @param {MasterAreaApiListAreasRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterAreaApi
      */
-    public listAreas(warehouseId?: number, buildingId?: number, storageCondition?: StorageCondition, areaType?: AreaType, isActive?: boolean, page?: number, size?: number, options?: RawAxiosRequestConfig) {
-        return MasterAreaApiFp(this.configuration).listAreas(warehouseId, buildingId, storageCondition, areaType, isActive, page, size, options).then((request) => request(this.axios, this.basePath));
+    public listAreas(requestParameters: MasterAreaApiListAreasRequest = {}, options?: RawAxiosRequestConfig) {
+        return MasterAreaApiFp(this.configuration).listAreas(requestParameters.warehouseId, requestParameters.buildingId, requestParameters.storageCondition, requestParameters.areaType, requestParameters.isActive, requestParameters.page, requestParameters.size, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのエリアの有効/無効を切り替える。配下にロケーションが存在するエリアは無効化不可
      * @summary エリア無効化／有効化
-     * @param {number} id リソースID
-     * @param {ToggleActiveRequest} toggleActiveRequest 
+     * @param {MasterAreaApiToggleAreaActiveRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterAreaApi
      */
-    public toggleAreaActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterAreaApiFp(this.configuration).toggleAreaActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleAreaActive(requestParameters: MasterAreaApiToggleAreaActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterAreaApiFp(this.configuration).toggleAreaActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのエリアマスタを更新する。エリアコード・棟ID・エリア種別は変更不可
      * @summary エリア更新
-     * @param {number} id リソースID
-     * @param {UpdateAreaRequest} updateAreaRequest 
+     * @param {MasterAreaApiUpdateAreaRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterAreaApi
      */
-    public updateArea(id: number, updateAreaRequest: UpdateAreaRequest, options?: RawAxiosRequestConfig) {
-        return MasterAreaApiFp(this.configuration).updateArea(id, updateAreaRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateArea(requestParameters: MasterAreaApiUpdateAreaRequest, options?: RawAxiosRequestConfig) {
+        return MasterAreaApiFp(this.configuration).updateArea(requestParameters.id, requestParameters.updateAreaRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

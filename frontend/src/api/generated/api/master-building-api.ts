@@ -352,61 +352,167 @@ export const MasterBuildingApiFactory = function (configuration?: Configuration,
         /**
          * 棟マスタに新規棟を登録する
          * @summary 棟登録
-         * @param {CreateBuildingRequest} createBuildingRequest 
+         * @param {MasterBuildingApiCreateBuildingRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createBuilding(createBuildingRequest: CreateBuildingRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
-            return localVarFp.createBuilding(createBuildingRequest, options).then((request) => request(axios, basePath));
+        createBuilding(requestParameters: MasterBuildingApiCreateBuildingRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
+            return localVarFp.createBuilding(requestParameters.createBuildingRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの棟マスタを1件取得する
          * @summary 棟取得
-         * @param {number} id リソースID
+         * @param {MasterBuildingApiGetBuildingRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getBuilding(id: number, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
-            return localVarFp.getBuilding(id, options).then((request) => request(axios, basePath));
+        getBuilding(requestParameters: MasterBuildingApiGetBuildingRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
+            return localVarFp.getBuilding(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定倉庫に属する棟の一覧を取得する
          * @summary 棟一覧取得
-         * @param {number} warehouseId 対象の倉庫ID
-         * @param {string} [buildingCode] 棟コード（前方一致）
-         * @param {boolean} [isActive] 有効/無効フィルタ
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
+         * @param {MasterBuildingApiListBuildingsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listBuildings(warehouseId: number, buildingCode?: string, isActive?: boolean, page?: number, size?: number, options?: RawAxiosRequestConfig): AxiosPromise<BuildingPageResponse> {
-            return localVarFp.listBuildings(warehouseId, buildingCode, isActive, page, size, options).then((request) => request(axios, basePath));
+        listBuildings(requestParameters: MasterBuildingApiListBuildingsRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingPageResponse> {
+            return localVarFp.listBuildings(requestParameters.warehouseId, requestParameters.buildingCode, requestParameters.isActive, requestParameters.page, requestParameters.size, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可
          * @summary 棟無効化／有効化
-         * @param {number} id リソースID
-         * @param {ToggleActiveRequest} toggleActiveRequest 
+         * @param {MasterBuildingApiToggleBuildingActiveRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleBuildingActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingToggleResponse> {
-            return localVarFp.toggleBuildingActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleBuildingActive(requestParameters: MasterBuildingApiToggleBuildingActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingToggleResponse> {
+            return localVarFp.toggleBuildingActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの棟マスタを更新する。棟コード・倉庫IDは変更不可
          * @summary 棟更新
-         * @param {number} id リソースID
-         * @param {UpdateBuildingRequest} updateBuildingRequest 
+         * @param {MasterBuildingApiUpdateBuildingRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateBuilding(id: number, updateBuildingRequest: UpdateBuildingRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
-            return localVarFp.updateBuilding(id, updateBuildingRequest, options).then((request) => request(axios, basePath));
+        updateBuilding(requestParameters: MasterBuildingApiUpdateBuildingRequest, options?: RawAxiosRequestConfig): AxiosPromise<BuildingDetail> {
+            return localVarFp.updateBuilding(requestParameters.id, requestParameters.updateBuildingRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for createBuilding operation in MasterBuildingApi.
+ * @export
+ * @interface MasterBuildingApiCreateBuildingRequest
+ */
+export interface MasterBuildingApiCreateBuildingRequest {
+    /**
+     * 
+     * @type {CreateBuildingRequest}
+     * @memberof MasterBuildingApiCreateBuilding
+     */
+    readonly createBuildingRequest: CreateBuildingRequest
+}
+
+/**
+ * Request parameters for getBuilding operation in MasterBuildingApi.
+ * @export
+ * @interface MasterBuildingApiGetBuildingRequest
+ */
+export interface MasterBuildingApiGetBuildingRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterBuildingApiGetBuilding
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for listBuildings operation in MasterBuildingApi.
+ * @export
+ * @interface MasterBuildingApiListBuildingsRequest
+ */
+export interface MasterBuildingApiListBuildingsRequest {
+    /**
+     * 対象の倉庫ID
+     * @type {number}
+     * @memberof MasterBuildingApiListBuildings
+     */
+    readonly warehouseId: number
+
+    /**
+     * 棟コード（前方一致）
+     * @type {string}
+     * @memberof MasterBuildingApiListBuildings
+     */
+    readonly buildingCode?: string
+
+    /**
+     * 有効/無効フィルタ
+     * @type {boolean}
+     * @memberof MasterBuildingApiListBuildings
+     */
+    readonly isActive?: boolean
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof MasterBuildingApiListBuildings
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof MasterBuildingApiListBuildings
+     */
+    readonly size?: number
+}
+
+/**
+ * Request parameters for toggleBuildingActive operation in MasterBuildingApi.
+ * @export
+ * @interface MasterBuildingApiToggleBuildingActiveRequest
+ */
+export interface MasterBuildingApiToggleBuildingActiveRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterBuildingApiToggleBuildingActive
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {ToggleActiveRequest}
+     * @memberof MasterBuildingApiToggleBuildingActive
+     */
+    readonly toggleActiveRequest: ToggleActiveRequest
+}
+
+/**
+ * Request parameters for updateBuilding operation in MasterBuildingApi.
+ * @export
+ * @interface MasterBuildingApiUpdateBuildingRequest
+ */
+export interface MasterBuildingApiUpdateBuildingRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterBuildingApiUpdateBuilding
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {UpdateBuildingRequest}
+     * @memberof MasterBuildingApiUpdateBuilding
+     */
+    readonly updateBuildingRequest: UpdateBuildingRequest
+}
 
 /**
  * MasterBuildingApi - object-oriented interface
@@ -418,67 +524,61 @@ export class MasterBuildingApi extends BaseAPI {
     /**
      * 棟マスタに新規棟を登録する
      * @summary 棟登録
-     * @param {CreateBuildingRequest} createBuildingRequest 
+     * @param {MasterBuildingApiCreateBuildingRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterBuildingApi
      */
-    public createBuilding(createBuildingRequest: CreateBuildingRequest, options?: RawAxiosRequestConfig) {
-        return MasterBuildingApiFp(this.configuration).createBuilding(createBuildingRequest, options).then((request) => request(this.axios, this.basePath));
+    public createBuilding(requestParameters: MasterBuildingApiCreateBuildingRequest, options?: RawAxiosRequestConfig) {
+        return MasterBuildingApiFp(this.configuration).createBuilding(requestParameters.createBuildingRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの棟マスタを1件取得する
      * @summary 棟取得
-     * @param {number} id リソースID
+     * @param {MasterBuildingApiGetBuildingRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterBuildingApi
      */
-    public getBuilding(id: number, options?: RawAxiosRequestConfig) {
-        return MasterBuildingApiFp(this.configuration).getBuilding(id, options).then((request) => request(this.axios, this.basePath));
+    public getBuilding(requestParameters: MasterBuildingApiGetBuildingRequest, options?: RawAxiosRequestConfig) {
+        return MasterBuildingApiFp(this.configuration).getBuilding(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定倉庫に属する棟の一覧を取得する
      * @summary 棟一覧取得
-     * @param {number} warehouseId 対象の倉庫ID
-     * @param {string} [buildingCode] 棟コード（前方一致）
-     * @param {boolean} [isActive] 有効/無効フィルタ
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
+     * @param {MasterBuildingApiListBuildingsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterBuildingApi
      */
-    public listBuildings(warehouseId: number, buildingCode?: string, isActive?: boolean, page?: number, size?: number, options?: RawAxiosRequestConfig) {
-        return MasterBuildingApiFp(this.configuration).listBuildings(warehouseId, buildingCode, isActive, page, size, options).then((request) => request(this.axios, this.basePath));
+    public listBuildings(requestParameters: MasterBuildingApiListBuildingsRequest, options?: RawAxiosRequestConfig) {
+        return MasterBuildingApiFp(this.configuration).listBuildings(requestParameters.warehouseId, requestParameters.buildingCode, requestParameters.isActive, requestParameters.page, requestParameters.size, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの棟の有効/無効を切り替える。配下にエリアが存在する棟は無効化不可
      * @summary 棟無効化／有効化
-     * @param {number} id リソースID
-     * @param {ToggleActiveRequest} toggleActiveRequest 
+     * @param {MasterBuildingApiToggleBuildingActiveRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterBuildingApi
      */
-    public toggleBuildingActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterBuildingApiFp(this.configuration).toggleBuildingActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleBuildingActive(requestParameters: MasterBuildingApiToggleBuildingActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterBuildingApiFp(this.configuration).toggleBuildingActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの棟マスタを更新する。棟コード・倉庫IDは変更不可
      * @summary 棟更新
-     * @param {number} id リソースID
-     * @param {UpdateBuildingRequest} updateBuildingRequest 
+     * @param {MasterBuildingApiUpdateBuildingRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterBuildingApi
      */
-    public updateBuilding(id: number, updateBuildingRequest: UpdateBuildingRequest, options?: RawAxiosRequestConfig) {
-        return MasterBuildingApiFp(this.configuration).updateBuilding(id, updateBuildingRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateBuilding(requestParameters: MasterBuildingApiUpdateBuildingRequest, options?: RawAxiosRequestConfig) {
+        return MasterBuildingApiFp(this.configuration).updateBuilding(requestParameters.id, requestParameters.updateBuildingRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
