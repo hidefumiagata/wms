@@ -138,6 +138,22 @@ describe('useOutboundSlipList', () => {
     )
   })
 
+  it('倉庫がnullになった場合はfetchListを呼ばない', async () => {
+    withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useOutboundSlipList()
+    })
+
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = null
+    await flushPromises()
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
   it('handleBulkAllocate が POST /allocation/execute を呼ぶ', async () => {
     vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse({}))
 

@@ -116,6 +116,22 @@ describe('useInboundSlipList', () => {
     )
   })
 
+  it('倉庫がnullになった場合はfetchListを呼ばない', async () => {
+    withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = null
+    await flushPromises()
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
   it('isViewer がロールに基づいて判定される', () => {
     const { result } = withSetup(() => {
       const auth = useAuthStore()

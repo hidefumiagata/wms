@@ -133,7 +133,8 @@ export function useInboundSlipList() {
   // --- 倉庫切替時の自動リフェッチ ---
   watch(
     () => warehouseStore.selectedWarehouseId,
-    () => {
+    (newId) => {
+      if (newId == null) return
       page.value = 1
       fetchList()
     },

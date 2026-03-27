@@ -184,6 +184,22 @@ describe('useInventoryList', () => {
     )
   })
 
+  it('倉庫がnullになった場合はfetchListを呼ばない', async () => {
+    withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryList()
+    })
+
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = null
+    await flushPromises()
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
   it('キャンセル時に state が更新されない', async () => {
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()

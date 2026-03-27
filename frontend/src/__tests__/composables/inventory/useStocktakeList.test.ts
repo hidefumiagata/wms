@@ -115,6 +115,22 @@ describe('useStocktakeList', () => {
     )
   })
 
+  it('倉庫がnullになった場合はfetchListを呼ばない', async () => {
+    withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useStocktakeList()
+    })
+
+    vi.mocked(apiClient.get).mockClear()
+
+    const ws = useWarehouseStore()
+    ws.selectedWarehouseId = null
+    await flushPromises()
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
   it('handleSearch がページを1にリセットする', async () => {
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
