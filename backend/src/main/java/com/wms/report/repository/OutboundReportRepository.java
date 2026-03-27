@@ -75,7 +75,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
               AND (:plannedDateFrom IS NULL OR os.planned_date >= :plannedDateFrom)
               AND (:plannedDateTo IS NULL OR os.planned_date <= :plannedDateTo)
               AND (:status IS NULL OR os.status = :status)
-              AND (:carrier IS NULL OR os.carrier LIKE :carrier)
+              AND (:carrier IS NULL OR os.carrier LIKE :carrier ESCAPE '\')
             ORDER BY os.planned_date ASC, os.slip_number ASC
             """, nativeQuery = true)
     List<Object[]> findDeliveryListHeaderData(

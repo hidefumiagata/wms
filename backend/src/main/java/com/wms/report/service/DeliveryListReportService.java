@@ -23,6 +23,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.OUTBOUND_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.escapeLikePattern;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -72,7 +73,7 @@ public class DeliveryListReportService {
 
         String warehouseName = warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
 
-        String carrierLike = carrier != null ? "%" + carrier + "%" : null;
+        String carrierLike = carrier != null ? "%" + escapeLikePattern(carrier) + "%" : null;
 
         List<Object[]> headerRows = outboundReportRepository.findDeliveryListHeaderData(
                 warehouseId, plannedDateFrom, plannedDateTo, status, carrierLike);

@@ -87,6 +87,14 @@ final class ReportServiceUtils {
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
     }
 
+    /** LIKE句のワイルドカード文字をエスケープする */
+    static String escapeLikePattern(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
     /** Productからケース入数を安全に取得する（null/0の場合は1を返す） */
     static int getCaseQuantity(Product product) {
         if (product == null) {
