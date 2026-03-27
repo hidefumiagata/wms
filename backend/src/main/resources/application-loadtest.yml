@@ -1,0 +1,40 @@
+spring:
+  # DataSource (override via env vars for Azure)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/wms}
+    username: ${DATABASE_USERNAME:wms}
+    password: ${DATABASE_PASSWORD:wms}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 3
+
+  # JPA (loadtest: no SQL logging for performance)
+  jpa:
+    show-sql: false
+
+  # Flyway: schema migration + common master + loadtest (generator output)
+  flyway:
+    clean-disabled: false
+    locations:
+      - classpath:db/migration
+      - classpath:db/testdata/common
+      - classpath:db/testdata/loadtest
+
+# JWT
+jwt:
+  secret-key: ${JWT_SECRET_KEY:dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+
+# Cookie
+cookie:
+  secure: false
+
+# CORS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+# Logging
+logging:
+  level:
+    com.wms: INFO
