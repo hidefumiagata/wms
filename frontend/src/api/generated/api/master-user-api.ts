@@ -467,229 +467,83 @@ export const MasterUserApiFactory = function (configuration?: Configuration, bas
         /**
          * 指定されたユーザーコードがすでに登録されているか確認する。SYSTEM_ADMINのみアクセス可能。
          * @summary ユーザーコード存在確認
-         * @param {MasterUserApiCheckUserCodeExistsRequest} requestParameters Request parameters.
+         * @param {string} code チェック対象のユーザーコード
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkUserCodeExists(requestParameters: MasterUserApiCheckUserCodeExistsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
-            return localVarFp.checkUserCodeExists(requestParameters.code, options).then((request) => request(axios, basePath));
+        checkUserCodeExists(code: string, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
+            return localVarFp.checkUserCodeExists(code, options).then((request) => request(axios, basePath));
         },
         /**
          * 新規ユーザーを登録する。初期パスワードをBCryptでハッシュ化して保存し、 初回ログイン時にパスワード変更を強制するフラグをtrueにセットする。 SYSTEM_ADMINのみアクセス可能。 
          * @summary ユーザー登録
-         * @param {MasterUserApiCreateUserRequest} requestParameters Request parameters.
+         * @param {CreateUserRequest} createUserRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createUser(requestParameters: MasterUserApiCreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
-            return localVarFp.createUser(requestParameters.createUserRequest, options).then((request) => request(axios, basePath));
+        createUser(createUserRequest: CreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
+            return localVarFp.createUser(createUserRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定されたIDのユーザーを1件取得する。SYSTEM_ADMINのみアクセス可能。
          * @summary ユーザー取得
-         * @param {MasterUserApiGetUserRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUser(requestParameters: MasterUserApiGetUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
-            return localVarFp.getUser(requestParameters.id, options).then((request) => request(axios, basePath));
+        getUser(id: number, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
+            return localVarFp.getUser(id, options).then((request) => request(axios, basePath));
         },
         /**
          * システムに登録されている全ユーザーをページング形式で取得する。 キーワード・ロール・ステータスでの絞り込み検索に対応する。 SYSTEM_ADMINのみアクセス可能。 
          * @summary ユーザー一覧取得
-         * @param {MasterUserApiListUsersRequest} requestParameters Request parameters.
+         * @param {string} [keyword] ユーザーコードまたは氏名で部分一致検索（大文字小文字不問）
+         * @param {UserRole} [role] ロール絞り込み
+         * @param {UserStatus} [status] ステータス絞り込み
+         * @param {boolean} [all] trueの場合ページングなしで全件返却
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート指定（例：userCode,asc / fullName,desc）
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listUsers(requestParameters: MasterUserApiListUsersRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<UserPageResponse> {
-            return localVarFp.listUsers(requestParameters.keyword, requestParameters.role, requestParameters.status, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listUsers(keyword?: string, role?: UserRole, status?: UserStatus, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<UserPageResponse> {
+            return localVarFp.listUsers(keyword, role, status, all, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定されたIDのユーザーの有効/無効フラグを切り替える。 自分自身の無効化は禁止する。SYSTEM_ADMINのみアクセス可能。 
          * @summary ユーザー無効化/有効化
-         * @param {MasterUserApiToggleUserActiveRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {ToggleActiveRequest} toggleActiveRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleUserActive(requestParameters: MasterUserApiToggleUserActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
-            return localVarFp.toggleUserActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleUserActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
+            return localVarFp.toggleUserActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * ログイン連続失敗によりロックされたユーザーのアカウントロックを解除する。 locked・failed_login_count・locked_atを初期化する。 冪等性あり（ロック解除済みのユーザーへの解除要求も204を返す）。 SYSTEM_ADMINのみアクセス可能。 
          * @summary アカウントロック解除
-         * @param {MasterUserApiUnlockUserRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        unlockUser(requestParameters: MasterUserApiUnlockUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.unlockUser(requestParameters.id, options).then((request) => request(axios, basePath));
+        unlockUser(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.unlockUser(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定されたIDのユーザー情報を更新する。ユーザーコードは変更不可。 自分自身のロール変更および無効化は禁止する。 SYSTEM_ADMINのみアクセス可能。 
          * @summary ユーザー更新
-         * @param {MasterUserApiUpdateUserRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {UpdateUserRequest} updateUserRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUser(requestParameters: MasterUserApiUpdateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
-            return localVarFp.updateUser(requestParameters.id, requestParameters.updateUserRequest, options).then((request) => request(axios, basePath));
+        updateUser(id: number, updateUserRequest: UpdateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<UserDetail> {
+            return localVarFp.updateUser(id, updateUserRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for checkUserCodeExists operation in MasterUserApi.
- * @export
- * @interface MasterUserApiCheckUserCodeExistsRequest
- */
-export interface MasterUserApiCheckUserCodeExistsRequest {
-    /**
-     * チェック対象のユーザーコード
-     * @type {string}
-     * @memberof MasterUserApiCheckUserCodeExists
-     */
-    readonly code: string
-}
-
-/**
- * Request parameters for createUser operation in MasterUserApi.
- * @export
- * @interface MasterUserApiCreateUserRequest
- */
-export interface MasterUserApiCreateUserRequest {
-    /**
-     * 
-     * @type {CreateUserRequest}
-     * @memberof MasterUserApiCreateUser
-     */
-    readonly createUserRequest: CreateUserRequest
-}
-
-/**
- * Request parameters for getUser operation in MasterUserApi.
- * @export
- * @interface MasterUserApiGetUserRequest
- */
-export interface MasterUserApiGetUserRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterUserApiGetUser
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for listUsers operation in MasterUserApi.
- * @export
- * @interface MasterUserApiListUsersRequest
- */
-export interface MasterUserApiListUsersRequest {
-    /**
-     * ユーザーコードまたは氏名で部分一致検索（大文字小文字不問）
-     * @type {string}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly keyword?: string
-
-    /**
-     * ロール絞り込み
-     * @type {UserRole}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly role?: UserRole
-
-    /**
-     * ステータス絞り込み
-     * @type {UserStatus}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly status?: UserStatus
-
-    /**
-     * trueの場合ページングなしで全件返却
-     * @type {boolean}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly all?: boolean
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly size?: number
-
-    /**
-     * ソート指定（例：userCode,asc / fullName,desc）
-     * @type {string}
-     * @memberof MasterUserApiListUsers
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for toggleUserActive operation in MasterUserApi.
- * @export
- * @interface MasterUserApiToggleUserActiveRequest
- */
-export interface MasterUserApiToggleUserActiveRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterUserApiToggleUserActive
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {ToggleActiveRequest}
-     * @memberof MasterUserApiToggleUserActive
-     */
-    readonly toggleActiveRequest: ToggleActiveRequest
-}
-
-/**
- * Request parameters for unlockUser operation in MasterUserApi.
- * @export
- * @interface MasterUserApiUnlockUserRequest
- */
-export interface MasterUserApiUnlockUserRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterUserApiUnlockUser
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for updateUser operation in MasterUserApi.
- * @export
- * @interface MasterUserApiUpdateUserRequest
- */
-export interface MasterUserApiUpdateUserRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterUserApiUpdateUser
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {UpdateUserRequest}
-     * @memberof MasterUserApiUpdateUser
-     */
-    readonly updateUserRequest: UpdateUserRequest
-}
 
 /**
  * MasterUserApi - object-oriented interface
@@ -701,85 +555,93 @@ export class MasterUserApi extends BaseAPI {
     /**
      * 指定されたユーザーコードがすでに登録されているか確認する。SYSTEM_ADMINのみアクセス可能。
      * @summary ユーザーコード存在確認
-     * @param {MasterUserApiCheckUserCodeExistsRequest} requestParameters Request parameters.
+     * @param {string} code チェック対象のユーザーコード
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public checkUserCodeExists(requestParameters: MasterUserApiCheckUserCodeExistsRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).checkUserCodeExists(requestParameters.code, options).then((request) => request(this.axios, this.basePath));
+    public checkUserCodeExists(code: string, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).checkUserCodeExists(code, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 新規ユーザーを登録する。初期パスワードをBCryptでハッシュ化して保存し、 初回ログイン時にパスワード変更を強制するフラグをtrueにセットする。 SYSTEM_ADMINのみアクセス可能。 
      * @summary ユーザー登録
-     * @param {MasterUserApiCreateUserRequest} requestParameters Request parameters.
+     * @param {CreateUserRequest} createUserRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public createUser(requestParameters: MasterUserApiCreateUserRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).createUser(requestParameters.createUserRequest, options).then((request) => request(this.axios, this.basePath));
+    public createUser(createUserRequest: CreateUserRequest, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).createUser(createUserRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定されたIDのユーザーを1件取得する。SYSTEM_ADMINのみアクセス可能。
      * @summary ユーザー取得
-     * @param {MasterUserApiGetUserRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public getUser(requestParameters: MasterUserApiGetUserRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).getUser(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public getUser(id: number, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).getUser(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * システムに登録されている全ユーザーをページング形式で取得する。 キーワード・ロール・ステータスでの絞り込み検索に対応する。 SYSTEM_ADMINのみアクセス可能。 
      * @summary ユーザー一覧取得
-     * @param {MasterUserApiListUsersRequest} requestParameters Request parameters.
+     * @param {string} [keyword] ユーザーコードまたは氏名で部分一致検索（大文字小文字不問）
+     * @param {UserRole} [role] ロール絞り込み
+     * @param {UserStatus} [status] ステータス絞り込み
+     * @param {boolean} [all] trueの場合ページングなしで全件返却
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート指定（例：userCode,asc / fullName,desc）
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public listUsers(requestParameters: MasterUserApiListUsersRequest = {}, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).listUsers(requestParameters.keyword, requestParameters.role, requestParameters.status, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listUsers(keyword?: string, role?: UserRole, status?: UserStatus, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).listUsers(keyword, role, status, all, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定されたIDのユーザーの有効/無効フラグを切り替える。 自分自身の無効化は禁止する。SYSTEM_ADMINのみアクセス可能。 
      * @summary ユーザー無効化/有効化
-     * @param {MasterUserApiToggleUserActiveRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {ToggleActiveRequest} toggleActiveRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public toggleUserActive(requestParameters: MasterUserApiToggleUserActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).toggleUserActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleUserActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).toggleUserActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ログイン連続失敗によりロックされたユーザーのアカウントロックを解除する。 locked・failed_login_count・locked_atを初期化する。 冪等性あり（ロック解除済みのユーザーへの解除要求も204を返す）。 SYSTEM_ADMINのみアクセス可能。 
      * @summary アカウントロック解除
-     * @param {MasterUserApiUnlockUserRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public unlockUser(requestParameters: MasterUserApiUnlockUserRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).unlockUser(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public unlockUser(id: number, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).unlockUser(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定されたIDのユーザー情報を更新する。ユーザーコードは変更不可。 自分自身のロール変更および無効化は禁止する。 SYSTEM_ADMINのみアクセス可能。 
      * @summary ユーザー更新
-     * @param {MasterUserApiUpdateUserRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {UpdateUserRequest} updateUserRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterUserApi
      */
-    public updateUser(requestParameters: MasterUserApiUpdateUserRequest, options?: RawAxiosRequestConfig) {
-        return MasterUserApiFp(this.configuration).updateUser(requestParameters.id, requestParameters.updateUserRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateUser(id: number, updateUserRequest: UpdateUserRequest, options?: RawAxiosRequestConfig) {
+        return MasterUserApiFp(this.configuration).updateUser(id, updateUserRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

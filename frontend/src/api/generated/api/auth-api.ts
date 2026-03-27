@@ -354,32 +354,32 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         /**
          * 現在のパスワードを確認した上で新しいパスワードに変更する。初回ログイン時のパスワード変更にも使用する
          * @summary パスワード変更
-         * @param {AuthApiChangePasswordRequest} requestParameters Request parameters.
+         * @param {ChangePasswordRequest} changePasswordRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        changePassword(requestParameters: AuthApiChangePasswordRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.changePassword(requestParameters.changePasswordRequest, options).then((request) => request(axios, basePath));
+        changePassword(changePasswordRequest: ChangePasswordRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.changePassword(changePasswordRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * パスワードリセットトークンを検証し、新しいパスワードを設定する。成功時にはアカウントロックの解除と失敗カウンタのリセットも実施する
          * @summary パスワード再設定
-         * @param {AuthApiConfirmPasswordResetRequest} requestParameters Request parameters.
+         * @param {PasswordResetConfirmRequest} passwordResetConfirmRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        confirmPasswordReset(requestParameters: AuthApiConfirmPasswordResetRequest, options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
-            return localVarFp.confirmPasswordReset(requestParameters.passwordResetConfirmRequest, options).then((request) => request(axios, basePath));
+        confirmPasswordReset(passwordResetConfirmRequest: PasswordResetConfirmRequest, options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
+            return localVarFp.confirmPasswordReset(passwordResetConfirmRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * ユーザーコードとパスワードで認証し、JWTアクセストークンおよびリフレッシュトークンをhttpOnlyクッキーにセットして返す
          * @summary ログイン
-         * @param {AuthApiLoginRequest} requestParameters Request parameters.
+         * @param {LoginRequest} loginRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        login(requestParameters: AuthApiLoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<LoginResponse> {
-            return localVarFp.login(requestParameters.loginRequest, options).then((request) => request(axios, basePath));
+        login(loginRequest: LoginRequest, options?: RawAxiosRequestConfig): AxiosPromise<LoginResponse> {
+            return localVarFp.login(loginRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * サーバー側のリフレッシュトークンを削除し、クライアント側のCookieを無効化する
@@ -393,95 +393,25 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
         /**
          * refresh_token Cookieを検証し、新しいアクセストークンとリフレッシュトークンを発行する（トークンローテーション）
          * @summary トークンリフレッシュ
-         * @param {AuthApiRefreshTokenRequest} requestParameters Request parameters.
+         * @param {string} refreshToken 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        refreshToken(requestParameters: AuthApiRefreshTokenRequest, options?: RawAxiosRequestConfig): AxiosPromise<RefreshResponse> {
-            return localVarFp.refreshToken(requestParameters.refreshToken, options).then((request) => request(axios, basePath));
+        refreshToken(refreshToken: string, options?: RawAxiosRequestConfig): AxiosPromise<RefreshResponse> {
+            return localVarFp.refreshToken(refreshToken, options).then((request) => request(axios, basePath));
         },
         /**
          * ユーザーコードまたはメールアドレスを受け取り、該当ユーザーにパスワードリセット用のメールを送信する。セキュリティ上、ユーザーの存在有無にかかわらず常に同一のレスポンスを返す
          * @summary パスワードリセット申請
-         * @param {AuthApiRequestPasswordResetRequest} requestParameters Request parameters.
+         * @param {PasswordResetRequestBody} passwordResetRequestBody 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        requestPasswordReset(requestParameters: AuthApiRequestPasswordResetRequest, options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
-            return localVarFp.requestPasswordReset(requestParameters.passwordResetRequestBody, options).then((request) => request(axios, basePath));
+        requestPasswordReset(passwordResetRequestBody: PasswordResetRequestBody, options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
+            return localVarFp.requestPasswordReset(passwordResetRequestBody, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for changePassword operation in AuthApi.
- * @export
- * @interface AuthApiChangePasswordRequest
- */
-export interface AuthApiChangePasswordRequest {
-    /**
-     * 
-     * @type {ChangePasswordRequest}
-     * @memberof AuthApiChangePassword
-     */
-    readonly changePasswordRequest: ChangePasswordRequest
-}
-
-/**
- * Request parameters for confirmPasswordReset operation in AuthApi.
- * @export
- * @interface AuthApiConfirmPasswordResetRequest
- */
-export interface AuthApiConfirmPasswordResetRequest {
-    /**
-     * 
-     * @type {PasswordResetConfirmRequest}
-     * @memberof AuthApiConfirmPasswordReset
-     */
-    readonly passwordResetConfirmRequest: PasswordResetConfirmRequest
-}
-
-/**
- * Request parameters for login operation in AuthApi.
- * @export
- * @interface AuthApiLoginRequest
- */
-export interface AuthApiLoginRequest {
-    /**
-     * 
-     * @type {LoginRequest}
-     * @memberof AuthApiLogin
-     */
-    readonly loginRequest: LoginRequest
-}
-
-/**
- * Request parameters for refreshToken operation in AuthApi.
- * @export
- * @interface AuthApiRefreshTokenRequest
- */
-export interface AuthApiRefreshTokenRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof AuthApiRefreshToken
-     */
-    readonly refreshToken: string
-}
-
-/**
- * Request parameters for requestPasswordReset operation in AuthApi.
- * @export
- * @interface AuthApiRequestPasswordResetRequest
- */
-export interface AuthApiRequestPasswordResetRequest {
-    /**
-     * 
-     * @type {PasswordResetRequestBody}
-     * @memberof AuthApiRequestPasswordReset
-     */
-    readonly passwordResetRequestBody: PasswordResetRequestBody
-}
 
 /**
  * AuthApi - object-oriented interface
@@ -493,37 +423,37 @@ export class AuthApi extends BaseAPI {
     /**
      * 現在のパスワードを確認した上で新しいパスワードに変更する。初回ログイン時のパスワード変更にも使用する
      * @summary パスワード変更
-     * @param {AuthApiChangePasswordRequest} requestParameters Request parameters.
+     * @param {ChangePasswordRequest} changePasswordRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public changePassword(requestParameters: AuthApiChangePasswordRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).changePassword(requestParameters.changePasswordRequest, options).then((request) => request(this.axios, this.basePath));
+    public changePassword(changePasswordRequest: ChangePasswordRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).changePassword(changePasswordRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * パスワードリセットトークンを検証し、新しいパスワードを設定する。成功時にはアカウントロックの解除と失敗カウンタのリセットも実施する
      * @summary パスワード再設定
-     * @param {AuthApiConfirmPasswordResetRequest} requestParameters Request parameters.
+     * @param {PasswordResetConfirmRequest} passwordResetConfirmRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public confirmPasswordReset(requestParameters: AuthApiConfirmPasswordResetRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).confirmPasswordReset(requestParameters.passwordResetConfirmRequest, options).then((request) => request(this.axios, this.basePath));
+    public confirmPasswordReset(passwordResetConfirmRequest: PasswordResetConfirmRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).confirmPasswordReset(passwordResetConfirmRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ユーザーコードとパスワードで認証し、JWTアクセストークンおよびリフレッシュトークンをhttpOnlyクッキーにセットして返す
      * @summary ログイン
-     * @param {AuthApiLoginRequest} requestParameters Request parameters.
+     * @param {LoginRequest} loginRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public login(requestParameters: AuthApiLoginRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).login(requestParameters.loginRequest, options).then((request) => request(this.axios, this.basePath));
+    public login(loginRequest: LoginRequest, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).login(loginRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -540,25 +470,25 @@ export class AuthApi extends BaseAPI {
     /**
      * refresh_token Cookieを検証し、新しいアクセストークンとリフレッシュトークンを発行する（トークンローテーション）
      * @summary トークンリフレッシュ
-     * @param {AuthApiRefreshTokenRequest} requestParameters Request parameters.
+     * @param {string} refreshToken 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public refreshToken(requestParameters: AuthApiRefreshTokenRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).refreshToken(requestParameters.refreshToken, options).then((request) => request(this.axios, this.basePath));
+    public refreshToken(refreshToken: string, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).refreshToken(refreshToken, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ユーザーコードまたはメールアドレスを受け取り、該当ユーザーにパスワードリセット用のメールを送信する。セキュリティ上、ユーザーの存在有無にかかわらず常に同一のレスポンスを返す
      * @summary パスワードリセット申請
-     * @param {AuthApiRequestPasswordResetRequest} requestParameters Request parameters.
+     * @param {PasswordResetRequestBody} passwordResetRequestBody 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AuthApi
      */
-    public requestPasswordReset(requestParameters: AuthApiRequestPasswordResetRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).requestPasswordReset(requestParameters.passwordResetRequestBody, options).then((request) => request(this.axios, this.basePath));
+    public requestPasswordReset(passwordResetRequestBody: PasswordResetRequestBody, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).requestPasswordReset(passwordResetRequestBody, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

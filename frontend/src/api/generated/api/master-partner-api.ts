@@ -422,212 +422,74 @@ export const MasterPartnerApiFactory = function (configuration?: Configuration, 
         /**
          * 指定された取引先コードがすでに登録されているか確認する
          * @summary 取引先コード存在確認
-         * @param {MasterPartnerApiCheckPartnerCodeExistsRequest} requestParameters Request parameters.
+         * @param {string} partnerCode チェック対象の取引先コード
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkPartnerCodeExists(requestParameters: MasterPartnerApiCheckPartnerCodeExistsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
-            return localVarFp.checkPartnerCodeExists(requestParameters.partnerCode, options).then((request) => request(axios, basePath));
+        checkPartnerCodeExists(partnerCode: string, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
+            return localVarFp.checkPartnerCodeExists(partnerCode, options).then((request) => request(axios, basePath));
         },
         /**
          * 新規取引先を登録する
          * @summary 取引先登録
-         * @param {MasterPartnerApiCreatePartnerRequest} requestParameters Request parameters.
+         * @param {CreatePartnerRequest} createPartnerRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createPartner(requestParameters: MasterPartnerApiCreatePartnerRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
-            return localVarFp.createPartner(requestParameters.createPartnerRequest, options).then((request) => request(axios, basePath));
+        createPartner(createPartnerRequest: CreatePartnerRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
+            return localVarFp.createPartner(createPartnerRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの取引先を1件取得する
          * @summary 取引先取得
-         * @param {MasterPartnerApiGetPartnerRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getPartner(requestParameters: MasterPartnerApiGetPartnerRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
-            return localVarFp.getPartner(requestParameters.id, options).then((request) => request(axios, basePath));
+        getPartner(id: number, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
+            return localVarFp.getPartner(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 取引先マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能。`partnerType=SUPPLIER`指定時はBOTH種別も含む
          * @summary 取引先一覧取得
-         * @param {MasterPartnerApiListPartnersRequest} requestParameters Request parameters.
+         * @param {string} [partnerCode] 取引先コード（前方一致）
+         * @param {string} [partnerName] 取引先名（部分一致、カナ名も検索対象）
+         * @param {PartnerType} [partnerType] 種別フィルタ。SUPPLIER指定時はBOTHも含む、CUSTOMER指定時もBOTHも含む
+         * @param {boolean} [isActive] 有効/無効フィルタ。省略時は全件
+         * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート条件
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listPartners(requestParameters: MasterPartnerApiListPartnersRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ListPartners200Response> {
-            return localVarFp.listPartners(requestParameters.partnerCode, requestParameters.partnerName, requestParameters.partnerType, requestParameters.isActive, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listPartners(partnerCode?: string, partnerName?: string, partnerType?: PartnerType, isActive?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<ListPartners200Response> {
+            return localVarFp.listPartners(partnerCode, partnerName, partnerType, isActive, all, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの取引先の有効/無効を切り替える。処理中の入荷予定・受注がある取引先は無効化不可
          * @summary 取引先無効化／有効化
-         * @param {MasterPartnerApiTogglePartnerActiveRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {ToggleActiveRequest} toggleActiveRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        togglePartnerActive(requestParameters: MasterPartnerApiTogglePartnerActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
-            return localVarFp.togglePartnerActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
+        togglePartnerActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
+            return localVarFp.togglePartnerActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの取引先情報を更新する。取引先コードは変更不可
          * @summary 取引先更新
-         * @param {MasterPartnerApiUpdatePartnerRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {UpdatePartnerRequest} updatePartnerRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updatePartner(requestParameters: MasterPartnerApiUpdatePartnerRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
-            return localVarFp.updatePartner(requestParameters.id, requestParameters.updatePartnerRequest, options).then((request) => request(axios, basePath));
+        updatePartner(id: number, updatePartnerRequest: UpdatePartnerRequest, options?: RawAxiosRequestConfig): AxiosPromise<PartnerDetail> {
+            return localVarFp.updatePartner(id, updatePartnerRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for checkPartnerCodeExists operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiCheckPartnerCodeExistsRequest
- */
-export interface MasterPartnerApiCheckPartnerCodeExistsRequest {
-    /**
-     * チェック対象の取引先コード
-     * @type {string}
-     * @memberof MasterPartnerApiCheckPartnerCodeExists
-     */
-    readonly partnerCode: string
-}
-
-/**
- * Request parameters for createPartner operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiCreatePartnerRequest
- */
-export interface MasterPartnerApiCreatePartnerRequest {
-    /**
-     * 
-     * @type {CreatePartnerRequest}
-     * @memberof MasterPartnerApiCreatePartner
-     */
-    readonly createPartnerRequest: CreatePartnerRequest
-}
-
-/**
- * Request parameters for getPartner operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiGetPartnerRequest
- */
-export interface MasterPartnerApiGetPartnerRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterPartnerApiGetPartner
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for listPartners operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiListPartnersRequest
- */
-export interface MasterPartnerApiListPartnersRequest {
-    /**
-     * 取引先コード（前方一致）
-     * @type {string}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly partnerCode?: string
-
-    /**
-     * 取引先名（部分一致、カナ名も検索対象）
-     * @type {string}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly partnerName?: string
-
-    /**
-     * 種別フィルタ。SUPPLIER指定時はBOTHも含む、CUSTOMER指定時もBOTHも含む
-     * @type {PartnerType}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly partnerType?: PartnerType
-
-    /**
-     * 有効/無効フィルタ。省略時は全件
-     * @type {boolean}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly isActive?: boolean
-
-    /**
-     * trueの場合ページングなしで全件返却（プルダウン用）
-     * @type {boolean}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly all?: boolean
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly size?: number
-
-    /**
-     * ソート条件
-     * @type {string}
-     * @memberof MasterPartnerApiListPartners
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for togglePartnerActive operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiTogglePartnerActiveRequest
- */
-export interface MasterPartnerApiTogglePartnerActiveRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterPartnerApiTogglePartnerActive
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {ToggleActiveRequest}
-     * @memberof MasterPartnerApiTogglePartnerActive
-     */
-    readonly toggleActiveRequest: ToggleActiveRequest
-}
-
-/**
- * Request parameters for updatePartner operation in MasterPartnerApi.
- * @export
- * @interface MasterPartnerApiUpdatePartnerRequest
- */
-export interface MasterPartnerApiUpdatePartnerRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterPartnerApiUpdatePartner
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {UpdatePartnerRequest}
-     * @memberof MasterPartnerApiUpdatePartner
-     */
-    readonly updatePartnerRequest: UpdatePartnerRequest
-}
 
 /**
  * MasterPartnerApi - object-oriented interface
@@ -639,73 +501,82 @@ export class MasterPartnerApi extends BaseAPI {
     /**
      * 指定された取引先コードがすでに登録されているか確認する
      * @summary 取引先コード存在確認
-     * @param {MasterPartnerApiCheckPartnerCodeExistsRequest} requestParameters Request parameters.
+     * @param {string} partnerCode チェック対象の取引先コード
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public checkPartnerCodeExists(requestParameters: MasterPartnerApiCheckPartnerCodeExistsRequest, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).checkPartnerCodeExists(requestParameters.partnerCode, options).then((request) => request(this.axios, this.basePath));
+    public checkPartnerCodeExists(partnerCode: string, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).checkPartnerCodeExists(partnerCode, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 新規取引先を登録する
      * @summary 取引先登録
-     * @param {MasterPartnerApiCreatePartnerRequest} requestParameters Request parameters.
+     * @param {CreatePartnerRequest} createPartnerRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public createPartner(requestParameters: MasterPartnerApiCreatePartnerRequest, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).createPartner(requestParameters.createPartnerRequest, options).then((request) => request(this.axios, this.basePath));
+    public createPartner(createPartnerRequest: CreatePartnerRequest, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).createPartner(createPartnerRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの取引先を1件取得する
      * @summary 取引先取得
-     * @param {MasterPartnerApiGetPartnerRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public getPartner(requestParameters: MasterPartnerApiGetPartnerRequest, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).getPartner(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public getPartner(id: number, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).getPartner(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 取引先マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能。`partnerType=SUPPLIER`指定時はBOTH種別も含む
      * @summary 取引先一覧取得
-     * @param {MasterPartnerApiListPartnersRequest} requestParameters Request parameters.
+     * @param {string} [partnerCode] 取引先コード（前方一致）
+     * @param {string} [partnerName] 取引先名（部分一致、カナ名も検索対象）
+     * @param {PartnerType} [partnerType] 種別フィルタ。SUPPLIER指定時はBOTHも含む、CUSTOMER指定時もBOTHも含む
+     * @param {boolean} [isActive] 有効/無効フィルタ。省略時は全件
+     * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート条件
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public listPartners(requestParameters: MasterPartnerApiListPartnersRequest = {}, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).listPartners(requestParameters.partnerCode, requestParameters.partnerName, requestParameters.partnerType, requestParameters.isActive, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listPartners(partnerCode?: string, partnerName?: string, partnerType?: PartnerType, isActive?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).listPartners(partnerCode, partnerName, partnerType, isActive, all, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの取引先の有効/無効を切り替える。処理中の入荷予定・受注がある取引先は無効化不可
      * @summary 取引先無効化／有効化
-     * @param {MasterPartnerApiTogglePartnerActiveRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {ToggleActiveRequest} toggleActiveRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public togglePartnerActive(requestParameters: MasterPartnerApiTogglePartnerActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).togglePartnerActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public togglePartnerActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).togglePartnerActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの取引先情報を更新する。取引先コードは変更不可
      * @summary 取引先更新
-     * @param {MasterPartnerApiUpdatePartnerRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {UpdatePartnerRequest} updatePartnerRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterPartnerApi
      */
-    public updatePartner(requestParameters: MasterPartnerApiUpdatePartnerRequest, options?: RawAxiosRequestConfig) {
-        return MasterPartnerApiFp(this.configuration).updatePartner(requestParameters.id, requestParameters.updatePartnerRequest, options).then((request) => request(this.axios, this.basePath));
+    public updatePartner(id: number, updatePartnerRequest: UpdatePartnerRequest, options?: RawAxiosRequestConfig) {
+        return MasterPartnerApiFp(this.configuration).updatePartner(id, updatePartnerRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

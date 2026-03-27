@@ -416,205 +416,73 @@ export const MasterWarehouseApiFactory = function (configuration?: Configuration
         /**
          * 指定された倉庫コードがすでに登録されているか確認する
          * @summary 倉庫コード存在確認
-         * @param {MasterWarehouseApiCheckWarehouseCodeExistsRequest} requestParameters Request parameters.
+         * @param {string} warehouseCode チェック対象の倉庫コード
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        checkWarehouseCodeExists(requestParameters: MasterWarehouseApiCheckWarehouseCodeExistsRequest, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
-            return localVarFp.checkWarehouseCodeExists(requestParameters.warehouseCode, options).then((request) => request(axios, basePath));
+        checkWarehouseCodeExists(warehouseCode: string, options?: RawAxiosRequestConfig): AxiosPromise<ExistsResponse> {
+            return localVarFp.checkWarehouseCodeExists(warehouseCode, options).then((request) => request(axios, basePath));
         },
         /**
          * 倉庫マスタに新規倉庫を登録する
          * @summary 倉庫登録
-         * @param {MasterWarehouseApiCreateWarehouseRequest} requestParameters Request parameters.
+         * @param {CreateWarehouseRequest} createWarehouseRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createWarehouse(requestParameters: MasterWarehouseApiCreateWarehouseRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
-            return localVarFp.createWarehouse(requestParameters.createWarehouseRequest, options).then((request) => request(axios, basePath));
+        createWarehouse(createWarehouseRequest: CreateWarehouseRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
+            return localVarFp.createWarehouse(createWarehouseRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの倉庫マスタを1件取得する
          * @summary 倉庫取得
-         * @param {MasterWarehouseApiGetWarehouseRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getWarehouse(requestParameters: MasterWarehouseApiGetWarehouseRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
-            return localVarFp.getWarehouse(requestParameters.id, options).then((request) => request(axios, basePath));
+        getWarehouse(id: number, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
+            return localVarFp.getWarehouse(id, options).then((request) => request(axios, basePath));
         },
         /**
          * 倉庫マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
          * @summary 倉庫一覧取得
-         * @param {MasterWarehouseApiListWarehousesRequest} requestParameters Request parameters.
+         * @param {string} [warehouseCode] 倉庫コード（前方一致）
+         * @param {string} [warehouseName] 倉庫名（部分一致）
+         * @param {boolean} [isActive] 有効/無効フィルタ。省略時は全件
+         * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+         * @param {number} [page] ページ番号（0始まり）
+         * @param {number} [size] ページサイズ
+         * @param {string} [sort] ソート条件
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listWarehouses(requestParameters: MasterWarehouseApiListWarehousesRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<ListWarehouses200Response> {
-            return localVarFp.listWarehouses(requestParameters.warehouseCode, requestParameters.warehouseName, requestParameters.isActive, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+        listWarehouses(warehouseCode?: string, warehouseName?: string, isActive?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<ListWarehouses200Response> {
+            return localVarFp.listWarehouses(warehouseCode, warehouseName, isActive, all, page, size, sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可
          * @summary 倉庫無効化／有効化
-         * @param {MasterWarehouseApiToggleWarehouseActiveRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {ToggleActiveRequest} toggleActiveRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleWarehouseActive(requestParameters: MasterWarehouseApiToggleWarehouseActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseToggleResponse> {
-            return localVarFp.toggleWarehouseActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleWarehouseActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseToggleResponse> {
+            return localVarFp.toggleWarehouseActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの倉庫マスタを更新する。倉庫コードは変更不可
          * @summary 倉庫更新
-         * @param {MasterWarehouseApiUpdateWarehouseRequest} requestParameters Request parameters.
+         * @param {number} id リソースID
+         * @param {UpdateWarehouseRequest} updateWarehouseRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateWarehouse(requestParameters: MasterWarehouseApiUpdateWarehouseRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
-            return localVarFp.updateWarehouse(requestParameters.id, requestParameters.updateWarehouseRequest, options).then((request) => request(axios, basePath));
+        updateWarehouse(id: number, updateWarehouseRequest: UpdateWarehouseRequest, options?: RawAxiosRequestConfig): AxiosPromise<WarehouseDetail> {
+            return localVarFp.updateWarehouse(id, updateWarehouseRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
-
-/**
- * Request parameters for checkWarehouseCodeExists operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiCheckWarehouseCodeExistsRequest
- */
-export interface MasterWarehouseApiCheckWarehouseCodeExistsRequest {
-    /**
-     * チェック対象の倉庫コード
-     * @type {string}
-     * @memberof MasterWarehouseApiCheckWarehouseCodeExists
-     */
-    readonly warehouseCode: string
-}
-
-/**
- * Request parameters for createWarehouse operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiCreateWarehouseRequest
- */
-export interface MasterWarehouseApiCreateWarehouseRequest {
-    /**
-     * 
-     * @type {CreateWarehouseRequest}
-     * @memberof MasterWarehouseApiCreateWarehouse
-     */
-    readonly createWarehouseRequest: CreateWarehouseRequest
-}
-
-/**
- * Request parameters for getWarehouse operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiGetWarehouseRequest
- */
-export interface MasterWarehouseApiGetWarehouseRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterWarehouseApiGetWarehouse
-     */
-    readonly id: number
-}
-
-/**
- * Request parameters for listWarehouses operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiListWarehousesRequest
- */
-export interface MasterWarehouseApiListWarehousesRequest {
-    /**
-     * 倉庫コード（前方一致）
-     * @type {string}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly warehouseCode?: string
-
-    /**
-     * 倉庫名（部分一致）
-     * @type {string}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly warehouseName?: string
-
-    /**
-     * 有効/無効フィルタ。省略時は全件
-     * @type {boolean}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly isActive?: boolean
-
-    /**
-     * trueの場合ページングなしで全件返却（プルダウン用）
-     * @type {boolean}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly all?: boolean
-
-    /**
-     * ページ番号（0始まり）
-     * @type {number}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly page?: number
-
-    /**
-     * ページサイズ
-     * @type {number}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly size?: number
-
-    /**
-     * ソート条件
-     * @type {string}
-     * @memberof MasterWarehouseApiListWarehouses
-     */
-    readonly sort?: string
-}
-
-/**
- * Request parameters for toggleWarehouseActive operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiToggleWarehouseActiveRequest
- */
-export interface MasterWarehouseApiToggleWarehouseActiveRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterWarehouseApiToggleWarehouseActive
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {ToggleActiveRequest}
-     * @memberof MasterWarehouseApiToggleWarehouseActive
-     */
-    readonly toggleActiveRequest: ToggleActiveRequest
-}
-
-/**
- * Request parameters for updateWarehouse operation in MasterWarehouseApi.
- * @export
- * @interface MasterWarehouseApiUpdateWarehouseRequest
- */
-export interface MasterWarehouseApiUpdateWarehouseRequest {
-    /**
-     * リソースID
-     * @type {number}
-     * @memberof MasterWarehouseApiUpdateWarehouse
-     */
-    readonly id: number
-
-    /**
-     * 
-     * @type {UpdateWarehouseRequest}
-     * @memberof MasterWarehouseApiUpdateWarehouse
-     */
-    readonly updateWarehouseRequest: UpdateWarehouseRequest
-}
 
 /**
  * MasterWarehouseApi - object-oriented interface
@@ -626,73 +494,81 @@ export class MasterWarehouseApi extends BaseAPI {
     /**
      * 指定された倉庫コードがすでに登録されているか確認する
      * @summary 倉庫コード存在確認
-     * @param {MasterWarehouseApiCheckWarehouseCodeExistsRequest} requestParameters Request parameters.
+     * @param {string} warehouseCode チェック対象の倉庫コード
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public checkWarehouseCodeExists(requestParameters: MasterWarehouseApiCheckWarehouseCodeExistsRequest, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).checkWarehouseCodeExists(requestParameters.warehouseCode, options).then((request) => request(this.axios, this.basePath));
+    public checkWarehouseCodeExists(warehouseCode: string, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).checkWarehouseCodeExists(warehouseCode, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 倉庫マスタに新規倉庫を登録する
      * @summary 倉庫登録
-     * @param {MasterWarehouseApiCreateWarehouseRequest} requestParameters Request parameters.
+     * @param {CreateWarehouseRequest} createWarehouseRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public createWarehouse(requestParameters: MasterWarehouseApiCreateWarehouseRequest, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).createWarehouse(requestParameters.createWarehouseRequest, options).then((request) => request(this.axios, this.basePath));
+    public createWarehouse(createWarehouseRequest: CreateWarehouseRequest, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).createWarehouse(createWarehouseRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの倉庫マスタを1件取得する
      * @summary 倉庫取得
-     * @param {MasterWarehouseApiGetWarehouseRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public getWarehouse(requestParameters: MasterWarehouseApiGetWarehouseRequest, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).getWarehouse(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
+    public getWarehouse(id: number, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).getWarehouse(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 倉庫マスタの一覧を取得する。`all=true`でプルダウン用の全件取得も可能
      * @summary 倉庫一覧取得
-     * @param {MasterWarehouseApiListWarehousesRequest} requestParameters Request parameters.
+     * @param {string} [warehouseCode] 倉庫コード（前方一致）
+     * @param {string} [warehouseName] 倉庫名（部分一致）
+     * @param {boolean} [isActive] 有効/無効フィルタ。省略時は全件
+     * @param {boolean} [all] trueの場合ページングなしで全件返却（プルダウン用）
+     * @param {number} [page] ページ番号（0始まり）
+     * @param {number} [size] ページサイズ
+     * @param {string} [sort] ソート条件
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public listWarehouses(requestParameters: MasterWarehouseApiListWarehousesRequest = {}, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).listWarehouses(requestParameters.warehouseCode, requestParameters.warehouseName, requestParameters.isActive, requestParameters.all, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+    public listWarehouses(warehouseCode?: string, warehouseName?: string, isActive?: boolean, all?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).listWarehouses(warehouseCode, warehouseName, isActive, all, page, size, sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの倉庫の有効/無効を切り替える。在庫が存在する倉庫は無効化不可
      * @summary 倉庫無効化／有効化
-     * @param {MasterWarehouseApiToggleWarehouseActiveRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {ToggleActiveRequest} toggleActiveRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public toggleWarehouseActive(requestParameters: MasterWarehouseApiToggleWarehouseActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).toggleWarehouseActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleWarehouseActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).toggleWarehouseActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの倉庫マスタを更新する。倉庫コードは変更不可
      * @summary 倉庫更新
-     * @param {MasterWarehouseApiUpdateWarehouseRequest} requestParameters Request parameters.
+     * @param {number} id リソースID
+     * @param {UpdateWarehouseRequest} updateWarehouseRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterWarehouseApi
      */
-    public updateWarehouse(requestParameters: MasterWarehouseApiUpdateWarehouseRequest, options?: RawAxiosRequestConfig) {
-        return MasterWarehouseApiFp(this.configuration).updateWarehouse(requestParameters.id, requestParameters.updateWarehouseRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateWarehouse(id: number, updateWarehouseRequest: UpdateWarehouseRequest, options?: RawAxiosRequestConfig) {
+        return MasterWarehouseApiFp(this.configuration).updateWarehouse(id, updateWarehouseRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
