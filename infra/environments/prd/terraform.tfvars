@@ -1,8 +1,8 @@
 # environments/prd/terraform.tfvars
+# subscription_id is set via environment variable: TF_VAR_subscription_id
 environment        = "prd"
 location_primary   = "japaneast"
 location_secondary = "japanwest"
-subscription_id    = "xxxxxxxx-prd-subscription-id"
 
 # Container Apps (East)
 min_replicas_east = 1
