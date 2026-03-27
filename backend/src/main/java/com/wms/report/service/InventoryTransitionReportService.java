@@ -18,13 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.JST;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -43,14 +43,12 @@ public class InventoryTransitionReportService {
     private final BusinessDateProvider businessDateProvider;
     private final ReportExportService reportExportService;
 
-    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
-
     private static final String[] CSV_HEADERS = {
             "変動日", "変動種別", "ロケーションコード", "荷姿",
             "変動前数量", "変動数", "変動後数量", "参照番号", "ロット番号"
     };
 
-    static final Map<String, String> MOVEMENT_TYPE_LABELS = Map.of(
+    private static final Map<String, String> MOVEMENT_TYPE_LABELS = Map.of(
             "INBOUND", "入庫",
             "OUTBOUND", "出庫",
             "MOVE_OUT", "在庫移動出",
@@ -69,7 +67,7 @@ public class InventoryTransitionReportService {
         log.info("RPT-08 在庫推移レポート生成開始: warehouseId={}, productId={}, format={}",
                 warehouseId, productId, format);
 
-        warehouseRepository.findById(warehouseId)
+        Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + warehouseId));
 
@@ -87,8 +85,6 @@ public class InventoryTransitionReportService {
 
         List<InventoryMovement> movements = movementRepository.findTransitionReportData(
                 warehouseId, productId, fromOdt, toOdt);
-
-        Warehouse warehouse = warehouseRepository.findById(warehouseId).orElseThrow();
 
         List<InventoryTransitionReportItem> items = movements.stream()
                 .map(this::toReportItem)

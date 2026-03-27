@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -27,6 +26,7 @@ import java.util.stream.Collectors;
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.JST;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -44,8 +44,6 @@ public class InventoryCorrectionReportService {
     private final UserRepository userRepository;
     private final BusinessDateProvider businessDateProvider;
     private final ReportExportService reportExportService;
-
-    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
     private static final String[] CSV_HEADERS = {
             "訂正日", "ロケーションコード", "商品コード", "商品名", "荷姿",

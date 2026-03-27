@@ -20,9 +20,7 @@
 <body>
     <div th:replace="~{reports/_base-layout :: report-header}" />
 
-    <div th:if="${items.isEmpty()}">
-        <div class="no-data">該当する在庫訂正データがありません</div>
-    </div>
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
 
     <table th:if="${!items.isEmpty()}">
         <thead>

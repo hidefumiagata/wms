@@ -22,7 +22,7 @@ final class ReportServiceUtils {
     private ReportServiceUtils() {
     }
 
-    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
+    static final ZoneId JST = ZoneId.of("Asia/Tokyo");
     private static final DateTimeFormatter FILE_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /** 入荷ステータス → 日本語ラベル */
