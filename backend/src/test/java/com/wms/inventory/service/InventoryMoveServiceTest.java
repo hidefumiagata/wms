@@ -72,10 +72,15 @@ class InventoryMoveServiceTest {
     }
 
     private Location createLocation(Long id, String code, boolean locked) {
+        return createLocation(id, code, locked, 1L);
+    }
+
+    private Location createLocation(Long id, String code, boolean locked, Long warehouseId) {
         Location loc = new Location();
         setField(loc, "id", id);
         loc.setLocationCode(code);
         loc.setIsStocktakingLocked(locked);
+        loc.setWarehouseId(warehouseId);
         return loc;
     }
 
@@ -213,6 +218,18 @@ class InventoryMoveServiceTest {
         void move_sameLocation_throws() {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
                     1L, 100L, "CASE", null, null, 1L, 5))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+        }
+
+        @Test
+        @DisplayName("移動元と移動先が異なる倉庫の場合エラー")
+        void move_crossWarehouse_throws() {
+            when(locationService.findById(1L)).thenReturn(createLocation(1L, "A-01", false, 1L));
+            when(locationService.findById(2L)).thenReturn(createLocation(2L, "B-01", false, 2L));
+
+            assertThatThrownBy(() -> inventoryMoveService.moveInventory(
+                    1L, 100L, "CASE", null, null, 2L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
         }

@@ -990,5 +990,17 @@ class InventoryControllerTest {
                     .andExpect(jsonPath("$.unitType").value("PIECE"))
                     .andExpect(jsonPath("$.maxQuantity").value(100));
         }
+
+        @Test
+        @DisplayName("異常系: 不正な unitType でリクエスト")
+        void getCapacity_invalidUnitType_returns422() throws Exception {
+            when(inventoryMoveService.getLocationCapacity("INVALID"))
+                    .thenThrow(new com.wms.shared.exception.BusinessRuleViolationException(
+                            "VALIDATION_ERROR", "不正な荷姿: INVALID"));
+
+            mockMvc.perform(get("/api/v1/inventory/location-capacity")
+                            .param("unitType", "INVALID"))
+                    .andExpect(status().isUnprocessableEntity());
+        }
     }
 }

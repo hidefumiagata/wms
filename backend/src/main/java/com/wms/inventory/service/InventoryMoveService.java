@@ -59,7 +59,11 @@ public class InventoryMoveService {
         Location toLocation = locationService.findById(toLocationId);
 
         // 倉庫スコープチェック (S-MAJ-01)
-        Long currentWarehouseId = getCurrentWarehouseId(fromLocation);
+        if (!fromLocation.getWarehouseId().equals(toLocation.getWarehouseId())) {
+            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                    "移動元と移動先が異なる倉庫です");
+        }
+        Long currentWarehouseId = fromLocation.getWarehouseId();
 
         // 棚卸ロックチェック
         if (Boolean.TRUE.equals(fromLocation.getIsStocktakingLocked())) {
@@ -207,10 +211,6 @@ public class InventoryMoveService {
         return inventoryRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
                         "在庫が見つかりません"));
-    }
-
-    private Long getCurrentWarehouseId(Location location) {
-        return location.getWarehouseId();
     }
 
     private Long getCurrentUserId() {
