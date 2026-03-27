@@ -4597,7 +4597,9 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>PARTNER_NOT_FOUND</code></td><td>指定の仕入先が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>PRODUCT_NOT_FOUND</code></td><td>明細内の商品が存在しない</td></tr>
 <tr><td><code>409</code></td><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>同一伝票内に同じ商品IDが重複</td></tr>
+<tr><td><code>422</code></td><td><code>INBOUND_PARTNER_REQUIRED</code></td><td><code>slipType=NORMAL</code> で仕入先IDが未指定</td></tr>
 <tr><td><code>422</code></td><td><code>INBOUND_PARTNER_NOT_SUPPLIER</code></td><td><code>partnerId</code> の取引先種別が <code>SUPPLIER</code> または <code>BOTH</code> でない</td></tr>
+<tr><td><code>422</code></td><td><code>PRODUCT_INACTIVE</code></td><td>無効な商品が指定されている</td></tr>
 <tr><td><code>422</code></td><td><code>PLANNED_DATE_TOO_EARLY</code></td><td><code>plannedDate</code> が現在営業日より前</td></tr>
 <tr><td><code>422</code></td><td><code>LOT_NUMBER_REQUIRED</code></td><td>ロット管理フラグONの商品に <code>lotNumber</code> が未指定</td></tr>
 <tr><td><code>422</code></td><td><code>EXPIRY_DATE_REQUIRED</code></td><td>期限管理フラグONの商品に <code>expiryDate</code> が未指定</td></tr>
@@ -4637,13 +4639,13 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><code>slipType=NORMAL</code> の場合、<code>partnerId</code> は必須</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>1</td><td><code>slipType=NORMAL</code> の場合、<code>partnerId</code> は必須</td><td><code>INBOUND_PARTNER_REQUIRED</code></td></tr>
 <tr><td>2</td><td>仕入先の <code>partner_type</code> が <code>SUPPLIER</code> または <code>BOTH</code> でなければならない</td><td><code>INBOUND_PARTNER_NOT_SUPPLIER</code></td></tr>
 <tr><td>3</td><td><code>plannedDate</code> は現在営業日（<code>business_dates.business_date</code>）以降でなければならない</td><td><code>PLANNED_DATE_TOO_EARLY</code></td></tr>
 <tr><td>4</td><td>同一伝票内に同じ <code>productId</code> を持つ明細は登録不可</td><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td></tr>
 <tr><td>5</td><td>商品の <code>lot_manage_flag=true</code> の場合、<code>lotNumber</code> 必須</td><td><code>LOT_NUMBER_REQUIRED</code></td></tr>
 <tr><td>6</td><td>商品の <code>expiry_manage_flag=true</code> の場合、<code>expiryDate</code> 必須</td><td><code>EXPIRY_DATE_REQUIRED</code></td></tr>
-<tr><td>7</td><td>商品の <code>is_active=false</code> は明細登録不可</td><td><code>VALIDATION_ERROR</code> (details: productId)</td></tr>
+<tr><td>7</td><td>商品の <code>is_active=false</code> は明細登録不可</td><td><code>PRODUCT_INACTIVE</code></td></tr>
 <p></tbody><br></table></p>
 <p><strong>伝票番号採番ルール</strong>:</p>
 <ul><li style="margin-left:0px">形式: <code>INB-YYYYMMDD-NNNN</code>（例: <code>INB-20260313-0001</code>）</li><li style="margin-left:0px"><code>YYYYMMDD</code> は現在営業日（<code>current_business_date</code>）</li><li style="margin-left:0px"><code>NNNN</code> は当日の入荷伝票通番（4桁ゼロ埋め）</li><li style="margin-left:0px">採番は DB シーケンスまたは SELECT FOR UPDATE による排他制御で重複を防ぐ</li></ul>
@@ -5309,7 +5311,9 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>INBOUND_LINE_NOT_FOUND</code></td><td>404</td><td>指定IDの入荷明細が当該伝票に存在しない</td></tr>
 <tr><td><code>INBOUND_INVALID_STATUS</code></td><td>409</td><td>現在のステータスではその操作は実行不可</td></tr>
 <tr><td><code>INBOUND_LINE_NOT_INSPECTED</code></td><td>409</td><td>対象明細が検品済（INSPECTED）でないため入庫確定不可</td></tr>
+<tr><td><code>INBOUND_PARTNER_REQUIRED</code></td><td>422</td><td>通常入荷で仕入先IDが未指定</td></tr>
 <tr><td><code>INBOUND_PARTNER_NOT_SUPPLIER</code></td><td>422</td><td>取引先種別が仕入先（SUPPLIER/BOTH）でない</td></tr>
+<tr><td><code>PRODUCT_INACTIVE</code></td><td>422</td><td>無効な商品が指定されている</td></tr>
 <tr><td><code>INBOUND_LOCATION_AREA_MISMATCH</code></td><td>422</td><td>指定ロケーションが入荷エリアに属さない</td></tr>
 <tr><td><code>LOCATION_PRODUCT_MISMATCH</code></td><td>422</td><td>入庫先ロケーションに既に別商品の在庫が存在する（同一ロケーション単一商品制約）</td></tr>
 <tr><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>409</td><td>同一伝票内に同じ商品IDの明細が重複</td></tr>
@@ -6739,12 +6743,16 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>HTTPステータス</th><th>エラーコード</th><th>説明</th></tr></thead>
 <tbody>
-<tr><td><code>400</code></td><td><code>VALIDATION_ERROR</code></td><td>入力値バリデーションエラー</td></tr>
+<tr><td><code>400</code></td><td><code>VALIDATION_ERROR</code></td><td>入力値バリデーションエラー（必須項目不足・型エラー・桁数超過）</td></tr>
 <tr><td><code>404</code></td><td><code>WAREHOUSE_NOT_FOUND</code></td><td>倉庫が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>PARTNER_NOT_FOUND</code></td><td>取引先が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>PRODUCT_NOT_FOUND</code></td><td>商品が存在しない</td></tr>
+<tr><td><code>409</code></td><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>同一伝票内に同じ商品が複数指定されている</td></tr>
+<tr><td><code>422</code></td><td><code>OUTBOUND_PARTNER_REQUIRED</code></td><td><code>slipType=NORMAL</code> で出荷先IDが未指定</td></tr>
 <tr><td><code>422</code></td><td><code>OUTBOUND_PARTNER_NOT_CUSTOMER</code></td><td>取引先種別が出荷先（<code>CUSTOMER</code> / <code>BOTH</code>）でない</td></tr>
+<tr><td><code>422</code></td><td><code>PRODUCT_INACTIVE</code></td><td>無効な商品が指定されている</td></tr>
 <tr><td><code>422</code></td><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td><td>出荷禁止フラグが立っている商品を選択した</td></tr>
+<tr><td><code>422</code></td><td><code>PLANNED_DATE_TOO_EARLY</code></td><td><code>plannedDate</code> が現在営業日より前</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>4. 業務ロジック</h3>
@@ -6754,17 +6762,21 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     VALIDATE -->|OK| CHECK_WH[倉庫存在チェック]
     CHECK_WH -->|存在しない| ERR_WH[404 WAREHOUSE_NOT_FOUND]
     CHECK_WH -->|OK| CHECK_TYPE{slipType?}
-    CHECK_TYPE -->|NORMAL| CHECK_PARTNER[取引先存在チェック\npartnerIdが必須]
+    CHECK_TYPE -->|NORMAL| CHECK_PARTNER_ID{partnerId指定あり?}
     CHECK_TYPE -->|WAREHOUSE_TRANSFER| CHECK_DATE[plannedDate 営業日チェック]
+    CHECK_PARTNER_ID -->|null| ERR_PAR_REQ[422 OUTBOUND_PARTNER_REQUIRED]
+    CHECK_PARTNER_ID -->|OK| CHECK_PARTNER[取引先存在チェック]
     CHECK_PARTNER -->|存在しない| ERR_PAR[404 PARTNER_NOT_FOUND]
     CHECK_PARTNER -->|OK| CHECK_PARTNER_TYPE[partner_type チェック\nCUSTOMER or BOTH]
     CHECK_PARTNER_TYPE -->|NG| ERR_PAR_TYPE[422 OUTBOUND_PARTNER_NOT_CUSTOMER]
     CHECK_PARTNER_TYPE -->|OK| CHECK_DATE
-    CHECK_DATE -->|営業日前| ERR_DATE[400 VALIDATION_ERROR\nplannedDate]
+    CHECK_DATE -->|営業日前| ERR_DATE[422 PLANNED_DATE_TOO_EARLY]
     CHECK_DATE -->|OK| CHECK_PRODUCTS[各明細の商品存在チェック\n重複チェック]
     CHECK_PRODUCTS -->|存在しない| ERR_PRD[404 PRODUCT_NOT_FOUND]
-    CHECK_PRODUCTS -->|重複あり| ERR_DUP[400 VALIDATION_ERROR\n同一商品重複不可]
-    CHECK_PRODUCTS -->|OK| CHECK_SHIPMENT_STOP[shipment_stop_flag チェック]
+    CHECK_PRODUCTS -->|重複あり| ERR_DUP[409 DUPLICATE_PRODUCT_IN_LINES]
+    CHECK_PRODUCTS -->|OK| CHECK_ACTIVE[商品有効チェック\nis_active=true]
+    CHECK_ACTIVE -->|false| ERR_INACTIVE[422 PRODUCT_INACTIVE]
+    CHECK_ACTIVE -->|OK| CHECK_SHIPMENT_STOP[shipment_stop_flag チェック]
     CHECK_SHIPMENT_STOP -->|trueあり| ERR_STOP[422 OUTBOUND_PRODUCT_SHIPMENT_STOPPED]
     CHECK_SHIPMENT_STOP -->|OK| GEN_SLIP_NUM[伝票番号自動採番\nOUT-YYYYMMDD-NNNN]
     GEN_SLIP_NUM --> INSERT_SLIP[outbound_slips INSERT\nstatus=ORDERED\nwarehouse/partner/product情報をコピー]
@@ -6775,13 +6787,14 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><code>slipType=NORMAL</code> の場合 <code>partnerId</code> は必須</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>1</td><td><code>slipType=NORMAL</code> の場合 <code>partnerId</code> は必須</td><td><code>OUTBOUND_PARTNER_REQUIRED</code></td></tr>
 <tr><td>2</td><td><code>partnerId</code> が指定された場合、<code>partner_type</code> が <code>CUSTOMER</code> または <code>BOTH</code> でなければならない</td><td><code>OUTBOUND_PARTNER_NOT_CUSTOMER</code></td></tr>
-<tr><td>3</td><td><code>shipment_stop_flag=true</code> の商品は明細に含められない</td><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td></tr>
-<tr><td>4</td><td><code>plannedDate</code> は現在営業日（<code>system_business_date</code> テーブル参照）以降でなければならない</td><td><code>VALIDATION_ERROR</code></td></tr>
-<tr><td>5</td><td><code>lines</code> に同一 <code>productId</code> の重複は不可</td><td><code>VALIDATION_ERROR</code></td></tr>
-<tr><td>6</td><td>伝票番号は <code>OUT-YYYYMMDD-NNNN</code>（4桁連番）形式で自動採番。<code>YYYYMMDD</code> は現在営業日（<code>current_business_date</code>）。採番はシーケンスまたはROWロックで重複排除する</td><td>—</td></tr>
-<tr><td>7</td><td><code>warehouse_code</code>, <code>warehouse_name</code>, <code>partner_code</code>, <code>partner_name</code>, <code>product_code</code>, <code>product_name</code> は登録時点の値をコピーして保持する（マスタ変更の影響を受けない）</td><td>—</td></tr>
+<tr><td>3</td><td>商品の <code>is_active=false</code> は明細登録不可</td><td><code>PRODUCT_INACTIVE</code></td></tr>
+<tr><td>4</td><td><code>shipment_stop_flag=true</code> の商品は明細に含められない</td><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td></tr>
+<tr><td>5</td><td><code>plannedDate</code> は現在営業日（<code>system_business_date</code> テーブル参照）以降でなければならない</td><td><code>PLANNED_DATE_TOO_EARLY</code></td></tr>
+<tr><td>6</td><td><code>lines</code> に同一 <code>productId</code> の重複は不可</td><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td></tr>
+<tr><td>7</td><td>伝票番号は <code>OUT-YYYYMMDD-NNNN</code>（4桁連番）形式で自動採番。<code>YYYYMMDD</code> は現在営業日（<code>current_business_date</code>）。採番はシーケンスまたはROWロックで重複排除する</td><td>—</td></tr>
+<tr><td>8</td><td><code>warehouse_code</code>, <code>warehouse_name</code>, <code>partner_code</code>, <code>partner_name</code>, <code>product_code</code>, <code>product_name</code> は登録時点の値をコピーして保持する（マスタ変更の影響を受けない）</td><td>—</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
@@ -7594,15 +7607,19 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tbody>
 <tr><td><code>OUTBOUND_SLIP_NOT_FOUND</code></td><td>404</td><td>出荷伝票が見つからない</td><td>OUT-003, 004, cancel, OUT-021, OUT-022</td></tr>
 <tr><td><code>OUTBOUND_INVALID_STATUS</code></td><td>409</td><td>現在のステータスではその操作は不可</td><td>OUT-004, cancel, OUT-014, OUT-021, OUT-022</td></tr>
+<tr><td><code>OUTBOUND_PARTNER_REQUIRED</code></td><td>422</td><td>通常出荷で出荷先IDが未指定</td><td>OUT-002</td></tr>
 <tr><td><code>OUTBOUND_PARTNER_NOT_CUSTOMER</code></td><td>422</td><td>取引先種別が出荷先（CUSTOMER/BOTH）でない</td><td>OUT-002</td></tr>
+<tr><td><code>PRODUCT_INACTIVE</code></td><td>422</td><td>無効な商品が指定されている</td><td>OUT-002</td></tr>
 <tr><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td><td>422</td><td>出荷禁止フラグが設定された商品</td><td>OUT-002</td></tr>
+<tr><td><code>PLANNED_DATE_TOO_EARLY</code></td><td>422</td><td>出荷予定日が現在営業日より前</td><td>OUT-002</td></tr>
+<tr><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>409</td><td>同一伝票内に同じ商品が複数指定されている</td><td>OUT-002</td></tr>
 <tr><td><code>PICKING_NOT_FOUND</code></td><td>404</td><td>ピッキング指示が見つからない</td><td>OUT-013, OUT-014</td></tr>
 <tr><td><code>UNPACK_NOT_COMPLETED</code></td><td>409</td><td>未完了のばらし指示が存在するためピッキング指示作成不可</td><td>OUT-012</td></tr>
 <tr><td><code>ALLOCATION_INSUFFICIENT</code></td><td>422</td><td>在庫引当に必要な在庫が不足</td><td>API-ALL-002（引当実行）</td></tr>
 <tr><td><code>INVENTORY_INSUFFICIENT</code></td><td>422</td><td>出荷完了時の在庫減算で在庫不足</td><td>OUT-022</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<p><em>最終更新: 2026-03-13</em></p>
+<p><em>最終更新: 2026-03-26</em></p>
 </div>
 
 <hr class="doc-separator">
@@ -9494,7 +9511,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tr><td><code>defaultValue</code></td><td>String</td><td>デフォルト値</td></tr>
 <tr><td><code>displayName</code></td><td>String</td><td>パラメータの表示名</td></tr>
 <tr><td><code>category</code></td><td>String</td><td>カテゴリ（<code>INVENTORY</code> / <code>OUTBOUND</code> / <code>INBOUND</code> / <code>SYSTEM</code> 等）</td></tr>
-<tr><td><code>valueType</code></td><td>String</td><td>値の型（<code>INTEGER</code> / <code>STRING</code>）</td></tr>
+<tr><td><code>valueType</code></td><td>String</td><td>値の型（<code>INTEGER</code> / <code>STRING</code> / <code>BOOLEAN</code>）</td></tr>
 <tr><td><code>description</code></td><td>String</td><td>パラメータの説明文</td></tr>
 <tr><td><code>updatedAt</code></td><td>String (ISO 8601)</td><td>最終更新日時</td></tr>
 <tr><td><code>updatedBy</code></td><td>Long</td><td>最終更新者のユーザーID</td></tr>
@@ -9523,7 +9540,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">参照系APIのため読み取り専用トランザクションで処理する。</li><li style="margin-left:0px"><code>paramValue</code> はすべて文字列型で返す。フロントエンドが <code>valueType</code> を参照して適切な型変換・入力コントロールの選択を行う。</li><li style="margin-left:0px"><code>updatedBy</code> はユーザーIDのみを返す。フロントエンドで更新者名の表示が必要な場合は、ユーザー情報をキャッシュして名前解決する。</li></ul>
+<ul><li style="margin-left:0px">参照系APIのため読み取り専用トランザクションで処理する。</li><li style="margin-left:0px"><code>paramValue</code> はすべて文字列型で返す。フロントエンドが <code>valueType</code> を参照して適切な型変換・入力コントロールの選択を行う。</li><li style="margin-left:0px"><code>updatedBy</code> はユーザーIDを返す。<code>updatedByName</code> にはサーバーサイドで解決した更新者名を含める（一覧取得時はN+1回避のため一括取得）。</li></ul>
 <hr>
 <hr>
 <h2>API-SYS-003 パラメータ値更新</h2>
@@ -9564,6 +9581,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tbody>
 <tr><td><code>INTEGER</code></td><td>正の整数（<code>^[1-9][0-9]*$</code> または <code>0</code>）。負の値・小数・空文字は不可</td></tr>
 <tr><td><code>STRING</code></td><td>1文字以上500文字以内。空文字は不可</td></tr>
+<tr><td><code>BOOLEAN</code></td><td><code>true</code> または <code>false</code>（大文字小文字を区別しない）。空文字は不可</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>3. レスポンス仕様</h3>
@@ -9621,6 +9639,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tr><td>1</td><td>指定された <code>paramKey</code> に一致するパラメータが存在しない場合は404を返す</td><td><code>PARAM_NOT_FOUND</code></td></tr>
 <tr><td>2</td><td><code>valueType = INTEGER</code> の場合、<code>paramValue</code> は正の整数（0以上の整数）であること</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>3</td><td><code>valueType = STRING</code> の場合、<code>paramValue</code> は1文字以上500文字以内であること</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>3a</td><td><code>valueType = BOOLEAN</code> の場合、<code>paramValue</code> は <code>true</code> または <code>false</code>（大文字小文字を区別しない）であること</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>4</td><td><code>paramKey</code>・<code>defaultValue</code>・<code>displayName</code>・<code>category</code>・<code>valueType</code>・<code>description</code> は更新不可（<code>paramValue</code> のみ更新対象）</td><td>—</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -9652,6 +9671,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tr><td><code>description</code></td><td>String</td><td><code>description</code></td><td>パラメータの説明文</td></tr>
 <tr><td><code>updatedAt</code></td><td>String</td><td><code>updated_at</code></td><td>最終更新日時（ISO 8601）</td></tr>
 <tr><td><code>updatedBy</code></td><td>Long</td><td><code>updated_by</code></td><td>最終更新者のユーザーID</td></tr>
+<tr><td><code>updatedByName</code></td><td>String</td><td>—</td><td>最終更新者名（サーバーサイドで解決）</td></tr>
 <p></tbody><br></table></p>
 </div>
 
