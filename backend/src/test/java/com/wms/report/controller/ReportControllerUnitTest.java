@@ -1,0 +1,194 @@
+package com.wms.report.controller;
+
+import com.wms.generated.model.InboundInspectionReportItem;
+import com.wms.generated.model.InboundPlanReportItem;
+import com.wms.generated.model.InboundResultReportItem;
+import com.wms.generated.model.ReportFormat;
+import com.wms.generated.model.UnreceivedConfirmedReportItem;
+import com.wms.generated.model.UnreceivedRealtimeReportItem;
+import com.wms.report.service.InboundInspectionReportService;
+import com.wms.report.service.InboundPlanReportService;
+import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.UnreceivedConfirmedReportService;
+import com.wms.report.service.UnreceivedRealtimeReportService;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ReportController 単体テスト")
+class ReportControllerUnitTest {
+
+    @Mock
+    private InboundInspectionReportService inboundInspectionReportService;
+
+    @Mock
+    private InboundPlanReportService inboundPlanReportService;
+
+    @Mock
+    private InboundResultReportService inboundResultReportService;
+
+    @Mock
+    private UnreceivedRealtimeReportService unreceivedRealtimeReportService;
+
+    @Mock
+    private UnreceivedConfirmedReportService unreceivedConfirmedReportService;
+
+    @InjectMocks
+    private ReportController controller;
+
+    @Test
+    @DisplayName("RPT-01: format指定ありの場合はそのまま渡される")
+    void getInboundInspectionReport_withFormat_passesFormat() {
+        when(inboundInspectionReportService.generate(eq(1L), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundInspectionReport(1L, ReportFormat.PDF);
+
+        verify(inboundInspectionReportService).generate(1L, ReportFormat.PDF);
+    }
+
+    @Test
+    @DisplayName("RPT-01: format未指定の場合はJSONがデフォルト")
+    void getInboundInspectionReport_nullFormat_defaultsToJson() {
+        when(inboundInspectionReportService.generate(eq(1L), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundInspectionReport(1L, null);
+
+        verify(inboundInspectionReportService).generate(1L, ReportFormat.JSON);
+    }
+
+    @Test
+    @DisplayName("RPT-03: format指定ありの場合はそのまま渡される")
+    void getInboundPlanReport_withFormat_passesFormat() {
+        when(inboundPlanReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundPlanReport(1L, null, null, null, null, ReportFormat.CSV);
+
+        verify(inboundPlanReportService).generate(eq(1L), any(), any(), any(), any(), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-03: format未指定の場合はJSONがデフォルト")
+    void getInboundPlanReport_nullFormat_defaultsToJson() {
+        when(inboundPlanReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundPlanReport(1L, null, null, null, null, null);
+
+        verify(inboundPlanReportService).generate(eq(1L), any(), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    @Test
+    @DisplayName("RPT-04: format指定ありの場合はそのまま渡される")
+    void getInboundResultReport_withFormat_passesFormat() {
+        when(inboundResultReportService.generate(any(), any(), any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundResultReport(1L, null, null, null, ReportFormat.PDF);
+
+        verify(inboundResultReportService).generate(eq(1L), any(), any(), any(), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-04: format未指定の場合はJSONがデフォルト")
+    void getInboundResultReport_nullFormat_defaultsToJson() {
+        when(inboundResultReportService.generate(any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getInboundResultReport(1L, null, null, null, null);
+
+        verify(inboundResultReportService).generate(eq(1L), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    @Test
+    @DisplayName("RPT-05: format指定ありの場合はそのまま渡される")
+    void getUnreceivedRealtimeReport_withFormat_passesFormat() {
+        when(unreceivedRealtimeReportService.generate(any(), any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getUnreceivedRealtimeReport(1L, null, ReportFormat.CSV);
+
+        verify(unreceivedRealtimeReportService).generate(eq(1L), any(), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-05: format未指定の場合はJSONがデフォルト")
+    void getUnreceivedRealtimeReport_nullFormat_defaultsToJson() {
+        when(unreceivedRealtimeReportService.generate(any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        controller.getUnreceivedRealtimeReport(1L, null, null);
+
+        verify(unreceivedRealtimeReportService).generate(eq(1L), any(), eq(ReportFormat.JSON));
+    }
+
+    @Test
+    @DisplayName("RPT-06: format指定ありの場合はそのまま渡される")
+    void getUnreceivedConfirmedReport_withFormat_passesFormat() {
+        when(unreceivedConfirmedReportService.generate(any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        LocalDate batchDate = LocalDate.of(2026, 3, 14);
+        controller.getUnreceivedConfirmedReport(1L, batchDate, ReportFormat.PDF);
+
+        verify(unreceivedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-06: format未指定の場合はJSONがデフォルト")
+    void getUnreceivedConfirmedReport_nullFormat_defaultsToJson() {
+        when(unreceivedConfirmedReportService.generate(any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+
+        LocalDate batchDate = LocalDate.of(2026, 3, 14);
+        controller.getUnreceivedConfirmedReport(1L, batchDate, null);
+
+        verify(unreceivedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.JSON));
+    }
+
+    @Test
+    @DisplayName("未実装エンドポイントはUnsupportedOperationExceptionをスロー")
+    void unimplementedEndpoints_throwUnsupportedOperationException() {
+        assertThatThrownBy(() -> controller.getInventoryReport(1L, null, null, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getInventoryTransitionReport(1L, null, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getInventoryCorrectionReport(1L, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getStocktakeListReport(null, null, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getStocktakeResultReport(null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getPickingInstructionReport(null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getShippingInspectionReport(null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getDeliveryListReport(null, null, null, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getUnshippedRealtimeReport(null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getUnshippedConfirmedReport(null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getDailySummaryReport(null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> controller.getReturnsReport(null, null, null, null, null, null, null, null))
+                .isInstanceOf(UnsupportedOperationException.class);
+    }
+}

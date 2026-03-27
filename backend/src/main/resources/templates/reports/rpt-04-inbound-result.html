@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">入庫実績レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-slip { width: 38mm; }
+        .col-date { width: 25mm; }
+        .col-product-code { width: 28mm; }
+        .col-product-name { width: 52mm; }
+        .col-qty { width: 25mm; }
+        .col-diff { width: 20mm; }
+        .col-return { width: 20mm; }
+        .col-location { width: 36mm; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- データなし -->
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <!-- グルーピング: 仕入先別 -->
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.stream.Collectors).toList()))}">
+            <th:block th:each="entry : ${groups.entrySet()}">
+                <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
+                    仕入先: <span th:text="${entry.key}">テスト仕入先A</span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th class="col-slip">伝票番号</th>
+                            <th class="col-date">入庫日</th>
+                            <th class="col-product-code">商品コード</th>
+                            <th class="col-product-name">商品名</th>
+                            <th class="col-qty">予定数(CS)</th>
+                            <th class="col-qty">検品数(CS)</th>
+                            <th class="col-diff">差異(CS)</th>
+                            <th class="col-return">返品数量</th>
+                            <th class="col-location">格納ロケーション</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, stat : ${entry.value}"
+                            th:classappend="${item.diffQuantityCas != null and item.diffQuantityCas != 0 ? 'highlight-pink' : ''}">
+                            <td class="text-right" th:text="${stat.count}">1</td>
+                            <td th:text="${item.slipNumber}">INB-2026-0120</td>
+                            <td class="text-center" th:text="${item.storedDate != null ? #temporals.format(item.storedDate, 'yyyy-MM-dd') : '—'}">2026-03-10</td>
+                            <td th:text="${item.productCode}">P-001</td>
+                            <td th:text="${item.productName}">商品A</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.plannedQuantityCas, 1, 'COMMA')}">10</td>
+                            <td class="text-right" th:text="${item.inspectedQuantityCas != null ? #numbers.formatInteger(item.inspectedQuantityCas, 1, 'COMMA') : '—'}">10</td>
+                            <td class="text-right" th:text="${item.diffQuantityCas != null ? (item.diffQuantityCas > 0 ? '+' + #numbers.formatInteger(item.diffQuantityCas, 1, 'COMMA') : #numbers.formatInteger(item.diffQuantityCas, 1, 'COMMA')) : '—'}">0</td>
+                            <td class="text-right" th:text="${item.returnQuantity != null ? #numbers.formatInteger(item.returnQuantity, 1, 'COMMA') : '—'}">2</td>
+                            <td th:text="${item.storedLocationCode != null ? item.storedLocationCode : '—'}">A-01-A-01-01-01</td>
+                        </tr>
+                        <!-- 小計行 -->
+                        <tr class="subtotal-row">
+                            <td colspan="4"></td>
+                            <td>小計</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![plannedQuantityCas]), 1, 'COMMA')}">15</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(entry.value.?[inspectedQuantityCas != null].![inspectedQuantityCas].isEmpty() ? 0 : #aggregates.sum(entry.value.?[inspectedQuantityCas != null].![inspectedQuantityCas]), 1, 'COMMA')}">14</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(entry.value.?[diffQuantityCas != null].![diffQuantityCas].isEmpty() ? 0 : #aggregates.sum(entry.value.?[diffQuantityCas != null].![diffQuantityCas]), 1, 'COMMA')}">-1</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(entry.value.?[returnQuantity != null].![returnQuantity].isEmpty() ? 0 : #aggregates.sum(entry.value.?[returnQuantity != null].![returnQuantity]), 1, 'COMMA')}">2</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </th:block>
+
+            <!-- 全体合計 -->
+            <table>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4" style="width: 99mm;"></td>
+                        <td style="width: 52mm;">合計</td>
+                        <td class="text-right" style="width: 25mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![plannedQuantityCas]), 1, 'COMMA')}">35</td>
+                        <td class="text-right" style="width: 25mm;" th:text="${#numbers.formatInteger(items.?[inspectedQuantityCas != null].![inspectedQuantityCas].isEmpty() ? 0 : #aggregates.sum(items.?[inspectedQuantityCas != null].![inspectedQuantityCas]), 1, 'COMMA')}">34</td>
+                        <td class="text-right" style="width: 20mm;" th:text="${#numbers.formatInteger(items.?[diffQuantityCas != null].![diffQuantityCas].isEmpty() ? 0 : #aggregates.sum(items.?[diffQuantityCas != null].![diffQuantityCas]), 1, 'COMMA')}">-1</td>
+                        <td class="text-right" style="width: 20mm;" th:text="${#numbers.formatInteger(items.?[returnQuantity != null].![returnQuantity].isEmpty() ? 0 : #aggregates.sum(items.?[returnQuantity != null].![returnQuantity]), 1, 'COMMA')}">2</td>
+                        <td style="width: 36mm;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>

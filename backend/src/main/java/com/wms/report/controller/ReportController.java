@@ -23,7 +23,11 @@ import com.wms.generated.model.UnreceivedConfirmedReportItem;
 import com.wms.generated.model.UnreceivedRealtimeReportItem;
 import com.wms.generated.model.UnshippedConfirmedReportItem;
 import com.wms.generated.model.UnshippedRealtimeReportItem;
-import com.wms.report.service.ReportExportService;
+import com.wms.report.service.InboundInspectionReportService;
+import com.wms.report.service.InboundPlanReportService;
+import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.UnreceivedConfirmedReportService;
+import com.wms.report.service.UnreceivedRealtimeReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +39,8 @@ import java.util.List;
 
 /**
  * レポート API コントローラー。
- * Phase 1 では全メソッドが未実装（501 Not Implemented）。
- * Phase 2 以降、個別レポートサービスを注入して順次実装する。
+ * 入荷系帳票（RPT-01, RPT-03, RPT-04, RPT-05, RPT-06）は本格実装済み。
+ * その他のレポートは後続Issueで順次実装する。
  */
 @RestController
 @RequiredArgsConstructor
@@ -44,13 +48,18 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF','VIEWER')")
 public class ReportController implements ReportApi {
 
-    private final ReportExportService reportExportService;
+    private final InboundInspectionReportService inboundInspectionReportService;
+    private final InboundPlanReportService inboundPlanReportService;
+    private final InboundResultReportService inboundResultReportService;
+    private final UnreceivedRealtimeReportService unreceivedRealtimeReportService;
+    private final UnreceivedConfirmedReportService unreceivedConfirmedReportService;
 
     // --- RPT-01: 入荷検品レポート ---
     @Override
     public ResponseEntity<List<InboundInspectionReportItem>> getInboundInspectionReport(
             Long slipId, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
+        return inboundInspectionReportService.generate(slipId, effectiveFormat);
     }
 
     // --- RPT-03: 入荷予定レポート ---
@@ -58,7 +67,9 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InboundPlanReportItem>> getInboundPlanReport(
             Long warehouseId, LocalDate plannedDateFrom, LocalDate plannedDateTo,
             String status, Long partnerId, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
+        return inboundPlanReportService.generate(
+                warehouseId, plannedDateFrom, plannedDateTo, status, partnerId, effectiveFormat);
     }
 
     // --- RPT-04: 入庫実績レポート ---
@@ -66,21 +77,25 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InboundResultReportItem>> getInboundResultReport(
             Long warehouseId, LocalDate storedDateFrom, LocalDate storedDateTo,
             Long partnerId, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
+        return inboundResultReportService.generate(
+                warehouseId, storedDateFrom, storedDateTo, partnerId, effectiveFormat);
     }
 
     // --- RPT-05: 未入荷リスト（リアルタイム） ---
     @Override
     public ResponseEntity<List<UnreceivedRealtimeReportItem>> getUnreceivedRealtimeReport(
             Long warehouseId, LocalDate asOfDate, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
+        return unreceivedRealtimeReportService.generate(warehouseId, asOfDate, effectiveFormat);
     }
 
     // --- RPT-06: 未入荷リスト（確定） ---
     @Override
     public ResponseEntity<List<UnreceivedConfirmedReportItem>> getUnreceivedConfirmedReport(
             Long warehouseId, LocalDate batchBusinessDate, ReportFormat format) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
+        return unreceivedConfirmedReportService.generate(warehouseId, batchBusinessDate, effectiveFormat);
     }
 
     // --- RPT-07: 在庫一覧レポート ---
