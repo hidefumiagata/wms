@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">配送リスト</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .slip-header {
+            background: #F5F5F5;
+            font-weight: bold;
+            padding: 2mm 3mm;
+            border: 1px solid #999;
+            margin-top: 3mm;
+            font-size: 9pt;
+        }
+        .slip-header span {
+            margin-right: 8mm;
+        }
+        .detail-table {
+            margin-left: 5mm;
+            width: calc(100% - 5mm);
+        }
+        .detail-table th {
+            font-size: 7pt;
+        }
+        .col-no { width: 8mm; }
+        .col-product-code { width: 35mm; }
+        .col-product-name { width: 92mm; }
+        .col-unit { width: 20mm; }
+        .col-qty { width: 20mm; }
+
+        .grand-total {
+            margin-top: 5mm;
+            font-weight: bold;
+            font-size: 10pt;
+            border: 1px solid #999;
+            padding: 2mm 5mm;
+            background: #1a1a2e;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:each="item : ${items}">
+            <!-- 伝票ヘッダー行 -->
+            <div class="slip-header">
+                <span th:text="'▼ ' + ${item.slipNumber}">▼ OUT-00050</span>
+                <span th:text="${item.customerName != null ? item.customerName : '—'}">出荷先A</span>
+                <span th:text="${item.plannedShipDate != null ? #temporals.format(item.plannedShipDate, 'yyyy-MM-dd') : '—'}">2026-03-15</span>
+                <span th:text="${item.statusLabel}">出荷完了</span>
+                <span th:text="${item.carrier != null ? item.carrier : '—'}">ヤマト</span>
+                <span th:text="${item.trackingNumber != null ? item.trackingNumber : '—'}">123456</span>
+            </div>
+            <!-- 明細行テーブル -->
+            <table class="detail-table" th:if="${item.lines != null and !item.lines.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th class="col-no">No.</th>
+                        <th class="col-product-code">商品コード</th>
+                        <th class="col-product-name">商品名</th>
+                        <th class="col-unit">荷姿</th>
+                        <th class="col-qty">数量</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="line, stat : ${item.lines}">
+                        <td class="text-right" th:text="${stat.count}">1</td>
+                        <td th:text="${line.productCode}">P-001</td>
+                        <td th:text="${line.productName}">商品A</td>
+                        <td class="text-center" th:text="${line.unitType}">CS</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(line.quantity, 1, 'COMMA')}">3</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="subtotal-row">
+                        <td colspan="3"></td>
+                        <td>伝票小計</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(item.totalQuantityPcs, 1, 'COMMA')}">23</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+
+        <!-- 総合計 -->
+        <div class="grand-total">
+            <span>総合計: </span>
+            <span class="text-right"
+                  th:text="${#numbers.formatInteger(#aggregates.sum(items.![totalQuantityPcs]), 1, 'COMMA')}">40</span>
+        </div>
+    </th:block>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">ピッキング指示書</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'portrait')}" />
+    <style>
+        /* ピッキング指示書は現場帳票のため文字サイズ10pt / 行高さ8mm */
+        body { font-size: 10pt; }
+        td { line-height: 8mm; }
+
+        .col-no { width: 4%; }
+        .col-location { width: 15%; }
+        .col-product-code { width: 11%; }
+        .col-product-name { width: 17%; }
+        .col-unit { width: 6%; }
+        .col-qty { width: 6%; }
+        .col-lot { width: 11%; }
+        .col-slip { width: 13%; }
+        .col-customer { width: 13%; }
+        .col-check { width: 4%; }
+
+        .instruction-header {
+            margin-bottom: 3mm;
+            font-size: 9pt;
+            color: #555;
+        }
+        .instruction-header span {
+            margin-right: 10mm;
+        }
+        .check-box {
+            font-size: 12pt;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- ピッキング指示固有ヘッダー -->
+    <div class="instruction-header">
+        <span>指示No: <b th:text="${instructionNumber}">PICK-2026-00010</b></span>
+        <span>ステータス: <b th:text="${status}">作成済</b></span>
+    </div>
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.locationCode, T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-no">No.</th>
+                        <th class="col-location">ロケーション</th>
+                        <th class="col-product-code">商品コード</th>
+                        <th class="col-product-name">商品名</th>
+                        <th class="col-unit">荷姿</th>
+                        <th class="col-qty">指示数</th>
+                        <th class="col-lot">ロット番号</th>
+                        <th class="col-slip">受注No.</th>
+                        <th class="col-customer">出荷先</th>
+                        <th class="col-check">済</th>
+                    </tr>
+                </thead>
+                <tbody th:each="entry : ${groups.entrySet()}">
+                    <!-- グループヘッダー -->
+                    <tr class="group-header">
+                        <td colspan="10" th:text="'【' + ${entry.key} + '】'">【A-01-A-01-01-01】</td>
+                    </tr>
+                    <!-- 明細行 -->
+                    <tr th:each="item, stat : ${entry.value}">
+                        <td class="text-right" th:text="${stat.count}">1</td>
+                        <td th:text="${item.locationCode}">A-01-A-01</td>
+                        <td th:text="${item.productCode}">P-001</td>
+                        <td th:text="${item.productName}">商品A</td>
+                        <td class="text-center" th:text="${item.unitType}">CAS</td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(item.instructedQuantity, 1, 'COMMA')}">3</td>
+                        <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-01</td>
+                        <td th:text="${item.outboundSlipNumber}">OUT-050</td>
+                        <td th:text="${item.customerName != null ? item.customerName : '—'}">出荷先A</td>
+                        <td class="check-box">□</td>
+                    </tr>
+                    <!-- 小計行 -->
+                    <tr class="subtotal-row">
+                        <td colspan="3"></td>
+                        <td>小計</td>
+                        <td></td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![instructedQuantity]), 1, 'COMMA')}">13</td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3"></td>
+                        <td>合計</td>
+                        <td></td>
+                        <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![instructedQuantity]), 1, 'COMMA')}">18</td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>

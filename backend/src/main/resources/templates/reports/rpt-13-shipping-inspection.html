@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">出荷検品レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 12mm; }
+        .col-product-code { width: 35mm; }
+        .col-product-name { width: 70mm; }
+        .col-unit { width: 25mm; }
+        .col-qty { width: 35mm; }
+        .col-diff { width: 30mm; }
+        .col-judge { width: 35mm; }
+
+        .inspection-header {
+            margin-bottom: 3mm;
+            font-size: 8pt;
+            color: #555;
+        }
+        .inspection-header span {
+            margin-right: 10mm;
+        }
+        .text-red { color: #D32F2F; }
+        .text-green { color: #2E7D32; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- 出荷検品固有ヘッダー -->
+    <div class="inspection-header">
+        <span>伝票No: <b th:text="${slipNumber}">OUT-2026-00050</b></span>
+        <span>出荷先: <b th:text="${customerName != null ? customerName : '—'}">テスト出荷先A</b></span>
+        <span>出荷予定日: <b th:text="${plannedShipDate != null ? #temporals.format(plannedShipDate, 'yyyy-MM-dd') : '—'}">2026-03-15</b></span>
+    </div>
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-no">No.</th>
+                    <th class="col-product-code">商品コード</th>
+                    <th class="col-product-name">商品名</th>
+                    <th class="col-unit">荷姿</th>
+                    <th class="col-qty">ピッキング数</th>
+                    <th class="col-qty">検品数</th>
+                    <th class="col-diff">差異</th>
+                    <th class="col-judge">判定</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item, stat : ${items}"
+                    th:classappend="${item.diffQuantity != null and item.diffQuantity != 0} ? 'highlight-pink' : ''">
+                    <td class="text-right" th:text="${stat.count}">1</td>
+                    <td th:text="${item.productCode}">P-001</td>
+                    <td th:text="${item.productName}">商品A</td>
+                    <td class="text-center" th:text="${item.unitType}">CASE</td>
+                    <td class="text-right" th:text="${#numbers.formatInteger(item.pickedQuantity, 1, 'COMMA')}">3</td>
+                    <td class="text-right" th:text="${item.inspectedQuantity != null ? #numbers.formatInteger(item.inspectedQuantity, 1, 'COMMA') : '—'}">3</td>
+                    <td class="text-right"
+                        th:classappend="${item.diffQuantity != null and item.diffQuantity != 0} ? 'text-red' : ''"
+                        th:text="${item.diffQuantity != null ? #numbers.formatInteger(item.diffQuantity, 1, 'COMMA') : '—'}">0</td>
+                    <td class="text-center"
+                        th:classappend="${item.diffQuantity != null and item.diffQuantity != 0} ? 'text-red' : 'text-green'"
+                        th:text="${item.diffQuantity == null ? '—' : (item.diffQuantity == 0 ? 'OK' : 'NG')}">OK</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td></td>
+                    <td></td>
+                    <td>合計</td>
+                    <td></td>
+                    <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![pickedQuantity]), 1, 'COMMA')}">18</td>
+                    <td class="text-right"
+                        th:with="inspected=${items.stream().filter(i -> i.inspectedQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                        th:text="${inspected.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(inspected.![inspectedQuantity]), 1, 'COMMA')}">16</td>
+                    <td class="text-right"
+                        th:with="diffs=${items.stream().filter(i -> i.diffQuantity != null).collect(T(java.util.stream.Collectors).toList())}"
+                        th:text="${diffs.isEmpty() ? '—' : #numbers.formatInteger(#aggregates.sum(diffs.![diffQuantity]), 1, 'COMMA')}">-2</td>
+                    <td class="text-center"
+                        th:with="diffs=${items.stream().filter(i -> i.diffQuantity != null).collect(T(java.util.stream.Collectors).toList())},
+                                 diffSum=${diffs.isEmpty() ? 0 : #aggregates.sum(diffs.![diffQuantity])}"
+                        th:classappend="${diffSum != 0} ? 'text-red' : 'text-green'"
+                        th:text="${diffs.isEmpty() ? '—' : (diffSum == 0 ? 'ALL OK' : 'NG あり')}">ALL OK</td>
+                </tr>
+            </tfoot>
+        </table>
+    </th:block>
+</body>
+</html>
