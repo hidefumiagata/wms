@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">入荷検品レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-product-code { width: 28mm; }
+        .col-product-name { width: 50mm; }
+        .col-case-qty { width: 18mm; }
+        .col-planned-cas { width: 20mm; }
+        .col-inspected-cas { width: 20mm; }
+        .col-diff-cas { width: 18mm; }
+        .col-planned-pcs { width: 20mm; }
+        .col-inspected-pcs { width: 20mm; }
+        .col-diff-pcs { width: 18mm; }
+        .col-lot { width: 22mm; }
+        .col-expiry { width: 20mm; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- 伝票情報（1ページ目） -->
+    <table class="report-header-table" th:if="${!items.isEmpty()}">
+        <tr>
+            <td class="label">伝票番号:</td>
+            <td th:text="${items[0].slipNumber}">INB-2026-00123</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="label">仕入先:</td>
+            <td th:text="${items[0].supplierName}">テスト仕入先A</td>
+            <td class="value-right">入荷予定日: <span th:text="${#temporals.format(items[0].plannedDate, 'yyyy-MM-dd')}">2026-03-14</span></td>
+        </tr>
+    </table>
+
+    <!-- データなし -->
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <!-- 明細テーブル -->
+    <table th:if="${!items.isEmpty()}">
+        <thead>
+            <tr>
+                <th class="col-no">No.</th>
+                <th class="col-product-code">商品コード</th>
+                <th class="col-product-name">商品名</th>
+                <th class="col-case-qty">ケース入数</th>
+                <th class="col-planned-cas">予定数(CS)</th>
+                <th class="col-inspected-cas">検品数(CS)</th>
+                <th class="col-diff-cas">差異(CS)</th>
+                <th class="col-planned-pcs">予定数(pc)</th>
+                <th class="col-inspected-pcs">検品数(pc)</th>
+                <th class="col-diff-pcs">差異(pc)</th>
+                <th class="col-lot">ロット番号</th>
+                <th class="col-expiry">期限日</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item, stat : ${items}"
+                th:classappend="${(item.diffQuantityPcs != null and item.diffQuantityPcs != 0) or (item.diffQuantityCas != null and item.diffQuantityCas != 0) ? 'highlight-pink' : ''}">
+                <td class="text-right" th:text="${stat.count}">1</td>
+                <td th:text="${item.productCode}">P-001</td>
+                <td th:text="${item.productName}">商品A</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(item.caseQuantity, 1, 'COMMA')}">10</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(item.plannedQuantityCas, 1, 'COMMA')}">5</td>
+                <td class="text-right" th:text="${item.inspectedQuantityCas != null ? #numbers.formatInteger(item.inspectedQuantityCas, 1, 'COMMA') : '—'}">5</td>
+                <td class="text-right"
+                    th:classappend="${item.diffQuantityCas != null and item.diffQuantityCas != 0 ? 'text-bold' : ''}"
+                    th:text="${item.diffQuantityCas != null ? #numbers.formatInteger(item.diffQuantityCas, 1, 'COMMA') : '—'}">0</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(item.plannedQuantityPcs, 1, 'COMMA')}">50</td>
+                <td class="text-right" th:text="${item.inspectedQuantityPcs != null ? #numbers.formatInteger(item.inspectedQuantityPcs, 1, 'COMMA') : '—'}">50</td>
+                <td class="text-right"
+                    th:classappend="${item.diffQuantityPcs != null and item.diffQuantityPcs != 0 ? 'text-bold' : ''}"
+                    th:text="${item.diffQuantityPcs != null ? #numbers.formatInteger(item.diffQuantityPcs, 1, 'COMMA') : '—'}">0</td>
+                <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
+                <td class="text-center" th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'yyyy-MM-dd') : '—'}">2027-03</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2"></td>
+                <td>合計</td>
+                <td></td>
+                <td class="text-right" th:text="${#aggregates.sum(items.![plannedQuantityCas]) != null ? #numbers.formatInteger(#aggregates.sum(items.![plannedQuantityCas]), 1, 'COMMA') : '0'}">20</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(items.?[inspectedQuantityCas != null].![inspectedQuantityCas].isEmpty() ? 0 : #aggregates.sum(items.?[inspectedQuantityCas != null].![inspectedQuantityCas]), 1, 'COMMA')}">20</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(items.?[diffQuantityCas != null].![diffQuantityCas].isEmpty() ? 0 : #aggregates.sum(items.?[diffQuantityCas != null].![diffQuantityCas]), 1, 'COMMA')}">0</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(items.![plannedQuantityPcs]), 1, 'COMMA')}">178</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(items.?[inspectedQuantityPcs != null].![inspectedQuantityPcs].isEmpty() ? 0 : #aggregates.sum(items.?[inspectedQuantityPcs != null].![inspectedQuantityPcs]), 1, 'COMMA')}">172</td>
+                <td class="text-right" th:text="${#numbers.formatInteger(items.?[diffQuantityPcs != null].![diffQuantityPcs].isEmpty() ? 0 : #aggregates.sum(items.?[diffQuantityPcs != null].![diffQuantityPcs]), 1, 'COMMA')}">-6</td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
+    </table>
+</body>
+</html>

@@ -98,6 +98,9 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testRuntimeOnly 'com.h2database:h2'
 
+    // Test - PDF verification (Apache PDFBox)
+    testImplementation 'org.apache.pdfbox:pdfbox:3.0.2'
+
     // Test - Lombok
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'

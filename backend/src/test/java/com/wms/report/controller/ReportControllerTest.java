@@ -1,11 +1,19 @@
 package com.wms.report.controller;
 
-import com.wms.report.service.ReportExportService;
+import com.wms.report.service.InboundInspectionReportService;
+import com.wms.report.service.InboundPlanReportService;
+import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.UnreceivedConfirmedReportService;
+import com.wms.report.service.UnreceivedRealtimeReportService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -23,6 +31,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,7 +45,19 @@ class ReportControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ReportExportService reportExportService;
+    private InboundInspectionReportService inboundInspectionReportService;
+
+    @MockitoBean
+    private InboundPlanReportService inboundPlanReportService;
+
+    @MockitoBean
+    private InboundResultReportService inboundResultReportService;
+
+    @MockitoBean
+    private UnreceivedRealtimeReportService unreceivedRealtimeReportService;
+
+    @MockitoBean
+    private UnreceivedConfirmedReportService unreceivedConfirmedReportService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -101,12 +123,12 @@ class ReportControllerTest {
     }
 
     @Nested
-    @DisplayName("全エンドポイントの未実装テスト")
-    class NotImplementedTests {
+    @DisplayName("実装済みエンドポイントテスト（サービスがmockで500）")
+    class ImplementedTests {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-01: 入荷検品レポート — 未実装で500")
+        @DisplayName("RPT-01: 入荷検品レポート — サービスが呼び出される（mockはnull返却で500）")
         void rpt01_inboundInspection() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inbound-inspection")
                             .param("slipId", "1")
@@ -116,7 +138,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-03: 入荷予定レポート — 未実装で500")
+        @DisplayName("RPT-03: 入荷予定レポート — サービスが呼び出される（mockはnull返却で500）")
         void rpt03_inboundPlan() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inbound-plan")
                             .param("warehouseId", "1")
@@ -126,7 +148,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-04: 入庫実績レポート — 未実装で500")
+        @DisplayName("RPT-04: 入庫実績レポート — サービスが呼び出される（mockはnull返却で500）")
         void rpt04_inboundResult() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inbound-result")
                             .param("warehouseId", "1")
@@ -136,7 +158,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-05: 未入荷リスト（リアルタイム） — 未実装で500")
+        @DisplayName("RPT-05: 未入荷リスト（リアルタイム） — サービスが呼び出される（mockはnull返却で500）")
         void rpt05_unreceivedRealtime() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/unreceived-realtime")
                             .param("warehouseId", "1")
@@ -146,7 +168,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-06: 未入荷リスト（確定） — 未実装で500")
+        @DisplayName("RPT-06: 未入荷リスト（確定） — サービスが呼び出される（mockはnull返却で500）")
         void rpt06_unreceivedConfirmed() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/unreceived-confirmed")
                             .param("warehouseId", "1")

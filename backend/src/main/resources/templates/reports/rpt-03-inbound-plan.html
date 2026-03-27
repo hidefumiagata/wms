@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">入荷予定レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-slip { width: 40mm; }
+        .col-date { width: 28mm; }
+        .col-product-code { width: 30mm; }
+        .col-product-name { width: 65mm; }
+        .col-qty { width: 28mm; }
+        .col-status { width: 30mm; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <!-- データなし -->
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <!-- グルーピング: 仕入先別 -->
+    <th:block th:if="${!items.isEmpty()}">
+        <!--/* 仕入先でグルーピング */-->
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <th:block th:each="entry : ${groups.entrySet()}">
+                <!-- グループヘッダー -->
+                <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
+                    仕入先: <span th:text="${entry.key}">テスト仕入先A</span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th class="col-slip">伝票番号</th>
+                            <th class="col-date">入荷予定日</th>
+                            <th class="col-product-code">商品コード</th>
+                            <th class="col-product-name">商品名</th>
+                            <th class="col-qty">予定数(ケース)</th>
+                            <th class="col-qty">予定数(バラ)</th>
+                            <th class="col-status">ステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, stat : ${entry.value}"
+                            th:classappend="${item.status == 'CANCELLED' ? 'text-strike' : (item.status == 'STORED' ? 'highlight-pink' : '')}">
+                            <td class="text-right" th:text="${stat.count}">1</td>
+                            <td th:text="${item.slipNumber}">INB-2026-00124</td>
+                            <td class="text-center" th:text="${#temporals.format(item.plannedDate, 'yyyy-MM-dd')}">2026-03-15</td>
+                            <td th:text="${item.productCode}">P-002</td>
+                            <td th:text="${item.productName}">商品B</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.plannedQuantityCas, 1, 'COMMA')}">10</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.plannedQuantityPcs, 1, 'COMMA')}">100</td>
+                            <td class="text-center" th:text="${item.statusLabel}">入荷予定</td>
+                        </tr>
+                        <!-- 小計行 -->
+                        <tr class="subtotal-row">
+                            <td colspan="4"></td>
+                            <td>小計</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![plannedQuantityCas]), 1, 'COMMA')}">15</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![plannedQuantityPcs]), 1, 'COMMA')}">150</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </th:block>
+
+            <!-- 全体合計 -->
+            <table>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4" style="width: 171mm;"></td>
+                        <td style="width: 65mm;">合計</td>
+                        <td class="text-right" style="width: 28mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![plannedQuantityCas]), 1, 'COMMA')}">35</td>
+                        <td class="text-right" style="width: 28mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![plannedQuantityPcs]), 1, 'COMMA')}">350</td>
+                        <td style="width: 30mm;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>
