@@ -114,9 +114,10 @@ checkstyle {
     maxErrors = 0
 }
 
-// Exclude generated sources from Checkstyle
+// Exclude generated sources and testdata generator from Checkstyle
 tasks.withType(Checkstyle).configureEach {
     exclude '**/com/wms/generated/**'
+    exclude '**/com/wms/testdata/**'
 }
 
 // --- SpotBugs ---
@@ -158,11 +159,19 @@ jacocoTestReport {
     }
 }
 
-// --- Load Test Data Generator ---
+// --- Load Test Data Generator (not included in production artifact) ---
+sourceSets {
+    testdata {
+        java {
+            srcDir 'src/testdata/java'
+        }
+    }
+}
+
 tasks.register('generateLoadTestData', JavaExec) {
     description = 'Generate 1-year load test SQL data'
     group = 'testdata'
-    classpath = sourceSets.main.runtimeClasspath
+    classpath = sourceSets.testdata.runtimeClasspath
     mainClass = 'com.wms.testdata.LoadTestDataGenerator'
     args = ["${projectDir}/src/main/resources/db/testdata/loadtest"]
 }
