@@ -519,6 +519,15 @@ class InventoryControllerTest {
         }
 
         @Test
+        @DisplayName("必須パラメータ欠落で400を返す")
+        void getCorrectionHistory_missingParam_returns400() throws Exception {
+            mockMvc.perform(get("/api/v1/inventory/correction-history")
+                            .param("warehouseId", "1")
+                            .param("locationId", "10"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
         @DisplayName("訂正履歴が空の場合は空配列を返す")
         void getCorrectionHistory_empty_returns200() throws Exception {
             when(inventoryCorrectionService.getCorrectionHistory(1L, 10L, 100L, "CASE"))

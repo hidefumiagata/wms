@@ -148,6 +148,20 @@ class InventoryCorrectionServiceTest {
                 .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
     }
 
+    @Test @DisplayName("悲観的ロック取得時に在庫が消えた場合エラー (TOCTOU)")
+    void correct_findByIdForUpdateEmpty_throws() {
+        when(locationService.findById(1L)).thenReturn(loc(1L, false));
+        when(productService.findById(100L)).thenReturn(prod(100L));
+        Inventory i = inv(10L, 5, 0);
+        when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                1L, 100L, "CASE", null, null)).thenReturn(Optional.of(i));
+        when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 3, "理由"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+    }
+
     @Test @DisplayName("訂正後数量が引当数を下回る場合エラー")
     void correct_belowAllocated_throws() {
         when(locationService.findById(1L)).thenReturn(loc(1L, false));
@@ -180,7 +194,7 @@ class InventoryCorrectionServiceTest {
                 movement(1L, -2, 3, "棚卸差異", 10L, now),
                 movement(2L, 5, 10, "入荷漏れ", 20L, now.minusDays(1)));
         when(inventoryMovementRepository
-                .findTop5ByWarehouseIdAndLocationIdAndProductIdAndUnitTypeAndMovementTypeOrderByExecutedAtDesc(
+                .findRecentByCondition(
                         1L, 1L, 100L, "CASE", "CORRECTION"))
                 .thenReturn(movements);
         when(userService.getUserFullNameMap(java.util.Set.of(10L, 20L)))
@@ -201,7 +215,7 @@ class InventoryCorrectionServiceTest {
     @Test @DisplayName("訂正履歴: 履歴なしの場合は空リスト")
     void getCorrectionHistory_empty() {
         when(inventoryMovementRepository
-                .findTop5ByWarehouseIdAndLocationIdAndProductIdAndUnitTypeAndMovementTypeOrderByExecutedAtDesc(
+                .findRecentByCondition(
                         1L, 1L, 100L, "CASE", "CORRECTION"))
                 .thenReturn(List.of());
 
@@ -216,7 +230,7 @@ class InventoryCorrectionServiceTest {
         List<InventoryMovement> movements = List.of(
                 movement(1L, -2, 3, "棚卸差異", 99L, now));
         when(inventoryMovementRepository
-                .findTop5ByWarehouseIdAndLocationIdAndProductIdAndUnitTypeAndMovementTypeOrderByExecutedAtDesc(
+                .findRecentByCondition(
                         1L, 1L, 100L, "CASE", "CORRECTION"))
                 .thenReturn(movements);
         when(userService.getUserFullNameMap(java.util.Set.of(99L)))

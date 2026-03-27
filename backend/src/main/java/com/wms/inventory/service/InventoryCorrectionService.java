@@ -115,8 +115,7 @@ public class InventoryCorrectionService {
     public List<CorrectionHistoryRecord> getCorrectionHistory(
             Long warehouseId, Long locationId, Long productId, String unitType) {
         List<InventoryMovement> movements = inventoryMovementRepository
-                .findTop5ByWarehouseIdAndLocationIdAndProductIdAndUnitTypeAndMovementTypeOrderByExecutedAtDesc(
-                        warehouseId, locationId, productId, unitType, "CORRECTION");
+                .findRecentByCondition(warehouseId, locationId, productId, unitType, "CORRECTION");
 
         if (movements.isEmpty()) {
             return List.of();
@@ -130,7 +129,7 @@ public class InventoryCorrectionService {
         return movements.stream()
                 .map(m -> new CorrectionHistoryRecord(
                         m.getExecutedAt(),
-                        m.getQuantityAfter() - m.getQuantity(),
+                        m.getQuantityAfter() - m.getQuantity(), // quantity = delta (newQty - oldQty), so oldQty = quantityAfter - delta
                         m.getQuantityAfter(),
                         m.getCorrectionReason(),
                         userNameMap.getOrDefault(m.getExecutedBy(), "")))
