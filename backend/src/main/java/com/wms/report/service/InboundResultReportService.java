@@ -12,22 +12,22 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
+import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
+import static com.wms.report.service.ReportServiceUtils.loadProductMap;
+import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
 /**
  * RPT-04: 入庫実績レポートサービス。
@@ -67,7 +67,7 @@ public class InboundResultReportService {
         List<InboundSlipLine> lines = inboundReportRepository.findResultReportData(
                 warehouseId, fromOdt, toOdt, partnerId);
 
-        Map<Long, Product> productMap = loadProductMap(lines);
+        Map<Long, Product> productMap = loadProductMap(lines, productRepository);
 
         List<InboundResultReportItem> items = lines.stream()
                 .map(line -> toReportItem(line, productMap))
@@ -77,7 +77,7 @@ public class InboundResultReportService {
         ReportMeta meta = new ReportMeta(
                 "入庫実績レポート",
                 "rpt-04-inbound-result",
-                "inbound_result_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                "inbound_result_" + todayFileDate(),
                 warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
                 getCurrentUserName(),
                 conditionsSummary,
@@ -91,8 +91,7 @@ public class InboundResultReportService {
 
     private InboundResultReportItem toReportItem(InboundSlipLine line, Map<Long, Product> productMap) {
         var slip = line.getInboundSlip();
-        Product product = productMap.get(line.getProductId());
-        int caseQuantity = product != null ? product.getCaseQuantity() : 1;
+        int caseQuantity = getCaseQuantity(productMap.get(line.getProductId()));
 
         int plannedCas = caseQuantity > 0 ? line.getPlannedQty() / caseQuantity : 0;
         Integer inspectedCas = line.getInspectedQty() != null && caseQuantity > 0
@@ -112,18 +111,8 @@ public class InboundResultReportService {
         item.setInspectedQuantityCas(inspectedCas);
         item.setDiffQuantityCas(diffCas);
         item.setStoredLocationCode(line.getPutawayLocationCode());
-        // returnQuantity は現在未実装（返品モジュール連携待ち）
         item.setReturnQuantity(null);
         return item;
-    }
-
-    private Map<Long, Product> loadProductMap(List<InboundSlipLine> lines) {
-        List<Long> productIds = lines.stream()
-                .map(InboundSlipLine::getProductId)
-                .distinct()
-                .toList();
-        return productRepository.findAllById(productIds).stream()
-                .collect(Collectors.toMap(Product::getId, Function.identity()));
     }
 
     private String buildConditionsSummary(LocalDate from, LocalDate to) {
@@ -150,9 +139,5 @@ public class InboundResultReportService {
                 fmtInteger(item.getReturnQuantity()),
                 fmtOrDash(item.getStoredLocationCode())
         };
-    }
-
-    private String getCurrentUserName() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

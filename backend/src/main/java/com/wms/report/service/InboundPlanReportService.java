@@ -12,20 +12,21 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.INBOUND_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
+import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
+import static com.wms.report.service.ReportServiceUtils.loadProductMap;
+import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
 /**
  * RPT-03: 入荷予定レポートサービス。
@@ -46,16 +47,6 @@ public class InboundPlanReportService {
             "予定数(ケース)", "予定数(バラ)", "ステータス"
     };
 
-    private static final Map<String, String> STATUS_LABELS = Map.of(
-            "PLANNED", "入荷予定",
-            "CONFIRMED", "確定",
-            "INSPECTING", "検品中",
-            "INSPECTED", "検品済",
-            "PARTIAL_STORED", "一部入庫",
-            "STORED", "入庫完了",
-            "CANCELLED", "キャンセル"
-    );
-
     public ResponseEntity<List<InboundPlanReportItem>> generate(
             Long warehouseId, LocalDate plannedDateFrom, LocalDate plannedDateTo,
             String status, Long partnerId, ReportFormat format) {
@@ -68,8 +59,7 @@ public class InboundPlanReportService {
         List<InboundSlipLine> lines = inboundReportRepository.findPlanReportData(
                 warehouseId, plannedDateFrom, plannedDateTo, status, partnerId);
 
-        // 商品マスタからケース入数を取得
-        Map<Long, Product> productMap = loadProductMap(lines);
+        Map<Long, Product> productMap = loadProductMap(lines, productRepository);
 
         List<InboundPlanReportItem> items = lines.stream()
                 .map(line -> toReportItem(line, productMap))
@@ -79,7 +69,7 @@ public class InboundPlanReportService {
         ReportMeta meta = new ReportMeta(
                 "入荷予定レポート",
                 "rpt-03-inbound-plan",
-                "inbound_plan_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                "inbound_plan_" + todayFileDate(),
                 warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
                 getCurrentUserName(),
                 conditionsSummary,
@@ -93,8 +83,7 @@ public class InboundPlanReportService {
 
     private InboundPlanReportItem toReportItem(InboundSlipLine line, Map<Long, Product> productMap) {
         var slip = line.getInboundSlip();
-        Product product = productMap.get(line.getProductId());
-        int caseQuantity = product != null ? product.getCaseQuantity() : 1;
+        int caseQuantity = getCaseQuantity(productMap.get(line.getProductId()));
 
         int plannedPcs = line.getPlannedQty();
         int plannedCas = caseQuantity > 0 ? plannedPcs / caseQuantity : 0;
@@ -108,17 +97,8 @@ public class InboundPlanReportService {
         item.setPlannedQuantityCas(plannedCas);
         item.setPlannedQuantityPcs(plannedPcs);
         item.setStatus(slip.getStatus());
-        item.setStatusLabel(STATUS_LABELS.getOrDefault(slip.getStatus(), slip.getStatus()));
+        item.setStatusLabel(INBOUND_STATUS_LABELS.getOrDefault(slip.getStatus(), slip.getStatus()));
         return item;
-    }
-
-    private Map<Long, Product> loadProductMap(List<InboundSlipLine> lines) {
-        List<Long> productIds = lines.stream()
-                .map(InboundSlipLine::getProductId)
-                .distinct()
-                .toList();
-        return productRepository.findAllById(productIds).stream()
-                .collect(Collectors.toMap(Product::getId, Function.identity()));
     }
 
     private String buildConditionsSummary(LocalDate from, LocalDate to, String status) {
@@ -133,7 +113,7 @@ public class InboundPlanReportService {
             if (!sb.isEmpty()) {
                 sb.append(" / ");
             }
-            sb.append("ステータス: ").append(STATUS_LABELS.getOrDefault(status, status));
+            sb.append("ステータス: ").append(INBOUND_STATUS_LABELS.getOrDefault(status, status));
         }
         return sb.toString();
     }
@@ -149,9 +129,5 @@ public class InboundPlanReportService {
                 fmtInteger(item.getPlannedQuantityPcs()),
                 fmtOrDash(item.getStatusLabel())
         };
-    }
-
-    private String getCurrentUserName() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

@@ -10,17 +10,18 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.INBOUND_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
+import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
 /**
  * RPT-06: 未入荷リスト（確定）サービス。
@@ -41,14 +42,6 @@ public class UnreceivedConfirmedReportService {
             "商品コード", "商品名", "予定数(ケース)", "バッチ時点ステータス"
     };
 
-    private static final java.util.Map<String, String> STATUS_LABELS = java.util.Map.of(
-            "PLANNED", "入荷予定",
-            "CONFIRMED", "確定",
-            "INSPECTING", "検品中",
-            "INSPECTED", "検品済",
-            "PARTIAL_STORED", "一部入庫"
-    );
-
     public ResponseEntity<List<UnreceivedConfirmedReportItem>> generate(
             Long warehouseId, LocalDate batchBusinessDate, ReportFormat format) {
 
@@ -62,13 +55,13 @@ public class UnreceivedConfirmedReportService {
                 .findByBatchBusinessDateAndWarehouseCode(batchBusinessDate, warehouse.getWarehouseCode());
 
         List<UnreceivedConfirmedReportItem> items = records.stream()
-                .map(record -> toReportItem(record))
+                .map(this::toReportItem)
                 .toList();
 
         ReportMeta meta = new ReportMeta(
                 "未入荷リスト（確定）",
                 "rpt-06-unreceived-confirmed",
-                "unreceived_confirmed_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                "unreceived_confirmed_" + todayFileDate(),
                 warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
                 getCurrentUserName(),
                 "営業日基準日: " + fmtDate(batchBusinessDate) + "（日替確定）",
@@ -102,11 +95,7 @@ public class UnreceivedConfirmedReportService {
                 item.getProductCode(),
                 item.getProductName(),
                 fmtInteger(item.getPlannedQuantityCas()),
-                STATUS_LABELS.getOrDefault(item.getStatusAtBatch(), fmtOrDash(item.getStatusAtBatch()))
+                INBOUND_STATUS_LABELS.getOrDefault(item.getStatusAtBatch(), fmtOrDash(item.getStatusAtBatch()))
         };
-    }
-
-    private String getCurrentUserName() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

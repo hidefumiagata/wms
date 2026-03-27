@@ -11,18 +11,19 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
+import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
+import static com.wms.report.service.ReportServiceUtils.loadProductMap;
+import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
 /**
  * RPT-01: 入荷検品レポートサービス。
@@ -52,14 +53,7 @@ public class InboundInspectionReportService {
         }
 
         InboundSlip slip = lines.getFirst().getInboundSlip();
-
-        // 商品マスタからケース入数を取得
-        List<Long> productIds = lines.stream()
-                .map(InboundSlipLine::getProductId)
-                .distinct()
-                .toList();
-        Map<Long, Product> productMap = productRepository.findAllById(productIds).stream()
-                .collect(Collectors.toMap(Product::getId, Function.identity()));
+        Map<Long, Product> productMap = loadProductMap(lines, productRepository);
 
         List<InboundInspectionReportItem> items = lines.stream()
                 .map(line -> toReportItem(slip, line, productMap))
@@ -68,8 +62,7 @@ public class InboundInspectionReportService {
         ReportMeta meta = new ReportMeta(
                 "入荷検品レポート",
                 "rpt-01-inbound-inspection",
-                "inbound_inspection_" + java.time.LocalDate.now().format(
-                        java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")),
+                "inbound_inspection_" + todayFileDate(),
                 slip.getWarehouseName() + " (" + slip.getWarehouseCode() + ")",
                 getCurrentUserName(),
                 "伝票番号: " + slip.getSlipNumber(),
@@ -85,7 +78,7 @@ public class InboundInspectionReportService {
             InboundSlip slip, InboundSlipLine line, Map<Long, Product> productMap) {
 
         Product product = productMap.get(line.getProductId());
-        int caseQuantity = product != null ? product.getCaseQuantity() : 1;
+        int caseQuantity = getCaseQuantity(product);
 
         Integer plannedPcs = line.getPlannedQty();
         Integer inspectedPcs = line.getInspectedQty();
@@ -103,7 +96,7 @@ public class InboundInspectionReportService {
         item.setPlannedDate(slip.getPlannedDate());
         item.setProductCode(line.getProductCode());
         item.setProductName(line.getProductName());
-        item.setCaseQuantity(caseQuantity);
+        item.setCaseQuantity(product != null ? product.getCaseQuantity() : 1);
         item.setPlannedQuantityCas(plannedCas);
         item.setInspectedQuantityCas(inspectedCas);
         item.setDiffQuantityCas(diffCas);
@@ -132,9 +125,5 @@ public class InboundInspectionReportService {
                 fmtOrDash(item.getLotNumber()),
                 fmtDate(item.getExpiryDate())
         };
-    }
-
-    private String getCurrentUserName() {
-        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }
