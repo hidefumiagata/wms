@@ -24,7 +24,7 @@
 
     <!-- グルーピング: 仕入先別 -->
     <th:block th:if="${!items.isEmpty()}">
-        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.stream.Collectors).toList()))}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
             <th:block th:each="entry : ${groups.entrySet()}">
                 <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
                     &#9632; <span th:text="${entry.key}">テスト仕入先A</span>

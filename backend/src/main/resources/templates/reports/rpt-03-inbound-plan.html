@@ -23,7 +23,7 @@
     <!-- グルーピング: 仕入先別 -->
     <th:block th:if="${!items.isEmpty()}">
         <!--/* 仕入先でグルーピング */-->
-        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.stream.Collectors).toList()))}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.supplierName != null ? item.supplierName : '', T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
             <th:block th:each="entry : ${groups.entrySet()}">
                 <!-- グループヘッダー -->
                 <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
