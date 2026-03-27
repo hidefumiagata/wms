@@ -11,6 +11,7 @@ import com.wms.report.repository.InboundReportRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.util.BusinessDateProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import static com.wms.report.service.CsvGenerationService.fmtOrDash;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class UnreceivedRealtimeReportService {
 
@@ -58,6 +60,8 @@ public class UnreceivedRealtimeReportService {
     public ResponseEntity<List<UnreceivedRealtimeReportItem>> generate(
             Long warehouseId, LocalDate asOfDate, ReportFormat format) {
 
+        log.info("RPT-05 未入荷リスト（リアルタイム）生成開始: warehouseId={}, asOfDate={}, format={}",
+                warehouseId, asOfDate, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + warehouseId));
@@ -84,6 +88,7 @@ public class UnreceivedRealtimeReportService {
                 row -> csvRowMapper((UnreceivedRealtimeReportItem) row)
         );
 
+        log.info("RPT-05 未入荷リスト（リアルタイム）生成完了: warehouseId={}, 件数={}", warehouseId, items.size());
         return reportExportService.export(items, format, meta);
     }
 

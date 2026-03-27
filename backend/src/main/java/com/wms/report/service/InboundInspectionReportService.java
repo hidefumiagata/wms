@@ -9,6 +9,7 @@ import com.wms.master.repository.ProductRepository;
 import com.wms.report.repository.InboundReportRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import static com.wms.report.service.CsvGenerationService.fmtOrDash;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class InboundInspectionReportService {
 
@@ -42,6 +44,7 @@ public class InboundInspectionReportService {
     };
 
     public ResponseEntity<List<InboundInspectionReportItem>> generate(Long slipId, ReportFormat format) {
+        log.info("RPT-01 入荷検品レポート生成開始: slipId={}, format={}", slipId, format);
         List<InboundSlipLine> lines = inboundReportRepository.findInspectionReportData(slipId);
         if (lines.isEmpty()) {
             throw new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
@@ -74,6 +77,7 @@ public class InboundInspectionReportService {
                 row -> csvRowMapper((InboundInspectionReportItem) row)
         );
 
+        log.info("RPT-01 入荷検品レポート生成完了: slipId={}, 件数={}", slipId, items.size());
         return reportExportService.export(items, format, meta);
     }
 

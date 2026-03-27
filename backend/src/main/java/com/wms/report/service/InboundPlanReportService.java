@@ -10,6 +10,7 @@ import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.InboundReportRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import static com.wms.report.service.CsvGenerationService.fmtOrDash;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class InboundPlanReportService {
 
@@ -58,6 +60,7 @@ public class InboundPlanReportService {
             Long warehouseId, LocalDate plannedDateFrom, LocalDate plannedDateTo,
             String status, Long partnerId, ReportFormat format) {
 
+        log.info("RPT-03 入荷予定レポート生成開始: warehouseId={}, format={}", warehouseId, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + warehouseId));
@@ -84,6 +87,7 @@ public class InboundPlanReportService {
                 row -> csvRowMapper((InboundPlanReportItem) row)
         );
 
+        log.info("RPT-03 入荷予定レポート生成完了: warehouseId={}, 件数={}", warehouseId, items.size());
         return reportExportService.export(items, format, meta);
     }
 

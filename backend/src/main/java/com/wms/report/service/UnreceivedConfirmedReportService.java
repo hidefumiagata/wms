@@ -8,6 +8,7 @@ import com.wms.report.entity.UnreceivedListRecord;
 import com.wms.report.repository.UnreceivedListRecordRepository;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import static com.wms.report.service.CsvGenerationService.fmtOrDash;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class UnreceivedConfirmedReportService {
 
@@ -50,6 +52,8 @@ public class UnreceivedConfirmedReportService {
     public ResponseEntity<List<UnreceivedConfirmedReportItem>> generate(
             Long warehouseId, LocalDate batchBusinessDate, ReportFormat format) {
 
+        log.info("RPT-06 未入荷リスト（確定）生成開始: warehouseId={}, batchBusinessDate={}, format={}",
+                warehouseId, batchBusinessDate, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + warehouseId));
@@ -72,6 +76,7 @@ public class UnreceivedConfirmedReportService {
                 row -> csvRowMapper((UnreceivedConfirmedReportItem) row)
         );
 
+        log.info("RPT-06 未入荷リスト（確定）生成完了: warehouseId={}, 件数={}", warehouseId, items.size());
         return reportExportService.export(items, format, meta);
     }
 
