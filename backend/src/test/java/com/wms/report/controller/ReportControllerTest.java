@@ -1,5 +1,8 @@
 package com.wms.report.controller;
 
+import com.wms.report.service.InventoryCorrectionReportService;
+import com.wms.report.service.InventoryReportService;
+import com.wms.report.service.InventoryTransitionReportService;
 import com.wms.report.service.InboundInspectionReportService;
 import com.wms.report.service.InboundPlanReportService;
 import com.wms.report.service.InboundResultReportService;
@@ -58,6 +61,15 @@ class ReportControllerTest {
 
     @MockitoBean
     private UnreceivedConfirmedReportService unreceivedConfirmedReportService;
+
+    @MockitoBean
+    private InventoryReportService inventoryReportService;
+
+    @MockitoBean
+    private InventoryTransitionReportService inventoryTransitionReportService;
+
+    @MockitoBean
+    private InventoryCorrectionReportService inventoryCorrectionReportService;
 
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -179,7 +191,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-07: 在庫一覧レポート — 未実装で500")
+        @DisplayName("RPT-07: 在庫一覧レポート — サービスが呼び出される（mockはnull返却で500）")
         void rpt07_inventory() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory")
                             .param("warehouseId", "1")
@@ -189,7 +201,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-08: 在庫推移レポート — 未実装で500")
+        @DisplayName("RPT-08: 在庫推移レポート — サービスが呼び出される（mockはnull返却で500）")
         void rpt08_inventoryTransition() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory-transition")
                             .param("warehouseId", "1")
@@ -200,7 +212,7 @@ class ReportControllerTest {
 
         @Test
         @WithMockUser(roles = "VIEWER")
-        @DisplayName("RPT-09: 在庫訂正一覧 — 未実装で500")
+        @DisplayName("RPT-09: 在庫訂正一覧 — サービスが呼び出される（mockはnull返却で500）")
         void rpt09_inventoryCorrection() throws Exception {
             mockMvc.perform(get(REPORTS_BASE + "/inventory-correction")
                             .param("warehouseId", "1")

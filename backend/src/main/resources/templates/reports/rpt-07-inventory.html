@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">在庫一覧レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-location { width: 38mm; }
+        .col-building { width: 25mm; }
+        .col-area { width: 30mm; }
+        .col-unit { width: 15mm; }
+        .col-lot { width: 30mm; }
+        .col-expiry { width: 22mm; }
+        .col-qty { width: 22mm; }
+        .col-product-code { width: 25mm; }
+        .col-product-name { width: 18mm; }
+        .text-red { color: #FF0000; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.productCode, T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <th:block th:each="entry : ${groups.entrySet()}">
+                <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
+                    &#9632; <span th:text="${entry.key + ' ' + entry.value[0].productName}">P-001 商品A</span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th class="col-location">ロケーション</th>
+                            <th class="col-building">棟名</th>
+                            <th class="col-area">エリア名</th>
+                            <th class="col-unit">荷姿</th>
+                            <th class="col-lot">ロット番号</th>
+                            <th class="col-expiry">期限日</th>
+                            <th class="col-qty">在庫数量</th>
+                            <th class="col-qty">引当数量</th>
+                            <th class="col-qty">有効在庫</th>
+                            <th class="col-product-code">商品CD</th>
+                            <th class="col-product-name">商品名</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, stat : ${entry.value}"
+                            th:classappend="${item.availableQty != null and item.availableQty == 0 ? 'highlight-gray' : ''}">
+                            <td class="text-right" th:text="${stat.count}">1</td>
+                            <td th:text="${item.locationCode}">A-01-A-01</td>
+                            <td th:text="${item.buildingName}">1号棟</td>
+                            <td th:text="${item.areaName}">保管A</td>
+                            <td class="text-center" th:text="${item.unitType}">CAS</td>
+                            <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
+                            <td class="text-center" th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'yyyy-MM-dd') : '—'}">2027-03-14</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.quantity, 1, 'COMMA')}">100</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.allocatedQty, 1, 'COMMA')}">20</td>
+                            <td class="text-right"
+                                th:classappend="${item.availableQty != null and item.availableQty < 0 ? 'text-red' : ''}"
+                                th:text="${#numbers.formatInteger(item.availableQty, 1, 'COMMA')}">80</td>
+                            <td th:text="${item.productCode}">P-001</td>
+                            <td th:text="${item.productName}">商品A</td>
+                        </tr>
+                        <tr class="subtotal-row">
+                            <td colspan="6"></td>
+                            <td>小計</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![quantity]), 1, 'COMMA')}">150</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![allocatedQty]), 1, 'COMMA')}">20</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(#aggregates.sum(entry.value.![availableQty]), 1, 'COMMA')}">130</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </th:block>
+
+            <table>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6" style="width: 168mm;"></td>
+                        <td style="width: 22mm;">合計</td>
+                        <td class="text-right" style="width: 22mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![quantity]), 1, 'COMMA')}">180</td>
+                        <td class="text-right" style="width: 22mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![allocatedQty]), 1, 'COMMA')}">30</td>
+                        <td class="text-right" style="width: 22mm;" th:text="${#numbers.formatInteger(#aggregates.sum(items.![availableQty]), 1, 'COMMA')}">150</td>
+                        <td colspan="2" style="width: 43mm;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>
