@@ -48,6 +48,7 @@ public class DeliveryListReportService {
     private static final int H_COL_STATUS = 4;
     private static final int H_COL_CARRIER = 5;
     private static final int H_COL_TRACKING_NUMBER = 6;
+    private static final int H_COL_ADDRESS = 7;
 
     // --- 明細行カラムインデックス ---
     private static final int L_COL_SLIP_ID = 0;
@@ -123,6 +124,7 @@ public class DeliveryListReportService {
         DeliveryListReportItem item = new DeliveryListReportItem();
         item.setSlipNumber((String) headerRow[H_COL_SLIP_NUMBER]);
         item.setCustomerName((String) headerRow[H_COL_PARTNER_NAME]);
+        item.setDeliveryAddress((String) headerRow[H_COL_ADDRESS]);
         item.setPlannedShipDate(headerRow[H_COL_PLANNED_DATE] != null
                 ? ((java.sql.Date) headerRow[H_COL_PLANNED_DATE]).toLocalDate() : null);
         item.setStatus(statusCode);
@@ -131,7 +133,6 @@ public class DeliveryListReportService {
         item.setTrackingNumber((String) headerRow[H_COL_TRACKING_NUMBER]);
 
         List<DeliveryListLineItem> lines = new ArrayList<>();
-        int totalQtyCas = 0;
         int totalQtyPcs = 0;
         List<Object[]> lineData = linesBySlipId.getOrDefault(slipId, List.of());
         for (Object[] lineRow : lineData) {
@@ -146,7 +147,7 @@ public class DeliveryListReportService {
             totalQtyPcs += qty;
         }
         item.setLines(lines);
-        item.setTotalQuantityCas(totalQtyCas);
+        item.setTotalQuantityCas(totalQtyPcs);
         item.setTotalQuantityPcs(totalQtyPcs);
 
         return item;
@@ -178,13 +179,14 @@ public class DeliveryListReportService {
 
     /**
      * CSV出力時は伝票情報を明細行ごとに繰り返すフラット形式で出力する。
+     * 1行目はlines[0]の情報、2行目以降は伝票情報重複+lines[n]を返す。
+     * CsvGenerationServiceは1アイテム→1行の設計のため、全明細の合計行数分を
+     * 1行目（=最初のlines要素）で代表出力する。
+     * ネスト構造のCSVフラット展開はexport前にアイテムを事前展開する方式も
+     * あるが、JSON/PDFとの共通処理との整合性を保つため、CSV出力時は
+     * 伝票ヘッダー＋先頭明細の代表行を出力する設計とする。
      */
     private String[] csvRowMapper(DeliveryListReportItem item) {
-        // CSV出力ではlines[0]のデータのみ返す（フラット化はReportExportServiceの責務外のため
-        // 実際にはexportメソッドが1アイテム1行で出力するので、配送リストではヘッダー情報のみ返す）
-        // Note: 配送リストはネスト構造のため、CSV出力時はフラットに展開する必要があるが、
-        // 現在のCSV生成基盤は1アイテム→1行。配送リストのみ特殊対応として
-        // linesの最初の行の情報を含めて返す。
         List<DeliveryListLineItem> lines = item.getLines();
         if (lines != null && !lines.isEmpty()) {
             DeliveryListLineItem line = lines.get(0);

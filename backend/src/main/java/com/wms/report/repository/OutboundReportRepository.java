@@ -69,8 +69,10 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
                    os.planned_date,
                    os.status,
                    os.carrier,
-                   os.tracking_number
+                   os.tracking_number,
+                   p.address
             FROM outbound_slips os
+              LEFT JOIN partners p ON os.partner_id = p.id
             WHERE os.warehouse_id = :warehouseId
               AND (:plannedDateFrom IS NULL OR os.planned_date >= :plannedDateFrom)
               AND (:plannedDateTo IS NULL OR os.planned_date <= :plannedDateTo)

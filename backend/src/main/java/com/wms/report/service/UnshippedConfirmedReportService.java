@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
@@ -62,6 +63,8 @@ public class UnshippedConfirmedReportService {
                 .map(this::toReportItem)
                 .toList();
 
+        Map<String, Object> extraVars = Map.of("statusLabels", OUTBOUND_STATUS_LABELS);
+
         ReportMeta meta = new ReportMeta(
                 "未出荷リスト（確定）",
                 "rpt-16-unshipped-confirmed",
@@ -70,7 +73,8 @@ public class UnshippedConfirmedReportService {
                 getCurrentUserName(),
                 "バッチ処理営業日: " + fmtDate(batchBusinessDate) + "（日替確定）",
                 CSV_HEADERS,
-                row -> csvRowMapper((UnshippedConfirmedReportItem) row)
+                row -> csvRowMapper((UnshippedConfirmedReportItem) row),
+                extraVars
         );
 
         log.info("RPT-16 未出荷リスト（確定）生成完了: warehouseId={}, 件数={}", warehouseId, items.size());

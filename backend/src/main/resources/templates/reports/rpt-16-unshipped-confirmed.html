@@ -46,7 +46,7 @@
                     <td th:text="${item.productCode}">P-002</td>
                     <td th:text="${item.productName}">商品B</td>
                     <td class="text-right" th:text="${#numbers.formatInteger(item.orderedQty, 1, 'COMMA')}">3</td>
-                    <td class="text-center" th:text="${isSameSlip ? '〃' : item.statusAtBatch}">ピッキング中</td>
+                    <td class="text-center" th:text="${isSameSlip ? '〃' : (statusLabels.containsKey(item.statusAtBatch) ? statusLabels[item.statusAtBatch] : item.statusAtBatch)}">ピッキング中</td>
                 </tr>
             </tbody>
             <tfoot>

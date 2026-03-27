@@ -85,7 +85,8 @@ class DeliveryListReportServiceTest {
                 plannedDate != null ? java.sql.Date.valueOf(plannedDate) : null,
                 status,
                 carrier,
-                trackingNumber
+                trackingNumber,
+                "東京都千代田区1-1-1"
         };
     }
 
