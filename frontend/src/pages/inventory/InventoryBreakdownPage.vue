@@ -49,8 +49,8 @@
             />
           </el-select>
           <span v-if="fromInventory" class="inline-info">
-            {{ t('inventory.currentQty') }}: {{ formatNumber(fromInventory.quantity) }}
-            / {{ t('inventory.availableQty') }}: {{ formatNumber(fromInventory.availableQty) }}
+            {{ t('inventory.currentQty') }}: {{ formatNumber(fromInventory.quantity) }} /
+            {{ t('inventory.availableQty') }}: {{ formatNumber(fromInventory.availableQty) }}
           </span>
         </el-form-item>
         <el-form-item :label="t('inventory.breakdownQty')" required>
@@ -67,7 +67,11 @@
       <el-divider content-position="left">{{ t('inventory.conversionPreview') }}</el-divider>
       <el-form label-width="180px">
         <el-form-item :label="t('inventory.toUnitType')" required>
-          <el-select v-model="toUnitType" style="width: 160px" :placeholder="t('inventory.unitType')">
+          <el-select
+            v-model="toUnitType"
+            style="width: 160px"
+            :placeholder="t('inventory.unitType')"
+          >
             <el-option
               v-for="ut in toUnitTypeOptions"
               :key="ut"

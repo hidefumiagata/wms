@@ -1,7 +1,6 @@
 package com.wms.inventory.service;
 
 import com.wms.inventory.entity.Inventory;
-import com.wms.inventory.entity.InventoryMovement;
 import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Location;
@@ -29,7 +28,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InventoryBreakdownService")

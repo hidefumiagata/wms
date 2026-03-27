@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude OpenAPI generated code -->
+    <Match>
+        <Package name="~com\.wms\.generated\..*"/>
+    </Match>
+
+    <!-- Exclude Lombok-generated code (covered by @lombok.Generated) -->
+    <Match>
+        <Annotation name="lombok.Generated"/>
+    </Match>
+
+    <!-- Spring Boot application class -->
+    <Match>
+        <Class name="com.wms.WmsApplication"/>
+    </Match>
+
+    <!-- Suppress EI_EXPOSE_REP / EI_EXPOSE_REP2 for packages where
+         Spring DI constructor injection and record-style DTOs
+         trigger false positives. -->
+    <Match>
+        <Or>
+            <Package name="~com\.wms\..*\.controller"/>
+            <Package name="~com\.wms\..*\.entity"/>
+            <Package name="~com\.wms\..*\.config"/>
+            <Package name="~com\.wms\..*\.service"/>
+            <Package name="~com\.wms\..*\.dto"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- Security package: suppress EI_EXPOSE_REP2 only for Spring filter/handler
+         classes that inject ObjectMapper via constructor (false positives).
+         JwtTokenProvider and WmsUserDetails remain fully checked. -->
+    <Match>
+        <Or>
+            <Class name="com.wms.shared.security.CsrfCustomHeaderFilter"/>
+            <Class name="com.wms.shared.security.CustomAccessDeniedHandler"/>
+            <Class name="com.wms.shared.security.JwtAuthenticationEntryPoint"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

@@ -1,23 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, createAxiosError, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useStocktakeForm } from '@/composables/inventory/useStocktakeForm'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
 
 describe('useStocktakeForm', () => {
   beforeEach(() => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({
-      content: [],
-      totalElements: 0,
-    }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({
+        content: [],
+        totalElements: 0,
+      }),
+    )
   })
 
   it('fetchBuildings が棟マスタを取得する', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({
-      content: [{ id: 1, buildingName: 'A棟' }, { id: 2, buildingName: 'B棟' }],
-    }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({
+        content: [
+          { id: 1, buildingName: 'A棟' },
+          { id: 2, buildingName: 'B棟' },
+        ],
+      }),
+    )
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -34,9 +41,7 @@ describe('useStocktakeForm', () => {
   it('onBuildingChange がエリアを取得しロケーション数を更新する', async () => {
     const areaRes = mockAxiosResponse({ content: [{ id: 10, areaName: 'エリア1' }] })
     const locCountRes = mockAxiosResponse({ totalElements: 15 })
-    vi.mocked(apiClient.get)
-      .mockResolvedValueOnce(areaRes)
-      .mockResolvedValueOnce(locCountRes)
+    vi.mocked(apiClient.get).mockResolvedValueOnce(areaRes).mockResolvedValueOnce(locCountRes)
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -79,9 +84,12 @@ describe('useStocktakeForm', () => {
     result.selectedAreaId.value = 10
     await result.onAreaChange()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/locations', expect.objectContaining({
-      params: expect.objectContaining({ buildingId: 1, areaId: 10 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/locations',
+      expect.objectContaining({
+        params: expect.objectContaining({ buildingId: 1, areaId: 10 }),
+      }),
+    )
   })
 
   it('submitStart がバリデーションエラーを出す（棟未選択）', async () => {
@@ -99,7 +107,9 @@ describe('useStocktakeForm', () => {
   })
 
   it('submitStart が確認後にPOSTリクエストを送信する', async () => {
-    vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse({ id: 99, stocktakeNumber: 'ST-001' }))
+    vi.mocked(apiClient.post).mockResolvedValue(
+      mockAxiosResponse({ id: 99, stocktakeNumber: 'ST-001' }),
+    )
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -115,10 +125,13 @@ describe('useStocktakeForm', () => {
     await result.submitStart()
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.post).toHaveBeenCalledWith('/inventory/stocktakes', expect.objectContaining({
-      warehouseId: 1,
-      buildingId: 1,
-    }))
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/inventory/stocktakes',
+      expect.objectContaining({
+        warehouseId: 1,
+        buildingId: 1,
+      }),
+    )
     expect(ElMessage.success).toHaveBeenCalled()
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'stocktake-detail', params: { id: 99 } })
   })

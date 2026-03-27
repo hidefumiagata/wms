@@ -12,11 +12,7 @@
       <el-divider content-position="left">{{ t('inventory.product') }}</el-divider>
       <el-form label-width="160px">
         <el-form-item :label="t('inventory.locationCode')" required>
-          <el-input
-            v-model="locationCode"
-            style="width: 280px"
-            @keyup.enter="fetchInventory"
-          />
+          <el-input v-model="locationCode" style="width: 280px" @keyup.enter="fetchInventory" />
           <el-button style="margin-left: 8px" @click="fetchInventory">
             {{ t('common.search') }}
           </el-button>
@@ -63,15 +59,15 @@
           </el-form-item>
           <el-form-item :label="t('inventory.allocatedQty')">
             <span :class="{ 'has-allocated': selectedInventory.allocatedQty > 0 }">
-              {{ selectedInventory.allocatedQty > 0 ? formatNumber(selectedInventory.allocatedQty) : '-' }}
+              {{
+                selectedInventory.allocatedQty > 0
+                  ? formatNumber(selectedInventory.allocatedQty)
+                  : '-'
+              }}
             </span>
           </el-form-item>
           <el-form-item :label="t('inventory.newQty')" required>
-            <el-input-number
-              v-model="newQty"
-              :min="0"
-              style="width: 160px"
-            />
+            <el-input-number v-model="newQty" :min="0" style="width: 160px" />
           </el-form-item>
           <el-form-item :label="t('inventory.diff')">
             <span :class="diffClass">

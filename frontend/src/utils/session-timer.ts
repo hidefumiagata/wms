@@ -17,8 +17,8 @@ import i18n from '@/i18n'
 // デフォルト値（API取得前 or 取得失敗時のフォールバック）
 const DEFAULT_WARNING_MS = 55 * 60 * 1000 // 55分
 const DEFAULT_TIMEOUT_MS = 60 * 60 * 1000 // 60分
-const MAX_TIMEOUT_MS = 480 * 60 * 1000    // 上限: 8時間
-const ACTIVITY_THROTTLE_MS = 30_000       // mousemove等のスロットリング間隔: 30秒
+const MAX_TIMEOUT_MS = 480 * 60 * 1000 // 上限: 8時間
+const ACTIVITY_THROTTLE_MS = 30_000 // mousemove等のスロットリング間隔: 30秒
 
 let WARNING_THRESHOLD_MS = DEFAULT_WARNING_MS
 let TIMEOUT_MS = DEFAULT_TIMEOUT_MS
@@ -94,8 +94,14 @@ if (bc) {
 
 // --- タイマー管理 ---
 function clearTimers() {
-  if (warningTimer !== null) { clearTimeout(warningTimer); warningTimer = null }
-  if (timeoutTimer !== null) { clearTimeout(timeoutTimer); timeoutTimer = null }
+  if (warningTimer !== null) {
+    clearTimeout(warningTimer)
+    warningTimer = null
+  }
+  if (timeoutTimer !== null) {
+    clearTimeout(timeoutTimer)
+    timeoutTimer = null
+  }
 }
 
 async function doLogout(options?: { broadcast?: boolean }) {
@@ -129,17 +135,13 @@ async function showWarning() {
 
   let extended = false
   try {
-    await ElMessageBox.confirm(
-      t('auth.sessionWarning'),
-      t('auth.sessionWarningTitle'),
-      {
-        confirmButtonText: t('auth.continueSession'),
-        cancelButtonText: t('auth.logout'),
-        type: 'warning',
-        closeOnClickModal: false,
-        closeOnPressEscape: false,
-      }
-    )
+    await ElMessageBox.confirm(t('auth.sessionWarning'), t('auth.sessionWarningTitle'), {
+      confirmButtonText: t('auth.continueSession'),
+      cancelButtonText: t('auth.logout'),
+      type: 'warning',
+      closeOnClickModal: false,
+      closeOnPressEscape: false,
+    })
     extended = true
   } catch {
     // 「ログアウト」クリック or ダイアログを無視してタイムアウト
@@ -247,9 +249,7 @@ export async function startSessionTimer() {
   } catch {
     // API取得失敗時はデフォルト値を維持
   }
-  ACTIVITY_EVENTS.forEach((event) =>
-    window.addEventListener(event, onActivity, { passive: true })
-  )
+  ACTIVITY_EVENTS.forEach((event) => window.addEventListener(event, onActivity, { passive: true }))
   document.addEventListener('visibilitychange', onVisibilityChange)
   // Axiosインターセプター登録（既存があればまず解除）
   if (interceptorId !== null) {
@@ -270,9 +270,7 @@ export async function startSessionTimer() {
 export function stopSessionTimer() {
   isActive = false
   clearTimers()
-  ACTIVITY_EVENTS.forEach((event) =>
-    window.removeEventListener(event, onActivity)
-  )
+  ACTIVITY_EVENTS.forEach((event) => window.removeEventListener(event, onActivity))
   document.removeEventListener('visibilitychange', onVisibilityChange)
   if (interceptorId !== null) {
     apiClient.interceptors.response.eject(interceptorId)

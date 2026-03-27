@@ -102,12 +102,19 @@
         </el-table-column>
         <el-table-column :label="t('inbound.slip.slipType')" width="100" align="center">
           <template #default="{ row }">
-            {{ row.slipType === 'NORMAL' ? t('inbound.slip.typeNormal') : t('inbound.slip.typeBatch') }}
+            {{
+              row.slipType === 'NORMAL' ? t('inbound.slip.typeNormal') : t('inbound.slip.typeBatch')
+            }}
           </template>
         </el-table-column>
         <el-table-column prop="plannedDate" :label="t('inbound.slip.plannedDate')" width="120" />
         <el-table-column prop="partnerName" :label="t('inbound.slip.partner')" min-width="160" />
-        <el-table-column prop="lineCount" :label="t('inbound.slip.lineCount')" width="80" align="center" />
+        <el-table-column
+          prop="lineCount"
+          :label="t('inbound.slip.lineCount')"
+          width="80"
+          align="center"
+        />
         <el-table-column :label="t('inbound.slip.status')" width="120" align="center">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" size="small">

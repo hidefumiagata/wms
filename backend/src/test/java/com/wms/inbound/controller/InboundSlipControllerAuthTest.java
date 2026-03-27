@@ -1,7 +1,6 @@
 package com.wms.inbound.controller;
 
 import com.wms.inbound.entity.InboundSlip;
-import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.inbound.service.InboundSlipService;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;

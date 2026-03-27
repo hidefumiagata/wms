@@ -5,7 +5,6 @@ import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useOutboundSlipList } from '@/composables/outbound/useOutboundSlipList'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/outbound-slip-summary', () => ({}))
 vi.mock('@/api/generated/models/outbound-slip-page-response', () => ({}))
@@ -43,10 +42,13 @@ describe('useOutboundSlipList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/outbound/slips', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 42 }),
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/outbound/slips',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 42 }),
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.items.value).toHaveLength(1)
   })
 
@@ -104,9 +106,7 @@ describe('useOutboundSlipList', () => {
   it('fetchPartnerOptions が出荷先オプションを取得する', async () => {
     const customerRes = mockAxiosResponse({ content: [{ id: 1, partnerName: '出荷先A' }] })
     const bothRes = mockAxiosResponse({ content: [{ id: 2, partnerName: '兼用B' }] })
-    vi.mocked(apiClient.get)
-      .mockResolvedValueOnce(customerRes)
-      .mockResolvedValueOnce(bothRes)
+    vi.mocked(apiClient.get).mockResolvedValueOnce(customerRes).mockResolvedValueOnce(bothRes)
 
     const { result } = withSetup(() => useOutboundSlipList())
     await result.fetchPartnerOptions()
@@ -169,7 +169,13 @@ describe('useOutboundSlipList', () => {
   it('isViewer がロールに基づいて判定される', () => {
     const { result } = withSetup(() => {
       const auth = useAuthStore()
-      auth.user = { userId: 1, userCode: 'v1', fullName: 'Viewer', role: 'VIEWER', passwordChangeRequired: false }
+      auth.user = {
+        userId: 1,
+        userCode: 'v1',
+        fullName: 'Viewer',
+        role: 'VIEWER',
+        passwordChangeRequired: false,
+      }
       return useOutboundSlipList()
     })
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, createAxiosError, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse, createAxiosError } from '../../helpers'
 import { useInboundSlipDetail } from '@/composables/inbound/useInboundSlipDetail'
 import { useAuthStore } from '@/stores/auth'
 import { mockRoute, mockRouter } from '../../setup'
@@ -37,9 +37,12 @@ describe('useInboundSlipDetail', () => {
     const { result } = withSetup(() => useInboundSlipDetail())
     await result.fetchDetail()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/inbound/slips/1', expect.objectContaining({
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inbound/slips/1',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.slip.value).toEqual(mockSlip)
   })
 
@@ -91,7 +94,7 @@ describe('useInboundSlipDetail', () => {
 
   it('handleCancel で409 INBOUND_ALREADY_STORED エラーを処理する', async () => {
     vi.mocked(apiClient.post).mockRejectedValue(
-      createAxiosError(409, { errorCode: 'INBOUND_ALREADY_STORED' })
+      createAxiosError(409, { errorCode: 'INBOUND_ALREADY_STORED' }),
     )
 
     const { result } = withSetup(() => useInboundSlipDetail())
@@ -111,7 +114,13 @@ describe('useInboundSlipDetail', () => {
   it('canConfirm が VIEWER ロールで false', async () => {
     const { result } = withSetup(() => {
       const auth = useAuthStore()
-      auth.user = { userId: 1, userCode: 'v1', fullName: 'Viewer', role: 'VIEWER', passwordChangeRequired: false }
+      auth.user = {
+        userId: 1,
+        userCode: 'v1',
+        fullName: 'Viewer',
+        role: 'VIEWER',
+        passwordChangeRequired: false,
+      }
       return useInboundSlipDetail()
     })
     await result.fetchDetail()
@@ -137,7 +146,10 @@ describe('useInboundSlipDetail', () => {
   it('goInspect が検品画面に遷移する', () => {
     const { result } = withSetup(() => useInboundSlipDetail())
     result.goInspect()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inbound-slip-inspect', params: { id: 1 } })
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      name: 'inbound-slip-inspect',
+      params: { id: 1 },
+    })
   })
 
   it('goStore が格納画面に遷移する', () => {

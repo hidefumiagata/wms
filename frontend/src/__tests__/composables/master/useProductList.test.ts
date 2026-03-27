@@ -134,7 +134,13 @@ describe('useProductList', () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = withSetup(() => useProductList())
-    const row = { id: 1, productCode: 'PRD001', productName: 'テスト', isActive: true, version: 1 } as never
+    const row = {
+      id: 1,
+      productCode: 'PRD001',
+      productName: 'テスト',
+      isActive: true,
+      version: 1,
+    } as never
 
     await result.handleToggleActive(row)
 
@@ -150,7 +156,13 @@ describe('useProductList', () => {
     vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
 
     const { result } = withSetup(() => useProductList())
-    const row = { id: 1, productCode: 'PRD001', productName: 'テスト', isActive: true, version: 1 } as never
+    const row = {
+      id: 1,
+      productCode: 'PRD001',
+      productName: 'テスト',
+      isActive: true,
+      version: 1,
+    } as never
 
     await result.handleToggleActive(row)
 
@@ -161,7 +173,13 @@ describe('useProductList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = withSetup(() => useProductList())
-    const row = { id: 1, productCode: 'PRD001', productName: 'テスト', isActive: true, version: 1 } as never
+    const row = {
+      id: 1,
+      productCode: 'PRD001',
+      productName: 'テスト',
+      isActive: true,
+      version: 1,
+    } as never
 
     await result.handleToggleActive(row)
 
@@ -170,11 +188,17 @@ describe('useProductList', () => {
 
   it('handleToggleActive の422エラー（在庫あり）でエラーが表示される', async () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(
-      createAxiosError(422, { errorCode: 'CANNOT_DEACTIVATE_HAS_INVENTORY' })
+      createAxiosError(422, { errorCode: 'CANNOT_DEACTIVATE_HAS_INVENTORY' }),
     )
 
     const { result } = withSetup(() => useProductList())
-    const row = { id: 1, productCode: 'PRD001', productName: 'テスト', isActive: true, version: 1 } as never
+    const row = {
+      id: 1,
+      productCode: 'PRD001',
+      productName: 'テスト',
+      isActive: true,
+      version: 1,
+    } as never
 
     await result.handleToggleActive(row)
 

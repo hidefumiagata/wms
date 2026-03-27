@@ -14,8 +14,8 @@ import type { CreateProductRequest } from '@/api/generated/models/create-product
 import type { UpdateProductRequest } from '@/api/generated/models/update-product-request'
 
 // 全角カタカナ（長音・スペース含む）
-const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
-const PRODUCT_CODE_REGEX = /^[A-Za-z0-9\-]+$/
+const KATAKANA_REGEX = /^[ァ-ヶー\u3000 ]*$/
+const PRODUCT_CODE_REGEX = /^[A-Za-z0-9-]+$/
 const BARCODE_REGEX = /^[0-9]*$/
 
 export function useProductForm() {
@@ -55,7 +55,11 @@ export function useProductForm() {
           .regex(BARCODE_REGEX, t('master.product.validation.barcodeFormat'))
           .optional()
           .or(z.literal('')),
-        storageCondition: z.enum([StorageCondition.Ambient, StorageCondition.Refrigerated, StorageCondition.Frozen]),
+        storageCondition: z.enum([
+          StorageCondition.Ambient,
+          StorageCondition.Refrigerated,
+          StorageCondition.Frozen,
+        ]),
         caseQuantity: z
           .number({ invalid_type_error: t('master.product.validation.caseQuantityRange') })
           .int(t('master.product.validation.caseQuantityRange'))
@@ -127,7 +131,9 @@ export function useProductForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // --- API呼び出し ---
   async function checkCodeExists() {
@@ -158,7 +164,9 @@ export function useProductForm() {
 
     initialLoading.value = true
     try {
-      const res = await apiClient.get<ProductDetail>(`/master/products/${productId.value}`, { signal })
+      const res = await apiClient.get<ProductDetail>(`/master/products/${productId.value}`, {
+        signal,
+      })
       setValues({
         productCode: res.data.productCode,
         productName: res.data.productName,
@@ -257,15 +265,11 @@ export function useProductForm() {
 
   async function handleCancel() {
     try {
-      await ElMessageBox.confirm(
-        t('master.product.confirmCancel'),
-        t('common.confirm'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        }
-      )
+      await ElMessageBox.confirm(t('master.product.confirmCancel'), t('common.confirm'), {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
     } catch {
       return // ダイアログキャンセル
     }
@@ -273,18 +277,30 @@ export function useProductForm() {
   }
 
   return {
-    productCode, productCodeAttrs,
-    productName, productNameAttrs,
-    productNameKana, productNameKanaAttrs,
-    barcode, barcodeAttrs,
-    storageCondition, storageConditionAttrs,
-    caseQuantity, caseQuantityAttrs,
-    ballQuantity, ballQuantityAttrs,
-    isHazardous, isHazardousAttrs,
-    lotManageFlag, lotManageFlagAttrs,
-    expiryManageFlag, expiryManageFlagAttrs,
-    shipmentStopFlag, shipmentStopFlagAttrs,
-    isActive, isActiveAttrs,
+    productCode,
+    productCodeAttrs,
+    productName,
+    productNameAttrs,
+    productNameKana,
+    productNameKanaAttrs,
+    barcode,
+    barcodeAttrs,
+    storageCondition,
+    storageConditionAttrs,
+    caseQuantity,
+    caseQuantityAttrs,
+    ballQuantity,
+    ballQuantityAttrs,
+    isHazardous,
+    isHazardousAttrs,
+    lotManageFlag,
+    lotManageFlagAttrs,
+    expiryManageFlag,
+    expiryManageFlagAttrs,
+    shipmentStopFlag,
+    shipmentStopFlagAttrs,
+    isActive,
+    isActiveAttrs,
     errors,
     loading,
     initialLoading,

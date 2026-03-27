@@ -2,7 +2,6 @@ package com.wms.master.service;
 
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
-import com.wms.master.service.UpdatePartnerCommand;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;

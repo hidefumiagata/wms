@@ -14,8 +14,8 @@ export const useWarehouseStore = defineStore('warehouse', () => {
   const selectedWarehouseId = ref<number | null>(null)
   const loading = ref(false)
 
-  const selectedWarehouse = computed(() =>
-    warehouses.value.find((w) => w.id === selectedWarehouseId.value) ?? null,
+  const selectedWarehouse = computed(
+    () => warehouses.value.find((w) => w.id === selectedWarehouseId.value) ?? null,
   )
 
   async function fetchWarehouses() {

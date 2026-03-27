@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useStocktakeDetail } from '@/composables/inventory/useStocktakeDetail'
 import { mockRoute, mockRouter } from '../../setup'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/stocktake-detail', () => ({}))
 vi.mock('@/api/generated/models/stocktake-line-item', () => ({}))
@@ -20,8 +19,24 @@ describe('useStocktakeDetail', () => {
     status: 'IN_PROGRESS',
     lines: {
       content: [
-        { lineId: 1, locationCode: 'A-01', productCode: 'P001', quantityBefore: 10, quantityCounted: null, isCounted: false, quantityDiff: null },
-        { lineId: 2, locationCode: 'A-02', productCode: 'P002', quantityBefore: 5, quantityCounted: 5, isCounted: true, quantityDiff: 0 },
+        {
+          lineId: 1,
+          locationCode: 'A-01',
+          productCode: 'P001',
+          quantityBefore: 10,
+          quantityCounted: null,
+          isCounted: false,
+          quantityDiff: null,
+        },
+        {
+          lineId: 2,
+          locationCode: 'A-02',
+          productCode: 'P002',
+          quantityBefore: 5,
+          quantityCounted: 5,
+          isCounted: true,
+          quantityDiff: 0,
+        },
       ],
     },
   }
@@ -54,7 +69,15 @@ describe('useStocktakeDetail', () => {
       ...mockDetail,
       lines: {
         content: [
-          { lineId: 1, locationCode: 'A-01', productCode: 'P001', quantityBefore: 10, quantityCounted: 10, isCounted: true, quantityDiff: 0 },
+          {
+            lineId: 1,
+            locationCode: 'A-01',
+            productCode: 'P001',
+            quantityBefore: 10,
+            quantityCounted: 10,
+            isCounted: true,
+            quantityDiff: 0,
+          },
         ],
       },
     }

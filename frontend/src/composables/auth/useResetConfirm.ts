@@ -5,7 +5,11 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
-import { calcPasswordStrength, PASSWORD_POLICY_REGEX, type PasswordStrength } from './useChangePassword'
+import {
+  calcPasswordStrength,
+  PASSWORD_POLICY_REGEX,
+  type PasswordStrength,
+} from './useChangePassword'
 
 export function useResetConfirm(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()

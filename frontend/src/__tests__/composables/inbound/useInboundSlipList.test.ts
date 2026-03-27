@@ -28,10 +28,13 @@ describe('useInboundSlipList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/inbound/slips', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 42 }),
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inbound/slips',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 42 }),
+        signal: expect.any(AbortSignal),
+      }),
+    )
   })
 
   it('fetchList が signal を渡す（AbortController対応）', async () => {
@@ -145,9 +148,7 @@ describe('useInboundSlipList', () => {
   it('fetchPartnerOptions が仕入先オプションを取得する', async () => {
     const supplierRes = mockAxiosResponse({ content: [{ id: 1, partnerName: '仕入先A' }] })
     const bothRes = mockAxiosResponse({ content: [{ id: 2, partnerName: '兼用B' }] })
-    vi.mocked(apiClient.get)
-      .mockResolvedValueOnce(supplierRes)
-      .mockResolvedValueOnce(bothRes)
+    vi.mocked(apiClient.get).mockResolvedValueOnce(supplierRes).mockResolvedValueOnce(bothRes)
 
     const { result } = withSetup(() => useInboundSlipList())
     await result.fetchPartnerOptions()

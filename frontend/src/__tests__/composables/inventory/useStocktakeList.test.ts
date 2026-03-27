@@ -30,14 +30,17 @@ describe('useStocktakeList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/inventory/stocktakes', expect.objectContaining({
-      params: expect.objectContaining({
-        warehouseId: 1,
-        dateFrom: expect.any(String),
-        dateTo: expect.any(String),
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inventory/stocktakes',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          warehouseId: 1,
+          dateFrom: expect.any(String),
+          dateTo: expect.any(String),
+        }),
+        signal: expect.any(AbortSignal),
       }),
-      signal: expect.any(AbortSignal),
-    }))
+    )
     expect(result.items.value).toHaveLength(1)
   })
 
@@ -60,7 +63,13 @@ describe('useStocktakeList', () => {
   it('isManager がロールに基づいて判定される', () => {
     const { result } = withSetup(() => {
       const auth = useAuthStore()
-      auth.user = { userId: 1, userCode: 'wm1', fullName: 'Manager', role: 'WAREHOUSE_MANAGER', passwordChangeRequired: false }
+      auth.user = {
+        userId: 1,
+        userCode: 'wm1',
+        fullName: 'Manager',
+        role: 'WAREHOUSE_MANAGER',
+        passwordChangeRequired: false,
+      }
       return useStocktakeList()
     })
 
@@ -70,7 +79,13 @@ describe('useStocktakeList', () => {
   it('isViewer がロールに基づいて判定される', () => {
     const { result } = withSetup(() => {
       const auth = useAuthStore()
-      auth.user = { userId: 1, userCode: 'v1', fullName: 'Viewer', role: 'VIEWER', passwordChangeRequired: false }
+      auth.user = {
+        userId: 1,
+        userCode: 'v1',
+        fullName: 'Viewer',
+        role: 'VIEWER',
+        passwordChangeRequired: false,
+      }
       return useStocktakeList()
     })
 

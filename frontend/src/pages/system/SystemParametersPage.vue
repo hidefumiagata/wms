@@ -46,12 +46,22 @@
                   :min="0"
                   :controls="false"
                   style="width: 100%"
-                  @change="(val: number | undefined) => { row.editValue = String(val ?? 0); handleValueChange(row) }"
+                  @change="
+                    (val: number | undefined) => {
+                      row.editValue = String(val ?? 0)
+                      handleValueChange(row)
+                    }
+                  "
                 />
                 <el-switch
                   v-else-if="row.original.valueType === SystemParameterValueType.Boolean"
                   :model-value="row.editValue === 'true'"
-                  @change="(val: boolean) => { row.editValue = String(val); handleValueChange(row) }"
+                  @change="
+                    (val: boolean) => {
+                      row.editValue = String(val)
+                      handleValueChange(row)
+                    }
+                  "
                 />
                 <el-input
                   v-else
@@ -64,11 +74,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column
-            :label="t('system.parameters.defaultValue')"
-            width="120"
-            align="center"
-          >
+          <el-table-column :label="t('system.parameters.defaultValue')" width="120" align="center">
             <template #default="{ row }">
               <span class="default-value">{{ row.original.defaultValue }}</span>
             </template>

@@ -127,17 +127,29 @@ const { form, rules, loading, errorMessage, passwordStrength, handleSubmit, hand
     flex: 1;
     transition: background-color 0.2s;
 
-    &--weak { background: #f56c6c; }
-    &--medium { background: #e6a23c; }
-    &--strong { background: #67c23a; }
+    &--weak {
+      background: #f56c6c;
+    }
+    &--medium {
+      background: #e6a23c;
+    }
+    &--strong {
+      background: #67c23a;
+    }
   }
 
   &__strength-label {
     font-size: 12px;
     min-width: 24px;
-    &--weak { color: #f56c6c; }
-    &--medium { color: #e6a23c; }
-    &--strong { color: #67c23a; }
+    &--weak {
+      color: #f56c6c;
+    }
+    &--medium {
+      color: #e6a23c;
+    }
+    &--strong {
+      color: #67c23a;
+    }
   }
 
   &__footer {

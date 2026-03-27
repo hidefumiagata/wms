@@ -88,7 +88,7 @@ describe('PASSWORD_POLICY_REGEX', () => {
     expect(PASSWORD_POLICY_REGEX.test('abcdefg1')).toBe(false) // 大文字なし
     expect(PASSWORD_POLICY_REGEX.test('ABCDEFG1')).toBe(false) // 小文字なし
     expect(PASSWORD_POLICY_REGEX.test('Abcdefgh')).toBe(false) // 数字なし
-    expect(PASSWORD_POLICY_REGEX.test('Ab1')).toBe(false)      // 8文字未満
+    expect(PASSWORD_POLICY_REGEX.test('Ab1')).toBe(false) // 8文字未満
   })
 })
 
@@ -144,9 +144,7 @@ describe('useChangePassword', () => {
         newPassword: 'NewPass1',
       })
       expect(mockClearPasswordChangeRequired).toHaveBeenCalled()
-      expect(mockElMessage).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'success' }),
-      )
+      expect(mockElMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }))
 
       // setTimeout で router.push が呼ばれる
       vi.advanceTimersByTime(500)

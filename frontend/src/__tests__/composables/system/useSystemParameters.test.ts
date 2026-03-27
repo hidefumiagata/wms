@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useSystemParameters } from '@/composables/system/useSystemParameters'
-import type { ParameterRow } from '@/composables/system/useSystemParameters'
 import axios from 'axios'
 
 vi.mock('@/api/generated/models/system-parameter-detail', () => ({}))
@@ -22,10 +21,42 @@ vi.mock('@/api/generated/models/system-parameter-category', () => ({
 
 describe('useSystemParameters', () => {
   const mockParams = [
-    { paramKey: 'p1', paramValue: '10', category: 'INVENTORY', valueType: 'INTEGER', displayName: 'Param1', version: 1, updatedByName: '管理者' },
-    { paramKey: 'p2', paramValue: 'hello', category: 'INVENTORY', valueType: 'STRING', displayName: 'Param2', version: 1, updatedByName: null },
-    { paramKey: 'p3', paramValue: '5', category: 'OUTBOUND', valueType: 'INTEGER', displayName: 'Param3', version: 1, updatedByName: '管理者' },
-    { paramKey: 'p4', paramValue: 'true', category: 'SYSTEM', valueType: 'BOOLEAN', displayName: 'FeatureFlag', version: 1, updatedByName: null },
+    {
+      paramKey: 'p1',
+      paramValue: '10',
+      category: 'INVENTORY',
+      valueType: 'INTEGER',
+      displayName: 'Param1',
+      version: 1,
+      updatedByName: '管理者',
+    },
+    {
+      paramKey: 'p2',
+      paramValue: 'hello',
+      category: 'INVENTORY',
+      valueType: 'STRING',
+      displayName: 'Param2',
+      version: 1,
+      updatedByName: null,
+    },
+    {
+      paramKey: 'p3',
+      paramValue: '5',
+      category: 'OUTBOUND',
+      valueType: 'INTEGER',
+      displayName: 'Param3',
+      version: 1,
+      updatedByName: '管理者',
+    },
+    {
+      paramKey: 'p4',
+      paramValue: 'true',
+      category: 'SYSTEM',
+      valueType: 'BOOLEAN',
+      displayName: 'FeatureFlag',
+      version: 1,
+      updatedByName: null,
+    },
   ]
 
   beforeEach(() => {

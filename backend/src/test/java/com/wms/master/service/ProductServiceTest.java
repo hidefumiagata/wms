@@ -3,7 +3,6 @@ package com.wms.master.service;
 import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Product;
 import com.wms.master.repository.ProductRepository;
-import com.wms.master.service.UpdateProductCommand;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;

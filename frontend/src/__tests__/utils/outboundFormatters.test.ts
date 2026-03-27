@@ -12,7 +12,11 @@ vi.mock('@/api/generated/models/outbound-slip-status', () => ({
   },
 }))
 
-import { outboundStatusLabel, outboundStatusTagType, formatDateTime } from '@/utils/outboundFormatters'
+import {
+  outboundStatusLabel,
+  outboundStatusTagType,
+  formatDateTime,
+} from '@/utils/outboundFormatters'
 
 const t = (key: string) => key
 

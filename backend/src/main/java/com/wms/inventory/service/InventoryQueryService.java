@@ -48,7 +48,9 @@ public class InventoryQueryService {
      * ロケーションコードのマップを取得（RULE-SVC-002: LocationService経由）
      */
     public Map<Long, String> getLocationCodeMap(Set<Long> locationIds) {
-        if (locationIds.isEmpty()) return Map.of();
+        if (locationIds.isEmpty()) {
+            return Map.of();
+        }
         Map<Long, Location> locationMap = locationService.findByIds(locationIds);
         return locationMap.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getLocationCode()));
@@ -58,7 +60,9 @@ public class InventoryQueryService {
      * 商品情報のマップを取得（RULE-SVC-002: ProductService経由）
      */
     public Map<Long, Product> getProductMap(Set<Long> productIds) {
-        if (productIds.isEmpty()) return Map.of();
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
         return productService.findAllByIds(productIds).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
     }

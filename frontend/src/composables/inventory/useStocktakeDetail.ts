@@ -26,19 +26,21 @@ export function useStocktakeDetail() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   const stocktakeId = computed(() => Number(route.params.id))
 
   // 未入力件数
-  const uncountedCount = computed(() =>
-    lines.value.filter(l => !l.isCounted && l.editQty == null).length
+  const uncountedCount = computed(
+    () => lines.value.filter((l) => !l.isCounted && l.editQty == null).length,
   )
   const totalCount = computed(() => lines.value.length)
   const allCounted = computed(() => uncountedCount.value === 0 && totalCount.value > 0)
 
   // 変更があるか（キャンセル時の確認用）
-  const hasDirtyLines = computed(() => lines.value.some(l => l.isDirty))
+  const hasDirtyLines = computed(() => lines.value.some((l) => l.isDirty))
 
   // --- 明細取得 ---
   async function fetchDetail() {
@@ -49,11 +51,11 @@ export function useStocktakeDetail() {
     try {
       const res = await apiClient.get<StocktakeDetail>(
         `/inventory/stocktakes/${stocktakeId.value}`,
-        { signal }
+        { signal },
       )
       header.value = res.data
       const rawLines: StocktakeLineItem[] = res.data.lines?.content ?? []
-      lines.value = rawLines.map(l => ({
+      lines.value = rawLines.map((l) => ({
         ...l,
         editQty: l.isCounted ? (l.quantityCounted ?? null) : null,
         isDirty: false,
@@ -89,7 +91,7 @@ export function useStocktakeDetail() {
 
   // --- 一時保存 ---
   async function saveLines() {
-    const dirtyLines = lines.value.filter(l => l.editQty != null && (l.isDirty || !l.isCounted))
+    const dirtyLines = lines.value.filter((l) => l.editQty != null && (l.isDirty || !l.isCounted))
     if (dirtyLines.length === 0) {
       ElMessage.info(t('inventory.stocktakeSaveSuccess'))
       return
@@ -106,7 +108,7 @@ export function useStocktakeDetail() {
     saving.value = true
     try {
       await apiClient.put(`/inventory/stocktakes/${stocktakeId.value}/lines`, {
-        lines: dirtyLines.map(l => ({
+        lines: dirtyLines.map((l) => ({
           lineId: l.lineId,
           actualQty: l.editQty,
         })),
@@ -139,11 +141,9 @@ export function useStocktakeDetail() {
   async function goBack() {
     if (hasDirtyLines.value) {
       try {
-        await ElMessageBox.confirm(
-          t('inventory.stocktakeCancelConfirm'),
-          t('common.confirm'),
-          { type: 'warning' }
-        )
+        await ElMessageBox.confirm(t('inventory.stocktakeCancelConfirm'), t('common.confirm'), {
+          type: 'warning',
+        })
       } catch {
         return
       }

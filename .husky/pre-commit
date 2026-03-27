@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+set -e
+
+# --- Java: Checkstyle (run only when backend Java files are staged) ---
+JAVA_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- 'backend/src/main/**/*.java' | head -1)
+if [ -n "$JAVA_STAGED" ]; then
+  echo "[pre-commit] Running Checkstyle on backend..."
+  (cd backend && ./gradlew checkstyleMain --quiet)
+  CHECKSTYLE_EXIT=$?
+  if [ $CHECKSTYLE_EXIT -ne 0 ]; then
+    echo "[pre-commit] Checkstyle failed. Please fix the violations before committing."
+    exit 1
+  fi
+fi
+
+# --- Frontend: ESLint + Prettier (via lint-staged) ---
+FE_STAGED=$(git diff --cached --name-only --diff-filter=ACM -- 'frontend/src/**' | head -1)
+if [ -n "$FE_STAGED" ]; then
+  echo "[pre-commit] Running lint-staged on frontend..."
+  npx lint-staged
+  LINT_STAGED_EXIT=$?
+  if [ $LINT_STAGED_EXIT -ne 0 ]; then
+    echo "[pre-commit] lint-staged failed. Please fix the issues before committing."
+    exit 1
+  fi
+fi

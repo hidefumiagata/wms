@@ -5,8 +5,6 @@ import com.wms.generated.model.ChangePasswordRequest;
 import com.wms.generated.model.LoginRequest;
 import com.wms.generated.model.PasswordResetConfirmRequest;
 import com.wms.generated.model.PasswordResetRequestBody;
-import com.wms.shared.exception.GlobalExceptionHandler;
-import com.wms.shared.exception.RateLimitExceededException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
 import com.wms.shared.security.RateLimiterService;

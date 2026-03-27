@@ -142,7 +142,9 @@ export function useUserForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   async function checkCodeExists() {
     if (isEdit.value) return
@@ -154,7 +156,10 @@ export function useUserForm() {
         params: { code },
       })
       if (res.data.exists) {
-        setFieldError('userCode', t('master.user.validation.codeDuplicate', { code: userCode.value }))
+        setFieldError(
+          'userCode',
+          t('master.user.validation.codeDuplicate', { code: userCode.value }),
+        )
       }
     } catch {
       // サーバー側バリデーションに委ねる
@@ -231,7 +236,10 @@ export function useUserForm() {
         ElMessage.error(t('error.network'))
       } else if (error.response.status === 409) {
         if (error.response.data?.errorCode === 'DUPLICATE_CODE') {
-          setFieldError('userCode', t('master.user.validation.codeDuplicate', { code: userCode.value }))
+          setFieldError(
+            'userCode',
+            t('master.user.validation.codeDuplicate', { code: userCode.value }),
+          )
         } else {
           ElMessage.error(t('error.optimisticLock'))
         }

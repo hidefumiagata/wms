@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import axios, { AxiosError } from 'axios'
+import { AxiosError } from 'axios'
 import { toApiError } from '@/utils/apiError'
 
 describe('toApiError', () => {
@@ -9,7 +9,7 @@ describe('toApiError', () => {
       data: { errorCode: 'VALIDATION_ERROR', message: 'Invalid input' },
       statusText: 'Unprocessable Entity',
       headers: {},
-      config: {} as any,
+      config: {} as unknown,
     })
 
     const result = toApiError(axiosError)

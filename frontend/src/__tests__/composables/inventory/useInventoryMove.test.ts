@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useInventoryMove } from '@/composables/inventory/useInventoryMove'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/inventory-location-item', () => ({}))
 vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
@@ -17,7 +16,17 @@ describe('useInventoryMove', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
   const mockInventoryRes = {
     content: [
-      { productId: 1, productCode: 'P001', productName: 'Product 1', unitType: 'CASE', quantity: 10, allocatedQty: 2, availableQty: 8, lotNumber: null, expiryDate: null },
+      {
+        productId: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        unitType: 'CASE',
+        quantity: 10,
+        allocatedQty: 2,
+        availableQty: 8,
+        lotNumber: null,
+        expiryDate: null,
+      },
     ],
   }
 
@@ -46,9 +55,7 @@ describe('useInventoryMove', () => {
     vi.mocked(apiClient.get).mockReset()
     const toLocRes = mockAxiosResponse({ content: [{ id: 200 }], totalElements: 1 })
     const toInvRes = mockAxiosResponse({ content: [{ quantity: 3 }] })
-    vi.mocked(apiClient.get)
-      .mockResolvedValueOnce(toLocRes)
-      .mockResolvedValueOnce(toInvRes)
+    vi.mocked(apiClient.get).mockResolvedValueOnce(toLocRes).mockResolvedValueOnce(toInvRes)
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -144,13 +151,16 @@ describe('useInventoryMove', () => {
     await result.submitMove()
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.post).toHaveBeenCalledWith('/inventory/move', expect.objectContaining({
-      fromLocationId: 100,
-      productId: 1,
-      unitType: 'CASE',
-      toLocationId: 200,
-      moveQty: 3,
-    }))
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/inventory/move',
+      expect.objectContaining({
+        fromLocationId: 100,
+        productId: 1,
+        unitType: 'CASE',
+        toLocationId: 200,
+        moveQty: 3,
+      }),
+    )
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inventory-list' })
   })
 

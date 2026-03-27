@@ -10,7 +10,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @DisplayName("PiiMaskingMessageJsonProvider: Logbackパイプライン統合テスト")
 class PiiMaskingMessageJsonProviderTest {

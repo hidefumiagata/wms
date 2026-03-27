@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useInventoryBreakdown } from '@/composables/inventory/useInventoryBreakdown'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
-import axios from 'axios'
 
 vi.mock('@/api/generated/models/inventory-location-item', () => ({}))
 vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
@@ -17,8 +16,24 @@ describe('useInventoryBreakdown', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
   const mockInventoryRes = {
     content: [
-      { productId: 1, productCode: 'P001', productName: 'Product 1', unitType: 'CASE', quantity: 10, allocatedQty: 2, availableQty: 8 },
-      { productId: 1, productCode: 'P001', productName: 'Product 1', unitType: 'BALL', quantity: 5, allocatedQty: 0, availableQty: 5 },
+      {
+        productId: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        unitType: 'CASE',
+        quantity: 10,
+        allocatedQty: 2,
+        availableQty: 8,
+      },
+      {
+        productId: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        unitType: 'BALL',
+        quantity: 5,
+        allocatedQty: 0,
+        availableQty: 5,
+      },
     ],
   }
 
@@ -62,9 +77,15 @@ describe('useInventoryBreakdown', () => {
 
   it('onProductChange が商品マスタから変換レートを取得する', async () => {
     vi.mocked(apiClient.get).mockReset()
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({
-      id: 1, productCode: 'P001', productName: 'Product 1', caseQuantity: 12, ballQuantity: 6,
-    }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({
+        id: 1,
+        productCode: 'P001',
+        productName: 'Product 1',
+        caseQuantity: 12,
+        ballQuantity: 6,
+      }),
+    )
 
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
@@ -100,7 +121,13 @@ describe('useInventoryBreakdown', () => {
       return useInventoryBreakdown()
     })
 
-    result.productInfo.value = { id: 1, productCode: 'P001', productName: 'P1', caseQuantity: 12, ballQuantity: 6 }
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 12,
+      ballQuantity: 6,
+    }
     result.fromUnitType.value = 'CASE'
     result.toUnitType.value = 'BALL'
     expect(result.conversionRate.value).toBe(12)
@@ -120,7 +147,13 @@ describe('useInventoryBreakdown', () => {
       return useInventoryBreakdown()
     })
 
-    result.productInfo.value = { id: 1, productCode: 'P001', productName: 'P1', caseQuantity: 12, ballQuantity: 6 }
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 12,
+      ballQuantity: 6,
+    }
     result.fromUnitType.value = 'CASE'
     result.toUnitType.value = 'BALL'
     result.breakdownQty.value = 3
@@ -145,18 +178,27 @@ describe('useInventoryBreakdown', () => {
     result.toUnitType.value = 'BALL'
     result.breakdownQty.value = 2
     result.fromLocationId.value = 100
-    result.productInfo.value = { id: 1, productCode: 'P001', productName: 'P1', caseQuantity: 12, ballQuantity: 6 }
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 12,
+      ballQuantity: 6,
+    }
 
     await result.submitBreakdown()
 
     expect(ElMessageBox.confirm).toHaveBeenCalled()
-    expect(apiClient.post).toHaveBeenCalledWith('/inventory/breakdown', expect.objectContaining({
-      fromLocationId: 100,
-      productId: 1,
-      fromUnitType: 'CASE',
-      breakdownQty: 2,
-      toUnitType: 'BALL',
-    }))
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/inventory/breakdown',
+      expect.objectContaining({
+        fromLocationId: 100,
+        productId: 1,
+        fromUnitType: 'CASE',
+        breakdownQty: 2,
+        toUnitType: 'BALL',
+      }),
+    )
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inventory-list' })
   })
 

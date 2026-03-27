@@ -51,13 +51,28 @@ export function useOutboundSlipList() {
     try {
       const [resCustomer, resBoth] = await Promise.all([
         apiClient.get('/master/partners', {
-          params: { page: 0, size: 1000, isActive: true, partnerType: 'CUSTOMER', sort: 'partnerName,asc' },
+          params: {
+            page: 0,
+            size: 1000,
+            isActive: true,
+            partnerType: 'CUSTOMER',
+            sort: 'partnerName,asc',
+          },
         }),
         apiClient.get('/master/partners', {
-          params: { page: 0, size: 1000, isActive: true, partnerType: 'BOTH', sort: 'partnerName,asc' },
+          params: {
+            page: 0,
+            size: 1000,
+            isActive: true,
+            partnerType: 'BOTH',
+            sort: 'partnerName,asc',
+          },
         }),
       ])
-      const toOption = (p: { id: number; partnerName: string }) => ({ id: p.id, partnerName: p.partnerName })
+      const toOption = (p: { id: number; partnerName: string }) => ({
+        id: p.id,
+        partnerName: p.partnerName,
+      })
       partnerOptions.value = [
         ...resCustomer.data.content.map(toOption),
         ...resBoth.data.content.map(toOption),
@@ -69,7 +84,9 @@ export function useOutboundSlipList() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   async function fetchList() {
     abortController?.abort()
@@ -147,7 +164,7 @@ export function useOutboundSlipList() {
   }
 
   function handleSelectionChange(rows: OutboundSlipSummary[]) {
-    selectedIds.value = rows.map(r => r.id)
+    selectedIds.value = rows.map((r) => r.id)
   }
 
   // --- 引当実行（共通） ---
@@ -182,21 +199,29 @@ export function useOutboundSlipList() {
       await ElMessageBox.confirm(
         t('outbound.slip.allocateMessage', { count: selectedIds.value.length }),
         t('common.confirm'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
+        {
+          type: 'warning',
+          confirmButtonText: t('common.confirm'),
+          cancelButtonText: t('common.cancel'),
+        },
       )
-    } catch { return }
+    } catch {
+      return
+    }
     await executeAllocation(selectedIds.value)
   }
 
   // --- 行単位引当 ---
   async function handleAllocateSingle(id: number) {
     try {
-      await ElMessageBox.confirm(
-        t('outbound.slip.allocateSingleMessage'),
-        t('common.confirm'),
-        { type: 'warning', confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel') }
-      )
-    } catch { return }
+      await ElMessageBox.confirm(t('outbound.slip.allocateSingleMessage'), t('common.confirm'), {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
+    } catch {
+      return
+    }
     await executeAllocation([id])
   }
 

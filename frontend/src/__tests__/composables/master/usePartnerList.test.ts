@@ -38,9 +38,12 @@ describe('usePartnerList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/partners', expect.objectContaining({
-      params: expect.objectContaining({ page: 0, size: 20 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/partners',
+      expect.objectContaining({
+        params: expect.objectContaining({ page: 0, size: 20 }),
+      }),
+    )
     expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
@@ -104,7 +107,9 @@ describe('usePartnerList', () => {
 
     let resolveFirst!: (value: unknown) => void
     vi.mocked(apiClient.get).mockImplementationOnce(() => {
-      return new Promise((resolve) => { resolveFirst = resolve })
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
     })
 
     const firstFetch = result.fetchList()
@@ -184,14 +189,17 @@ describe('usePartnerList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/partners', expect.objectContaining({
-      params: expect.objectContaining({
-        partnerCode: 'PTN001',
-        partnerName: 'テスト',
-        partnerType: 'SUPPLIER',
-        isActive: true,
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/partners',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          partnerCode: 'PTN001',
+          partnerName: 'テスト',
+          partnerType: 'SUPPLIER',
+          isActive: true,
+        }),
       }),
-    }))
+    )
   })
 
   // --- エラーハンドリング ---
@@ -236,7 +244,14 @@ describe('usePartnerList', () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(mockAxiosResponse({}))
 
     const { result } = withSetup(() => usePartnerList())
-    const row = { id: 1, partnerCode: 'PTN001', partnerName: 'テスト取引先', partnerType: 'SUPPLIER', isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      partnerCode: 'PTN001',
+      partnerName: 'テスト取引先',
+      partnerType: 'SUPPLIER',
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -252,7 +267,14 @@ describe('usePartnerList', () => {
     vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
 
     const { result } = withSetup(() => usePartnerList())
-    const row = { id: 1, partnerCode: 'PTN001', partnerName: 'テスト取引先', partnerType: 'SUPPLIER', isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      partnerCode: 'PTN001',
+      partnerName: 'テスト取引先',
+      partnerType: 'SUPPLIER',
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -263,7 +285,14 @@ describe('usePartnerList', () => {
     vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(409))
 
     const { result } = withSetup(() => usePartnerList())
-    const row = { id: 1, partnerCode: 'PTN001', partnerName: 'テスト取引先', partnerType: 'SUPPLIER', isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      partnerCode: 'PTN001',
+      partnerName: 'テスト取引先',
+      partnerType: 'SUPPLIER',
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -276,7 +305,14 @@ describe('usePartnerList', () => {
     )
 
     const { result } = withSetup(() => usePartnerList())
-    const row = { id: 1, partnerCode: 'PTN001', partnerName: 'テスト取引先', partnerType: 'SUPPLIER', isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      partnerCode: 'PTN001',
+      partnerName: 'テスト取引先',
+      partnerType: 'SUPPLIER',
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row as never)
 
@@ -284,12 +320,17 @@ describe('usePartnerList', () => {
   })
 
   it('handleToggleActive の422エラー（入荷）でエラーメッセージが表示される', async () => {
-    vi.mocked(apiClient.patch).mockRejectedValueOnce(
-      createAxiosError(422, { errorCode: 'OTHER' }),
-    )
+    vi.mocked(apiClient.patch).mockRejectedValueOnce(createAxiosError(422, { errorCode: 'OTHER' }))
 
     const { result } = withSetup(() => usePartnerList())
-    const row = { id: 1, partnerCode: 'PTN001', partnerName: 'テスト取引先', partnerType: 'SUPPLIER', isActive: true, version: 1 }
+    const row = {
+      id: 1,
+      partnerCode: 'PTN001',
+      partnerName: 'テスト取引先',
+      partnerType: 'SUPPLIER',
+      isActive: true,
+      version: 1,
+    }
 
     await result.handleToggleActive(row as never)
 

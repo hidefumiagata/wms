@@ -42,7 +42,9 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="change-password">{{ t('auth.changePassword') }}</el-dropdown-item>
+            <el-dropdown-item command="change-password">
+              {{ t('auth.changePassword') }}
+            </el-dropdown-item>
             <el-dropdown-item command="logout" divided>{{ t('auth.logout') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>

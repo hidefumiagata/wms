@@ -1,5 +1,5 @@
 <template>
-  <div class="wms-page" v-loading="loading">
+  <div v-loading="loading" class="wms-page">
     <template v-if="slip">
       <!-- 基本情報 -->
       <el-card>
@@ -17,7 +17,11 @@
             {{ slip.slipNumber }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('inbound.slip.slipType')">
-            {{ slip.slipType === 'NORMAL' ? t('inbound.slip.typeNormal') : t('inbound.slip.typeBatch') }}
+            {{
+              slip.slipType === 'NORMAL'
+                ? t('inbound.slip.typeNormal')
+                : t('inbound.slip.typeBatch')
+            }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('inbound.slip.plannedDate')">
             {{ slip.plannedDate }}
@@ -45,17 +49,36 @@
         </template>
 
         <el-table :data="slip.lines" stripe border style="width: 100%">
-          <el-table-column prop="lineNo" :label="t('inbound.slip.lineNo')" width="60" align="center" />
+          <el-table-column
+            prop="lineNo"
+            :label="t('inbound.slip.lineNo')"
+            width="60"
+            align="center"
+          />
           <el-table-column prop="productCode" :label="t('inbound.slip.productCode')" width="140" />
-          <el-table-column prop="productName" :label="t('inbound.slip.productName')" min-width="160" />
-          <el-table-column prop="unitType" :label="t('inbound.slip.unitType')" width="80" align="center" />
+          <el-table-column
+            prop="productName"
+            :label="t('inbound.slip.productName')"
+            min-width="160"
+          />
+          <el-table-column
+            prop="unitType"
+            :label="t('inbound.slip.unitType')"
+            width="80"
+            align="center"
+          />
           <el-table-column prop="lotNumber" :label="t('inbound.slip.lotNumber')" width="120">
             <template #default="{ row }">{{ row.lotNumber ?? '—' }}</template>
           </el-table-column>
           <el-table-column prop="expiryDate" :label="t('inbound.slip.expiryDate')" width="110">
             <template #default="{ row }">{{ row.expiryDate ?? '—' }}</template>
           </el-table-column>
-          <el-table-column prop="plannedQty" :label="t('inbound.slip.plannedQty')" width="90" align="right" />
+          <el-table-column
+            prop="plannedQty"
+            :label="t('inbound.slip.plannedQty')"
+            width="90"
+            align="right"
+          />
           <el-table-column :label="t('inbound.slip.inspectedQty')" width="90" align="right">
             <template #default="{ row }">
               {{ row.inspectedQty != null ? row.inspectedQty : '—' }}
@@ -63,10 +86,7 @@
           </el-table-column>
           <el-table-column :label="t('inbound.slip.differenceQty')" width="80" align="right">
             <template #default="{ row }">
-              <span
-                v-if="row.diffQty != null"
-                :class="{ 'text-danger': row.diffQty !== 0 }"
-              >
+              <span v-if="row.diffQty != null" :class="{ 'text-danger': row.diffQty !== 0 }">
                 {{ row.diffQty }}
               </span>
               <span v-else>—</span>
@@ -103,18 +123,10 @@
           >
             {{ t('inbound.slip.confirm') }}
           </el-button>
-          <el-button
-            v-if="canInspect"
-            type="warning"
-            @click="goInspect"
-          >
+          <el-button v-if="canInspect" type="warning" @click="goInspect">
             {{ t('inbound.slip.goInspect') }}
           </el-button>
-          <el-button
-            v-if="canStore"
-            type="success"
-            @click="goStore"
-          >
+          <el-button v-if="canStore" type="success" @click="goStore">
             {{ t('inbound.slip.goStore') }}
           </el-button>
         </div>

@@ -26,9 +26,18 @@
             clearable
             :placeholder="t('master.product.storageConditionAll')"
           >
-            <el-option :label="t('master.product.storageAmbient')" :value="StorageCondition.Ambient" />
-            <el-option :label="t('master.product.storageRefrigerated')" :value="StorageCondition.Refrigerated" />
-            <el-option :label="t('master.product.storageFrozen')" :value="StorageCondition.Frozen" />
+            <el-option
+              :label="t('master.product.storageAmbient')"
+              :value="StorageCondition.Ambient"
+            />
+            <el-option
+              :label="t('master.product.storageRefrigerated')"
+              :value="StorageCondition.Refrigerated"
+            />
+            <el-option
+              :label="t('master.product.storageFrozen')"
+              :value="StorageCondition.Frozen"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('master.product.status')">
@@ -65,11 +74,7 @@
       </template>
 
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
-        <el-table-column
-          prop="productCode"
-          :label="t('master.product.productCode')"
-          width="140"
-        >
+        <el-table-column prop="productCode" :label="t('master.product.productCode')" width="140">
           <template #default="{ row }">
             <el-link
               type="primary"
@@ -92,7 +97,13 @@
         <el-table-column :label="t('master.product.storageCondition')" width="100" align="center">
           <template #default="{ row }">
             <el-tag
-              :type="row.storageCondition === 'FROZEN' ? 'primary' : row.storageCondition === 'REFRIGERATED' ? 'info' : 'warning'"
+              :type="
+                row.storageCondition === 'FROZEN'
+                  ? 'primary'
+                  : row.storageCondition === 'REFRIGERATED'
+                    ? 'info'
+                    : 'warning'
+              "
               size="small"
             >
               {{ storageConditionLabel(row.storageCondition) }}
@@ -116,12 +127,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          :label="t('common.actions')"
-          width="180"
-          align="center"
-          fixed="right"
-        >
+        <el-table-column :label="t('common.actions')" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button
               size="small"

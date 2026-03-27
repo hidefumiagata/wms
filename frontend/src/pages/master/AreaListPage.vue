@@ -88,17 +88,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="areaName" :label="t('master.area.areaName')" min-width="180" />
-        <el-table-column
-          prop="buildingCode"
-          :label="t('master.area.buildingCode')"
-          width="100"
-        />
+        <el-table-column prop="buildingCode" :label="t('master.area.buildingCode')" width="100" />
         <el-table-column :label="t('master.area.storageCondition')" width="100" align="center">
           <template #default="{ row }">
-            <el-tag
-              :type="storageConditionTagType(row.storageCondition)"
-              size="small"
-            >
+            <el-tag :type="storageConditionTagType(row.storageCondition)" size="small">
               {{ storageConditionLabel(row.storageCondition) }}
             </el-tag>
           </template>
@@ -217,11 +210,14 @@ onMounted(() => {
   fetchList()
 })
 
-watch(() => warehouseStore.selectedWarehouseId, () => {
-  page.value = 1
-  fetchBuildings()
-  fetchList()
-})
+watch(
+  () => warehouseStore.selectedWarehouseId,
+  () => {
+    page.value = 1
+    fetchBuildings()
+    fetchList()
+  },
+)
 </script>
 
 <style scoped lang="scss">

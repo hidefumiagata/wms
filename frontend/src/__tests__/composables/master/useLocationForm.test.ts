@@ -63,20 +63,25 @@ describe('useLocationForm', () => {
       const { result } = withSetup(() => useLocationForm())
       await result.fetchLocation()
 
-      expect(apiClient.get).toHaveBeenCalledWith('/master/locations/1', expect.objectContaining({
-        signal: expect.any(AbortSignal),
-      }))
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/locations/1',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        }),
+      )
     })
 
     it('fetchLocation が signal を渡す（AbortController対応）', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        areaId: 10,
-        locationCode: 'BLD01-A-01-01',
-        locationName: '',
-        warehouseCode: 'WHS01',
-        areaCode: 'AREA01',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          areaId: 10,
+          locationCode: 'BLD01-A-01-01',
+          locationName: '',
+          warehouseCode: 'WHS01',
+          areaCode: 'AREA01',
+          version: 1,
+        }),
+      )
 
       const { result } = withSetup(() => useLocationForm())
       await result.fetchLocation()
@@ -87,14 +92,16 @@ describe('useLocationForm', () => {
     })
 
     it('onUnmounted 時に進行中のリクエストがキャンセルされる', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        areaId: 10,
-        locationCode: 'BLD01-A-01-01',
-        locationName: '',
-        warehouseCode: 'WHS01',
-        areaCode: 'AREA01',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          areaId: 10,
+          locationCode: 'BLD01-A-01-01',
+          locationName: '',
+          warehouseCode: 'WHS01',
+          areaCode: 'AREA01',
+          version: 1,
+        }),
+      )
 
       const { result, wrapper } = withSetup(() => useLocationForm())
       const fetchPromise = result.fetchLocation()
@@ -142,8 +149,20 @@ describe('useLocationForm', () => {
     it('倉庫選択時にエリア一覧を取得する', async () => {
       const areasData = {
         content: [
-          { id: 1, areaCode: 'AREA01', areaName: '第1エリア', areaType: 'STOCK', buildingCode: 'BLD01' },
-          { id: 2, areaCode: 'AREA02', areaName: '第2エリア', areaType: 'RECEIVING', buildingCode: 'BLD01' },
+          {
+            id: 1,
+            areaCode: 'AREA01',
+            areaName: '第1エリア',
+            areaType: 'STOCK',
+            buildingCode: 'BLD01',
+          },
+          {
+            id: 2,
+            areaCode: 'AREA02',
+            areaName: '第2エリア',
+            areaType: 'RECEIVING',
+            buildingCode: 'BLD01',
+          },
         ],
         totalElements: 2,
       }
@@ -181,24 +200,29 @@ describe('useLocationForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.post).mock.calls.length > 0) {
-        expect(apiClient.post).toHaveBeenCalledWith('/master/locations', expect.objectContaining({
-          areaId: 10,
-          locationCode: 'BLD01-A-01-01',
-        }))
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/master/locations',
+          expect.objectContaining({
+            areaId: 10,
+            locationCode: 'BLD01-A-01-01',
+          }),
+        )
       }
     })
 
     it('編集時にPUT APIを呼ぶ', async () => {
       mockRouteParams = { id: '1' }
       vi.mocked(apiClient.put).mockResolvedValueOnce(mockAxiosResponse({}))
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        areaId: 10,
-        locationCode: 'BLD01-A-01-01',
-        locationName: 'テストロケーション',
-        warehouseCode: 'WHS01',
-        areaCode: 'AREA01',
-        version: 2,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          areaId: 10,
+          locationCode: 'BLD01-A-01-01',
+          locationName: 'テストロケーション',
+          warehouseCode: 'WHS01',
+          areaCode: 'AREA01',
+          version: 2,
+        }),
+      )
 
       const { result } = withSetup(() => useLocationForm())
       await result.fetchLocation()
@@ -206,9 +230,12 @@ describe('useLocationForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.put).mock.calls.length > 0) {
-        expect(apiClient.put).toHaveBeenCalledWith('/master/locations/1', expect.objectContaining({
-          version: 2,
-        }))
+        expect(apiClient.put).toHaveBeenCalledWith(
+          '/master/locations/1',
+          expect.objectContaining({
+            version: 2,
+          }),
+        )
       }
     })
   })

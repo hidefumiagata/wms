@@ -11,9 +11,19 @@
         </div>
         <div v-if="header" class="summary-bar">
           <span>{{ header.targetDescription }}</span>
-          <span style="margin-left: 16px">{{ t('inventory.stocktakeDate') }}: {{ formatDate(header.startedAt) }}</span>
-          <el-tag :type="header.status === 'CONFIRMED' ? 'success' : 'warning'" size="small" style="margin-left: 8px">
-            {{ header.status === 'CONFIRMED' ? t('inventory.stocktakeStatusConfirmed') : t('inventory.stocktakeStatusStarted') }}
+          <span style="margin-left: 16px">
+            {{ t('inventory.stocktakeDate') }}: {{ formatDate(header.startedAt) }}
+          </span>
+          <el-tag
+            :type="header.status === 'CONFIRMED' ? 'success' : 'warning'"
+            size="small"
+            style="margin-left: 8px"
+          >
+            {{
+              header.status === 'CONFIRMED'
+                ? t('inventory.stocktakeStatusConfirmed')
+                : t('inventory.stocktakeStatusStarted')
+            }}
           </el-tag>
         </div>
       </template>
@@ -22,7 +32,9 @@
       <div class="toolbar">
         <!-- TODO: RPT-010 棚卸リスト出力ボタン -->
         <span class="counter">
-          {{ t('inventory.stocktakeUncountedCount', { uncounted: uncountedCount, total: totalCount }) }}
+          {{
+            t('inventory.stocktakeUncountedCount', { uncounted: uncountedCount, total: totalCount })
+          }}
         </span>
       </div>
 

@@ -72,9 +72,12 @@ describe('useProductForm', () => {
     const { result } = withSetup(() => useProductForm())
     await result.fetchProduct()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/products/5', expect.objectContaining({
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/products/5',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.hasInventory.value).toBe(true)
   })
 

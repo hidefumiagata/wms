@@ -44,11 +44,13 @@ export function useInventoryList() {
       const res = await apiClient.get('/master/products', {
         params: { page: 0, size: 1000, isActive: true, sort: 'productCode,asc' },
       })
-      productOptions.value = res.data.content.map((p: { id: number; productCode: string; productName: string }) => ({
-        id: p.id,
-        productCode: p.productCode,
-        productName: p.productName,
-      }))
+      productOptions.value = res.data.content.map(
+        (p: { id: number; productCode: string; productName: string }) => ({
+          id: p.id,
+          productCode: p.productCode,
+          productName: p.productName,
+        }),
+      )
     } catch {
       // エラーは無視（プルダウンが空になるだけ）
     }
@@ -74,7 +76,8 @@ export function useInventoryList() {
         page: page.value - 1,
         size: pageSize.value,
       }
-      if (searchForm.locationCodePrefix?.trim()) params.locationCodePrefix = searchForm.locationCodePrefix.trim()
+      if (searchForm.locationCodePrefix?.trim())
+        params.locationCodePrefix = searchForm.locationCodePrefix.trim()
       if (searchForm.productId) params.productId = searchForm.productId
       if (searchForm.unitType) params.unitType = searchForm.unitType
       if (searchForm.storageCondition) params.storageCondition = searchForm.storageCondition

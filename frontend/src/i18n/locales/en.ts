@@ -41,11 +41,15 @@ export default {
     logoutLink: 'Logout from this account',
     logoutConfirm: 'Are you sure you want to logout?',
     sessionWarningTitle: 'Session Timeout Warning',
-    sessionWarning: 'You have been inactive for 55 minutes. You will be automatically logged out in 5 minutes. Would you like to extend your session?',
+    sessionWarning:
+      'You have been inactive for 55 minutes. You will be automatically logged out in 5 minutes. Would you like to extend your session?',
     continueSession: 'Extend Session',
-    versionInfo: 'WMS v1.0 — Please contact your system administrator if you have trouble logging in',
-    passwordChangeNotice: 'This is your first login. Please change your password. You cannot access other features until you do.',
-    passwordPolicyInfo: '8–128 characters, including at least one uppercase letter, one lowercase letter, and one digit',
+    versionInfo:
+      'WMS v1.0 — Please contact your system administrator if you have trouble logging in',
+    passwordChangeNotice:
+      'This is your first login. Please change your password. You cannot access other features until you do.',
+    passwordPolicyInfo:
+      '8–128 characters, including at least one uppercase letter, one lowercase letter, and one digit',
     resetRequestDescription: 'Enter your registered user code or email address',
     strength: {
       weak: 'Weak',
@@ -77,7 +81,8 @@ export default {
       passwordSameAsCurrent: 'New password must be different from the current password',
       confirmPasswordRequired: 'Password confirmation is required',
       identifierRequired: 'Please enter your user code or email address',
-      passwordPolicy: 'Password must be 8–128 characters and include at least one uppercase letter, one lowercase letter, and one digit',
+      passwordPolicy:
+        'Password must be 8–128 characters and include at least one uppercase letter, one lowercase letter, and one digit',
     },
   },
   nav: {
@@ -147,8 +152,10 @@ export default {
       fetchError: 'Failed to load data. Please try again later.',
       notFound: 'The specified partner does not exist or has been deleted.',
       cannotDeactivateHasActiveInbound: 'Cannot deactivate because there are active inbound plans.',
-      cannotDeactivateHasActiveOutbound: 'Cannot deactivate because there are active outbound orders.',
-      confirmDeactivate: 'Deactivate this partner? Deactivated partners cannot be selected for new inbound/outbound registrations.',
+      cannotDeactivateHasActiveOutbound:
+        'Cannot deactivate because there are active outbound orders.',
+      confirmDeactivate:
+        'Deactivate this partner? Deactivated partners cannot be selected for new inbound/outbound registrations.',
       confirmActivate: 'Activate this partner?',
       validation: {
         codeRequired: 'Partner code is required',
@@ -208,7 +215,8 @@ export default {
       fetchError: 'Failed to load data. Please try again later.',
       notFound: 'The specified product does not exist or has been deleted.',
       cannotDeactivateHasInventory: 'Cannot deactivate because inventory exists.',
-      confirmDeactivate: 'Deactivate this product? Deactivated products cannot be selected for new inbound/outbound/stocktake registrations.',
+      confirmDeactivate:
+        'Deactivate this product? Deactivated products cannot be selected for new inbound/outbound/stocktake registrations.',
       confirmActivate: 'Activate this product?',
       confirmCancel: 'Your changes will be lost. Are you sure you want to cancel?',
       cannotChangeLotFlag: 'Cannot change lot management flag because inventory exists.',
@@ -254,8 +262,10 @@ export default {
       deactivateSuccess: 'Warehouse deactivated.',
       fetchError: 'Failed to load data. Please try again later.',
       notFound: 'The specified warehouse does not exist or has been deleted.',
-      cannotDeactivateHasInventory: 'Cannot deactivate warehouse because it has existing inventory.',
-      confirmDeactivate: 'Deactivate this warehouse? Warehouses with existing inventory cannot be deactivated.',
+      cannotDeactivateHasInventory:
+        'Cannot deactivate warehouse because it has existing inventory.',
+      confirmDeactivate:
+        'Deactivate this warehouse? Warehouses with existing inventory cannot be deactivated.',
       confirmActivate: 'Activate this warehouse?',
       validation: {
         codeRequired: 'Warehouse code is required',
@@ -382,7 +392,8 @@ export default {
       codePlaceholder: 'e.g. A-01-A-01-01-01',
       namePlaceholder: 'e.g. Shelf 1 Level 1 Column 1',
       codeHint: 'Location code cannot be changed after registration',
-      codeFormatHintStock: 'Stock area format: Building-Floor-Area-Shelf-Level-Column (e.g. A-01-A-01-01-01)',
+      codeFormatHintStock:
+        'Stock area format: Building-Floor-Area-Shelf-Level-Column (e.g. A-01-A-01-01-01)',
       createSuccess: 'Location registered successfully.',
       updateSuccess: 'Location updated successfully.',
       activateSuccess: 'Location activated.',
@@ -390,8 +401,10 @@ export default {
       fetchError: 'Failed to load data. Please try again.',
       notFound: 'The specified location was not found.',
       cannotDeactivateHasInventory: 'Cannot deactivate because this location has inventory.',
-      cannotDeactivateStocktakeInProgress: 'Cannot deactivate because this location is under stocktake.',
-      areaLocationLimitExceeded: 'This area already has a location registered (Inbound/Outbound/Return areas allow only one location).',
+      cannotDeactivateStocktakeInProgress:
+        'Cannot deactivate because this location is under stocktake.',
+      areaLocationLimitExceeded:
+        'This area already has a location registered (Inbound/Outbound/Return areas allow only one location).',
       confirmDeactivate: 'Are you sure you want to deactivate this location?',
       confirmActivate: 'Activate this location?',
       confirmCancel: 'Your changes will be lost. Are you sure you want to cancel?',
@@ -441,7 +454,8 @@ export default {
       emailPlaceholder: 'e.g. suzuki@example.com',
       passwordPlaceholder: '8 characters or more',
       confirmPasswordPlaceholder: 'Re-enter password',
-      passwordPolicyHint: '8 or more characters. The user will be required to change their password on first login.',
+      passwordPolicyHint:
+        '8 or more characters. The user will be required to change their password on first login.',
       selfRoleHint: 'You cannot change your own role',
       selfDeactivateHint: 'You cannot deactivate yourself',
       lockedAlert: 'This account is locked',
@@ -550,7 +564,8 @@ export default {
       goStore: 'Store',
       confirmMessage: 'Confirm receipt. Are you sure?',
       cancelMessage: 'Cancel this inbound slip. This cannot be undone. Are you sure?',
-      cancelPartialStoredMessage: 'Some items have already been stored. Cancellation will rollback stored inventory. Are you sure?',
+      cancelPartialStoredMessage:
+        'Some items have already been stored. Cancellation will rollback stored inventory. Are you sure?',
       confirmSuccess: 'Receipt confirmed',
       cancelSuccess: 'Inbound slip cancelled',
       fetchError: 'Failed to fetch inbound slips',
@@ -682,14 +697,16 @@ export default {
     breakdownSuccess: 'Breakdown completed successfully.',
     breakdownError: 'Failed to register breakdown. Please try again later.',
     breakdownQtyExceedsAvailable: 'Breakdown quantity exceeds available stock.',
-    conversionRateNotSet: 'Conversion rate not set in product master. Please contact administrator.',
+    conversionRateNotSet:
+      'Conversion rate not set in product master. Please contact administrator.',
     // INV-004
     correctionTitle: 'Inventory Correction',
     newQty: 'New Qty',
     diff: 'Difference',
     reason: 'Reason',
     reasonPlaceholder: 'Enter correction reason (max 200 characters)',
-    correctionConfirmMessage: 'Correct {product} ({unitType}) at {loc} from {current} to {newQty}? (Diff: {diff})',
+    correctionConfirmMessage:
+      'Correct {product} ({unitType}) at {loc} from {current} to {newQty}? (Diff: {diff})',
     correctionConfirmZeroMessage: 'New quantity is 0. Inventory will be zero. Continue?',
     correctionSuccess: 'Inventory correction registered.',
     correctionError: 'Failed to register correction. Please try again later.',
@@ -723,17 +740,20 @@ export default {
     stocktakeDateRangeError: 'Invalid date range.',
     // INV-012
     stocktakeNewTitle: 'Start Stocktake',
-    stocktakeLockWarning: 'Inbound/outbound operations for locations under stocktake will be restricted. Please ensure all operations are completed before starting.',
+    stocktakeLockWarning:
+      'Inbound/outbound operations for locations under stocktake will be restricted. Please ensure all operations are completed before starting.',
     stocktakeSelectBuilding: 'Select building',
     stocktakeSelectArea: 'All areas',
     stocktakeTargetLocations: 'Target locations',
     stocktakeTargetDescription: 'Target scope',
     stocktakeNote: 'Note',
     stocktakeNotePlaceholder: 'Enter note (max 200 characters)',
-    stocktakeStartConfirm: 'Start stocktake for {count} locations? Inbound/outbound operations will be restricted after starting.',
+    stocktakeStartConfirm:
+      'Start stocktake for {count} locations? Inbound/outbound operations will be restricted after starting.',
     stocktakeStartSuccess: 'Stocktake started (ID: {number})',
     stocktakeStartError: 'Failed to start stocktake. Please try again later.',
-    stocktakeConflictError: 'There is an active stocktake for the target locations. Please confirm it first.',
+    stocktakeConflictError:
+      'There is an active stocktake for the target locations. Please confirm it first.',
     stocktakeBuildingRequired: 'Building is required.',
     stocktakeDateRequired: 'Date is required.',
     stocktakePrintList: 'Print Stocktake List',
@@ -751,7 +771,8 @@ export default {
     stocktakeSaveError: 'Failed to save. Please try again later.',
     stocktakeDetailFetchError: 'Failed to fetch stocktake data.',
     stocktakeGoConfirm: 'Proceed to Confirm',
-    stocktakeNotAllCounted: 'Some items are not counted. Please enter all quantities before confirming.',
+    stocktakeNotAllCounted:
+      'Some items are not counted. Please enter all quantities before confirming.',
     stocktakeCancelConfirm: 'Unsaved changes will be lost. Return to list?',
     stocktakeActualQtyInvalid: 'Actual quantity must be a non-negative integer.',
     // INV-014
@@ -764,7 +785,8 @@ export default {
     stocktakeDiffRate: 'Diff %',
     stocktakeDiffOnlyFilter: 'Show diff only',
     stocktakeConfirmAction: 'Confirm Stocktake',
-    stocktakeConfirmMessage: 'Confirm stocktake? Inventory will be updated to actual quantities. This cannot be undone.',
+    stocktakeConfirmMessage:
+      'Confirm stocktake? Inventory will be updated to actual quantities. This cannot be undone.',
     stocktakeConfirmSuccess: 'Stocktake confirmed. Inventory updated (ID: {number})',
     stocktakeConfirmError: 'Failed to confirm stocktake. Please try again later.',
     stocktakeConfirmNotAllCounted: 'Some items are not counted. Please complete count entry first.',
@@ -788,6 +810,7 @@ export default {
     conflict: 'Data already exists',
     optimisticLock: 'Data was updated by another user. Please reload.',
     forbidden: 'You do not have permission to perform this action',
-    forbiddenDescription: 'You do not have permission to access this page. Please contact your system administrator if you need access.',
+    forbiddenDescription:
+      'You do not have permission to access this page. Please contact your system administrator if you need access.',
   },
 }

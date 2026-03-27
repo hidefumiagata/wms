@@ -32,12 +32,7 @@
         @submit.prevent="handleSubmit"
       >
         <el-form-item :label="t('auth.identifier')" prop="identifier">
-          <el-input
-            v-model="form.identifier"
-            size="large"
-            autocomplete="username"
-            clearable
-          />
+          <el-input v-model="form.identifier" size="large" autocomplete="username" clearable />
         </el-form-item>
 
         <el-button

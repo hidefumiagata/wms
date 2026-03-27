@@ -28,9 +28,7 @@ describe('useLocationList', () => {
   })
 
   const createMockAreasResponse = () => ({
-    content: [
-      { id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true },
-    ],
+    content: [{ id: 1, areaCode: 'AREA01', areaName: 'テストエリア', isActive: true }],
     page: 0,
     size: 100,
     totalElements: 1,
@@ -56,9 +54,12 @@ describe('useLocationList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/locations', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 1, page: 0, size: 20 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/locations',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 1, page: 0, size: 20 }),
+      }),
+    )
     expect(result.items.value).toEqual(createMockListResponse().content)
     expect(result.total.value).toBe(1)
     expect(result.loading.value).toBe(false)
@@ -93,9 +94,12 @@ describe('useLocationList', () => {
 
     await result.fetchAreas()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/areas', expect.objectContaining({
-      params: expect.objectContaining({ warehouseId: 1, isActive: true, size: 100 }),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/areas',
+      expect.objectContaining({
+        params: expect.objectContaining({ warehouseId: 1, isActive: true, size: 100 }),
+      }),
+    )
     expect(result.areas.value).toHaveLength(1)
   })
 
@@ -165,7 +169,9 @@ describe('useLocationList', () => {
 
     let resolveFirst!: (value: unknown) => void
     vi.mocked(apiClient.get).mockImplementationOnce(() => {
-      return new Promise((resolve) => { resolveFirst = resolve })
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
     })
 
     const firstFetch = result.fetchList()
@@ -242,14 +248,17 @@ describe('useLocationList', () => {
 
     await result.fetchList()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/master/locations', expect.objectContaining({
-      params: expect.objectContaining({
-        warehouseId: 1,
-        codePrefix: 'LOC',
-        areaId: 1,
-        isActive: true,
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/master/locations',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          warehouseId: 1,
+          codePrefix: 'LOC',
+          areaId: 1,
+          isActive: true,
+        }),
       }),
-    }))
+    )
   })
 
   // --- エラーハンドリング ---
@@ -349,6 +358,8 @@ describe('useLocationList', () => {
 
     await result.handleToggleActive(row as never)
 
-    expect(ElMessage.error).toHaveBeenCalledWith('master.location.cannotDeactivateStocktakeInProgress')
+    expect(ElMessage.error).toHaveBeenCalledWith(
+      'master.location.cannotDeactivateStocktakeInProgress',
+    )
   })
 })

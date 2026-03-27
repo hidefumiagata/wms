@@ -229,12 +229,18 @@ public class AllocationService {
 
         // Phase 1: 同一荷姿の在庫を優先引当
         for (Inventory stock : availableStocks) {
-            if (remaining <= 0) break;
-            if (!stock.getUnitType().equals(requestedUnitType)) continue;
+            if (remaining <= 0) {
+                break;
+            }
+            if (!stock.getUnitType().equals(requestedUnitType)) {
+                continue;
+            }
 
             int available = stock.getQuantity() - stock.getAllocatedQty();
             int allocateQty = Math.min(available, remaining);
-            if (allocateQty <= 0) continue;
+            if (allocateQty <= 0) {
+                continue;
+            }
 
             Inventory locked = inventoryRepository.findByIdForUpdate(stock.getId())
                     .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
@@ -243,7 +249,9 @@ public class AllocationService {
             // 再計算（ロック後に在庫が変わっている可能性）
             available = locked.getQuantity() - locked.getAllocatedQty();
             allocateQty = Math.min(available, remaining);
-            if (allocateQty <= 0) continue;
+            if (allocateQty <= 0) {
+                continue;
+            }
 
             locked.setAllocatedQty(locked.getAllocatedQty() + allocateQty);
             inventoryRepository.save(locked);
@@ -282,15 +290,21 @@ public class AllocationService {
         int totalAllocated = 0;
 
         for (Inventory stock : availableStocks) {
-            if (remaining <= 0) break;
+            if (remaining <= 0) {
+                break;
+            }
 
             String stockUnitType = stock.getUnitType();
             // 上位荷姿のみ対象
             int conversionRate = getConversionRate(stockUnitType, requestedUnitType, product);
-            if (conversionRate <= 0) continue;
+            if (conversionRate <= 0) {
+                continue;
+            }
 
             int available = stock.getQuantity() - stock.getAllocatedQty();
-            if (available <= 0) continue;
+            if (available <= 0) {
+                continue;
+            }
 
             // 必要なばらし元数量を計算
             int neededFromQty = (int) Math.ceil((double) remaining / conversionRate);
@@ -304,7 +318,9 @@ public class AllocationService {
 
             available = locked.getQuantity() - locked.getAllocatedQty();
             fromQty = Math.min(available, neededFromQty);
-            if (fromQty <= 0) continue;
+            if (fromQty <= 0) {
+                continue;
+            }
             toQty = fromQty * conversionRate;
             allocateQty = Math.min(toQty, remaining);
 
@@ -367,7 +383,9 @@ public class AllocationService {
             return product.getBallQuantity();
         }
         if ("CASE".equals(fromUnitType) && "BALL".equals(toUnitType)) {
-            if (product.getBallQuantity() == 0) return 0;
+            if (product.getBallQuantity() == 0) {
+                return 0;
+            }
             return product.getCaseQuantity() / product.getBallQuantity();
         }
         return 0; // 同一荷姿 or 下位→上位は対象外

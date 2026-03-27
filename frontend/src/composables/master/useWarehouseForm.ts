@@ -10,7 +10,7 @@ import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 
 // 全角カタカナ（長音・スペース含む）
-const KATAKANA_REGEX = /^[ァ-ヶー　 ]*$/
+const KATAKANA_REGEX = /^[ァ-ヶー\u3000 ]*$/
 const WAREHOUSE_CODE_REGEX = /^[A-Z]{4}$/
 
 export function useWarehouseForm() {
@@ -43,9 +43,7 @@ export function useWarehouseForm() {
           .min(1, t('master.warehouse.validation.kanaRequired'))
           .max(200, t('master.warehouse.validation.kanaMaxLength'))
           .regex(KATAKANA_REGEX, t('master.warehouse.validation.kanaFormat')),
-        address: z
-          .string()
-          .max(500, t('master.warehouse.validation.addressMaxLength')),
+        address: z.string().max(500, t('master.warehouse.validation.addressMaxLength')),
       }),
     ),
   )
@@ -88,7 +86,9 @@ export function useWarehouseForm() {
 
   // --- 並行リクエスト制御 ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // --- API呼び出し ---
   async function checkCodeExists() {

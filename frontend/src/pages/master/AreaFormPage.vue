@@ -12,11 +12,7 @@
         </div>
       </template>
 
-      <el-form
-        label-width="160px"
-        style="max-width: 640px"
-        @submit.prevent="handleSubmit"
-      >
+      <el-form label-width="160px" style="max-width: 640px" @submit.prevent="handleSubmit">
         <!-- 倉庫コード -->
         <el-form-item :label="t('master.area.warehouseCode')">
           <span class="readonly-value">
@@ -82,12 +78,7 @@
 
         <!-- エリア種別 -->
         <el-form-item :label="t('master.area.areaType')" :error="errors.areaType">
-          <el-select
-            v-if="!isEdit"
-            v-model="areaType"
-            v-bind="areaTypeAttrs"
-            style="width: 200px"
-          >
+          <el-select v-if="!isEdit" v-model="areaType" v-bind="areaTypeAttrs" style="width: 200px">
             <el-option :label="t('master.area.typeStock')" value="STOCK" />
             <el-option :label="t('master.area.typeInbound')" value="INBOUND" />
             <el-option :label="t('master.area.typeOutbound')" value="OUTBOUND" />

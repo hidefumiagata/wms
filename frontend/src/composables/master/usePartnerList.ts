@@ -129,7 +129,7 @@ export function usePartnerList() {
       ElMessage.success(
         isDeactivating
           ? t('master.partner.deactivateSuccess')
-          : t('master.partner.activateSuccess')
+          : t('master.partner.activateSuccess'),
       )
       await fetchList()
     } catch (err: unknown) {

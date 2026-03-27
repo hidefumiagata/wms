@@ -15,7 +15,9 @@ const { mockBcInstance } = vi.hoisted(() => {
     onmessage: null as ((event: MessageEvent) => void) | null,
   }
   // vi.fn(() => instance) は new で呼べないため、function コンストラクタを使う
-  globalThis.BroadcastChannel = function BroadcastChannel() { return instance } as unknown as typeof BroadcastChannel
+  globalThis.BroadcastChannel = function BroadcastChannel() {
+    return instance
+  } as unknown as typeof BroadcastChannel
   // crypto は getter-only なので Object.defineProperty で上書き
   Object.defineProperty(globalThis, 'crypto', {
     value: { randomUUID: vi.fn(() => 'test-nonce-123') },
@@ -60,11 +62,7 @@ vi.mock('@/stores/auth', () => ({
 }))
 
 // --- テスト本体 ---
-import {
-  startSessionTimer,
-  stopSessionTimer,
-  resetSessionTimer,
-} from '@/utils/session-timer'
+import { startSessionTimer, stopSessionTimer, resetSessionTimer } from '@/utils/session-timer'
 
 /**
  * デフォルト値（60分/55分）で startSessionTimer を呼び出す。
@@ -145,10 +143,7 @@ describe('session-timer', () => {
     it('nonce をローテーションする', async () => {
       await startSessionTimer()
 
-      expect(localStorage.setItem).toHaveBeenCalledWith(
-        'wms_bc_nonce',
-        'test-nonce-123',
-      )
+      expect(localStorage.setItem).toHaveBeenCalledWith('wms_bc_nonce', 'test-nonce-123')
     })
   })
 

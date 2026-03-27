@@ -79,7 +79,9 @@ public class CsvGenerationService {
      * 先頭が =, +, -, @, \t, \r の場合、シングルクォートを前置して数式実行を防止する。
      */
     String sanitizeFormulaInjection(String value) {
-        if (value.isEmpty()) return value;
+        if (value.isEmpty()) {
+            return value;
+        }
         char first = value.charAt(0);
         if (first == '=' || first == '+' || first == '-' || first == '@' || first == '\t' || first == '\r') {
             return "'" + value;
@@ -98,17 +100,23 @@ public class CsvGenerationService {
     }
 
     public static String fmtInteger(Integer value) {
-        if (value == null) return EM_DASH;
+        if (value == null) {
+            return EM_DASH;
+        }
         return INTEGER_FMT.get().format(value);
     }
 
     public static String fmtLong(Long value) {
-        if (value == null) return EM_DASH;
+        if (value == null) {
+            return EM_DASH;
+        }
         return INTEGER_FMT.get().format(value);
     }
 
     public static String fmtPercent(Double value) {
-        if (value == null) return EM_DASH;
+        if (value == null) {
+            return EM_DASH;
+        }
         return String.format("%.1f%%", value);
     }
 

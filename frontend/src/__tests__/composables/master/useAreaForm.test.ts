@@ -65,22 +65,27 @@ describe('useAreaForm', () => {
       const { result } = withSetup(() => useAreaForm())
       await result.fetchArea()
 
-      expect(apiClient.get).toHaveBeenCalledWith('/master/areas/1', expect.objectContaining({
-        signal: expect.any(AbortSignal),
-      }))
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/areas/1',
+        expect.objectContaining({
+          signal: expect.any(AbortSignal),
+        }),
+      )
     })
 
     it('fetchArea が signal を渡す（AbortController対応）', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        buildingId: 10,
-        areaCode: 'AREA01',
-        areaName: 'テストエリア',
-        storageCondition: 'AMBIENT',
-        areaType: 'STOCK',
-        warehouseCode: 'WHS01',
-        buildingCode: 'BLD01',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          buildingId: 10,
+          areaCode: 'AREA01',
+          areaName: 'テストエリア',
+          storageCondition: 'AMBIENT',
+          areaType: 'STOCK',
+          warehouseCode: 'WHS01',
+          buildingCode: 'BLD01',
+          version: 1,
+        }),
+      )
 
       const { result } = withSetup(() => useAreaForm())
       await result.fetchArea()
@@ -91,16 +96,18 @@ describe('useAreaForm', () => {
     })
 
     it('onUnmounted 時に進行中のリクエストがキャンセルされる', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        buildingId: 10,
-        areaCode: 'AREA01',
-        areaName: 'テストエリア',
-        storageCondition: 'AMBIENT',
-        areaType: 'STOCK',
-        warehouseCode: 'WHS01',
-        buildingCode: 'BLD01',
-        version: 1,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          buildingId: 10,
+          areaCode: 'AREA01',
+          areaName: 'テストエリア',
+          storageCondition: 'AMBIENT',
+          areaType: 'STOCK',
+          warehouseCode: 'WHS01',
+          buildingCode: 'BLD01',
+          version: 1,
+        }),
+      )
 
       const { result, wrapper } = withSetup(() => useAreaForm())
       const fetchPromise = result.fetchArea()
@@ -190,27 +197,32 @@ describe('useAreaForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.post).mock.calls.length > 0) {
-        expect(apiClient.post).toHaveBeenCalledWith('/master/areas', expect.objectContaining({
-          buildingId: 10,
-          areaCode: 'AREA01',
-          areaName: 'テストエリア',
-        }))
+        expect(apiClient.post).toHaveBeenCalledWith(
+          '/master/areas',
+          expect.objectContaining({
+            buildingId: 10,
+            areaCode: 'AREA01',
+            areaName: 'テストエリア',
+          }),
+        )
       }
     })
 
     it('編集時にPUT APIを呼ぶ', async () => {
       mockRouteParams = { id: '1' }
       vi.mocked(apiClient.put).mockResolvedValueOnce(mockAxiosResponse({}))
-      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({
-        buildingId: 10,
-        areaCode: 'AREA01',
-        areaName: 'テストエリア',
-        storageCondition: 'AMBIENT',
-        areaType: 'STOCK',
-        warehouseCode: 'WHS01',
-        buildingCode: 'BLD01',
-        version: 2,
-      }))
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          buildingId: 10,
+          areaCode: 'AREA01',
+          areaName: 'テストエリア',
+          storageCondition: 'AMBIENT',
+          areaType: 'STOCK',
+          warehouseCode: 'WHS01',
+          buildingCode: 'BLD01',
+          version: 2,
+        }),
+      )
 
       const { result } = withSetup(() => useAreaForm())
       await result.fetchArea()
@@ -218,9 +230,12 @@ describe('useAreaForm', () => {
       await result.handleSubmit()
 
       if (vi.mocked(apiClient.put).mock.calls.length > 0) {
-        expect(apiClient.put).toHaveBeenCalledWith('/master/areas/1', expect.objectContaining({
-          version: 2,
-        }))
+        expect(apiClient.put).toHaveBeenCalledWith(
+          '/master/areas/1',
+          expect.objectContaining({
+            version: 2,
+          }),
+        )
       }
     })
   })

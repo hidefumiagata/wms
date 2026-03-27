@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse, createAxiosError, flushPromises } from '../../helpers'
+import { withSetup, mockAxiosResponse, createAxiosError } from '../../helpers'
 import { useOutboundSlipDetail } from '@/composables/outbound/useOutboundSlipDetail'
 import { mockRoute, mockRouter } from '../../setup'
 import axios from 'axios'
@@ -37,9 +37,12 @@ describe('useOutboundSlipDetail', () => {
     const { result } = withSetup(() => useOutboundSlipDetail())
     await result.fetchDetail()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/outbound/slips/1', expect.objectContaining({
-      signal: expect.any(AbortSignal),
-    }))
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/outbound/slips/1',
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      }),
+    )
     expect(result.slip.value).toEqual(mockSlip)
   })
 
@@ -97,7 +100,9 @@ describe('useOutboundSlipDetail', () => {
   })
 
   it('canAllocate が SHIPPED ステータスで false', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ ...mockSlip, status: 'SHIPPED' }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({ ...mockSlip, status: 'SHIPPED' }),
+    )
 
     const { result } = withSetup(() => useOutboundSlipDetail())
     await result.fetchDetail()
@@ -106,7 +111,9 @@ describe('useOutboundSlipDetail', () => {
   })
 
   it('canCancel が SHIPPED ステータスで false', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ ...mockSlip, status: 'SHIPPED' }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({ ...mockSlip, status: 'SHIPPED' }),
+    )
 
     const { result } = withSetup(() => useOutboundSlipDetail())
     await result.fetchDetail()
@@ -115,7 +122,9 @@ describe('useOutboundSlipDetail', () => {
   })
 
   it('canInspect が PICKING_COMPLETED ステータスで true', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ ...mockSlip, status: 'PICKING_COMPLETED' }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({ ...mockSlip, status: 'PICKING_COMPLETED' }),
+    )
 
     const { result } = withSetup(() => useOutboundSlipDetail())
     await result.fetchDetail()
@@ -124,7 +133,9 @@ describe('useOutboundSlipDetail', () => {
   })
 
   it('canShip が INSPECTING ステータスで true', async () => {
-    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ ...mockSlip, status: 'INSPECTING' }))
+    vi.mocked(apiClient.get).mockResolvedValue(
+      mockAxiosResponse({ ...mockSlip, status: 'INSPECTING' }),
+    )
 
     const { result } = withSetup(() => useOutboundSlipDetail())
     await result.fetchDetail()
@@ -141,7 +152,10 @@ describe('useOutboundSlipDetail', () => {
   it('goInspect が検品画面に遷移する', () => {
     const { result } = withSetup(() => useOutboundSlipDetail())
     result.goInspect()
-    expect(mockRouter.push).toHaveBeenCalledWith({ name: 'outbound-slip-inspect', params: { id: 1 } })
+    expect(mockRouter.push).toHaveBeenCalledWith({
+      name: 'outbound-slip-inspect',
+      params: { id: 1 },
+    })
   })
 
   it('goShip が出荷画面に遷移する', () => {

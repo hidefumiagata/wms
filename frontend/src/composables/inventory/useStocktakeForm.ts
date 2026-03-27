@@ -1,4 +1,4 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -25,7 +25,9 @@ export function useStocktakeForm() {
 
   // --- AbortController ---
   let abortController: AbortController | null = null
-  onUnmounted(() => { abortController?.abort() })
+  onUnmounted(() => {
+    abortController?.abort()
+  })
 
   // フォーム
   const selectedBuildingId = ref<number | null>(null)
@@ -52,10 +54,12 @@ export function useStocktakeForm() {
           sort: 'buildingName,asc',
         },
       })
-      buildingOptions.value = (res.data.content ?? []).map((b: { id: number; buildingName: string }) => ({
-        id: b.id,
-        buildingName: b.buildingName,
-      }))
+      buildingOptions.value = (res.data.content ?? []).map(
+        (b: { id: number; buildingName: string }) => ({
+          id: b.id,
+          buildingName: b.buildingName,
+        }),
+      )
     } catch {
       buildingOptions.value = []
     }
@@ -112,7 +116,10 @@ export function useStocktakeForm() {
         size: 1,
       }
       if (selectedAreaId.value) params.areaId = selectedAreaId.value
-      const res = await apiClient.get('/master/locations', { params, signal: abortController.signal })
+      const res = await apiClient.get('/master/locations', {
+        params,
+        signal: abortController.signal,
+      })
       targetLocationCount.value = res.data.totalElements ?? 0
     } catch {
       targetLocationCount.value = null
@@ -145,7 +152,7 @@ export function useStocktakeForm() {
       await ElMessageBox.confirm(
         t('inventory.stocktakeStartConfirm', { count: targetLocationCount.value ?? 0 }),
         t('common.confirm'),
-        { type: 'warning' }
+        { type: 'warning' },
       )
     } catch {
       return

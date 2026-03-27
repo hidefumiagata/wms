@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { setActivePinia, createPinia } from 'pinia'
 import apiClient from '@/api/client'
 import { mockAxiosResponse } from '../helpers'
 import { useAuthStore, type AuthUser } from '@/stores/auth'
