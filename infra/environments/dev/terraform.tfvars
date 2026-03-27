@@ -1,7 +1,7 @@
 # environments/dev/terraform.tfvars
-environment     = "dev"
-location        = "japaneast"
-subscription_id = "xxxxxxxx-dev-subscription-id"
+# subscription_id is set via environment variable: TF_VAR_subscription_id
+environment = "dev"
+location    = "japaneast"
 
 # Container Apps
 min_replicas = 0

@@ -26,10 +26,9 @@ infra/
 
 - Azure CLI (`az`) インストール済み
 - Terraform >= 1.5.0 インストール済み
-- Azureサブスクリプション 3つ作成済み:
-  - `wms-terraform` — Terraform state保管用
+- Azureサブスクリプション 2つ:
+  - メインサブスクリプション — Terraform state保管 + prd環境
   - `wms-dev` — 開発環境
-  - `wms-prd` — 本番環境
 
 ---
 
@@ -42,30 +41,35 @@ az login
 
 cd infra
 ./bootstrap.sh \
-  --terraform-sub <wms-terraform サブスクリプションID> \
-  --dev-sub <wms-dev サブスクリプションID> \
-  --prd-sub <wms-prd サブスクリプションID>
+  --main-sub <メインサブスクリプションID> \
+  --dev-sub <wms-dev サブスクリプションID>
 ```
 
 このスクリプトは以下を行う:
 1. Terraform state用Storage Account（`stwmsterraform`）をプロビジョニング
-2. 各環境のサブスクリプション情報を出力
+2. 次のステップで必要な環境変数を案内
 
-### 2. backend.tf のサブスクリプションIDを更新
+### 2. 環境変数を設定
+
+サブスクリプションIDやシークレットはすべて環境変数で渡す（リポジトリにはコミットしない）。
 
 ```bash
-# bootstrap.sh出力に表示されるwms-terraformサブスクリプションIDで置き換え
-vi infra/environments/dev/backend.tf
-vi infra/environments/prd/backend.tf
+# Terraform state backend（全環境共通）
+export TF_STATE_SUBSCRIPTION_ID="<メインサブスクリプションID>"
+
+# シークレット
+export TF_VAR_db_admin_password="<PostgreSQL管理者パスワード>"
+export TF_VAR_jwt_secret="<JWT署名鍵（32文字以上）>"
 ```
 
-`subscription_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"` を実際の値に変更する。
-
-### 3. terraform.tfvars のサブスクリプションIDを更新
+環境ごとのサブスクリプションID:
 
 ```bash
-vi infra/environments/dev/terraform.tfvars   # subscription_id
-vi infra/environments/prd/terraform.tfvars   # subscription_id
+# dev環境の場合
+export TF_VAR_subscription_id="<wms-dev サブスクリプションID>"
+
+# prd環境の場合
+export TF_VAR_subscription_id="<メインサブスクリプションID>"
 ```
 
 ---
@@ -75,43 +79,31 @@ vi infra/environments/prd/terraform.tfvars   # subscription_id
 ### Plan（変更内容の確認）
 
 ```bash
-# Azure認証
 az login
-az account set --subscription <対象サブスクリプションID>
-
-# 環境変数を設定
-export TF_VAR_db_admin_password="<パスワード>"
-export TF_VAR_jwt_secret="<JWT鍵>"
 
 # dev環境
 cd infra/environments/dev
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan
 
 # prd環境
 cd infra/environments/prd
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan
 ```
 
 ### Apply（変更の適用）
 
 ```bash
-az login
-az account set --subscription <対象サブスクリプションID>
-
-export TF_VAR_db_admin_password="<パスワード>"
-export TF_VAR_jwt_secret="<JWT鍵>"
-
 # dev環境
 cd infra/environments/dev
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan -out=tfplan    # 必ずplanを確認してから
 terraform apply tfplan
 
 # prd環境
 cd infra/environments/prd
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan -out=tfplan    # 必ずplanを確認してから
 terraform apply tfplan
 ```
@@ -125,21 +117,15 @@ dev環境は使わない時に破棄してコストをゼロにできる。
 ### Destroy（環境の破棄）
 
 ```bash
-az login
-az account set --subscription <対象サブスクリプションID>
-
-export TF_VAR_db_admin_password="<パスワード>"
-export TF_VAR_jwt_secret="<JWT鍵>"
-
 # dev環境
 cd infra/environments/dev
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan -destroy       # 破棄内容を確認してから
 terraform destroy
 
 # prd環境（慎重に！）
 cd infra/environments/prd
-terraform init
+terraform init -backend-config="subscription_id=$TF_STATE_SUBSCRIPTION_ID"
 terraform plan -destroy       # 破棄内容を必ず確認
 terraform destroy
 ```
