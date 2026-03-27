@@ -102,6 +102,10 @@ public class DeliveryListReportService {
 
         String conditionsSummary = buildConditionsSummary(plannedDateFrom, plannedDateTo, status, carrier);
 
+        // CSV出力時はネスト構造をフラット展開（1明細行=1CSV行）
+        List<DeliveryListReportItem> exportItems =
+                format == ReportFormat.CSV ? flattenForCsv(items) : items;
+
         ReportMeta meta = new ReportMeta(
                 "配送リスト",
                 "rpt-14-delivery-list",
@@ -114,7 +118,7 @@ public class DeliveryListReportService {
         );
 
         log.info("RPT-14 配送リスト生成完了: warehouseId={}, 件数={}", warehouseId, items.size());
-        return reportExportService.export(items, format, meta);
+        return reportExportService.export(exportItems, format, meta);
     }
 
     private DeliveryListReportItem toReportItem(Object[] headerRow, Map<Long, List<Object[]>> linesBySlipId) {
@@ -178,13 +182,40 @@ public class DeliveryListReportService {
     }
 
     /**
-     * CSV出力時は伝票情報を明細行ごとに繰り返すフラット形式で出力する。
-     * 1行目はlines[0]の情報、2行目以降は伝票情報重複+lines[n]を返す。
-     * CsvGenerationServiceは1アイテム→1行の設計のため、全明細の合計行数分を
-     * 1行目（=最初のlines要素）で代表出力する。
-     * ネスト構造のCSVフラット展開はexport前にアイテムを事前展開する方式も
-     * あるが、JSON/PDFとの共通処理との整合性を保つため、CSV出力時は
-     * 伝票ヘッダー＋先頭明細の代表行を出力する設計とする。
+     * CSV出力用にネスト構造をフラット展開する。
+     * 1伝票×N明細 → N行（伝票情報を繰り返し、各行に1明細を設定）。
+     * 明細0件の伝票はヘッダーのみ1行で出力する。
+     */
+    static List<DeliveryListReportItem> flattenForCsv(List<DeliveryListReportItem> items) {
+        List<DeliveryListReportItem> flat = new ArrayList<>();
+        for (DeliveryListReportItem item : items) {
+            List<DeliveryListLineItem> lines = item.getLines();
+            if (lines == null || lines.isEmpty()) {
+                flat.add(item);
+            } else {
+                for (DeliveryListLineItem line : lines) {
+                    DeliveryListReportItem row = new DeliveryListReportItem();
+                    row.setSlipNumber(item.getSlipNumber());
+                    row.setCustomerName(item.getCustomerName());
+                    row.setDeliveryAddress(item.getDeliveryAddress());
+                    row.setPlannedShipDate(item.getPlannedShipDate());
+                    row.setStatus(item.getStatus());
+                    row.setStatusLabel(item.getStatusLabel());
+                    row.setCarrier(item.getCarrier());
+                    row.setTrackingNumber(item.getTrackingNumber());
+                    row.setTotalQuantityCas(item.getTotalQuantityCas());
+                    row.setTotalQuantityPcs(item.getTotalQuantityPcs());
+                    row.setLines(List.of(line));
+                    flat.add(row);
+                }
+            }
+        }
+        return flat;
+    }
+
+    /**
+     * CSV出力時の行マッパー。flattenForCsv で事前展開済みのため、
+     * lines[0] を安全に参照できる。
      */
     private String[] csvRowMapper(DeliveryListReportItem item) {
         List<DeliveryListLineItem> lines = item.getLines();

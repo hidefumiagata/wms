@@ -491,4 +491,86 @@ class DeliveryListReportServiceTest {
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }
     }
+
+    @Nested
+    @DisplayName("flattenForCsv")
+    class FlattenForCsvTest {
+
+        @Test
+        @DisplayName("複数明細行を持つ伝票がフラット展開される")
+        void flattenForCsv_multipleLines_expandsToMultipleRows() {
+            DeliveryListReportItem item = new DeliveryListReportItem();
+            item.setSlipNumber("OUT-001");
+            item.setCustomerName("出荷先A");
+
+            DeliveryListLineItem line1 = new DeliveryListLineItem();
+            line1.setProductCode("P-001");
+            line1.setQuantity(3);
+            DeliveryListLineItem line2 = new DeliveryListLineItem();
+            line2.setProductCode("P-002");
+            line2.setQuantity(5);
+            item.setLines(List.of(line1, line2));
+
+            List<DeliveryListReportItem> result = DeliveryListReportService.flattenForCsv(List.of(item));
+
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).getSlipNumber()).isEqualTo("OUT-001");
+            assertThat(result.get(0).getLines().get(0).getProductCode()).isEqualTo("P-001");
+            assertThat(result.get(1).getSlipNumber()).isEqualTo("OUT-001");
+            assertThat(result.get(1).getLines().get(0).getProductCode()).isEqualTo("P-002");
+        }
+
+        @Test
+        @DisplayName("明細0件の伝票はそのまま1行で出力")
+        void flattenForCsv_emptyLines_keepsSingleRow() {
+            DeliveryListReportItem item = new DeliveryListReportItem();
+            item.setSlipNumber("OUT-002");
+            item.setLines(List.of());
+
+            List<DeliveryListReportItem> result = DeliveryListReportService.flattenForCsv(List.of(item));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).getSlipNumber()).isEqualTo("OUT-002");
+        }
+
+        @Test
+        @DisplayName("lines=nullの伝票はそのまま1行で出力")
+        void flattenForCsv_nullLines_keepsSingleRow() {
+            DeliveryListReportItem item = new DeliveryListReportItem();
+            item.setSlipNumber("OUT-003");
+            item.setLines(null);
+
+            List<DeliveryListReportItem> result = DeliveryListReportService.flattenForCsv(List.of(item));
+
+            assertThat(result).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("CSV出力時にflattenForCsvが適用される")
+        void generate_csvFormat_flattensItems() {
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+
+            Object[] header = createHeaderRow(10L, "OUT-001", "出荷先A",
+                    LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
+            when(outboundReportRepository.findDeliveryListHeaderData(
+                    eq(1L), any(), any(), any(), any()))
+                    .thenReturn(List.<Object[]>of(header));
+
+            Object[] line1 = createLineRow(10L, "P-001", "商品A", "CAS", 3);
+            Object[] line2 = createLineRow(10L, "P-002", "商品B", "PCS", 5);
+            when(outboundReportRepository.findDeliveryListLineData(anyList()))
+                    .thenReturn(List.<Object[]>of(line1, line2));
+
+            when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
+                    .thenAnswer(inv -> {
+                        List<?> data = inv.getArgument(0);
+                        // CSV出力時は2明細→2行にフラット展開される
+                        assertThat(data).hasSize(2);
+                        return ResponseEntity.ok(data);
+                    });
+
+            service.generate(1L, null, null, null, null, ReportFormat.CSV);
+            verify(reportExportService).export(anyList(), eq(ReportFormat.CSV), any());
+        }
+    }
 }
