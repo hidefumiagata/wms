@@ -9,6 +9,9 @@ import com.wms.generated.model.UnreceivedRealtimeReportItem;
 import com.wms.report.service.InboundInspectionReportService;
 import com.wms.report.service.InboundPlanReportService;
 import com.wms.report.service.InboundResultReportService;
+import com.wms.report.service.InventoryCorrectionReportService;
+import com.wms.report.service.InventoryReportService;
+import com.wms.report.service.InventoryTransitionReportService;
 import com.wms.report.service.UnreceivedConfirmedReportService;
 import com.wms.report.service.UnreceivedRealtimeReportService;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +50,15 @@ class ReportControllerUnitTest {
 
     @Mock
     private UnreceivedConfirmedReportService unreceivedConfirmedReportService;
+
+    @Mock
+    private InventoryReportService inventoryReportService;
+
+    @Mock
+    private InventoryTransitionReportService inventoryTransitionReportService;
+
+    @Mock
+    private InventoryCorrectionReportService inventoryCorrectionReportService;
 
     @InjectMocks
     private ReportController controller;
@@ -163,15 +175,66 @@ class ReportControllerUnitTest {
         verify(unreceivedConfirmedReportService).generate(eq(1L), eq(batchDate), eq(ReportFormat.JSON));
     }
 
+    // --- RPT-07 ---
+    @Test
+    @DisplayName("RPT-07: format指定ありの場合はそのまま渡される")
+    void getInventoryReport_withFormat_passesFormat() {
+        when(inventoryReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryReport(1L, null, null, null, null, ReportFormat.PDF);
+        verify(inventoryReportService).generate(any(), any(), any(), any(), any(), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-07: format未指定の場合はJSONがデフォルト")
+    void getInventoryReport_nullFormat_defaultsToJson() {
+        when(inventoryReportService.generate(any(), any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryReport(1L, null, null, null, null, null);
+        verify(inventoryReportService).generate(any(), any(), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    // --- RPT-08 ---
+    @Test
+    @DisplayName("RPT-08: format指定ありの場合はそのまま渡される")
+    void getInventoryTransitionReport_withFormat_passesFormat() {
+        when(inventoryTransitionReportService.generate(any(), any(), any(), any(), eq(ReportFormat.CSV)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryTransitionReport(1L, 100L, null, null, ReportFormat.CSV);
+        verify(inventoryTransitionReportService).generate(any(), any(), any(), any(), eq(ReportFormat.CSV));
+    }
+
+    @Test
+    @DisplayName("RPT-08: format未指定の場合はJSONがデフォルト")
+    void getInventoryTransitionReport_nullFormat_defaultsToJson() {
+        when(inventoryTransitionReportService.generate(any(), any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryTransitionReport(1L, 100L, null, null, null);
+        verify(inventoryTransitionReportService).generate(any(), any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
+    // --- RPT-09 ---
+    @Test
+    @DisplayName("RPT-09: format指定ありの場合はそのまま渡される")
+    void getInventoryCorrectionReport_withFormat_passesFormat() {
+        when(inventoryCorrectionReportService.generate(any(), any(), any(), eq(ReportFormat.PDF)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryCorrectionReport(1L, null, null, ReportFormat.PDF);
+        verify(inventoryCorrectionReportService).generate(any(), any(), any(), eq(ReportFormat.PDF));
+    }
+
+    @Test
+    @DisplayName("RPT-09: format未指定の場合はJSONがデフォルト")
+    void getInventoryCorrectionReport_nullFormat_defaultsToJson() {
+        when(inventoryCorrectionReportService.generate(any(), any(), any(), eq(ReportFormat.JSON)))
+                .thenReturn(ResponseEntity.ok(List.of()));
+        controller.getInventoryCorrectionReport(1L, null, null, null);
+        verify(inventoryCorrectionReportService).generate(any(), any(), any(), eq(ReportFormat.JSON));
+    }
+
     @Test
     @DisplayName("未実装エンドポイントはUnsupportedOperationExceptionをスロー")
     void unimplementedEndpoints_throwUnsupportedOperationException() {
-        assertThatThrownBy(() -> controller.getInventoryReport(1L, null, null, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getInventoryTransitionReport(1L, null, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> controller.getInventoryCorrectionReport(1L, null, null, null))
-                .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getStocktakeListReport(null, null, null, null, null))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> controller.getStocktakeResultReport(null, null))

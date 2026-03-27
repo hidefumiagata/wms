@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${reportTitle}">在庫推移レポート</title>
+    <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
+    <style>
+        .col-no { width: 8mm; }
+        .col-date { width: 25mm; }
+        .col-type { width: 30mm; }
+        .col-location { width: 38mm; }
+        .col-unit { width: 15mm; }
+        .col-lot { width: 30mm; }
+        .col-qty { width: 25mm; }
+        .col-ref { width: 56mm; }
+        .text-red { color: #FF0000; }
+        .highlight-correction { background: #FFFFF0; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{reports/_base-layout :: report-header}" />
+
+    <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
+
+    <th:block th:if="${!items.isEmpty()}">
+        <th:block th:with="groups=${items.stream().collect(T(java.util.stream.Collectors).groupingBy(item -> item.movementDate, T(java.util.LinkedHashMap)::new, T(java.util.stream.Collectors).toList()))}">
+            <th:block th:each="entry : ${groups.entrySet()}">
+                <div class="group-header" style="padding: 2mm 3mm; margin-top: 3mm; border: 1px solid #999;">
+                    &#9632; <span th:text="${#temporals.format(entry.key, 'yyyy-MM-dd')}">2026-03-10</span>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-no">No.</th>
+                            <th class="col-date">変動日</th>
+                            <th class="col-type">変動種別</th>
+                            <th class="col-location">ロケーション</th>
+                            <th class="col-unit">荷姿</th>
+                            <th class="col-lot">ロット番号</th>
+                            <th class="col-qty">変動前</th>
+                            <th class="col-qty">変動数</th>
+                            <th class="col-qty">変動後</th>
+                            <th class="col-ref">参照番号</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item, stat : ${entry.value}"
+                            th:classappend="${item.movementType == 'CORRECTION' ? 'highlight-correction' : ''}">
+                            <td class="text-right" th:text="${stat.count}">1</td>
+                            <td class="text-center" th:text="${#temporals.format(item.movementDate, 'yyyy-MM-dd')}">2026-03-10</td>
+                            <td th:text="${item.movementTypeLabel}">入庫</td>
+                            <td th:text="${item.locationCode}">A-01-A-01</td>
+                            <td class="text-center" th:text="${item.unitType}">CAS</td>
+                            <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.quantityBefore, 1, 'COMMA')}">5</td>
+                            <td class="text-right"
+                                th:classappend="${item.quantityChange < 0 ? 'text-red' : ''}"
+                                th:text="${(item.quantityChange > 0 ? '+' : '') + #numbers.formatInteger(item.quantityChange, 1, 'COMMA')}">+10</td>
+                            <td class="text-right" th:text="${#numbers.formatInteger(item.quantityAfter, 1, 'COMMA')}">15</td>
+                            <td th:text="${item.referenceNumber != null ? item.referenceNumber : ''}"></td>
+                        </tr>
+                        <tr class="subtotal-row">
+                            <td colspan="6"></td>
+                            <td>日次小計</td>
+                            <td class="text-right" th:text="${(#aggregates.sum(entry.value.![quantityChange]) > 0 ? '+' : '') + #numbers.formatInteger(#aggregates.sum(entry.value.![quantityChange]), 1, 'COMMA')}">+10</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </th:block>
+
+            <table>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="6" style="width: 146mm;"></td>
+                        <td style="width: 25mm;">期間合計</td>
+                        <td class="text-right" style="width: 25mm;" th:text="${(#aggregates.sum(items.![quantityChange]) > 0 ? '+' : '') + #numbers.formatInteger(#aggregates.sum(items.![quantityChange]), 1, 'COMMA')}">+5</td>
+                        <td colspan="2" style="width: 81mm;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </th:block>
+    </th:block>
+</body>
+</html>

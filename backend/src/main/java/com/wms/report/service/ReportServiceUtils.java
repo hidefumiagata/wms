@@ -5,6 +5,8 @@ import com.wms.master.entity.Product;
 import com.wms.master.repository.ProductRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.wms.generated.model.ReportFormat;
+
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +24,7 @@ final class ReportServiceUtils {
     private ReportServiceUtils() {
     }
 
-    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
+    static final ZoneId JST = ZoneId.of("Asia/Tokyo");
     private static final DateTimeFormatter FILE_DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /** 入荷ステータス → 日本語ラベル */
@@ -35,6 +37,11 @@ final class ReportServiceUtils {
             "STORED", "入庫完了",
             "CANCELLED", "キャンセル"
     );
+
+    /** formatがnullの場合はJSONをデフォルトとする */
+    static ReportFormat defaultFormat(ReportFormat format) {
+        return format != null ? format : ReportFormat.JSON;
+    }
 
     /** 現在のJST日付をファイル名用にフォーマットする（例: "20260327"） */
     static String todayFileDate() {
