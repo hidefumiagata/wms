@@ -12,8 +12,9 @@ resource "azurerm_postgresql_flexible_server" "main" {
   administrator_password       = var.db_admin_password
   zone                         = "1"
 
-  delegated_subnet_id = var.snet_pg_id
-  private_dns_zone_id = var.private_dns_zone_id
+  public_network_access_enabled = false
+  delegated_subnet_id           = var.snet_pg_id
+  private_dns_zone_id           = var.private_dns_zone_id
 
   tags = var.common_tags
 }

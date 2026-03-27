@@ -56,6 +56,7 @@ module "vnet" {
 
 module "acr" {
   source      = "../../modules/acr"
+  acr_name    = var.acr_name
   location    = var.location
   common_tags = local.common_tags
 }

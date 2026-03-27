@@ -2,6 +2,7 @@
 # subscription_id is set via environment variable: TF_VAR_subscription_id
 environment = "dev"
 location    = "japaneast"
+acr_name    = "acrwmsdevshowcase"
 
 # Container Apps
 min_replicas = 0

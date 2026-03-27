@@ -3,6 +3,11 @@ variable "environment" {
   type        = string
 }
 
+variable "acr_name" {
+  description = "Globally unique name for the Azure Container Registry"
+  type        = string
+}
+
 variable "location" {
   description = "Azure region"
   type        = string

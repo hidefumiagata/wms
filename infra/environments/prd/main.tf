@@ -120,6 +120,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres_west" {
 
 module "acr" {
   source      = "../../modules/acr"
+  acr_name    = var.acr_name
   location    = var.location_primary
   common_tags = local.common_tags
 }
