@@ -235,7 +235,7 @@ flowchart TD
 ### 5. 補足事項
 
 - `locationCodePrefix` は `LIKE 'A-01%'` として適用する（前方一致）。
-- `storageCondition` は `locations` テーブルの `storage_condition` カラムを JOIN して絞り込む。
+- `storageCondition` は `areas` テーブルの `storage_condition` カラムを JOIN して絞り込む（`locations` → `areas` → `areas.storage_condition`）。
 - `viewType=PRODUCT_SUMMARY` の `totalPieceEquivalent` は `products.case_quantity` および `products.ball_quantity` を参照して算出する。
 - ソートのデフォルトは `locationCode,asc`（LOCATION時）/ `productCode,asc`（PRODUCT_SUMMARY時）。
 
