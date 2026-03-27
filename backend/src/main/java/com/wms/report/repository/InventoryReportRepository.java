@@ -30,7 +30,7 @@ public interface InventoryReportRepository extends JpaRepository<Inventory, Long
             JOIN products p ON i.product_id = p.id
             WHERE i.warehouse_id = :warehouseId
               AND i.quantity > 0
-              AND (:locationCodePrefix IS NULL OR l.location_code LIKE :locationCodePrefix || '%')
+              AND (:locationCodePrefix IS NULL OR l.location_code LIKE CONCAT(:locationCodePrefix, '%') ESCAPE '\\')
               AND (:productId IS NULL OR i.product_id = :productId)
               AND (:unitType IS NULL OR i.unit_type = :unitType)
               AND (:storageCondition IS NULL OR a.storage_condition = :storageCondition)

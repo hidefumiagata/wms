@@ -61,12 +61,15 @@ public class ReportController implements ReportApi {
     private final InventoryTransitionReportService inventoryTransitionReportService;
     private final InventoryCorrectionReportService inventoryCorrectionReportService;
 
+    private static ReportFormat defaultFormat(ReportFormat format) {
+        return format != null ? format : ReportFormat.JSON;
+    }
+
     // --- RPT-01: 入荷検品レポート ---
     @Override
     public ResponseEntity<List<InboundInspectionReportItem>> getInboundInspectionReport(
             Long slipId, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
-        return inboundInspectionReportService.generate(slipId, effectiveFormat);
+        return inboundInspectionReportService.generate(slipId, defaultFormat(format));
     }
 
     // --- RPT-03: 入荷予定レポート ---
@@ -74,9 +77,8 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InboundPlanReportItem>> getInboundPlanReport(
             Long warehouseId, LocalDate plannedDateFrom, LocalDate plannedDateTo,
             String status, Long partnerId, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
         return inboundPlanReportService.generate(
-                warehouseId, plannedDateFrom, plannedDateTo, status, partnerId, effectiveFormat);
+                warehouseId, plannedDateFrom, plannedDateTo, status, partnerId, defaultFormat(format));
     }
 
     // --- RPT-04: 入庫実績レポート ---
@@ -84,25 +86,22 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InboundResultReportItem>> getInboundResultReport(
             Long warehouseId, LocalDate storedDateFrom, LocalDate storedDateTo,
             Long partnerId, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
         return inboundResultReportService.generate(
-                warehouseId, storedDateFrom, storedDateTo, partnerId, effectiveFormat);
+                warehouseId, storedDateFrom, storedDateTo, partnerId, defaultFormat(format));
     }
 
     // --- RPT-05: 未入荷リスト（リアルタイム） ---
     @Override
     public ResponseEntity<List<UnreceivedRealtimeReportItem>> getUnreceivedRealtimeReport(
             Long warehouseId, LocalDate asOfDate, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
-        return unreceivedRealtimeReportService.generate(warehouseId, asOfDate, effectiveFormat);
+        return unreceivedRealtimeReportService.generate(warehouseId, asOfDate, defaultFormat(format));
     }
 
     // --- RPT-06: 未入荷リスト（確定） ---
     @Override
     public ResponseEntity<List<UnreceivedConfirmedReportItem>> getUnreceivedConfirmedReport(
             Long warehouseId, LocalDate batchBusinessDate, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
-        return unreceivedConfirmedReportService.generate(warehouseId, batchBusinessDate, effectiveFormat);
+        return unreceivedConfirmedReportService.generate(warehouseId, batchBusinessDate, defaultFormat(format));
     }
 
     // --- RPT-07: 在庫一覧レポート ---
@@ -110,9 +109,8 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InventoryReportItem>> getInventoryReport(
             Long warehouseId, String locationCodePrefix, Long productId,
             UnitType unitType, StorageCondition storageCondition, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
         return inventoryReportService.generate(
-                warehouseId, locationCodePrefix, productId, unitType, storageCondition, effectiveFormat);
+                warehouseId, locationCodePrefix, productId, unitType, storageCondition, defaultFormat(format));
     }
 
     // --- RPT-08: 在庫推移レポート ---
@@ -120,9 +118,8 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InventoryTransitionReportItem>> getInventoryTransitionReport(
             Long warehouseId, Long productId, LocalDate dateFrom,
             LocalDate dateTo, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
         return inventoryTransitionReportService.generate(
-                warehouseId, productId, dateFrom, dateTo, effectiveFormat);
+                warehouseId, productId, dateFrom, dateTo, defaultFormat(format));
     }
 
     // --- RPT-09: 在庫訂正一覧 ---
@@ -130,9 +127,8 @@ public class ReportController implements ReportApi {
     public ResponseEntity<List<InventoryCorrectionReportItem>> getInventoryCorrectionReport(
             Long warehouseId, LocalDate correctionDateFrom,
             LocalDate correctionDateTo, ReportFormat format) {
-        ReportFormat effectiveFormat = format != null ? format : ReportFormat.JSON;
         return inventoryCorrectionReportService.generate(
-                warehouseId, correctionDateFrom, correctionDateTo, effectiveFormat);
+                warehouseId, correctionDateFrom, correctionDateTo, defaultFormat(format));
     }
 
     // --- RPT-10: 棚卸リスト ---

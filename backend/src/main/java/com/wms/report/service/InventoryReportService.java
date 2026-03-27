@@ -36,6 +36,18 @@ public class InventoryReportService {
     private final WarehouseRepository warehouseRepository;
     private final ReportExportService reportExportService;
 
+    // --- ネイティブクエリのカラムインデックス定数（InventoryReportRepository.findInventoryReportData のSELECT順） ---
+    private static final int COL_UNIT_TYPE = 4;
+    private static final int COL_LOT_NUMBER = 5;
+    private static final int COL_EXPIRY_DATE = 6;
+    private static final int COL_QUANTITY = 7;
+    private static final int COL_ALLOCATED_QTY = 8;
+    private static final int COL_LOCATION_CODE = 11;
+    private static final int COL_BUILDING_NAME = 12;
+    private static final int COL_AREA_NAME = 13;
+    private static final int COL_PRODUCT_CODE = 14;
+    private static final int COL_PRODUCT_NAME = 15;
+
     private static final String[] CSV_HEADERS = {
             "ロケーションコード", "棟名", "エリア名", "商品コード", "商品名",
             "荷姿", "在庫数量", "ロット番号", "期限日"
@@ -53,8 +65,9 @@ public class InventoryReportService {
         String unitTypeStr = unitType != null ? unitType.getValue() : null;
         String storageConditionStr = storageCondition != null ? storageCondition.getValue() : null;
 
+        String escapedPrefix = escapeLikePattern(locationCodePrefix);
         List<Object[]> rows = inventoryReportRepository.findInventoryReportData(
-                warehouseId, locationCodePrefix, productId, unitTypeStr, storageConditionStr);
+                warehouseId, escapedPrefix, productId, unitTypeStr, storageConditionStr);
 
         List<InventoryReportItem> items = rows.stream()
                 .map(this::toReportItem)
@@ -77,21 +90,21 @@ public class InventoryReportService {
     }
 
     private InventoryReportItem toReportItem(Object[] row) {
-        int quantity = ((Number) row[7]).intValue();
-        int allocatedQty = ((Number) row[8]).intValue();
+        int quantity = ((Number) row[COL_QUANTITY]).intValue();
+        int allocatedQty = ((Number) row[COL_ALLOCATED_QTY]).intValue();
 
         InventoryReportItem item = new InventoryReportItem();
-        item.setLocationCode((String) row[11]);
-        item.setBuildingName((String) row[12]);
-        item.setAreaName((String) row[13]);
-        item.setProductCode((String) row[14]);
-        item.setProductName((String) row[15]);
-        item.setUnitType((String) row[4]);
+        item.setLocationCode((String) row[COL_LOCATION_CODE]);
+        item.setBuildingName((String) row[COL_BUILDING_NAME]);
+        item.setAreaName((String) row[COL_AREA_NAME]);
+        item.setProductCode((String) row[COL_PRODUCT_CODE]);
+        item.setProductName((String) row[COL_PRODUCT_NAME]);
+        item.setUnitType((String) row[COL_UNIT_TYPE]);
         item.setQuantity(quantity);
         item.setAllocatedQty(allocatedQty);
         item.setAvailableQty(quantity - allocatedQty);
-        item.setLotNumber((String) row[5]);
-        item.setExpiryDate(row[6] != null ? LocalDate.parse(row[6].toString()) : null);
+        item.setLotNumber((String) row[COL_LOT_NUMBER]);
+        item.setExpiryDate(row[COL_EXPIRY_DATE] != null ? LocalDate.parse(row[COL_EXPIRY_DATE].toString()) : null);
         return item;
     }
 
@@ -114,6 +127,14 @@ public class InventoryReportService {
             sb.append("保管条件: ").append(storageCondition.getValue());
         }
         return sb.toString();
+    }
+
+    /** LIKE句で使用するパターン文字列のワイルドカード（%, _）をエスケープする */
+    private static String escapeLikePattern(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     private String[] csvRowMapper(InventoryReportItem item) {
