@@ -87,4 +87,41 @@ class ReportServiceUtilsTest {
             assertThat(ReportServiceUtils.getCaseQuantity(product)).isZero();
         }
     }
+
+    @Nested
+    @DisplayName("defaultFormat")
+    class DefaultFormat {
+
+        @Test
+        @DisplayName("nullの場合はJSONを返す")
+        void null_returnsJson() {
+            assertThat(ReportServiceUtils.defaultFormat(null))
+                    .isEqualTo(com.wms.generated.model.ReportFormat.JSON);
+        }
+
+        @Test
+        @DisplayName("指定値がある場合はそのまま返す")
+        void nonNull_returnsValue() {
+            assertThat(ReportServiceUtils.defaultFormat(com.wms.generated.model.ReportFormat.PDF))
+                    .isEqualTo(com.wms.generated.model.ReportFormat.PDF);
+        }
+    }
+
+    @Nested
+    @DisplayName("escapeLikePattern")
+    class EscapeLikePattern {
+
+        @Test
+        @DisplayName("nullの場合はnullを返す")
+        void null_returnsNull() {
+            assertThat(ReportServiceUtils.escapeLikePattern(null)).isNull();
+        }
+
+        @Test
+        @DisplayName("ワイルドカード文字をエスケープする")
+        void escapesWildcards() {
+            assertThat(ReportServiceUtils.escapeLikePattern("100%_test\\"))
+                    .isEqualTo("100\\%\\_test\\\\");
+        }
+    }
 }

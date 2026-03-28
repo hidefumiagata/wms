@@ -256,4 +256,21 @@ class CsvGenerationServiceTest {
             assertThat(CsvGenerationService.fmtOrDash(null)).isEqualTo("\u2014");
         }
     }
+
+    @Nested
+    @DisplayName("sanitizeFormulaInjection - 追加パターン")
+    class SanitizeAdditional {
+
+        @Test
+        @DisplayName("タブ文字で始まる値はシングルクォートが前置される")
+        void tabPrefix_sanitized() {
+            assertThat(service.sanitizeFormulaInjection("\tdata")).isEqualTo("'\tdata");
+        }
+
+        @Test
+        @DisplayName("復帰文字で始まる値はシングルクォートが前置される")
+        void crPrefix_sanitized() {
+            assertThat(service.sanitizeFormulaInjection("\rdata")).isEqualTo("'\rdata");
+        }
+    }
 }

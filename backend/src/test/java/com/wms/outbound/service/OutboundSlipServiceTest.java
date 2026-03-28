@@ -636,4 +636,35 @@ class OutboundSlipServiceTest {
             verify(outboundSlipRepository, never()).save(any());
         }
     }
+
+    // ========== findBySlipLineId ==========
+
+    @Nested
+    @DisplayName("findBySlipLineId")
+    class FindBySlipLineIdTests {
+
+        @Test
+        @DisplayName("正常系: slipLineIdから出荷伝票を返す")
+        void findBySlipLineId_success() {
+            OutboundSlip slip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260322-0001")
+                    .status(OutboundSlipStatus.ALLOCATED.getValue())
+                    .build();
+            setField(slip, "id", 1L);
+            when(outboundSlipRepository.findBySlipLineId(10L)).thenReturn(Optional.of(slip));
+
+            OutboundSlip result = outboundSlipService.findBySlipLineId(10L);
+            assertThat(result.getSlipNumber()).isEqualTo("OUT-20260322-0001");
+        }
+
+        @Test
+        @DisplayName("異常系: 該当伝票なしでResourceNotFoundExceptionをスロー")
+        void findBySlipLineId_notFound_throws() {
+            when(outboundSlipRepository.findBySlipLineId(999L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> outboundSlipService.findBySlipLineId(999L))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
+        }
+    }
 }

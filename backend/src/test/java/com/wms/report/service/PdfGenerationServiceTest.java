@@ -94,4 +94,16 @@ class PdfGenerationServiceTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid template name");
     }
+
+    @Test
+    @DisplayName("PdfGenerationExceptionがスローされた場合そのまま再スローされる")
+    void shouldRethrowPdfGenerationException() {
+        when(templateEngine.process(eq("reports/rethrow-test"), any(Context.class)))
+                .thenThrow(new PdfGenerationService.PdfGenerationException(
+                        "nested PDF error", new RuntimeException("cause")));
+
+        assertThatThrownBy(() -> service.generatePdf("rethrow-test", Map.of()))
+                .isInstanceOf(PdfGenerationService.PdfGenerationException.class)
+                .hasMessage("nested PDF error");
+    }
 }
