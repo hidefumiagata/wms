@@ -24,6 +24,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.context.MessageSourceResolvable;
 
 import java.util.List;
@@ -299,6 +300,23 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().details()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("MethodArgumentTypeMismatchException -> 400 BAD_REQUEST")
+    void handleTypeMismatch_invalidEnumValue_returns400() {
+        MethodParameter methodParameter = mock(MethodParameter.class);
+        MethodArgumentTypeMismatchException ex = new MethodArgumentTypeMismatchException(
+                "invalid", String.class, "format", methodParameter,
+                new IllegalArgumentException("Unexpected value 'invalid'"));
+
+        ResponseEntity<ErrorResponse> response = handler.handleTypeMismatch(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().code()).isEqualTo("INVALID_PARAMETER");
+        assertThat(response.getBody().message()).contains("format");
+        assertThat(response.getBody().traceId()).isEqualTo(TEST_TRACE_ID);
     }
 
     @Test

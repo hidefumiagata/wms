@@ -48,8 +48,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -125,7 +123,7 @@ class ReportControllerTest {
     @BeforeEach
     void setUpMocks() {
         ResponseEntity<?> ok = ResponseEntity.ok(List.of());
-        lenient().when(inboundInspectionReportService.generate(anyLong(), any())).thenReturn((ResponseEntity) ok);
+        lenient().when(inboundInspectionReportService.generate(any(), any())).thenReturn((ResponseEntity) ok);
         lenient().when(inboundPlanReportService.generate(any(), any(), any(), any(), any(), any())).thenReturn((ResponseEntity) ok);
         lenient().when(inboundResultReportService.generate(any(), any(), any(), any(), any())).thenReturn((ResponseEntity) ok);
         lenient().when(unreceivedRealtimeReportService.generate(any(), any(), any())).thenReturn((ResponseEntity) ok);
