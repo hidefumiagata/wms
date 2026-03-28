@@ -13,7 +13,7 @@ resource "azurerm_container_registry" "main" {
 
   tags = var.common_tags
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # lifecycle {
+  #   prevent_destroy = true
+  # }
 }
