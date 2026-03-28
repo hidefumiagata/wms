@@ -358,7 +358,7 @@ public class InboundSlipService {
             }
 
             if (lineReq.getInspectedQty() < 0) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("INBOUND_INSPECTED_QTY_NEGATIVE",
                         "検品数は0以上である必要があります (lineId=" + line.getId()
                                 + ", inspectedQty=" + lineReq.getInspectedQty() + ")");
             }

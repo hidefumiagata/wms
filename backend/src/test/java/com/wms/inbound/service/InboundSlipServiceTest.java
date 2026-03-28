@@ -1443,7 +1443,7 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("INBOUND_INSPECTED_QTY_NEGATIVE");
         }
 
     }

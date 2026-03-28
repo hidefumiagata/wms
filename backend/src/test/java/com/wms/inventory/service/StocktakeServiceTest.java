@@ -214,7 +214,7 @@ class StocktakeServiceTest {
 
             assertThatThrownBy(() -> service.startStocktake(1L, 2L, null, LocalDate.of(2026, 3, 13), null))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("STOCKTAKE_NO_TARGET_LOCATIONS");
         }
 
         @Test @DisplayName("棚卸ロック中のロケーションがある場合エラー")
@@ -249,7 +249,7 @@ class StocktakeServiceTest {
 
             assertThatThrownBy(() -> service.startStocktake(1L, 2L, null, LocalDate.of(2026, 3, 13), null))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("STOCKTAKE_LINES_EXCEEDED");
         }
 
         @Test @DisplayName("商品マップにない在庫の場合、商品コード・名が空文字になる")
@@ -319,14 +319,14 @@ class StocktakeServiceTest {
         void saveLines_nullInputs_throws() {
             assertThatThrownBy(() -> service.saveStocktakeLines(1L, null))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("STOCKTAKE_LINES_REQUIRED");
         }
 
         @Test @DisplayName("inputsが空の場合エラー")
         void saveLines_emptyInputs_throws() {
             assertThatThrownBy(() -> service.saveStocktakeLines(1L, List.of()))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("STOCKTAKE_LINES_REQUIRED");
         }
 
         @Test @DisplayName("棚卸ヘッダが見つからない場合エラー")
@@ -367,7 +367,7 @@ class StocktakeServiceTest {
             var inputs = List.of(new StocktakeService.LineInput(10L, -1));
             assertThatThrownBy(() -> service.saveStocktakeLines(1L, inputs))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("STOCKTAKE_ACTUAL_QTY_NEGATIVE");
         }
 
         @Test @DisplayName("明細が見つからない場合エラー")

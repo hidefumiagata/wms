@@ -51,10 +51,10 @@ public class InventoryCorrectionService {
                                      int newQty, String reason) {
         // バリデーション
         if (newQty < 0) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR", "訂正後数量は0以上を指定してください");
+            throw new BusinessRuleViolationException("CORRECTION_QTY_NEGATIVE", "訂正後数量は0以上を指定してください");
         }
         if (reason == null || reason.isBlank() || reason.length() > 200) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR", "訂正理由は1〜200文字で入力してください");
+            throw new BusinessRuleViolationException("CORRECTION_REASON_INVALID", "訂正理由は1〜200文字で入力してください");
         }
 
         // ロケーション存在チェック

@@ -73,7 +73,7 @@ public class StocktakeService {
                 warehouseId, buildingId, areaId);
 
         if (locations.isEmpty()) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("STOCKTAKE_NO_TARGET_LOCATIONS",
                     "対象ロケーションが存在しません");
         }
 
@@ -118,7 +118,7 @@ public class StocktakeService {
 
         // 2000行上限チェック
         if (inventories.size() > MAX_STOCKTAKE_LINES) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("STOCKTAKE_LINES_EXCEEDED",
                     "棚卸対象の在庫明細が" + MAX_STOCKTAKE_LINES + "行を超えています。エリアを絞ってください");
         }
 
@@ -171,7 +171,7 @@ public class StocktakeService {
     @Transactional
     public InputResult saveStocktakeLines(Long headerId, java.util.List<LineInput> inputs) {
         if (inputs == null || inputs.isEmpty()) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR", "明細を1件以上指定してください");
+            throw new BusinessRuleViolationException("STOCKTAKE_LINES_REQUIRED", "明細を1件以上指定してください");
         }
 
         StocktakeHeader header = stocktakeHeaderRepository.findById(headerId)
@@ -189,7 +189,7 @@ public class StocktakeService {
 
         for (LineInput input : inputs) {
             if (input.actualQty() < 0) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("STOCKTAKE_ACTUAL_QTY_NEGATIVE",
                         "実数は0以上を指定してください");
             }
 

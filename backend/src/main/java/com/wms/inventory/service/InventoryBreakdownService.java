@@ -42,17 +42,17 @@ public class InventoryBreakdownService {
                                       String toUnitType, Long toLocationId) {
         // バリデーション
         if (breakdownQty < 1) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR", "ばらし数量は1以上を指定してください");
+            throw new BusinessRuleViolationException("BREAKDOWN_QTY_INVALID", "ばらし数量は1以上を指定してください");
         }
         if ("PIECE".equals(fromUnitType)) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR", "PIECEからのばらしはできません");
+            throw new BusinessRuleViolationException("BREAKDOWN_FROM_PIECE", "PIECEからのばらしはできません");
         }
 
         // 荷姿順序チェック
         int fromRank = unitRank(fromUnitType);
         int toRank = unitRank(toUnitType);
         if (fromRank <= toRank) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("BREAKDOWN_UNIT_ORDER_INVALID",
                     "荷姿の大小関係が不正です（CASE > BALL > PIECE）");
         }
 
