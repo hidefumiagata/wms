@@ -358,7 +358,11 @@ Closes #{Issue番号}
 - 機密情報の漏洩
 
 ### Agent 3: 設計準拠レビュー
-`docs/architecture-design/` および `docs/ARCHITECTURE-RULES.md` を読み込み、RULE-* への準拠をチェック。
+以下を読み込み、実装が設計に準拠しているかチェック:
+1. `docs/ARCHITECTURE-RULES.md` — RULE-* への準拠
+2. `docs/document-map.yaml` で対象モジュールの関連ドキュメントを特定
+3. 該当の機能設計書（`docs/functional-design/API-*.md`, `SCR-*.md` 等）— API仕様・画面仕様との整合
+4. 該当の要件定義書（`docs/functional-requirements/*.md`）— 業務ルール・業務フローとの整合
 
 ### レビュー結果の投稿
 
