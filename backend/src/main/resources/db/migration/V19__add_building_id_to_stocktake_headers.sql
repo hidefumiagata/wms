@@ -19,4 +19,4 @@ WHERE h.id = sub.stocktake_header_id;
 -- NOT NULL制約は追加しない（既存データにnullが残る可能性があるため）
 -- 検索用インデックス
 CREATE INDEX idx_stocktake_headers_building ON stocktake_headers(building_id);
-CREATE INDEX idx_stocktake_headers_number ON stocktake_headers(stocktake_number);
+-- stocktake_number は UNIQUE制約（V14）で既にインデックスが存在するため追加不要

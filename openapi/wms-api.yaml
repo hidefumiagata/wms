@@ -3015,6 +3015,7 @@ paths:
           in: query
           schema:
             type: string
+            maxLength: 50
           description: 棚卸番号（前方一致）
         - name: buildingId
           in: query

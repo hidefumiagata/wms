@@ -133,6 +133,7 @@ export function useStocktakeList() {
     () => warehouseStore.selectedWarehouseId,
     (newId) => {
       if (newId == null) return
+      searchForm.buildingId = null
       page.value = 1
       fetchBuildings()
       fetchList()
