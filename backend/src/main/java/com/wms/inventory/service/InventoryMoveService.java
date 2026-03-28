@@ -44,13 +44,13 @@ public class InventoryMoveService {
                                      Long toLocationId, int moveQty) {
         // moveQty バリデーション (D-MAJ-01)
         if (moveQty < 1) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("MOVE_QTY_INVALID",
                     "移動数量は1以上を指定してください");
         }
 
         // 移動元 = 移動先チェック
         if (fromLocationId.equals(toLocationId)) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("MOVE_SAME_LOCATION",
                     "移動元と移動先が同一です");
         }
 
@@ -60,7 +60,7 @@ public class InventoryMoveService {
 
         // 倉庫スコープチェック (S-MAJ-01)
         if (!fromLocation.getWarehouseId().equals(toLocation.getWarehouseId())) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("MOVE_CROSS_WAREHOUSE",
                     "移動元と移動先が異なる倉庫です");
         }
         Long currentWarehouseId = fromLocation.getWarehouseId();
@@ -201,7 +201,7 @@ public class InventoryMoveService {
             case "CASE" -> "LOCATION_CAPACITY_CASE";
             case "BALL" -> "LOCATION_CAPACITY_BALL";
             case "PIECE" -> "LOCATION_CAPACITY_PIECE";
-            default -> throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            default -> throw new BusinessRuleViolationException("MOVE_INVALID_UNIT_TYPE",
                     "不正な荷姿: " + unitType);
         };
         return systemParameterService.getIntValue(paramKey);

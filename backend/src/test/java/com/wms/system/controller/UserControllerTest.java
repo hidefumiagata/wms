@@ -519,6 +519,43 @@ class UserControllerTest {
         }
     }
 
+    // ========== parseSort additional coverage ==========
+
+    @Nested
+    @DisplayName("parseSort edge cases")
+    class ParseSortTests {
+
+        @Test
+        @DisplayName("空文字のsortパラメータはデフォルトソートにフォールバック")
+        void list_paged_blankSort_fallbackToDefault() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("sort", " "))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(userService).search(any(), any(), any(), pageableCaptor.capture());
+            assertThat(pageableCaptor.getValue().getSort().getOrderFor("createdAt")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("ソートプロパティのみ（方向なし）でデフォルト方向を使用")
+        void list_paged_sortWithoutDirection() throws Exception {
+            User u = createUser(1L, "USR001", "山田太郎");
+            var page = new PageImpl<>(List.of(u), PageRequest.of(0, 20), 1);
+            when(userService.search(any(), any(), any(), any())).thenReturn(page);
+
+            mockMvc.perform(get(BASE_URL).param("sort", "fullName"))
+                    .andExpect(status().isOk());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(userService).search(any(), any(), any(), pageableCaptor.capture());
+            assertThat(pageableCaptor.getValue().getSort().getOrderFor("fullName")).isNotNull();
+        }
+    }
+
     // --- Helper ---
 
     private static User createUser(Long id, String code, String fullName) {

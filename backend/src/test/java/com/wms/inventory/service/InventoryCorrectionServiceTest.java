@@ -104,28 +104,28 @@ class InventoryCorrectionServiceTest {
     void correct_negativeQty_throws() {
         assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, -1, "理由"))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                .extracting("errorCode").isEqualTo("CORRECTION_QTY_NEGATIVE");
     }
 
     @Test @DisplayName("reason が空はエラー")
     void correct_emptyReason_throws() {
         assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 3, ""))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                .extracting("errorCode").isEqualTo("CORRECTION_REASON_INVALID");
     }
 
     @Test @DisplayName("reason が null はエラー")
     void correct_nullReason_throws() {
         assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 3, null))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                .extracting("errorCode").isEqualTo("CORRECTION_REASON_INVALID");
     }
 
     @Test @DisplayName("reason が 201文字以上はエラー")
     void correct_longReason_throws() {
         assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 3, "a".repeat(201)))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                .extracting("errorCode").isEqualTo("CORRECTION_REASON_INVALID");
     }
 
     @Test @DisplayName("棚卸ロック中はエラー")

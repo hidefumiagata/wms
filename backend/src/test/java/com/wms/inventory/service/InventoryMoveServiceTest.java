@@ -177,7 +177,7 @@ class InventoryMoveServiceTest {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
                     1L, 100L, "CASE", null, null, 2L, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("MOVE_QTY_INVALID");
         }
 
         @Test
@@ -219,7 +219,7 @@ class InventoryMoveServiceTest {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
                     1L, 100L, "CASE", null, null, 1L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("MOVE_SAME_LOCATION");
         }
 
         @Test
@@ -231,7 +231,7 @@ class InventoryMoveServiceTest {
             assertThatThrownBy(() -> inventoryMoveService.moveInventory(
                     1L, 100L, "CASE", null, null, 2L, 5))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("MOVE_CROSS_WAREHOUSE");
         }
 
         @Test
@@ -419,7 +419,7 @@ class InventoryMoveServiceTest {
         void getCapacity_invalidUnitType_throws() {
             assertThatThrownBy(() -> inventoryMoveService.getLocationCapacity("INVALID"))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("MOVE_INVALID_UNIT_TYPE");
         }
     }
 }

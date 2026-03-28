@@ -300,4 +300,18 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().details()).hasSize(2);
     }
+
+    @Test
+    @DisplayName("ResponseStatusException: ステータスコードとreasonをそのまま返す")
+    void handleResponseStatus_returnsStatus() {
+        var ex = new org.springframework.web.server.ResponseStatusException(
+                HttpStatus.SERVICE_UNAVAILABLE, "Service temporarily unavailable");
+
+        ResponseEntity<ErrorResponse> response = handler.handleResponseStatus(ex);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().code()).isEqualTo("503 SERVICE_UNAVAILABLE");
+        assertThat(response.getBody().message()).isEqualTo("Service temporarily unavailable");
+    }
 }

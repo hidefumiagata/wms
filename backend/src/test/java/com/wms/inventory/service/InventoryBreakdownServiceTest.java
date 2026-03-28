@@ -225,7 +225,7 @@ class InventoryBreakdownServiceTest {
         void breakdown_fromPiece_throws() {
             assertThatThrownBy(() -> service.breakdown(1L, 100L, "PIECE", 1, "BALL", 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("BREAKDOWN_FROM_PIECE");
         }
 
         @Test
@@ -233,7 +233,7 @@ class InventoryBreakdownServiceTest {
         void breakdown_wrongOrder_throws() {
             assertThatThrownBy(() -> service.breakdown(1L, 100L, "BALL", 1, "CASE", 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("BREAKDOWN_UNIT_ORDER_INVALID");
         }
 
         @Test
@@ -241,7 +241,7 @@ class InventoryBreakdownServiceTest {
         void breakdown_zeroQty_throws() {
             assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 0, "BALL", 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("BREAKDOWN_QTY_INVALID");
         }
 
         @Test
@@ -336,7 +336,7 @@ class InventoryBreakdownServiceTest {
         void breakdown_sameUnitType_throws() {
             assertThatThrownBy(() -> service.breakdown(1L, 100L, "CASE", 1, "CASE", 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("BREAKDOWN_UNIT_ORDER_INVALID");
         }
 
         @Test
@@ -344,7 +344,7 @@ class InventoryBreakdownServiceTest {
         void breakdown_unknownUnitType_throws() {
             assertThatThrownBy(() -> service.breakdown(1L, 100L, "UNKNOWN", 1, "PIECE", 1L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .extracting("errorCode").isEqualTo("VALIDATION_ERROR");
+                    .extracting("errorCode").isEqualTo("BREAKDOWN_UNIT_ORDER_INVALID");
         }
     }
 
@@ -362,6 +362,14 @@ class InventoryBreakdownServiceTest {
         }
         @Test void invalidConversion() {
             assertThat(service.getConversionRate("PIECE", "CASE", createProduct(1L, 12, 6))).isEqualTo(0);
+        }
+        @Test @DisplayName("CASE→CASE は変換不可（0を返す）")
+        void caseToCase() {
+            assertThat(service.getConversionRate("CASE", "CASE", createProduct(1L, 12, 6))).isEqualTo(0);
+        }
+        @Test @DisplayName("BALL→BALL は変換不可（0を返す）")
+        void ballToBall() {
+            assertThat(service.getConversionRate("BALL", "BALL", createProduct(1L, 12, 6))).isEqualTo(0);
         }
     }
 }
