@@ -4,6 +4,7 @@ import com.wms.generated.api.InventoryApi;
 import com.wms.generated.model.BreakdownInventoryRequest;
 import com.wms.generated.model.BreakdownInventoryResponse;
 import com.wms.generated.model.ConfirmStocktakeResponse;
+import com.wms.generated.model.CorrectionHistoryItem;
 import com.wms.generated.model.LocationCapacityResponse;
 import com.wms.generated.model.CorrectionInventoryRequest;
 import com.wms.generated.model.CorrectionInventoryResponse;
@@ -209,32 +210,19 @@ public class InventoryController implements InventoryApi {
                 .totalPieceEquivalent(totalPieceEquivalent);
     }
 
-    // --- Stub implementations for other inventory APIs ---
-
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
     @Override
     public ResponseEntity<MoveInventoryResponse> moveInventory(MoveInventoryRequest request) {
         InventoryMoveService.MoveResult result = inventoryMoveService.moveInventory(
-                request.getFromLocationId(),
-                request.getProductId(),
-                request.getUnitType().getValue(),
-                request.getLotNumber(),
-                request.getExpiryDate(),
-                request.getToLocationId(),
-                request.getMoveQty());
-
+                request.getFromLocationId(), request.getProductId(),
+                request.getUnitType().getValue(), request.getLotNumber(),
+                request.getExpiryDate(), request.getToLocationId(), request.getMoveQty());
         MoveInventoryResponse response = new MoveInventoryResponse()
-                .fromInventoryId(result.fromInventoryId())
-                .toInventoryId(result.toInventoryId())
-                .fromLocationCode(result.fromLocationCode())
-                .toLocationCode(result.toLocationCode())
-                .productCode(result.productCode())
-                .productName(result.productName())
-                .unitType(UnitType.fromValue(result.unitType()))
-                .movedQty(result.movedQty())
-                .fromQuantityAfter(result.fromQuantityAfter())
-                .toQuantityAfter(result.toQuantityAfter());
-
+                .fromInventoryId(result.fromInventoryId()).toInventoryId(result.toInventoryId())
+                .fromLocationCode(result.fromLocationCode()).toLocationCode(result.toLocationCode())
+                .productCode(result.productCode()).productName(result.productName())
+                .unitType(UnitType.fromValue(result.unitType())).movedQty(result.movedQty())
+                .fromQuantityAfter(result.fromQuantityAfter()).toQuantityAfter(result.toQuantityAfter());
         return ResponseEntity.ok(response);
     }
 
@@ -242,10 +230,8 @@ public class InventoryController implements InventoryApi {
     @Override
     public ResponseEntity<LocationCapacityResponse> getLocationCapacity(String unitType) {
         int maxQty = inventoryMoveService.getLocationCapacity(unitType);
-        LocationCapacityResponse response = new LocationCapacityResponse()
-                .unitType(UnitType.fromValue(unitType))
-                .maxQuantity(maxQty);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new LocationCapacityResponse()
+                .unitType(UnitType.fromValue(unitType)).maxQuantity(maxQty));
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF')")
@@ -255,20 +241,28 @@ public class InventoryController implements InventoryApi {
                 request.getFromLocationId(), request.getProductId(),
                 request.getFromUnitType().getValue(), request.getBreakdownQty(),
                 request.getToUnitType().getValue(), request.getToLocationId());
-
         BreakdownInventoryResponse response = new BreakdownInventoryResponse()
-                .fromInventoryId(result.fromInventoryId())
-                .toInventoryId(result.toInventoryId())
-                .productCode(result.productCode())
-                .productName(result.productName())
-                .fromUnitType(result.fromUnitType())
-                .toUnitType(result.toUnitType())
-                .breakdownQty(result.breakdownQty())
-                .convertedQty(result.convertedQty())
-                .fromQuantityAfter(result.fromQuantityAfter())
-                .toQuantityAfter(result.toQuantityAfter());
-
+                .fromInventoryId(result.fromInventoryId()).toInventoryId(result.toInventoryId())
+                .productCode(result.productCode()).productName(result.productName())
+                .fromUnitType(result.fromUnitType()).toUnitType(result.toUnitType())
+                .breakdownQty(result.breakdownQty()).convertedQty(result.convertedQty())
+                .fromQuantityAfter(result.fromQuantityAfter()).toQuantityAfter(result.toQuantityAfter());
         return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
+    @Override
+    public ResponseEntity<List<CorrectionHistoryItem>> getCorrectionHistory(
+            Long warehouseId, Long locationId, Long productId, UnitType unitType) {
+        return ResponseEntity.ok(
+                inventoryCorrectionService.getCorrectionHistory(
+                        warehouseId, locationId, productId, unitType.getValue())
+                .stream()
+                .map(r -> new CorrectionHistoryItem()
+                        .correctedAt(r.correctedAt()).quantityBefore(r.quantityBefore())
+                        .quantityAfter(r.quantityAfter()).reason(r.reason())
+                        .executedByName(r.executedByName()))
+                .toList());
     }
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")

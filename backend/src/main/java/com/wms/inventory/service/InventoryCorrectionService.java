@@ -11,6 +11,7 @@ import com.wms.master.service.ProductService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
+import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,11 +34,16 @@ public class InventoryCorrectionService {
     private final InventoryMovementRepository inventoryMovementRepository;
     private final LocationService locationService;
     private final ProductService productService;
+    private final UserService userService;
 
     public record CorrectionResult(
             Long inventoryId, String locationCode,
             String productCode, String productName, String unitType,
             int quantityBefore, int quantityAfter, String reason) {}
+
+    public record CorrectionHistoryRecord(
+            OffsetDateTime correctedAt, int quantityBefore,
+            int quantityAfter, String reason, String executedByName) {}
 
     @Transactional
     public CorrectionResult correct(Long locationId, Long productId, String unitType,
@@ -99,6 +109,31 @@ public class InventoryCorrectionService {
         return new CorrectionResult(locked.getId(), location.getLocationCode(),
                 product.getProductCode(), product.getProductName(), unitType,
                 quantityBefore, newQty, reason);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CorrectionHistoryRecord> getCorrectionHistory(
+            Long warehouseId, Long locationId, Long productId, String unitType) {
+        List<InventoryMovement> movements = inventoryMovementRepository
+                .findRecentByCondition(warehouseId, locationId, productId, unitType, "CORRECTION");
+
+        if (movements.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> userIds = movements.stream()
+                .map(InventoryMovement::getExecutedBy)
+                .collect(Collectors.toSet());
+        Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
+
+        return movements.stream()
+                .map(m -> new CorrectionHistoryRecord(
+                        m.getExecutedAt(),
+                        m.getQuantityAfter() - m.getQuantity(), // quantity = delta (newQty - oldQty), so oldQty = quantityAfter - delta
+                        m.getQuantityAfter(),
+                        m.getCorrectionReason(),
+                        userNameMap.getOrDefault(m.getExecutedBy(), "")))
+                .toList();
     }
 
     private Long getCurrentUserId() {

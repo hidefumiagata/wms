@@ -8,6 +8,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { unitTypeLabel } from '@/utils/inventoryFormatters'
 import type { InventoryLocationItem } from '@/api/generated/models/inventory-location-item'
+import type { CorrectionHistoryItem } from '@/api/generated/models/correction-history-item'
 
 interface InventoryOption {
   productId: number
@@ -39,6 +40,9 @@ export function useInventoryCorrection() {
   // 訂正入力
   const newQty = ref<number | null>(null)
   const reason = ref('')
+
+  // 訂正履歴
+  const correctionHistory = ref<CorrectionHistoryItem[]>([])
 
   // --- AbortController ---
   let abortController: AbortController | null = null
@@ -143,12 +147,36 @@ export function useInventoryCorrection() {
   function onProductChange() {
     selectedUnitType.value = null
     newQty.value = null
+    correctionHistory.value = []
   }
 
-  function onUnitTypeChange() {
+  async function fetchCorrectionHistory() {
+    if (!locationId.value || !selectedProductId.value || !selectedUnitType.value) {
+      correctionHistory.value = []
+      return
+    }
+    try {
+      const res = await apiClient.get('/inventory/correction-history', {
+        params: {
+          warehouseId: warehouseStore.selectedWarehouseId,
+          locationId: locationId.value,
+          productId: selectedProductId.value,
+          unitType: selectedUnitType.value,
+        },
+        signal: abortController?.signal,
+      })
+      correctionHistory.value = res.data ?? []
+    } catch (err) {
+      if (axios.isCancel(err)) return
+      correctionHistory.value = []
+    }
+  }
+
+  async function onUnitTypeChange() {
     if (selectedInventory.value) {
       newQty.value = selectedInventory.value.quantity
     }
+    await fetchCorrectionHistory()
   }
 
   // --- 登録 ---
@@ -236,6 +264,7 @@ export function useInventoryCorrection() {
     diff,
     productOptions,
     unitTypeOptions,
+    correctionHistory,
     fetchInventory,
     onProductChange,
     onUnitTypeChange,

@@ -715,6 +715,13 @@ export default {
     correctionBelowAllocated: 'Cannot correct below allocated quantity ({allocated}).',
     correctionSameQty: 'Same quantity as current stock.',
     correctionReport: 'Correction Report',
+    correctionHistory: 'Correction History (Last 5)',
+    correctionHistoryDate: 'Date',
+    correctionHistoryBefore: 'Before',
+    correctionHistoryAfter: 'After',
+    correctionHistoryReason: 'Reason',
+    correctionHistoryExecutor: 'Performed By',
+    correctionHistoryEmpty: 'No correction history.',
     backToList: 'Back to List',
     // INV-011
     stocktakeTitle: 'Stocktake List',

@@ -1,6 +1,7 @@
 package com.wms.inventory.service;
 
 import com.wms.inventory.entity.Inventory;
+import com.wms.inventory.entity.InventoryMovement;
 import com.wms.inventory.repository.InventoryMovementRepository;
 import com.wms.inventory.repository.InventoryRepository;
 import com.wms.master.entity.Location;
@@ -10,6 +11,7 @@ import com.wms.master.service.ProductService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +23,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +42,7 @@ class InventoryCorrectionServiceTest {
     @Mock private InventoryMovementRepository inventoryMovementRepository;
     @Mock private LocationService locationService;
     @Mock private ProductService productService;
+    @Mock private UserService userService;
     @InjectMocks private InventoryCorrectionService service;
 
     @AfterEach void tearDown() { SecurityContextHolder.clearContext(); }
@@ -143,6 +148,20 @@ class InventoryCorrectionServiceTest {
                 .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
     }
 
+    @Test @DisplayName("悲観的ロック取得時に在庫が消えた場合エラー (TOCTOU)")
+    void correct_findByIdForUpdateEmpty_throws() {
+        when(locationService.findById(1L)).thenReturn(loc(1L, false));
+        when(productService.findById(100L)).thenReturn(prod(100L));
+        Inventory i = inv(10L, 5, 0);
+        when(inventoryRepository.findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
+                1L, 100L, "CASE", null, null)).thenReturn(Optional.of(i));
+        when(inventoryRepository.findByIdForUpdate(10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 3, "理由"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .extracting("errorCode").isEqualTo("INVENTORY_NOT_FOUND");
+    }
+
     @Test @DisplayName("訂正後数量が引当数を下回る場合エラー")
     void correct_belowAllocated_throws() {
         when(locationService.findById(1L)).thenReturn(loc(1L, false));
@@ -155,5 +174,71 @@ class InventoryCorrectionServiceTest {
         assertThatThrownBy(() -> service.correct(1L, 100L, "CASE", null, null, 2, "理由"))
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .extracting("errorCode").isEqualTo("CORRECTION_BELOW_ALLOCATED");
+    }
+
+    // --- getCorrectionHistory ---
+
+    private InventoryMovement movement(Long id, int quantity, int quantityAfter, String reason, Long executedBy, OffsetDateTime at) {
+        return InventoryMovement.builder()
+                .warehouseId(1L).locationId(1L).locationCode("A-01")
+                .productId(100L).productCode("P-001").productName("テスト商品")
+                .unitType("CASE").movementType("CORRECTION")
+                .quantity(quantity).quantityAfter(quantityAfter)
+                .correctionReason(reason).executedAt(at).executedBy(executedBy).build();
+    }
+
+    @Test @DisplayName("訂正履歴: 正常系 - 結果を返す")
+    void getCorrectionHistory_success() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<InventoryMovement> movements = List.of(
+                movement(1L, -2, 3, "棚卸差異", 10L, now),
+                movement(2L, 5, 10, "入荷漏れ", 20L, now.minusDays(1)));
+        when(inventoryMovementRepository
+                .findRecentByCondition(
+                        1L, 1L, 100L, "CASE", "CORRECTION"))
+                .thenReturn(movements);
+        when(userService.getUserFullNameMap(java.util.Set.of(10L, 20L)))
+                .thenReturn(Map.of(10L, "山田太郎", 20L, "鈴木花子"));
+
+        var result = service.getCorrectionHistory(1L, 1L, 100L, "CASE");
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).quantityBefore()).isEqualTo(5);  // quantityAfter(3) - quantity(-2) = 5
+        assertThat(result.get(0).quantityAfter()).isEqualTo(3);
+        assertThat(result.get(0).reason()).isEqualTo("棚卸差異");
+        assertThat(result.get(0).executedByName()).isEqualTo("山田太郎");
+        assertThat(result.get(1).quantityBefore()).isEqualTo(5);  // quantityAfter(10) - quantity(5) = 5
+        assertThat(result.get(1).quantityAfter()).isEqualTo(10);
+        assertThat(result.get(1).executedByName()).isEqualTo("鈴木花子");
+    }
+
+    @Test @DisplayName("訂正履歴: 履歴なしの場合は空リスト")
+    void getCorrectionHistory_empty() {
+        when(inventoryMovementRepository
+                .findRecentByCondition(
+                        1L, 1L, 100L, "CASE", "CORRECTION"))
+                .thenReturn(List.of());
+
+        var result = service.getCorrectionHistory(1L, 1L, 100L, "CASE");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test @DisplayName("訂正履歴: ユーザー名が解決できない場合は空文字")
+    void getCorrectionHistory_unknownUser() {
+        OffsetDateTime now = OffsetDateTime.now();
+        List<InventoryMovement> movements = List.of(
+                movement(1L, -2, 3, "棚卸差異", 99L, now));
+        when(inventoryMovementRepository
+                .findRecentByCondition(
+                        1L, 1L, 100L, "CASE", "CORRECTION"))
+                .thenReturn(movements);
+        when(userService.getUserFullNameMap(java.util.Set.of(99L)))
+                .thenReturn(Map.of());
+
+        var result = service.getCorrectionHistory(1L, 1L, 100L, "CASE");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).executedByName()).isEmpty();
     }
 }

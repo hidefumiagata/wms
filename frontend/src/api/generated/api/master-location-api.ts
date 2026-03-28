@@ -436,76 +436,226 @@ export const MasterLocationApiFactory = function (configuration?: Configuration,
         /**
          * 棚卸開始プレビュー用のロケーション件数を取得する
          * @summary ロケーション件数取得
-         * @param {number} [warehouseId] 倉庫IDで絞り込み
-         * @param {number} [buildingId] 棟IDで絞り込み
-         * @param {number} [areaId] エリアIDで絞り込み
-         * @param {boolean} [isActive] 省略時は有効件数のみカウント（true固定）
+         * @param {MasterLocationApiCountLocationsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        countLocations(warehouseId?: number, buildingId?: number, areaId?: number, isActive?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<CountResponse> {
-            return localVarFp.countLocations(warehouseId, buildingId, areaId, isActive, options).then((request) => request(axios, basePath));
+        countLocations(requestParameters: MasterLocationApiCountLocationsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<CountResponse> {
+            return localVarFp.countLocations(requestParameters.warehouseId, requestParameters.buildingId, requestParameters.areaId, requestParameters.isActive, options).then((request) => request(axios, basePath));
         },
         /**
          * ロケーションマスタに新規ロケーションを登録する。エリア種別に応じた制約チェックを行う
          * @summary ロケーション登録
-         * @param {CreateLocationRequest} createLocationRequest 
+         * @param {MasterLocationApiCreateLocationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createLocation(createLocationRequest: CreateLocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationDetail> {
-            return localVarFp.createLocation(createLocationRequest, options).then((request) => request(axios, basePath));
+        createLocation(requestParameters: MasterLocationApiCreateLocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationDetail> {
+            return localVarFp.createLocation(requestParameters.createLocationRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのロケーションマスタを1件取得する
          * @summary ロケーション取得
-         * @param {number} id リソースID
+         * @param {MasterLocationApiGetLocationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getLocation(id: number, options?: RawAxiosRequestConfig): AxiosPromise<LocationFullDetail> {
-            return localVarFp.getLocation(id, options).then((request) => request(axios, basePath));
+        getLocation(requestParameters: MasterLocationApiGetLocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationFullDetail> {
+            return localVarFp.getLocation(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * ロケーションマスタの一覧を取得する
          * @summary ロケーション一覧取得
-         * @param {number} [warehouseId] 倉庫IDで絞り込み
-         * @param {string} [codePrefix] ロケーションコード前方一致
-         * @param {number} [areaId] エリアIDで絞り込み
-         * @param {boolean} [isActive] 有効/無効フィルタ
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート条件
+         * @param {MasterLocationApiListLocationsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listLocations(warehouseId?: number, codePrefix?: string, areaId?: number, isActive?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<LocationPageResponse> {
-            return localVarFp.listLocations(warehouseId, codePrefix, areaId, isActive, page, size, sort, options).then((request) => request(axios, basePath));
+        listLocations(requestParameters: MasterLocationApiListLocationsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<LocationPageResponse> {
+            return localVarFp.listLocations(requestParameters.warehouseId, requestParameters.codePrefix, requestParameters.areaId, requestParameters.isActive, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのロケーションの有効/無効を切り替える。在庫が存在する・棚卸中のロケーションは無効化不可
          * @summary ロケーション無効化／有効化
-         * @param {number} id リソースID
-         * @param {ToggleActiveRequest} toggleActiveRequest 
+         * @param {MasterLocationApiToggleLocationActiveRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        toggleLocationActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationToggleResponse> {
-            return localVarFp.toggleLocationActive(id, toggleActiveRequest, options).then((request) => request(axios, basePath));
+        toggleLocationActive(requestParameters: MasterLocationApiToggleLocationActiveRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationToggleResponse> {
+            return localVarFp.toggleLocationActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDのロケーションマスタを更新する。ロケーションコード・エリアIDは変更不可
          * @summary ロケーション更新
-         * @param {number} id リソースID
-         * @param {UpdateLocationRequest} updateLocationRequest 
+         * @param {MasterLocationApiUpdateLocationRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateLocation(id: number, updateLocationRequest: UpdateLocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationUpdateResponse> {
-            return localVarFp.updateLocation(id, updateLocationRequest, options).then((request) => request(axios, basePath));
+        updateLocation(requestParameters: MasterLocationApiUpdateLocationRequest, options?: RawAxiosRequestConfig): AxiosPromise<LocationUpdateResponse> {
+            return localVarFp.updateLocation(requestParameters.id, requestParameters.updateLocationRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for countLocations operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiCountLocationsRequest
+ */
+export interface MasterLocationApiCountLocationsRequest {
+    /**
+     * 倉庫IDで絞り込み
+     * @type {number}
+     * @memberof MasterLocationApiCountLocations
+     */
+    readonly warehouseId?: number
+
+    /**
+     * 棟IDで絞り込み
+     * @type {number}
+     * @memberof MasterLocationApiCountLocations
+     */
+    readonly buildingId?: number
+
+    /**
+     * エリアIDで絞り込み
+     * @type {number}
+     * @memberof MasterLocationApiCountLocations
+     */
+    readonly areaId?: number
+
+    /**
+     * 省略時は有効件数のみカウント（true固定）
+     * @type {boolean}
+     * @memberof MasterLocationApiCountLocations
+     */
+    readonly isActive?: boolean
+}
+
+/**
+ * Request parameters for createLocation operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiCreateLocationRequest
+ */
+export interface MasterLocationApiCreateLocationRequest {
+    /**
+     * 
+     * @type {CreateLocationRequest}
+     * @memberof MasterLocationApiCreateLocation
+     */
+    readonly createLocationRequest: CreateLocationRequest
+}
+
+/**
+ * Request parameters for getLocation operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiGetLocationRequest
+ */
+export interface MasterLocationApiGetLocationRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterLocationApiGetLocation
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for listLocations operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiListLocationsRequest
+ */
+export interface MasterLocationApiListLocationsRequest {
+    /**
+     * 倉庫IDで絞り込み
+     * @type {number}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly warehouseId?: number
+
+    /**
+     * ロケーションコード前方一致
+     * @type {string}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly codePrefix?: string
+
+    /**
+     * エリアIDで絞り込み
+     * @type {number}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly areaId?: number
+
+    /**
+     * 有効/無効フィルタ
+     * @type {boolean}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly isActive?: boolean
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly size?: number
+
+    /**
+     * ソート条件
+     * @type {string}
+     * @memberof MasterLocationApiListLocations
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for toggleLocationActive operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiToggleLocationActiveRequest
+ */
+export interface MasterLocationApiToggleLocationActiveRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterLocationApiToggleLocationActive
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {ToggleActiveRequest}
+     * @memberof MasterLocationApiToggleLocationActive
+     */
+    readonly toggleActiveRequest: ToggleActiveRequest
+}
+
+/**
+ * Request parameters for updateLocation operation in MasterLocationApi.
+ * @export
+ * @interface MasterLocationApiUpdateLocationRequest
+ */
+export interface MasterLocationApiUpdateLocationRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof MasterLocationApiUpdateLocation
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {UpdateLocationRequest}
+     * @memberof MasterLocationApiUpdateLocation
+     */
+    readonly updateLocationRequest: UpdateLocationRequest
+}
 
 /**
  * MasterLocationApi - object-oriented interface
@@ -517,84 +667,73 @@ export class MasterLocationApi extends BaseAPI {
     /**
      * 棚卸開始プレビュー用のロケーション件数を取得する
      * @summary ロケーション件数取得
-     * @param {number} [warehouseId] 倉庫IDで絞り込み
-     * @param {number} [buildingId] 棟IDで絞り込み
-     * @param {number} [areaId] エリアIDで絞り込み
-     * @param {boolean} [isActive] 省略時は有効件数のみカウント（true固定）
+     * @param {MasterLocationApiCountLocationsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public countLocations(warehouseId?: number, buildingId?: number, areaId?: number, isActive?: boolean, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).countLocations(warehouseId, buildingId, areaId, isActive, options).then((request) => request(this.axios, this.basePath));
+    public countLocations(requestParameters: MasterLocationApiCountLocationsRequest = {}, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).countLocations(requestParameters.warehouseId, requestParameters.buildingId, requestParameters.areaId, requestParameters.isActive, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ロケーションマスタに新規ロケーションを登録する。エリア種別に応じた制約チェックを行う
      * @summary ロケーション登録
-     * @param {CreateLocationRequest} createLocationRequest 
+     * @param {MasterLocationApiCreateLocationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public createLocation(createLocationRequest: CreateLocationRequest, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).createLocation(createLocationRequest, options).then((request) => request(this.axios, this.basePath));
+    public createLocation(requestParameters: MasterLocationApiCreateLocationRequest, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).createLocation(requestParameters.createLocationRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのロケーションマスタを1件取得する
      * @summary ロケーション取得
-     * @param {number} id リソースID
+     * @param {MasterLocationApiGetLocationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public getLocation(id: number, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).getLocation(id, options).then((request) => request(this.axios, this.basePath));
+    public getLocation(requestParameters: MasterLocationApiGetLocationRequest, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).getLocation(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ロケーションマスタの一覧を取得する
      * @summary ロケーション一覧取得
-     * @param {number} [warehouseId] 倉庫IDで絞り込み
-     * @param {string} [codePrefix] ロケーションコード前方一致
-     * @param {number} [areaId] エリアIDで絞り込み
-     * @param {boolean} [isActive] 有効/無効フィルタ
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート条件
+     * @param {MasterLocationApiListLocationsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public listLocations(warehouseId?: number, codePrefix?: string, areaId?: number, isActive?: boolean, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).listLocations(warehouseId, codePrefix, areaId, isActive, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listLocations(requestParameters: MasterLocationApiListLocationsRequest = {}, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).listLocations(requestParameters.warehouseId, requestParameters.codePrefix, requestParameters.areaId, requestParameters.isActive, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのロケーションの有効/無効を切り替える。在庫が存在する・棚卸中のロケーションは無効化不可
      * @summary ロケーション無効化／有効化
-     * @param {number} id リソースID
-     * @param {ToggleActiveRequest} toggleActiveRequest 
+     * @param {MasterLocationApiToggleLocationActiveRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public toggleLocationActive(id: number, toggleActiveRequest: ToggleActiveRequest, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).toggleLocationActive(id, toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
+    public toggleLocationActive(requestParameters: MasterLocationApiToggleLocationActiveRequest, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).toggleLocationActive(requestParameters.id, requestParameters.toggleActiveRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDのロケーションマスタを更新する。ロケーションコード・エリアIDは変更不可
      * @summary ロケーション更新
-     * @param {number} id リソースID
-     * @param {UpdateLocationRequest} updateLocationRequest 
+     * @param {MasterLocationApiUpdateLocationRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof MasterLocationApi
      */
-    public updateLocation(id: number, updateLocationRequest: UpdateLocationRequest, options?: RawAxiosRequestConfig) {
-        return MasterLocationApiFp(this.configuration).updateLocation(id, updateLocationRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateLocation(requestParameters: MasterLocationApiUpdateLocationRequest, options?: RawAxiosRequestConfig) {
+        return MasterLocationApiFp(this.configuration).updateLocation(requestParameters.id, requestParameters.updateLocationRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

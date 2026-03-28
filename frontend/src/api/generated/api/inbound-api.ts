@@ -633,113 +633,347 @@ export const InboundApiFactory = function (configuration?: Configuration, basePa
         /**
          * STORED・CANCELLED以外の入荷予定伝票をCANCELLEDに遷移させる。 PARTIAL_STOREDの場合は入庫確定済み在庫を戻す処理を行う。 
          * @summary 入荷キャンセル
-         * @param {number} id リソースID
+         * @param {InboundApiCancelInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        cancelInboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.cancelInboundSlip(id, options).then((request) => request(axios, basePath));
+        cancelInboundSlip(requestParameters: InboundApiCancelInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.cancelInboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * PLANNED状態の入荷予定伝票をCONFIRMED（入荷確認済）に遷移させる。
          * @summary 入荷確認
-         * @param {number} id リソースID
+         * @param {InboundApiConfirmInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        confirmInboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.confirmInboundSlip(id, options).then((request) => request(axios, basePath));
+        confirmInboundSlip(requestParameters: InboundApiConfirmInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.confirmInboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 新しい入荷予定伝票をヘッダー情報と明細とともに登録する。 登録時のステータスはPLANNEDで固定。伝票番号はシステムが自動採番する。 
          * @summary 入荷予定登録
-         * @param {CreateInboundSlipRequest} createInboundSlipRequest 
+         * @param {InboundApiCreateInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createInboundSlip(createInboundSlipRequest: CreateInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.createInboundSlip(createInboundSlipRequest, options).then((request) => request(axios, basePath));
+        createInboundSlip(requestParameters: InboundApiCreateInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.createInboundSlip(requestParameters.createInboundSlipRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * ステータスがPLANNEDの入荷予定伝票を物理削除する。
          * @summary 入荷予定削除
-         * @param {number} id リソースID
+         * @param {InboundApiDeleteInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        deleteInboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<void> {
-            return localVarFp.deleteInboundSlip(id, options).then((request) => request(axios, basePath));
+        deleteInboundSlip(requestParameters: InboundApiDeleteInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<void> {
+            return localVarFp.deleteInboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定IDの入荷予定伝票のヘッダー情報と全明細（差異数含む）を取得する。
          * @summary 入荷予定詳細取得
-         * @param {number} id リソースID
+         * @param {InboundApiGetInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInboundSlip(id: number, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.getInboundSlip(id, options).then((request) => request(axios, basePath));
+        getInboundSlip(requestParameters: InboundApiGetInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.getInboundSlip(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * 到着した入荷品を明細単位で検品し、実際の入荷数を記録する。 初回呼び出し時にステータスがINSPECTINGに遷移する。検品数は再保存（上書き）可能。 
          * @summary 検品登録
-         * @param {number} id リソースID
-         * @param {InspectInboundRequest} inspectInboundRequest 
+         * @param {InboundApiInspectInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        inspectInboundSlip(id: number, inspectInboundRequest: InspectInboundRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.inspectInboundSlip(id, inspectInboundRequest, options).then((request) => request(axios, basePath));
+        inspectInboundSlip(requestParameters: InboundApiInspectInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.inspectInboundSlip(requestParameters.id, requestParameters.inspectInboundRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 入庫完了した入荷伝票の実績を明細レベルで照会する。
          * @summary 入荷実績照会
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [storedDateFrom] 入庫日From（yyyy-MM-dd）。デフォルト：当月1日
-         * @param {string} [storedDateTo] 入庫日To（yyyy-MM-dd）。デフォルト：現在日
-         * @param {number} [partnerId] 仕入先ID
-         * @param {string} [slipNumber] 伝票番号（前方一致）
-         * @param {string} [productCode] 商品コード（前方一致）
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {InboundApiListInboundResultsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listInboundResults(warehouseId: number, storedDateFrom?: string, storedDateTo?: string, partnerId?: number, slipNumber?: string, productCode?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<InboundResultPageResponse> {
-            return localVarFp.listInboundResults(warehouseId, storedDateFrom, storedDateTo, partnerId, slipNumber, productCode, page, size, sort, options).then((request) => request(axios, basePath));
+        listInboundResults(requestParameters: InboundApiListInboundResultsRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundResultPageResponse> {
+            return localVarFp.listInboundResults(requestParameters.warehouseId, requestParameters.storedDateFrom, requestParameters.storedDateTo, requestParameters.partnerId, requestParameters.slipNumber, requestParameters.productCode, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定倉庫の入荷予定伝票をページング形式で取得する。ステータス・入荷予定日・仕入先等の条件で絞り込みが可能。
          * @summary 入荷予定一覧取得
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [slipNumber] 伝票番号（前方一致）
-         * @param {Array<InboundSlipStatus>} [status] ステータス（複数指定可）
-         * @param {string} [plannedDateFrom] 入荷予定日From（yyyy-MM-dd）
-         * @param {string} [plannedDateTo] 入荷予定日To（yyyy-MM-dd）
-         * @param {number} [partnerId] 仕入先ID
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {InboundApiListInboundSlipsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listInboundSlips(warehouseId: number, slipNumber?: string, status?: Array<InboundSlipStatus>, plannedDateFrom?: string, plannedDateTo?: string, partnerId?: number, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipSummaryPageResponse> {
-            return localVarFp.listInboundSlips(warehouseId, slipNumber, status, plannedDateFrom, plannedDateTo, partnerId, page, size, sort, options).then((request) => request(axios, basePath));
+        listInboundSlips(requestParameters: InboundApiListInboundSlipsRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipSummaryPageResponse> {
+            return localVarFp.listInboundSlips(requestParameters.warehouseId, requestParameters.slipNumber, requestParameters.status, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.partnerId, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 検品済み明細を指定ロケーションへ入庫確定する。 確定と同時にinventoriesテーブルの在庫を加算し、inventory_movementsにINBOUNDレコードを追記する。 全明細入庫完了でSTOREDに、一部の場合はPARTIAL_STOREDに遷移する。 
          * @summary 入庫確定
-         * @param {number} id リソースID
-         * @param {StoreInboundRequest} storeInboundRequest 
+         * @param {InboundApiStoreInboundSlipRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        storeInboundSlip(id: number, storeInboundRequest: StoreInboundRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
-            return localVarFp.storeInboundSlip(id, storeInboundRequest, options).then((request) => request(axios, basePath));
+        storeInboundSlip(requestParameters: InboundApiStoreInboundSlipRequest, options?: RawAxiosRequestConfig): AxiosPromise<InboundSlipDetail> {
+            return localVarFp.storeInboundSlip(requestParameters.id, requestParameters.storeInboundRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for cancelInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiCancelInboundSlipRequest
+ */
+export interface InboundApiCancelInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiCancelInboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for confirmInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiConfirmInboundSlipRequest
+ */
+export interface InboundApiConfirmInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiConfirmInboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for createInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiCreateInboundSlipRequest
+ */
+export interface InboundApiCreateInboundSlipRequest {
+    /**
+     * 
+     * @type {CreateInboundSlipRequest}
+     * @memberof InboundApiCreateInboundSlip
+     */
+    readonly createInboundSlipRequest: CreateInboundSlipRequest
+}
+
+/**
+ * Request parameters for deleteInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiDeleteInboundSlipRequest
+ */
+export interface InboundApiDeleteInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiDeleteInboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for getInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiGetInboundSlipRequest
+ */
+export interface InboundApiGetInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiGetInboundSlip
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for inspectInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiInspectInboundSlipRequest
+ */
+export interface InboundApiInspectInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiInspectInboundSlip
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {InspectInboundRequest}
+     * @memberof InboundApiInspectInboundSlip
+     */
+    readonly inspectInboundRequest: InspectInboundRequest
+}
+
+/**
+ * Request parameters for listInboundResults operation in InboundApi.
+ * @export
+ * @interface InboundApiListInboundResultsRequest
+ */
+export interface InboundApiListInboundResultsRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly warehouseId: number
+
+    /**
+     * 入庫日From（yyyy-MM-dd）。デフォルト：当月1日
+     * @type {string}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly storedDateFrom?: string
+
+    /**
+     * 入庫日To（yyyy-MM-dd）。デフォルト：現在日
+     * @type {string}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly storedDateTo?: string
+
+    /**
+     * 仕入先ID
+     * @type {number}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly partnerId?: number
+
+    /**
+     * 伝票番号（前方一致）
+     * @type {string}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly slipNumber?: string
+
+    /**
+     * 商品コード（前方一致）
+     * @type {string}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly productCode?: string
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof InboundApiListInboundResults
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for listInboundSlips operation in InboundApi.
+ * @export
+ * @interface InboundApiListInboundSlipsRequest
+ */
+export interface InboundApiListInboundSlipsRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly warehouseId: number
+
+    /**
+     * 伝票番号（前方一致）
+     * @type {string}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly slipNumber?: string
+
+    /**
+     * ステータス（複数指定可）
+     * @type {Array<InboundSlipStatus>}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly status?: Array<InboundSlipStatus>
+
+    /**
+     * 入荷予定日From（yyyy-MM-dd）
+     * @type {string}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly plannedDateFrom?: string
+
+    /**
+     * 入荷予定日To（yyyy-MM-dd）
+     * @type {string}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly plannedDateTo?: string
+
+    /**
+     * 仕入先ID
+     * @type {number}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly partnerId?: number
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof InboundApiListInboundSlips
+     */
+    readonly sort?: string
+}
+
+/**
+ * Request parameters for storeInboundSlip operation in InboundApi.
+ * @export
+ * @interface InboundApiStoreInboundSlipRequest
+ */
+export interface InboundApiStoreInboundSlipRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof InboundApiStoreInboundSlip
+     */
+    readonly id: number
+
+    /**
+     * 
+     * @type {StoreInboundRequest}
+     * @memberof InboundApiStoreInboundSlip
+     */
+    readonly storeInboundRequest: StoreInboundRequest
+}
 
 /**
  * InboundApi - object-oriented interface
@@ -751,127 +985,109 @@ export class InboundApi extends BaseAPI {
     /**
      * STORED・CANCELLED以外の入荷予定伝票をCANCELLEDに遷移させる。 PARTIAL_STOREDの場合は入庫確定済み在庫を戻す処理を行う。 
      * @summary 入荷キャンセル
-     * @param {number} id リソースID
+     * @param {InboundApiCancelInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public cancelInboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).cancelInboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public cancelInboundSlip(requestParameters: InboundApiCancelInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).cancelInboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * PLANNED状態の入荷予定伝票をCONFIRMED（入荷確認済）に遷移させる。
      * @summary 入荷確認
-     * @param {number} id リソースID
+     * @param {InboundApiConfirmInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public confirmInboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).confirmInboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public confirmInboundSlip(requestParameters: InboundApiConfirmInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).confirmInboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 新しい入荷予定伝票をヘッダー情報と明細とともに登録する。 登録時のステータスはPLANNEDで固定。伝票番号はシステムが自動採番する。 
      * @summary 入荷予定登録
-     * @param {CreateInboundSlipRequest} createInboundSlipRequest 
+     * @param {InboundApiCreateInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public createInboundSlip(createInboundSlipRequest: CreateInboundSlipRequest, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).createInboundSlip(createInboundSlipRequest, options).then((request) => request(this.axios, this.basePath));
+    public createInboundSlip(requestParameters: InboundApiCreateInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).createInboundSlip(requestParameters.createInboundSlipRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * ステータスがPLANNEDの入荷予定伝票を物理削除する。
      * @summary 入荷予定削除
-     * @param {number} id リソースID
+     * @param {InboundApiDeleteInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public deleteInboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).deleteInboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public deleteInboundSlip(requestParameters: InboundApiDeleteInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).deleteInboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定IDの入荷予定伝票のヘッダー情報と全明細（差異数含む）を取得する。
      * @summary 入荷予定詳細取得
-     * @param {number} id リソースID
+     * @param {InboundApiGetInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public getInboundSlip(id: number, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).getInboundSlip(id, options).then((request) => request(this.axios, this.basePath));
+    public getInboundSlip(requestParameters: InboundApiGetInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).getInboundSlip(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 到着した入荷品を明細単位で検品し、実際の入荷数を記録する。 初回呼び出し時にステータスがINSPECTINGに遷移する。検品数は再保存（上書き）可能。 
      * @summary 検品登録
-     * @param {number} id リソースID
-     * @param {InspectInboundRequest} inspectInboundRequest 
+     * @param {InboundApiInspectInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public inspectInboundSlip(id: number, inspectInboundRequest: InspectInboundRequest, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).inspectInboundSlip(id, inspectInboundRequest, options).then((request) => request(this.axios, this.basePath));
+    public inspectInboundSlip(requestParameters: InboundApiInspectInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).inspectInboundSlip(requestParameters.id, requestParameters.inspectInboundRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 入庫完了した入荷伝票の実績を明細レベルで照会する。
      * @summary 入荷実績照会
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [storedDateFrom] 入庫日From（yyyy-MM-dd）。デフォルト：当月1日
-     * @param {string} [storedDateTo] 入庫日To（yyyy-MM-dd）。デフォルト：現在日
-     * @param {number} [partnerId] 仕入先ID
-     * @param {string} [slipNumber] 伝票番号（前方一致）
-     * @param {string} [productCode] 商品コード（前方一致）
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {InboundApiListInboundResultsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public listInboundResults(warehouseId: number, storedDateFrom?: string, storedDateTo?: string, partnerId?: number, slipNumber?: string, productCode?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).listInboundResults(warehouseId, storedDateFrom, storedDateTo, partnerId, slipNumber, productCode, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listInboundResults(requestParameters: InboundApiListInboundResultsRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).listInboundResults(requestParameters.warehouseId, requestParameters.storedDateFrom, requestParameters.storedDateTo, requestParameters.partnerId, requestParameters.slipNumber, requestParameters.productCode, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 指定倉庫の入荷予定伝票をページング形式で取得する。ステータス・入荷予定日・仕入先等の条件で絞り込みが可能。
      * @summary 入荷予定一覧取得
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [slipNumber] 伝票番号（前方一致）
-     * @param {Array<InboundSlipStatus>} [status] ステータス（複数指定可）
-     * @param {string} [plannedDateFrom] 入荷予定日From（yyyy-MM-dd）
-     * @param {string} [plannedDateTo] 入荷予定日To（yyyy-MM-dd）
-     * @param {number} [partnerId] 仕入先ID
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {InboundApiListInboundSlipsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public listInboundSlips(warehouseId: number, slipNumber?: string, status?: Array<InboundSlipStatus>, plannedDateFrom?: string, plannedDateTo?: string, partnerId?: number, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).listInboundSlips(warehouseId, slipNumber, status, plannedDateFrom, plannedDateTo, partnerId, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listInboundSlips(requestParameters: InboundApiListInboundSlipsRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).listInboundSlips(requestParameters.warehouseId, requestParameters.slipNumber, requestParameters.status, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.partnerId, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 検品済み明細を指定ロケーションへ入庫確定する。 確定と同時にinventoriesテーブルの在庫を加算し、inventory_movementsにINBOUNDレコードを追記する。 全明細入庫完了でSTOREDに、一部の場合はPARTIAL_STOREDに遷移する。 
      * @summary 入庫確定
-     * @param {number} id リソースID
-     * @param {StoreInboundRequest} storeInboundRequest 
+     * @param {InboundApiStoreInboundSlipRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof InboundApi
      */
-    public storeInboundSlip(id: number, storeInboundRequest: StoreInboundRequest, options?: RawAxiosRequestConfig) {
-        return InboundApiFp(this.configuration).storeInboundSlip(id, storeInboundRequest, options).then((request) => request(this.axios, this.basePath));
+    public storeInboundSlip(requestParameters: InboundApiStoreInboundSlipRequest, options?: RawAxiosRequestConfig) {
+        return InboundApiFp(this.configuration).storeInboundSlip(requestParameters.id, requestParameters.storeInboundRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

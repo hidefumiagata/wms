@@ -2865,6 +2865,56 @@ paths:
                     errorCode: BREAKDOWN_CONVERSION_FRACTION
                     message: 変換後数量に端数が発生しました
 
+  /api/v1/inventory/correction-history:
+    get:
+      operationId: getCorrectionHistory
+      summary: 訂正履歴取得（直近5件）
+      description: |
+        指定した在庫の訂正履歴（直近5件）を取得する。
+        商品・荷姿選択時に参考表示として使用。
+      tags: [inventory]
+      parameters:
+        - name: warehouseId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫ID
+        - name: locationId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ロケーションID
+        - name: productId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 商品ID
+        - name: unitType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/UnitType'
+          description: 荷姿
+      responses:
+        '200':
+          description: 訂正履歴一覧（直近5件、新しい順）
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CorrectionHistoryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
   /api/v1/inventory/correction:
     post:
       operationId: correctInventory
@@ -7233,6 +7283,27 @@ components:
         reason:
           type: string
           description: 訂正理由
+
+    CorrectionHistoryItem:
+      type: object
+      required: [correctedAt, quantityBefore, quantityAfter, reason, executedByName]
+      properties:
+        correctedAt:
+          type: string
+          format: date-time
+          description: 訂正日時
+        quantityBefore:
+          type: integer
+          description: 前数量
+        quantityAfter:
+          type: integer
+          description: 後数量
+        reason:
+          type: string
+          description: 訂正理由
+        executedByName:
+          type: string
+          description: 実施者名
 
     StocktakeSummary:
       type: object

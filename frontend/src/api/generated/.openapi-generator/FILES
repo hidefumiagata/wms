@@ -1,5 +1,6 @@
 .gitignore
 .npmignore
+README.md
 api.ts
 api/allocation-api.ts
 api/auth-api.ts
@@ -55,6 +56,7 @@ models/complete-picking-line-response.ts
 models/complete-picking-request.ts
 models/complete-picking-response.ts
 models/confirm-stocktake-response.ts
+models/correction-history-item.ts
 models/correction-inventory-request.ts
 models/correction-inventory-response.ts
 models/count-response.ts
@@ -211,3 +213,6 @@ models/warehouse-list-item.ts
 models/warehouse-page-response.ts
 models/warehouse-simple.ts
 models/warehouse-toggle-response.ts
+package.json
+tsconfig.esm.json
+tsconfig.json

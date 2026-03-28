@@ -1318,225 +1318,763 @@ export const ReportApiFactory = function (configuration?: Configuration, basePat
         /**
          * 
          * @summary 日次集計レポート
-         * @param {string} targetBusinessDate 対象営業日
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetDailySummaryReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getDailySummaryReport(targetBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<DailySummaryReportItem>> {
-            return localVarFp.getDailySummaryReport(targetBusinessDate, format, options).then((request) => request(axios, basePath));
+        getDailySummaryReport(requestParameters: ReportApiGetDailySummaryReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<DailySummaryReportItem>> {
+            return localVarFp.getDailySummaryReport(requestParameters.targetBusinessDate, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 配送リスト
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [plannedDateFrom] 出荷予定日（From）
-         * @param {string} [plannedDateTo] 出荷予定日（To）
-         * @param {string} [status] ステータス絞り込み
-         * @param {string} [carrier] 配送業者名で絞り込み（部分一致）
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetDeliveryListReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getDeliveryListReport(warehouseId: number, plannedDateFrom?: string, plannedDateTo?: string, status?: string, carrier?: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<DeliveryListReportItem>> {
-            return localVarFp.getDeliveryListReport(warehouseId, plannedDateFrom, plannedDateTo, status, carrier, format, options).then((request) => request(axios, basePath));
+        getDeliveryListReport(requestParameters: ReportApiGetDeliveryListReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<DeliveryListReportItem>> {
+            return localVarFp.getDeliveryListReport(requestParameters.warehouseId, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.status, requestParameters.carrier, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 入荷伝票IDを指定して検品レポートを取得する。format指定でCSV/PDFダウンロードも可能。
          * @summary 入荷検品レポート
-         * @param {number} slipId 入荷伝票ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInboundInspectionReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInboundInspectionReport(slipId: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundInspectionReportItem>> {
-            return localVarFp.getInboundInspectionReport(slipId, format, options).then((request) => request(axios, basePath));
+        getInboundInspectionReport(requestParameters: ReportApiGetInboundInspectionReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundInspectionReportItem>> {
+            return localVarFp.getInboundInspectionReport(requestParameters.slipId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 入荷予定レポート
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [plannedDateFrom] 入荷予定日From
-         * @param {string} [plannedDateTo] 入荷予定日To
-         * @param {string} [status] ステータス絞り込み
-         * @param {number} [partnerId] 仕入先ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInboundPlanReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInboundPlanReport(warehouseId: number, plannedDateFrom?: string, plannedDateTo?: string, status?: string, partnerId?: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundPlanReportItem>> {
-            return localVarFp.getInboundPlanReport(warehouseId, plannedDateFrom, plannedDateTo, status, partnerId, format, options).then((request) => request(axios, basePath));
+        getInboundPlanReport(requestParameters: ReportApiGetInboundPlanReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundPlanReportItem>> {
+            return localVarFp.getInboundPlanReport(requestParameters.warehouseId, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.status, requestParameters.partnerId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 入庫実績レポート
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [storedDateFrom] 入庫日From
-         * @param {string} [storedDateTo] 入庫日To
-         * @param {number} [partnerId] 仕入先ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInboundResultReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInboundResultReport(warehouseId: number, storedDateFrom?: string, storedDateTo?: string, partnerId?: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundResultReportItem>> {
-            return localVarFp.getInboundResultReport(warehouseId, storedDateFrom, storedDateTo, partnerId, format, options).then((request) => request(axios, basePath));
+        getInboundResultReport(requestParameters: ReportApiGetInboundResultReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InboundResultReportItem>> {
+            return localVarFp.getInboundResultReport(requestParameters.warehouseId, requestParameters.storedDateFrom, requestParameters.storedDateTo, requestParameters.partnerId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 在庫訂正一覧
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [correctionDateFrom] 訂正日From（デフォルト：当月1日）
-         * @param {string} [correctionDateTo] 訂正日To（デフォルト：本日）
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInventoryCorrectionReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInventoryCorrectionReport(warehouseId: number, correctionDateFrom?: string, correctionDateTo?: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryCorrectionReportItem>> {
-            return localVarFp.getInventoryCorrectionReport(warehouseId, correctionDateFrom, correctionDateTo, format, options).then((request) => request(axios, basePath));
+        getInventoryCorrectionReport(requestParameters: ReportApiGetInventoryCorrectionReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryCorrectionReportItem>> {
+            return localVarFp.getInventoryCorrectionReport(requestParameters.warehouseId, requestParameters.correctionDateFrom, requestParameters.correctionDateTo, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 在庫一覧レポート
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [locationCodePrefix] ロケーションコード前方一致
-         * @param {number} [productId] 商品ID
-         * @param {UnitType} [unitType] 荷姿種別
-         * @param {StorageCondition} [storageCondition] 保管条件
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInventoryReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInventoryReport(warehouseId: number, locationCodePrefix?: string, productId?: number, unitType?: UnitType, storageCondition?: StorageCondition, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryReportItem>> {
-            return localVarFp.getInventoryReport(warehouseId, locationCodePrefix, productId, unitType, storageCondition, format, options).then((request) => request(axios, basePath));
+        getInventoryReport(requestParameters: ReportApiGetInventoryReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryReportItem>> {
+            return localVarFp.getInventoryReport(requestParameters.warehouseId, requestParameters.locationCodePrefix, requestParameters.productId, requestParameters.unitType, requestParameters.storageCondition, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 在庫推移レポート
-         * @param {number} warehouseId 倉庫ID
-         * @param {number} productId 商品ID
-         * @param {string} [dateFrom] 対象期間From（デフォルト：当月1日）
-         * @param {string} [dateTo] 対象期間To（デフォルト：本日）
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetInventoryTransitionReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getInventoryTransitionReport(warehouseId: number, productId: number, dateFrom?: string, dateTo?: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryTransitionReportItem>> {
-            return localVarFp.getInventoryTransitionReport(warehouseId, productId, dateFrom, dateTo, format, options).then((request) => request(axios, basePath));
+        getInventoryTransitionReport(requestParameters: ReportApiGetInventoryTransitionReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<InventoryTransitionReportItem>> {
+            return localVarFp.getInventoryTransitionReport(requestParameters.warehouseId, requestParameters.productId, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary ピッキング指示書
-         * @param {number} pickingInstructionId ピッキング指示ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetPickingInstructionReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getPickingInstructionReport(pickingInstructionId: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<PickingInstructionReportItem>> {
-            return localVarFp.getPickingInstructionReport(pickingInstructionId, format, options).then((request) => request(axios, basePath));
+        getPickingInstructionReport(requestParameters: ReportApiGetPickingInstructionReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<PickingInstructionReportItem>> {
+            return localVarFp.getPickingInstructionReport(requestParameters.pickingInstructionId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 返品レポート
-         * @param {number} warehouseId 倉庫ID
-         * @param {ReturnType} [returnType] 返品種別
-         * @param {string} [returnDateFrom] 返品日From
-         * @param {string} [returnDateTo] 返品日To
-         * @param {number} [productId] 商品ID
-         * @param {number} [partnerId] 取引先ID
-         * @param {ReturnReason} [returnReason] 返品理由コード
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetReturnsReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getReturnsReport(warehouseId: number, returnType?: ReturnType, returnDateFrom?: string, returnDateTo?: string, productId?: number, partnerId?: number, returnReason?: ReturnReason, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<ReturnsReportItem>> {
-            return localVarFp.getReturnsReport(warehouseId, returnType, returnDateFrom, returnDateTo, productId, partnerId, returnReason, format, options).then((request) => request(axios, basePath));
+        getReturnsReport(requestParameters: ReportApiGetReturnsReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ReturnsReportItem>> {
+            return localVarFp.getReturnsReport(requestParameters.warehouseId, requestParameters.returnType, requestParameters.returnDateFrom, requestParameters.returnDateTo, requestParameters.productId, requestParameters.partnerId, requestParameters.returnReason, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 出荷検品レポート
-         * @param {number} slipId 出荷伝票ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetShippingInspectionReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getShippingInspectionReport(slipId: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<ShippingInspectionReportItem>> {
-            return localVarFp.getShippingInspectionReport(slipId, format, options).then((request) => request(axios, basePath));
+        getShippingInspectionReport(requestParameters: ReportApiGetShippingInspectionReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<ShippingInspectionReportItem>> {
+            return localVarFp.getShippingInspectionReport(requestParameters.slipId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 棚卸リスト
-         * @param {number} [stocktakeId] 棚卸ID（棚卸開始後）
-         * @param {number} [buildingId] 棟ID（プレビュー用）
-         * @param {number} [areaId] エリアID（プレビュー用）
-         * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetStocktakeListReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getStocktakeListReport(stocktakeId?: number, buildingId?: number, areaId?: number, hideBookQty?: boolean, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<StocktakeListReportItem>> {
-            return localVarFp.getStocktakeListReport(stocktakeId, buildingId, areaId, hideBookQty, format, options).then((request) => request(axios, basePath));
+        getStocktakeListReport(requestParameters: ReportApiGetStocktakeListReportRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<Array<StocktakeListReportItem>> {
+            return localVarFp.getStocktakeListReport(requestParameters.stocktakeId, requestParameters.buildingId, requestParameters.areaId, requestParameters.hideBookQty, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 棚卸結果レポート
-         * @param {number} stocktakeId 棚卸ID
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetStocktakeResultReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getStocktakeResultReport(stocktakeId: number, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<StocktakeResultReportItem>> {
-            return localVarFp.getStocktakeResultReport(stocktakeId, format, options).then((request) => request(axios, basePath));
+        getStocktakeResultReport(requestParameters: ReportApiGetStocktakeResultReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<StocktakeResultReportItem>> {
+            return localVarFp.getStocktakeResultReport(requestParameters.stocktakeId, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 未入荷リスト（確定）
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} batchBusinessDate バッチ処理営業日
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetUnreceivedConfirmedReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUnreceivedConfirmedReport(warehouseId: number, batchBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnreceivedConfirmedReportItem>> {
-            return localVarFp.getUnreceivedConfirmedReport(warehouseId, batchBusinessDate, format, options).then((request) => request(axios, basePath));
+        getUnreceivedConfirmedReport(requestParameters: ReportApiGetUnreceivedConfirmedReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnreceivedConfirmedReportItem>> {
+            return localVarFp.getUnreceivedConfirmedReport(requestParameters.warehouseId, requestParameters.batchBusinessDate, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 未入荷リスト（リアルタイム）
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [asOfDate] 基準日（デフォルト：現在営業日）
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetUnreceivedRealtimeReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUnreceivedRealtimeReport(warehouseId: number, asOfDate?: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnreceivedRealtimeReportItem>> {
-            return localVarFp.getUnreceivedRealtimeReport(warehouseId, asOfDate, format, options).then((request) => request(axios, basePath));
+        getUnreceivedRealtimeReport(requestParameters: ReportApiGetUnreceivedRealtimeReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnreceivedRealtimeReportItem>> {
+            return localVarFp.getUnreceivedRealtimeReport(requestParameters.warehouseId, requestParameters.asOfDate, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 未出荷リスト（確定）
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} batchBusinessDate バッチ処理営業日
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetUnshippedConfirmedReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUnshippedConfirmedReport(warehouseId: number, batchBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnshippedConfirmedReportItem>> {
-            return localVarFp.getUnshippedConfirmedReport(warehouseId, batchBusinessDate, format, options).then((request) => request(axios, basePath));
+        getUnshippedConfirmedReport(requestParameters: ReportApiGetUnshippedConfirmedReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnshippedConfirmedReportItem>> {
+            return localVarFp.getUnshippedConfirmedReport(requestParameters.warehouseId, requestParameters.batchBusinessDate, requestParameters.format, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary 未出荷リスト（リアルタイム）
-         * @param {number} warehouseId 倉庫ID
-         * @param {string} [asOfDate] 基準日（デフォルト：現在営業日）
-         * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+         * @param {ReportApiGetUnshippedRealtimeReportRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getUnshippedRealtimeReport(warehouseId: number, asOfDate?: string, format?: ReportFormat, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnshippedRealtimeReportItem>> {
-            return localVarFp.getUnshippedRealtimeReport(warehouseId, asOfDate, format, options).then((request) => request(axios, basePath));
+        getUnshippedRealtimeReport(requestParameters: ReportApiGetUnshippedRealtimeReportRequest, options?: RawAxiosRequestConfig): AxiosPromise<Array<UnshippedRealtimeReportItem>> {
+            return localVarFp.getUnshippedRealtimeReport(requestParameters.warehouseId, requestParameters.asOfDate, requestParameters.format, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for getDailySummaryReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetDailySummaryReportRequest
+ */
+export interface ReportApiGetDailySummaryReportRequest {
+    /**
+     * 対象営業日
+     * @type {string}
+     * @memberof ReportApiGetDailySummaryReport
+     */
+    readonly targetBusinessDate: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetDailySummaryReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getDeliveryListReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetDeliveryListReportRequest
+ */
+export interface ReportApiGetDeliveryListReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 出荷予定日（From）
+     * @type {string}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly plannedDateFrom?: string
+
+    /**
+     * 出荷予定日（To）
+     * @type {string}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly plannedDateTo?: string
+
+    /**
+     * ステータス絞り込み
+     * @type {string}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly status?: string
+
+    /**
+     * 配送業者名で絞り込み（部分一致）
+     * @type {string}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly carrier?: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetDeliveryListReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInboundInspectionReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInboundInspectionReportRequest
+ */
+export interface ReportApiGetInboundInspectionReportRequest {
+    /**
+     * 入荷伝票ID
+     * @type {number}
+     * @memberof ReportApiGetInboundInspectionReport
+     */
+    readonly slipId: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInboundInspectionReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInboundPlanReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInboundPlanReportRequest
+ */
+export interface ReportApiGetInboundPlanReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 入荷予定日From
+     * @type {string}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly plannedDateFrom?: string
+
+    /**
+     * 入荷予定日To
+     * @type {string}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly plannedDateTo?: string
+
+    /**
+     * ステータス絞り込み
+     * @type {string}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly status?: string
+
+    /**
+     * 仕入先ID
+     * @type {number}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly partnerId?: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInboundPlanReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInboundResultReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInboundResultReportRequest
+ */
+export interface ReportApiGetInboundResultReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetInboundResultReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 入庫日From
+     * @type {string}
+     * @memberof ReportApiGetInboundResultReport
+     */
+    readonly storedDateFrom?: string
+
+    /**
+     * 入庫日To
+     * @type {string}
+     * @memberof ReportApiGetInboundResultReport
+     */
+    readonly storedDateTo?: string
+
+    /**
+     * 仕入先ID
+     * @type {number}
+     * @memberof ReportApiGetInboundResultReport
+     */
+    readonly partnerId?: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInboundResultReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInventoryCorrectionReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInventoryCorrectionReportRequest
+ */
+export interface ReportApiGetInventoryCorrectionReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetInventoryCorrectionReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 訂正日From（デフォルト：当月1日）
+     * @type {string}
+     * @memberof ReportApiGetInventoryCorrectionReport
+     */
+    readonly correctionDateFrom?: string
+
+    /**
+     * 訂正日To（デフォルト：本日）
+     * @type {string}
+     * @memberof ReportApiGetInventoryCorrectionReport
+     */
+    readonly correctionDateTo?: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInventoryCorrectionReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInventoryReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInventoryReportRequest
+ */
+export interface ReportApiGetInventoryReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * ロケーションコード前方一致
+     * @type {string}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly locationCodePrefix?: string
+
+    /**
+     * 商品ID
+     * @type {number}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly productId?: number
+
+    /**
+     * 荷姿種別
+     * @type {UnitType}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly unitType?: UnitType
+
+    /**
+     * 保管条件
+     * @type {StorageCondition}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly storageCondition?: StorageCondition
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInventoryReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getInventoryTransitionReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetInventoryTransitionReportRequest
+ */
+export interface ReportApiGetInventoryTransitionReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetInventoryTransitionReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 商品ID
+     * @type {number}
+     * @memberof ReportApiGetInventoryTransitionReport
+     */
+    readonly productId: number
+
+    /**
+     * 対象期間From（デフォルト：当月1日）
+     * @type {string}
+     * @memberof ReportApiGetInventoryTransitionReport
+     */
+    readonly dateFrom?: string
+
+    /**
+     * 対象期間To（デフォルト：本日）
+     * @type {string}
+     * @memberof ReportApiGetInventoryTransitionReport
+     */
+    readonly dateTo?: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetInventoryTransitionReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getPickingInstructionReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetPickingInstructionReportRequest
+ */
+export interface ReportApiGetPickingInstructionReportRequest {
+    /**
+     * ピッキング指示ID
+     * @type {number}
+     * @memberof ReportApiGetPickingInstructionReport
+     */
+    readonly pickingInstructionId: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetPickingInstructionReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getReturnsReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetReturnsReportRequest
+ */
+export interface ReportApiGetReturnsReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 返品種別
+     * @type {ReturnType}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly returnType?: ReturnType
+
+    /**
+     * 返品日From
+     * @type {string}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly returnDateFrom?: string
+
+    /**
+     * 返品日To
+     * @type {string}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly returnDateTo?: string
+
+    /**
+     * 商品ID
+     * @type {number}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly productId?: number
+
+    /**
+     * 取引先ID
+     * @type {number}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly partnerId?: number
+
+    /**
+     * 返品理由コード
+     * @type {ReturnReason}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly returnReason?: ReturnReason
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetReturnsReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getShippingInspectionReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetShippingInspectionReportRequest
+ */
+export interface ReportApiGetShippingInspectionReportRequest {
+    /**
+     * 出荷伝票ID
+     * @type {number}
+     * @memberof ReportApiGetShippingInspectionReport
+     */
+    readonly slipId: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetShippingInspectionReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getStocktakeListReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetStocktakeListReportRequest
+ */
+export interface ReportApiGetStocktakeListReportRequest {
+    /**
+     * 棚卸ID（棚卸開始後）
+     * @type {number}
+     * @memberof ReportApiGetStocktakeListReport
+     */
+    readonly stocktakeId?: number
+
+    /**
+     * 棟ID（プレビュー用）
+     * @type {number}
+     * @memberof ReportApiGetStocktakeListReport
+     */
+    readonly buildingId?: number
+
+    /**
+     * エリアID（プレビュー用）
+     * @type {number}
+     * @memberof ReportApiGetStocktakeListReport
+     */
+    readonly areaId?: number
+
+    /**
+     * PDF出力時に帳簿数量を非表示
+     * @type {boolean}
+     * @memberof ReportApiGetStocktakeListReport
+     */
+    readonly hideBookQty?: boolean
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetStocktakeListReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getStocktakeResultReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetStocktakeResultReportRequest
+ */
+export interface ReportApiGetStocktakeResultReportRequest {
+    /**
+     * 棚卸ID
+     * @type {number}
+     * @memberof ReportApiGetStocktakeResultReport
+     */
+    readonly stocktakeId: number
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetStocktakeResultReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getUnreceivedConfirmedReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetUnreceivedConfirmedReportRequest
+ */
+export interface ReportApiGetUnreceivedConfirmedReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetUnreceivedConfirmedReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * バッチ処理営業日
+     * @type {string}
+     * @memberof ReportApiGetUnreceivedConfirmedReport
+     */
+    readonly batchBusinessDate: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetUnreceivedConfirmedReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getUnreceivedRealtimeReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetUnreceivedRealtimeReportRequest
+ */
+export interface ReportApiGetUnreceivedRealtimeReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetUnreceivedRealtimeReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 基準日（デフォルト：現在営業日）
+     * @type {string}
+     * @memberof ReportApiGetUnreceivedRealtimeReport
+     */
+    readonly asOfDate?: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetUnreceivedRealtimeReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getUnshippedConfirmedReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetUnshippedConfirmedReportRequest
+ */
+export interface ReportApiGetUnshippedConfirmedReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetUnshippedConfirmedReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * バッチ処理営業日
+     * @type {string}
+     * @memberof ReportApiGetUnshippedConfirmedReport
+     */
+    readonly batchBusinessDate: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetUnshippedConfirmedReport
+     */
+    readonly format?: ReportFormat
+}
+
+/**
+ * Request parameters for getUnshippedRealtimeReport operation in ReportApi.
+ * @export
+ * @interface ReportApiGetUnshippedRealtimeReportRequest
+ */
+export interface ReportApiGetUnshippedRealtimeReportRequest {
+    /**
+     * 倉庫ID
+     * @type {number}
+     * @memberof ReportApiGetUnshippedRealtimeReport
+     */
+    readonly warehouseId: number
+
+    /**
+     * 基準日（デフォルト：現在営業日）
+     * @type {string}
+     * @memberof ReportApiGetUnshippedRealtimeReport
+     */
+    readonly asOfDate?: string
+
+    /**
+     * 出力フォーマット（json/csv/pdf）
+     * @type {ReportFormat}
+     * @memberof ReportApiGetUnshippedRealtimeReport
+     */
+    readonly format?: ReportFormat
+}
 
 /**
  * ReportApi - object-oriented interface
@@ -1548,255 +2086,205 @@ export class ReportApi extends BaseAPI {
     /**
      * 
      * @summary 日次集計レポート
-     * @param {string} targetBusinessDate 対象営業日
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetDailySummaryReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getDailySummaryReport(targetBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getDailySummaryReport(targetBusinessDate, format, options).then((request) => request(this.axios, this.basePath));
+    public getDailySummaryReport(requestParameters: ReportApiGetDailySummaryReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getDailySummaryReport(requestParameters.targetBusinessDate, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 配送リスト
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [plannedDateFrom] 出荷予定日（From）
-     * @param {string} [plannedDateTo] 出荷予定日（To）
-     * @param {string} [status] ステータス絞り込み
-     * @param {string} [carrier] 配送業者名で絞り込み（部分一致）
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetDeliveryListReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getDeliveryListReport(warehouseId: number, plannedDateFrom?: string, plannedDateTo?: string, status?: string, carrier?: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getDeliveryListReport(warehouseId, plannedDateFrom, plannedDateTo, status, carrier, format, options).then((request) => request(this.axios, this.basePath));
+    public getDeliveryListReport(requestParameters: ReportApiGetDeliveryListReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getDeliveryListReport(requestParameters.warehouseId, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.status, requestParameters.carrier, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 入荷伝票IDを指定して検品レポートを取得する。format指定でCSV/PDFダウンロードも可能。
      * @summary 入荷検品レポート
-     * @param {number} slipId 入荷伝票ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInboundInspectionReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInboundInspectionReport(slipId: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInboundInspectionReport(slipId, format, options).then((request) => request(this.axios, this.basePath));
+    public getInboundInspectionReport(requestParameters: ReportApiGetInboundInspectionReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInboundInspectionReport(requestParameters.slipId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 入荷予定レポート
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [plannedDateFrom] 入荷予定日From
-     * @param {string} [plannedDateTo] 入荷予定日To
-     * @param {string} [status] ステータス絞り込み
-     * @param {number} [partnerId] 仕入先ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInboundPlanReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInboundPlanReport(warehouseId: number, plannedDateFrom?: string, plannedDateTo?: string, status?: string, partnerId?: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInboundPlanReport(warehouseId, plannedDateFrom, plannedDateTo, status, partnerId, format, options).then((request) => request(this.axios, this.basePath));
+    public getInboundPlanReport(requestParameters: ReportApiGetInboundPlanReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInboundPlanReport(requestParameters.warehouseId, requestParameters.plannedDateFrom, requestParameters.plannedDateTo, requestParameters.status, requestParameters.partnerId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 入庫実績レポート
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [storedDateFrom] 入庫日From
-     * @param {string} [storedDateTo] 入庫日To
-     * @param {number} [partnerId] 仕入先ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInboundResultReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInboundResultReport(warehouseId: number, storedDateFrom?: string, storedDateTo?: string, partnerId?: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInboundResultReport(warehouseId, storedDateFrom, storedDateTo, partnerId, format, options).then((request) => request(this.axios, this.basePath));
+    public getInboundResultReport(requestParameters: ReportApiGetInboundResultReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInboundResultReport(requestParameters.warehouseId, requestParameters.storedDateFrom, requestParameters.storedDateTo, requestParameters.partnerId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 在庫訂正一覧
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [correctionDateFrom] 訂正日From（デフォルト：当月1日）
-     * @param {string} [correctionDateTo] 訂正日To（デフォルト：本日）
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInventoryCorrectionReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInventoryCorrectionReport(warehouseId: number, correctionDateFrom?: string, correctionDateTo?: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInventoryCorrectionReport(warehouseId, correctionDateFrom, correctionDateTo, format, options).then((request) => request(this.axios, this.basePath));
+    public getInventoryCorrectionReport(requestParameters: ReportApiGetInventoryCorrectionReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInventoryCorrectionReport(requestParameters.warehouseId, requestParameters.correctionDateFrom, requestParameters.correctionDateTo, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 在庫一覧レポート
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [locationCodePrefix] ロケーションコード前方一致
-     * @param {number} [productId] 商品ID
-     * @param {UnitType} [unitType] 荷姿種別
-     * @param {StorageCondition} [storageCondition] 保管条件
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInventoryReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInventoryReport(warehouseId: number, locationCodePrefix?: string, productId?: number, unitType?: UnitType, storageCondition?: StorageCondition, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInventoryReport(warehouseId, locationCodePrefix, productId, unitType, storageCondition, format, options).then((request) => request(this.axios, this.basePath));
+    public getInventoryReport(requestParameters: ReportApiGetInventoryReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInventoryReport(requestParameters.warehouseId, requestParameters.locationCodePrefix, requestParameters.productId, requestParameters.unitType, requestParameters.storageCondition, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 在庫推移レポート
-     * @param {number} warehouseId 倉庫ID
-     * @param {number} productId 商品ID
-     * @param {string} [dateFrom] 対象期間From（デフォルト：当月1日）
-     * @param {string} [dateTo] 対象期間To（デフォルト：本日）
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetInventoryTransitionReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getInventoryTransitionReport(warehouseId: number, productId: number, dateFrom?: string, dateTo?: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getInventoryTransitionReport(warehouseId, productId, dateFrom, dateTo, format, options).then((request) => request(this.axios, this.basePath));
+    public getInventoryTransitionReport(requestParameters: ReportApiGetInventoryTransitionReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getInventoryTransitionReport(requestParameters.warehouseId, requestParameters.productId, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary ピッキング指示書
-     * @param {number} pickingInstructionId ピッキング指示ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetPickingInstructionReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getPickingInstructionReport(pickingInstructionId: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getPickingInstructionReport(pickingInstructionId, format, options).then((request) => request(this.axios, this.basePath));
+    public getPickingInstructionReport(requestParameters: ReportApiGetPickingInstructionReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getPickingInstructionReport(requestParameters.pickingInstructionId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 返品レポート
-     * @param {number} warehouseId 倉庫ID
-     * @param {ReturnType} [returnType] 返品種別
-     * @param {string} [returnDateFrom] 返品日From
-     * @param {string} [returnDateTo] 返品日To
-     * @param {number} [productId] 商品ID
-     * @param {number} [partnerId] 取引先ID
-     * @param {ReturnReason} [returnReason] 返品理由コード
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetReturnsReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getReturnsReport(warehouseId: number, returnType?: ReturnType, returnDateFrom?: string, returnDateTo?: string, productId?: number, partnerId?: number, returnReason?: ReturnReason, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getReturnsReport(warehouseId, returnType, returnDateFrom, returnDateTo, productId, partnerId, returnReason, format, options).then((request) => request(this.axios, this.basePath));
+    public getReturnsReport(requestParameters: ReportApiGetReturnsReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getReturnsReport(requestParameters.warehouseId, requestParameters.returnType, requestParameters.returnDateFrom, requestParameters.returnDateTo, requestParameters.productId, requestParameters.partnerId, requestParameters.returnReason, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 出荷検品レポート
-     * @param {number} slipId 出荷伝票ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetShippingInspectionReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getShippingInspectionReport(slipId: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getShippingInspectionReport(slipId, format, options).then((request) => request(this.axios, this.basePath));
+    public getShippingInspectionReport(requestParameters: ReportApiGetShippingInspectionReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getShippingInspectionReport(requestParameters.slipId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 棚卸リスト
-     * @param {number} [stocktakeId] 棚卸ID（棚卸開始後）
-     * @param {number} [buildingId] 棟ID（プレビュー用）
-     * @param {number} [areaId] エリアID（プレビュー用）
-     * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetStocktakeListReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getStocktakeListReport(stocktakeId?: number, buildingId?: number, areaId?: number, hideBookQty?: boolean, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getStocktakeListReport(stocktakeId, buildingId, areaId, hideBookQty, format, options).then((request) => request(this.axios, this.basePath));
+    public getStocktakeListReport(requestParameters: ReportApiGetStocktakeListReportRequest = {}, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getStocktakeListReport(requestParameters.stocktakeId, requestParameters.buildingId, requestParameters.areaId, requestParameters.hideBookQty, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 棚卸結果レポート
-     * @param {number} stocktakeId 棚卸ID
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetStocktakeResultReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getStocktakeResultReport(stocktakeId: number, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getStocktakeResultReport(stocktakeId, format, options).then((request) => request(this.axios, this.basePath));
+    public getStocktakeResultReport(requestParameters: ReportApiGetStocktakeResultReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getStocktakeResultReport(requestParameters.stocktakeId, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 未入荷リスト（確定）
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} batchBusinessDate バッチ処理営業日
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetUnreceivedConfirmedReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getUnreceivedConfirmedReport(warehouseId: number, batchBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getUnreceivedConfirmedReport(warehouseId, batchBusinessDate, format, options).then((request) => request(this.axios, this.basePath));
+    public getUnreceivedConfirmedReport(requestParameters: ReportApiGetUnreceivedConfirmedReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getUnreceivedConfirmedReport(requestParameters.warehouseId, requestParameters.batchBusinessDate, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 未入荷リスト（リアルタイム）
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [asOfDate] 基準日（デフォルト：現在営業日）
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetUnreceivedRealtimeReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getUnreceivedRealtimeReport(warehouseId: number, asOfDate?: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getUnreceivedRealtimeReport(warehouseId, asOfDate, format, options).then((request) => request(this.axios, this.basePath));
+    public getUnreceivedRealtimeReport(requestParameters: ReportApiGetUnreceivedRealtimeReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getUnreceivedRealtimeReport(requestParameters.warehouseId, requestParameters.asOfDate, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 未出荷リスト（確定）
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} batchBusinessDate バッチ処理営業日
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetUnshippedConfirmedReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getUnshippedConfirmedReport(warehouseId: number, batchBusinessDate: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getUnshippedConfirmedReport(warehouseId, batchBusinessDate, format, options).then((request) => request(this.axios, this.basePath));
+    public getUnshippedConfirmedReport(requestParameters: ReportApiGetUnshippedConfirmedReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getUnshippedConfirmedReport(requestParameters.warehouseId, requestParameters.batchBusinessDate, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary 未出荷リスト（リアルタイム）
-     * @param {number} warehouseId 倉庫ID
-     * @param {string} [asOfDate] 基準日（デフォルト：現在営業日）
-     * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
+     * @param {ReportApiGetUnshippedRealtimeReportRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ReportApi
      */
-    public getUnshippedRealtimeReport(warehouseId: number, asOfDate?: string, format?: ReportFormat, options?: RawAxiosRequestConfig) {
-        return ReportApiFp(this.configuration).getUnshippedRealtimeReport(warehouseId, asOfDate, format, options).then((request) => request(this.axios, this.basePath));
+    public getUnshippedRealtimeReport(requestParameters: ReportApiGetUnshippedRealtimeReportRequest, options?: RawAxiosRequestConfig) {
+        return ReportApiFp(this.configuration).getUnshippedRealtimeReport(requestParameters.warehouseId, requestParameters.asOfDate, requestParameters.format, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

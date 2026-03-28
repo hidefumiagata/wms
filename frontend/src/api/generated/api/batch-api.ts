@@ -254,41 +254,119 @@ export const BatchApiFactory = function (configuration?: Configuration, basePath
         /**
          * 日替処理を同期実行する。未入荷リスト・未出荷リスト確定、営業日更新等を行う。
          * @summary 日替処理実行
-         * @param {DailyCloseRequest} dailyCloseRequest 
+         * @param {BatchApiExecuteDailyCloseRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        executeDailyClose(dailyCloseRequest: DailyCloseRequest, options?: RawAxiosRequestConfig): AxiosPromise<DailyCloseResponse> {
-            return localVarFp.executeDailyClose(dailyCloseRequest, options).then((request) => request(axios, basePath));
+        executeDailyClose(requestParameters: BatchApiExecuteDailyCloseRequest, options?: RawAxiosRequestConfig): AxiosPromise<DailyCloseResponse> {
+            return localVarFp.executeDailyClose(requestParameters.dailyCloseRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * バッチ実行履歴の詳細を1件取得する。
          * @summary バッチ実行履歴詳細取得
-         * @param {number} id リソースID
+         * @param {BatchApiGetBatchExecutionRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        getBatchExecution(id: number, options?: RawAxiosRequestConfig): AxiosPromise<BatchExecutionDetail> {
-            return localVarFp.getBatchExecution(id, options).then((request) => request(axios, basePath));
+        getBatchExecution(requestParameters: BatchApiGetBatchExecutionRequest, options?: RawAxiosRequestConfig): AxiosPromise<BatchExecutionDetail> {
+            return localVarFp.getBatchExecution(requestParameters.id, options).then((request) => request(axios, basePath));
         },
         /**
          * バッチ実行履歴をページング形式で取得する。
          * @summary バッチ実行履歴一覧取得
-         * @param {string} [executedDateFrom] 実行日From（yyyy-MM-dd）
-         * @param {string} [executedDateTo] 実行日To（yyyy-MM-dd）
-         * @param {string} [targetBusinessDate] 処理対象営業日（yyyy-MM-dd）
-         * @param {BatchExecutionStatus} [status] ステータス
-         * @param {number} [page] ページ番号（0始まり）
-         * @param {number} [size] ページサイズ
-         * @param {string} [sort] ソート指定
+         * @param {BatchApiListBatchExecutionsRequest} requestParameters Request parameters.
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listBatchExecutions(executedDateFrom?: string, executedDateTo?: string, targetBusinessDate?: string, status?: BatchExecutionStatus, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): AxiosPromise<BatchExecutionPageResponse> {
-            return localVarFp.listBatchExecutions(executedDateFrom, executedDateTo, targetBusinessDate, status, page, size, sort, options).then((request) => request(axios, basePath));
+        listBatchExecutions(requestParameters: BatchApiListBatchExecutionsRequest = {}, options?: RawAxiosRequestConfig): AxiosPromise<BatchExecutionPageResponse> {
+            return localVarFp.listBatchExecutions(requestParameters.executedDateFrom, requestParameters.executedDateTo, requestParameters.targetBusinessDate, requestParameters.status, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
     };
 };
+
+/**
+ * Request parameters for executeDailyClose operation in BatchApi.
+ * @export
+ * @interface BatchApiExecuteDailyCloseRequest
+ */
+export interface BatchApiExecuteDailyCloseRequest {
+    /**
+     * 
+     * @type {DailyCloseRequest}
+     * @memberof BatchApiExecuteDailyClose
+     */
+    readonly dailyCloseRequest: DailyCloseRequest
+}
+
+/**
+ * Request parameters for getBatchExecution operation in BatchApi.
+ * @export
+ * @interface BatchApiGetBatchExecutionRequest
+ */
+export interface BatchApiGetBatchExecutionRequest {
+    /**
+     * リソースID
+     * @type {number}
+     * @memberof BatchApiGetBatchExecution
+     */
+    readonly id: number
+}
+
+/**
+ * Request parameters for listBatchExecutions operation in BatchApi.
+ * @export
+ * @interface BatchApiListBatchExecutionsRequest
+ */
+export interface BatchApiListBatchExecutionsRequest {
+    /**
+     * 実行日From（yyyy-MM-dd）
+     * @type {string}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly executedDateFrom?: string
+
+    /**
+     * 実行日To（yyyy-MM-dd）
+     * @type {string}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly executedDateTo?: string
+
+    /**
+     * 処理対象営業日（yyyy-MM-dd）
+     * @type {string}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly targetBusinessDate?: string
+
+    /**
+     * ステータス
+     * @type {BatchExecutionStatus}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly status?: BatchExecutionStatus
+
+    /**
+     * ページ番号（0始まり）
+     * @type {number}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly page?: number
+
+    /**
+     * ページサイズ
+     * @type {number}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly size?: number
+
+    /**
+     * ソート指定
+     * @type {string}
+     * @memberof BatchApiListBatchExecutions
+     */
+    readonly sort?: string
+}
 
 /**
  * BatchApi - object-oriented interface
@@ -300,43 +378,37 @@ export class BatchApi extends BaseAPI {
     /**
      * 日替処理を同期実行する。未入荷リスト・未出荷リスト確定、営業日更新等を行う。
      * @summary 日替処理実行
-     * @param {DailyCloseRequest} dailyCloseRequest 
+     * @param {BatchApiExecuteDailyCloseRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BatchApi
      */
-    public executeDailyClose(dailyCloseRequest: DailyCloseRequest, options?: RawAxiosRequestConfig) {
-        return BatchApiFp(this.configuration).executeDailyClose(dailyCloseRequest, options).then((request) => request(this.axios, this.basePath));
+    public executeDailyClose(requestParameters: BatchApiExecuteDailyCloseRequest, options?: RawAxiosRequestConfig) {
+        return BatchApiFp(this.configuration).executeDailyClose(requestParameters.dailyCloseRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * バッチ実行履歴の詳細を1件取得する。
      * @summary バッチ実行履歴詳細取得
-     * @param {number} id リソースID
+     * @param {BatchApiGetBatchExecutionRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BatchApi
      */
-    public getBatchExecution(id: number, options?: RawAxiosRequestConfig) {
-        return BatchApiFp(this.configuration).getBatchExecution(id, options).then((request) => request(this.axios, this.basePath));
+    public getBatchExecution(requestParameters: BatchApiGetBatchExecutionRequest, options?: RawAxiosRequestConfig) {
+        return BatchApiFp(this.configuration).getBatchExecution(requestParameters.id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * バッチ実行履歴をページング形式で取得する。
      * @summary バッチ実行履歴一覧取得
-     * @param {string} [executedDateFrom] 実行日From（yyyy-MM-dd）
-     * @param {string} [executedDateTo] 実行日To（yyyy-MM-dd）
-     * @param {string} [targetBusinessDate] 処理対象営業日（yyyy-MM-dd）
-     * @param {BatchExecutionStatus} [status] ステータス
-     * @param {number} [page] ページ番号（0始まり）
-     * @param {number} [size] ページサイズ
-     * @param {string} [sort] ソート指定
+     * @param {BatchApiListBatchExecutionsRequest} requestParameters Request parameters.
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof BatchApi
      */
-    public listBatchExecutions(executedDateFrom?: string, executedDateTo?: string, targetBusinessDate?: string, status?: BatchExecutionStatus, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig) {
-        return BatchApiFp(this.configuration).listBatchExecutions(executedDateFrom, executedDateTo, targetBusinessDate, status, page, size, sort, options).then((request) => request(this.axios, this.basePath));
+    public listBatchExecutions(requestParameters: BatchApiListBatchExecutionsRequest = {}, options?: RawAxiosRequestConfig) {
+        return BatchApiFp(this.configuration).listBatchExecutions(requestParameters.executedDateFrom, requestParameters.executedDateTo, requestParameters.targetBusinessDate, requestParameters.status, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
