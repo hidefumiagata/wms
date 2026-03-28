@@ -3011,6 +3011,18 @@ paths:
             type: string
             format: date
           description: 棚卸開始日To
+        - name: stocktakeNumber
+          in: query
+          schema:
+            type: string
+            maxLength: 50
+          description: 棚卸番号（前方一致）
+        - name: buildingId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 対象棟ID
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
         - name: sort

@@ -103,6 +103,7 @@ public class StocktakeService {
         StocktakeHeader header = StocktakeHeader.builder()
                 .stocktakeNumber(stocktakeNumber)
                 .warehouseId(warehouseId)
+                .buildingId(buildingId)
                 .targetDescription(targetDescription)
                 .stocktakeDate(stocktakeDate)
                 .status("STARTED")

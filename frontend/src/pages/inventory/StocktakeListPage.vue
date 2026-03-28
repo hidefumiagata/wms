@@ -3,6 +3,29 @@
     <!-- 検索フォーム -->
     <el-card class="search-card">
       <el-form :model="searchForm" inline @submit.prevent="handleSearch">
+        <el-form-item :label="t('inventory.stocktakeNumber')">
+          <el-input
+            v-model="searchForm.stocktakeNumber"
+            style="width: 180px"
+            clearable
+            :placeholder="t('inventory.stocktakeNumber')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('inventory.stocktakeBuilding')">
+          <el-select
+            v-model="searchForm.buildingId"
+            style="width: 160px"
+            clearable
+            :placeholder="t('inventory.stocktakeStatusAll')"
+          >
+            <el-option
+              v-for="b in buildingOptions"
+              :key="b.id"
+              :label="b.buildingName"
+              :value="b.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item :label="t('inventory.stocktakeDateFrom')">
           <el-date-picker
             v-model="searchForm.dateFrom"
@@ -153,8 +176,10 @@ const {
   page,
   pageSize,
   searchForm,
+  buildingOptions,
   isManager,
   isViewer,
+  fetchBuildings,
   fetchList,
   handleSearch,
   handleReset,
@@ -166,6 +191,7 @@ const {
 } = useStocktakeList()
 
 onMounted(() => {
+  fetchBuildings()
   fetchList()
 })
 </script>

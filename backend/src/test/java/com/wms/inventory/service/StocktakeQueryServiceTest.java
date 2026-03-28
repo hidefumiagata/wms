@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,10 +48,10 @@ class StocktakeQueryServiceTest {
                 .stocktakeNumber("ST-001").warehouseId(1L).status("STARTED")
                 .stocktakeDate(LocalDate.of(2026, 3, 20))
                 .startedAt(OffsetDateTime.now()).startedBy(10L).build();
-        when(headerRepository.search(eq(1L), any(), any(), any(), any(Pageable.class)))
+        when(headerRepository.search(eq(1L), any(), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(h)));
 
-        Page<StocktakeHeader> result = service.search(1L, null, null, null, PageRequest.of(0, 20));
+        Page<StocktakeHeader> result = service.search(1L, null, null, null, null, null, PageRequest.of(0, 20));
         assertThat(result.getContent()).hasSize(1);
     }
 
@@ -58,11 +59,36 @@ class StocktakeQueryServiceTest {
     @DisplayName("フィルタ指定で検索")
     void search_withFilters() {
         when(warehouseService.findById(1L)).thenReturn(new Warehouse());
-        when(headerRepository.search(eq(1L), eq("STARTED"), any(), any(), any(Pageable.class)))
+        when(headerRepository.search(eq(1L), eq("STARTED"), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
         Page<StocktakeHeader> result = service.search(1L, "STARTED",
-                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), PageRequest.of(0, 20));
+                LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), null, null, PageRequest.of(0, 20));
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("stocktakeNumber・buildingIdフィルタで検索")
+    void search_withStocktakeNumberAndBuildingId() {
+        when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+        when(headerRepository.search(eq(1L), isNull(), any(), any(), eq("ST-2026"), eq(5L), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        Page<StocktakeHeader> result = service.search(1L, null, null, null,
+                "ST-2026", 5L, PageRequest.of(0, 20));
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("stocktakeNumberにワイルドカード文字が含まれる場合エスケープされる")
+    void search_stocktakeNumberEscaped() {
+        when(warehouseService.findById(1L)).thenReturn(new Warehouse());
+        // LikeEscapeUtil.escape("ST%_") => "ST\\%\\_"
+        when(headerRepository.search(eq(1L), isNull(), any(), any(), eq("ST\\%\\_"), isNull(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        Page<StocktakeHeader> result = service.search(1L, null, null, null,
+                "ST%_", null, PageRequest.of(0, 20));
         assertThat(result.getContent()).isEmpty();
     }
 
@@ -71,7 +97,7 @@ class StocktakeQueryServiceTest {
     void search_warehouseNotFound() {
         when(warehouseService.findById(999L))
                 .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫が見つかりません"));
-        assertThatThrownBy(() -> service.search(999L, null, null, null, PageRequest.of(0, 20)))
+        assertThatThrownBy(() -> service.search(999L, null, null, null, null, null, PageRequest.of(0, 20)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

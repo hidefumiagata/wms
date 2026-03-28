@@ -291,13 +291,19 @@ public class InventoryController implements InventoryApi {
     @Override
     public ResponseEntity<StocktakeSummaryPageResponse> listStocktakes(
             Long warehouseId, StocktakeStatus status, LocalDate dateFrom, LocalDate dateTo,
+            String stocktakeNumber, Long buildingId,
             Integer page, Integer size, String sort) {
 
         String statusStr = status != null ? status.getValue() : null;
+        String trimmedNumber = stocktakeNumber != null ? stocktakeNumber.trim() : null;
+        if (trimmedNumber != null && trimmedNumber.isEmpty()) {
+            trimmedNumber = null;
+        }
 
         Sort sortObj = parseSort(sort, "startedAt", Set.of("startedAt", "stocktakeNumber", "status"));
         Page<StocktakeHeader> resultPage = stocktakeQueryService.search(
                 warehouseId, statusStr, dateFrom, dateTo,
+                trimmedNumber, buildingId,
                 PageRequest.of(page, size, sortObj));
 
         // ユーザー名・倉庫名のバッチ取得（N+1回避）

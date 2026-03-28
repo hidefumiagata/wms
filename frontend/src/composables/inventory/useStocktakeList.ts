@@ -10,6 +10,11 @@ import { useAuthStore } from '@/stores/auth'
 import type { StocktakeSummary } from '@/api/generated/models/stocktake-summary'
 import type { StocktakeSummaryPageResponse } from '@/api/generated/models/stocktake-summary-page-response'
 
+interface BuildingOption {
+  id: number
+  buildingName: string
+}
+
 export function useStocktakeList() {
   const { t } = useI18n()
   const router = useRouter()
@@ -27,6 +32,31 @@ export function useStocktakeList() {
   const page = ref(1)
   const pageSize = ref(20)
 
+  // 棟マスタ選択肢
+  const buildingOptions = ref<BuildingOption[]>([])
+
+  async function fetchBuildings() {
+    try {
+      const res = await apiClient.get('/master/buildings', {
+        params: {
+          warehouseId: warehouseStore.selectedWarehouseId,
+          page: 0,
+          size: 1000,
+          isActive: true,
+          sort: 'buildingName,asc',
+        },
+      })
+      buildingOptions.value = (res.data.content ?? []).map(
+        (b: { id: number; buildingName: string }) => ({
+          id: b.id,
+          buildingName: b.buildingName,
+        }),
+      )
+    } catch {
+      buildingOptions.value = []
+    }
+  }
+
   // 検索条件: 初期値は当月
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -36,6 +66,8 @@ export function useStocktakeList() {
   }
 
   const searchForm = reactive({
+    stocktakeNumber: '' as string,
+    buildingId: null as number | null,
     dateFrom: formatDate(monthStart) as string | null,
     dateTo: formatDate(now) as string | null,
     status: null as string | null,
@@ -66,6 +98,9 @@ export function useStocktakeList() {
         size: pageSize.value,
         sort: 'startedAt,desc',
       }
+      if (searchForm.stocktakeNumber?.trim())
+        params.stocktakeNumber = searchForm.stocktakeNumber.trim()
+      if (searchForm.buildingId) params.buildingId = searchForm.buildingId
       if (searchForm.dateFrom) params.dateFrom = searchForm.dateFrom
       if (searchForm.dateTo) params.dateTo = searchForm.dateTo
       if (searchForm.status) params.status = searchForm.status
@@ -98,7 +133,9 @@ export function useStocktakeList() {
     () => warehouseStore.selectedWarehouseId,
     (newId) => {
       if (newId == null) return
+      searchForm.buildingId = null
       page.value = 1
+      fetchBuildings()
       fetchList()
     },
   )
@@ -111,6 +148,8 @@ export function useStocktakeList() {
   function handleReset() {
     const resetNow = new Date()
     const resetMonthStart = new Date(resetNow.getFullYear(), resetNow.getMonth(), 1)
+    searchForm.stocktakeNumber = ''
+    searchForm.buildingId = null
     searchForm.dateFrom = formatDate(resetMonthStart)
     searchForm.dateTo = formatDate(resetNow)
     searchForm.status = null
@@ -150,8 +189,10 @@ export function useStocktakeList() {
     page,
     pageSize,
     searchForm,
+    buildingOptions,
     isManager,
     isViewer,
+    fetchBuildings,
     fetchList,
     handleSearch,
     handleReset,

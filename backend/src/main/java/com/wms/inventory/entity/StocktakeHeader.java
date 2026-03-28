@@ -43,6 +43,9 @@ public class StocktakeHeader {
     @Column(name = "warehouse_id", nullable = false)
     private Long warehouseId;
 
+    @Column(name = "building_id")
+    private Long buildingId;
+
     @Column(name = "target_description", length = 500)
     private String targetDescription;
 

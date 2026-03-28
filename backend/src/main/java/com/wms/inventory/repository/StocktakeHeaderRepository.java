@@ -18,12 +18,16 @@ public interface StocktakeHeaderRepository extends JpaRepository<StocktakeHeader
             AND (:status IS NULL OR h.status = :status)
             AND (:dateFrom IS NULL OR h.startedAt >= :dateFrom)
             AND (:dateTo IS NULL OR h.startedAt < :dateTo)
+            AND (:stocktakeNumber IS NULL OR h.stocktakeNumber LIKE CONCAT(:stocktakeNumber, '%') ESCAPE '\\')
+            AND (:buildingId IS NULL OR h.buildingId = :buildingId)
             """)
     Page<StocktakeHeader> search(
             @Param("warehouseId") Long warehouseId,
             @Param("status") String status,
             @Param("dateFrom") OffsetDateTime dateFrom,
             @Param("dateTo") OffsetDateTime dateTo,
+            @Param("stocktakeNumber") String stocktakeNumber,
+            @Param("buildingId") Long buildingId,
             Pageable pageable);
 
     @Query("SELECT h FROM StocktakeHeader h LEFT JOIN FETCH h.lines WHERE h.id = :id")

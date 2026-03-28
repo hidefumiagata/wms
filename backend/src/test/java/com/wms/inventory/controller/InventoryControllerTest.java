@@ -570,7 +570,7 @@ class InventoryControllerTest {
         void listStocktakes_withConfirmedBy_returns200() throws Exception {
             StocktakeHeader h = createHeader(1L, "CONFIRMED", 20L);
 
-            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(h)));
             when(userService.getUserFullNameMap(Set.of(10L, 20L)))
                     .thenReturn(Map.of(10L, "開始者", 20L, "確定者"));
@@ -598,7 +598,7 @@ class InventoryControllerTest {
         void listStocktakes_withoutConfirmedBy_returns200() throws Exception {
             StocktakeHeader h = createHeader(1L, "STARTED", null);
 
-            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(h)));
             when(userService.getUserFullNameMap(Set.of(10L)))
                     .thenReturn(Map.of(10L, "開始者"));
@@ -620,7 +620,7 @@ class InventoryControllerTest {
         @Test
         @DisplayName("ステータスフィルタ指定で棚卸一覧を返す")
         void listStocktakes_withStatusFilter_returns200() throws Exception {
-            when(stocktakeQueryService.search(eq(1L), eq("STARTED"), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), eq("STARTED"), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of()));
             when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
 
@@ -636,7 +636,7 @@ class InventoryControllerTest {
         void listStocktakes_warehouseNotFound_returnsEmptyName() throws Exception {
             StocktakeHeader h = createHeader(1L, "STARTED", null);
 
-            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of(h)));
             when(userService.getUserFullNameMap(any()))
                     .thenReturn(Map.of(10L, "開始者"));
@@ -654,7 +654,7 @@ class InventoryControllerTest {
         @Test
         @DisplayName("日付フィルタ指定で棚卸一覧を返す")
         void listStocktakes_withDateFilter_returns200() throws Exception {
-            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of()));
             when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
 
@@ -662,6 +662,34 @@ class InventoryControllerTest {
                             .param("warehouseId", "1")
                             .param("dateFrom", "2026-01-01")
                             .param("dateTo", "2026-03-31"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("棚卸番号・buildingIdフィルタ指定で棚卸一覧を返す")
+        void listStocktakes_withStocktakeNumberAndBuildingId_returns200() throws Exception {
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), eq("ST-2026"), eq(5L), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
+
+            mockMvc.perform(get("/api/v1/inventory/stocktakes")
+                            .param("warehouseId", "1")
+                            .param("stocktakeNumber", "ST-2026")
+                            .param("buildingId", "5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("空白のみの棚卸番号はnullとして扱われる")
+        void listStocktakes_blankStocktakeNumber_treatedAsNull() throws Exception {
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), isNull(), isNull(), any(Pageable.class)))
+                    .thenReturn(new PageImpl<>(List.of()));
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
+
+            mockMvc.perform(get("/api/v1/inventory/stocktakes")
+                            .param("warehouseId", "1")
+                            .param("stocktakeNumber", "   "))
                     .andExpect(status().isOk());
         }
     }
@@ -1001,7 +1029,7 @@ class InventoryControllerTest {
         @Test
         @DisplayName("棚卸一覧で不明なソートプロパティはデフォルトにフォールバックする")
         void parseSort_stocktakes_unknownProperty_fallsToDefault() throws Exception {
-            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(Pageable.class)))
+            when(stocktakeQueryService.search(eq(1L), isNull(), any(), any(), any(), any(), any(Pageable.class)))
                     .thenReturn(new PageImpl<>(List.of()));
             when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
 
