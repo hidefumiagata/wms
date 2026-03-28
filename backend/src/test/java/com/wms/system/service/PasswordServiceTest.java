@@ -11,10 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
@@ -22,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -213,6 +217,21 @@ class PasswordServiceTest {
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("有効期限");
         verify(passwordResetTokenRepository).deleteByUserId(1L);
+    }
+
+    @Test
+    void sha256_noSuchAlgorithm_throwsRuntimeException() {
+        when(userRepository.findByUserCodeOrEmail("admin001", "admin001"))
+                .thenReturn(Optional.of(user));
+
+        try (MockedStatic<MessageDigest> md = mockStatic(MessageDigest.class)) {
+            md.when(() -> MessageDigest.getInstance("SHA-256"))
+                    .thenThrow(new NoSuchAlgorithmException("mocked"));
+
+            assertThatThrownBy(() -> passwordService.requestPasswordReset("admin001"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("SHA-256 not available");
+        }
     }
 
     // helper: same SHA-256 as PasswordService

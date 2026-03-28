@@ -85,4 +85,29 @@ class OpenApiEnumConverterConfigTest {
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
+
+    @Nested
+    @DisplayName("リフレクション例外ハンドリング")
+    class ReflectionExceptionHandling {
+
+        @SuppressWarnings("unused")
+        enum CheckedExEnum {
+            A("a");
+            private final String value;
+            CheckedExEnum(String value) { this.value = value; }
+            public static CheckedExEnum fromValue(String v) throws Exception {
+                throw new Exception("checked exception from fromValue");
+            }
+        }
+
+        @Test
+        @DisplayName("fromValueが検査例外をスローした場合IllegalArgumentExceptionにラップされる")
+        void convert_checkedExceptionCause_wrapsInIllegalArgumentException() {
+            Converter<String, CheckedExEnum> converter = factory.getConverter(CheckedExEnum.class);
+            assertThatThrownBy(() -> converter.convert("a"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasCauseInstanceOf(Exception.class)
+                    .hasRootCauseMessage("checked exception from fromValue");
+        }
+    }
 }

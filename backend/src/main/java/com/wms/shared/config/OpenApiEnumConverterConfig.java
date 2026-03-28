@@ -6,7 +6,8 @@ import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
 /**
@@ -36,23 +37,20 @@ public class OpenApiEnumConverterConfig implements WebMvcConfigurer {
         @Override
         @SuppressWarnings("unchecked")
         public <T extends Enum> Converter<String, T> getConverter(Class<T> targetType) {
-            Method fromValue;
+            MethodHandle mh;
             try {
-                fromValue = targetType.getMethod("fromValue", String.class);
-            } catch (NoSuchMethodException e) {
+                Method fromValue = targetType.getMethod("fromValue", String.class);
+                mh = MethodHandles.lookup().unreflect(fromValue);
+            } catch (NoSuchMethodException | IllegalAccessException e) {
                 return source -> (T) Enum.valueOf(targetType, source);
             }
 
-            Method method = fromValue;
             return source -> {
                 try {
-                    return (T) method.invoke(null, source);
-                } catch (InvocationTargetException e) {
-                    if (e.getCause() instanceof RuntimeException re) {
-                        throw re;
-                    }
-                    throw new IllegalArgumentException(e.getCause());
-                } catch (IllegalAccessException e) {
+                    return (T) mh.invoke(source);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Throwable e) {
                     throw new IllegalArgumentException(e);
                 }
             };

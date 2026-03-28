@@ -138,9 +138,21 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
     }
 }
 
+// JaCoCoカバレッジ対象外パターン（レポート・検証で共通使用）
+def jacocoExcludes = [
+    'com/wms/generated/**',        // OpenAPI自動生成コード
+    'com/wms/WmsApplication.class'  // Spring Boot Applicationクラス
+]
+
 tasks.named('test') {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
+}
+
+// check タスク実行時にカバレッジ検証を自動実行
+// （./gradlew test ではレポート生成のみ、./gradlew check でレポート＋検証）
+tasks.named('check') {
+    dependsOn jacocoTestCoverageVerification
 }
 
 jacocoTestReport {
@@ -149,13 +161,33 @@ jacocoTestReport {
         xml.required = true
         html.required = true
     }
-    // OpenAPI自動生成コードをカバレッジ対象外にする
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                'com/wms/generated/**'
-            ])
+            fileTree(dir: it, exclude: jacocoExcludes)
         }))
+    }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn test
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludes)
+        }))
+    }
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION' // C0（命令網羅）
+                value = 'COVEREDRATIO'
+                minimum = 1.0
+            }
+            limit {
+                counter = 'BRANCH' // C1（分岐網羅）
+                value = 'COVEREDRATIO'
+                minimum = 1.0
+            }
+        }
     }
 }
 

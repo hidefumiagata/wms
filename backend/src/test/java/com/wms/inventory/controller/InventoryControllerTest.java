@@ -193,7 +193,7 @@ class InventoryControllerTest {
             setField(product, "id", 100L);
             product.setProductCode("P-001");
             product.setProductName("テスト商品");
-            product.setStorageCondition("NORMAL");
+            product.setStorageCondition("AMBIENT");
             product.setCaseQuantity(24);
             product.setBallQuantity(6);
             when(inventoryQueryService.getProductMap(Set.of(100L)))
@@ -205,6 +205,7 @@ class InventoryControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.content", hasSize(1)))
                     .andExpect(jsonPath("$.content[0].productCode").value("P-001"))
+                    .andExpect(jsonPath("$.content[0].storageCondition").value("AMBIENT"))
                     .andExpect(jsonPath("$.content[0].caseQuantity").value(10))
                     .andExpect(jsonPath("$.content[0].ballQuantity").value(5))
                     .andExpect(jsonPath("$.content[0].pieceQuantity").value(24));
