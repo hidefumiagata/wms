@@ -363,5 +363,13 @@ class InventoryBreakdownServiceTest {
         @Test void invalidConversion() {
             assertThat(service.getConversionRate("PIECE", "CASE", createProduct(1L, 12, 6))).isEqualTo(0);
         }
+        @Test @DisplayName("CASE→CASE は変換不可（0を返す）")
+        void caseToCase() {
+            assertThat(service.getConversionRate("CASE", "CASE", createProduct(1L, 12, 6))).isEqualTo(0);
+        }
+        @Test @DisplayName("BALL→BALL は変換不可（0を返す）")
+        void ballToBall() {
+            assertThat(service.getConversionRate("BALL", "BALL", createProduct(1L, 12, 6))).isEqualTo(0);
+        }
     }
 }
