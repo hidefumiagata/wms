@@ -1,7 +1,8 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
@@ -27,7 +28,7 @@ interface ProductInfo {
   ballQuantity: number
 }
 
-export function useInventoryBreakdown() {
+export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstance>>) {
   const { t } = useI18n()
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
@@ -35,17 +36,60 @@ export function useInventoryBreakdown() {
   const loading = ref(false)
   const submitting = ref(false)
 
+  // フォームモデル
+  const form = reactive({
+    fromLocationCode: '',
+    selectedProductId: null as number | null,
+    fromUnitType: null as string | null,
+    breakdownQty: 1,
+    toUnitType: null as string | null,
+    toLocationCode: '',
+  })
+
+  // バリデーションルール
+  const rules: FormRules = {
+    fromLocationCode: [
+      {
+        required: true,
+        message: () => t('inventory.validation.locationCodeRequired'),
+        trigger: 'blur',
+      },
+    ],
+    selectedProductId: [
+      {
+        required: true,
+        message: () => t('inventory.validation.productRequired'),
+        trigger: 'change',
+      },
+    ],
+    fromUnitType: [
+      {
+        required: true,
+        message: () => t('inventory.validation.unitTypeRequired'),
+        trigger: 'change',
+      },
+    ],
+    breakdownQty: [
+      {
+        required: true,
+        message: () => t('inventory.validation.breakdownQtyRequired'),
+        trigger: 'change',
+      },
+    ],
+    toUnitType: [
+      {
+        required: true,
+        message: () => t('inventory.validation.toUnitTypeRequired'),
+        trigger: 'change',
+      },
+    ],
+  }
+
   // ばらし元
-  const fromLocationCode = ref('')
   const fromLocationId = ref<number | null>(null)
   const fromInventoryOptions = ref<InventoryOption[]>([])
-  const selectedProductId = ref<number | null>(null)
-  const fromUnitType = ref<string | null>(null)
-  const breakdownQty = ref(1)
 
   // ばらし先
-  const toUnitType = ref<string | null>(null)
-  const toLocationCode = ref('')
   const toLocationId = ref<number | null>(null)
   const toCurrentQty = ref<number | null>(null)
 
@@ -60,10 +104,10 @@ export function useInventoryBreakdown() {
 
   // 選択中の在庫
   const fromInventory = computed<InventoryOption | null>(() => {
-    if (!selectedProductId.value || !fromUnitType.value) return null
+    if (!form.selectedProductId || !form.fromUnitType) return null
     return (
       fromInventoryOptions.value.find(
-        (i) => i.productId === selectedProductId.value && i.unitType === fromUnitType.value,
+        (i) => i.productId === form.selectedProductId && i.unitType === form.fromUnitType,
       ) ?? null
     )
   })
@@ -80,40 +124,40 @@ export function useInventoryBreakdown() {
 
   // ばらし元荷姿選択肢（PIECEは不可）
   const fromUnitTypeOptions = computed(() => {
-    if (!selectedProductId.value) return []
+    if (!form.selectedProductId) return []
     return fromInventoryOptions.value.filter(
-      (i) => i.productId === selectedProductId.value && i.unitType !== 'PIECE',
+      (i) => i.productId === form.selectedProductId && i.unitType !== 'PIECE',
     )
   })
 
   // ばらし先荷姿選択肢（ばらし元より小さい荷姿のみ）
   const toUnitTypeOptions = computed(() => {
-    if (!fromUnitType.value) return []
-    if (fromUnitType.value === 'CASE') return ['BALL', 'PIECE']
-    if (fromUnitType.value === 'BALL') return ['PIECE']
+    if (!form.fromUnitType) return []
+    if (form.fromUnitType === 'CASE') return ['BALL', 'PIECE']
+    if (form.fromUnitType === 'BALL') return ['PIECE']
     return []
   })
 
   // 変換レート
   const conversionRate = computed(() => {
-    if (!productInfo.value || !fromUnitType.value || !toUnitType.value) return null
+    if (!productInfo.value || !form.fromUnitType || !form.toUnitType) return null
     const p = productInfo.value
-    if (fromUnitType.value === 'CASE' && toUnitType.value === 'BALL') return p.caseQuantity
-    if (fromUnitType.value === 'CASE' && toUnitType.value === 'PIECE')
+    if (form.fromUnitType === 'CASE' && form.toUnitType === 'BALL') return p.caseQuantity
+    if (form.fromUnitType === 'CASE' && form.toUnitType === 'PIECE')
       return p.caseQuantity * p.ballQuantity
-    if (fromUnitType.value === 'BALL' && toUnitType.value === 'PIECE') return p.ballQuantity
+    if (form.fromUnitType === 'BALL' && form.toUnitType === 'PIECE') return p.ballQuantity
     return null
   })
 
   // 変換後数量
   const convertedQty = computed(() => {
     if (!conversionRate.value) return null
-    return breakdownQty.value * conversionRate.value
+    return form.breakdownQty * conversionRate.value
   })
 
   // --- ロケーション検索 ---
   async function fetchFromInventory() {
-    if (!fromLocationCode.value.trim()) return
+    if (!form.fromLocationCode.trim()) return
     abortController?.abort()
     abortController = new AbortController()
     loading.value = true
@@ -122,7 +166,7 @@ export function useInventoryBreakdown() {
       const locRes = await apiClient.get('/master/locations', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCode: fromLocationCode.value.trim(),
+          locationCode: form.fromLocationCode.trim(),
           page: 0,
           size: 1,
         },
@@ -141,7 +185,7 @@ export function useInventoryBreakdown() {
       const res = await apiClient.get('/inventory', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCodePrefix: fromLocationCode.value.trim(),
+          locationCodePrefix: form.fromLocationCode.trim(),
           viewType: 'LOCATION',
           page: 0,
           size: 100,
@@ -158,9 +202,9 @@ export function useInventoryBreakdown() {
         allocatedQty: i.allocatedQty,
         availableQty: i.availableQty,
       }))
-      selectedProductId.value = null
-      fromUnitType.value = null
-      toUnitType.value = null
+      form.selectedProductId = null
+      form.fromUnitType = null
+      form.toUnitType = null
     } catch (err) {
       if (axios.isCancel(err)) return
       fromInventoryOptions.value = []
@@ -172,12 +216,12 @@ export function useInventoryBreakdown() {
 
   // 商品選択時: 商品マスタから変換レート取得
   async function onProductChange() {
-    fromUnitType.value = null
-    toUnitType.value = null
+    form.fromUnitType = null
+    form.toUnitType = null
     productInfo.value = null
-    if (!selectedProductId.value) return
+    if (!form.selectedProductId) return
     try {
-      const res = await apiClient.get(`/master/products/${selectedProductId.value}`)
+      const res = await apiClient.get(`/master/products/${form.selectedProductId}`)
       const p = res.data
       productInfo.value = {
         id: p.id,
@@ -192,12 +236,12 @@ export function useInventoryBreakdown() {
   }
 
   function onFromUnitTypeChange() {
-    toUnitType.value = null
+    form.toUnitType = null
   }
 
   // --- ばらし先情報取得 ---
   async function fetchToLocationInfo() {
-    if (!toLocationCode.value.trim()) {
+    if (!form.toLocationCode.trim()) {
       toLocationId.value = fromLocationId.value
       toCurrentQty.value = null
       return
@@ -206,7 +250,7 @@ export function useInventoryBreakdown() {
       const locRes = await apiClient.get('/master/locations', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCode: toLocationCode.value.trim(),
+          locationCode: form.toLocationCode.trim(),
           page: 0,
           size: 1,
         },
@@ -220,13 +264,13 @@ export function useInventoryBreakdown() {
       }
       toLocationId.value = locs[0].id
 
-      if (selectedProductId.value && toUnitType.value) {
+      if (form.selectedProductId && form.toUnitType) {
         const invRes = await apiClient.get('/inventory', {
           params: {
             warehouseId: warehouseStore.selectedWarehouseId,
-            locationCodePrefix: toLocationCode.value.trim(),
-            productId: selectedProductId.value,
-            unitType: toUnitType.value,
+            locationCodePrefix: form.toLocationCode.trim(),
+            productId: form.selectedProductId,
+            unitType: form.toUnitType,
             viewType: 'LOCATION',
             page: 0,
             size: 1,
@@ -243,9 +287,13 @@ export function useInventoryBreakdown() {
 
   // --- 登録 ---
   async function submitBreakdown() {
-    if (!fromInventory.value || !fromLocationId.value || !toUnitType.value) return
+    // el-form バリデーション
+    const valid = await formRef.value?.validate().catch(() => false)
+    if (!valid) return
 
-    if (breakdownQty.value < 1 || breakdownQty.value > fromInventory.value.availableQty) {
+    if (!fromInventory.value || !fromLocationId.value || !form.toUnitType) return
+
+    if (form.breakdownQty < 1 || form.breakdownQty > fromInventory.value.availableQty) {
       ElMessage.error(t('inventory.breakdownQtyExceedsAvailable'))
       return
     }
@@ -255,14 +303,14 @@ export function useInventoryBreakdown() {
     }
 
     const effectiveToLocationId = toLocationId.value ?? fromLocationId.value
-    const fromUtLabel = unitTypeLabel(fromUnitType.value!, t)
-    const toUtLabel = unitTypeLabel(toUnitType.value, t)
+    const fromUtLabel = unitTypeLabel(form.fromUnitType!, t)
+    const toUtLabel = unitTypeLabel(form.toUnitType, t)
 
     try {
       await ElMessageBox.confirm(
         t('inventory.breakdownConfirmMessage', {
           fromUnitType: fromUtLabel,
-          qty: breakdownQty.value,
+          qty: form.breakdownQty,
           toUnitType: toUtLabel,
           result: convertedQty.value,
         }),
@@ -278,9 +326,9 @@ export function useInventoryBreakdown() {
       await apiClient.post('/inventory/breakdown', {
         fromLocationId: fromLocationId.value,
         productId: fromInventory.value.productId,
-        fromUnitType: fromUnitType.value,
-        breakdownQty: breakdownQty.value,
-        toUnitType: toUnitType.value,
+        fromUnitType: form.fromUnitType,
+        breakdownQty: form.breakdownQty,
+        toUnitType: form.toUnitType,
         toLocationId: effectiveToLocationId,
       })
       ElMessage.success(t('inventory.breakdownSuccess'))
@@ -304,14 +352,10 @@ export function useInventoryBreakdown() {
   return {
     loading,
     submitting,
-    fromLocationCode,
+    form,
+    rules,
     fromLocationId,
     fromInventoryOptions,
-    selectedProductId,
-    fromUnitType,
-    breakdownQty,
-    toUnitType,
-    toLocationCode,
     toLocationId,
     toCurrentQty,
     fromInventory,
