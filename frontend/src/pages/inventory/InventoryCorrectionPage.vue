@@ -8,18 +8,22 @@
         </div>
       </template>
 
-      <!-- 対象在庫の選択 -->
-      <el-divider content-position="left">{{ t('inventory.product') }}</el-divider>
-      <el-form label-width="160px">
-        <el-form-item :label="t('inventory.locationCode')" required>
-          <el-input v-model="locationCode" style="width: 280px" @keyup.enter="fetchInventory" />
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="160px">
+        <!-- 対象在庫の選択 -->
+        <el-divider content-position="left">{{ t('inventory.product') }}</el-divider>
+        <el-form-item :label="t('inventory.locationCode')" prop="locationCode">
+          <el-input
+            v-model="form.locationCode"
+            style="width: 280px"
+            @keyup.enter="fetchInventory"
+          />
           <el-button style="margin-left: 8px" @click="fetchInventory">
             {{ t('common.search') }}
           </el-button>
         </el-form-item>
-        <el-form-item :label="t('inventory.product')" required>
+        <el-form-item :label="t('inventory.product')" prop="selectedProductId">
           <el-select
-            v-model="selectedProductId"
+            v-model="form.selectedProductId"
             style="width: 320px"
             filterable
             :placeholder="t('inventory.product')"
@@ -33,9 +37,9 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item :label="t('inventory.unitType')" required>
+        <el-form-item :label="t('inventory.unitType')" prop="selectedUnitType">
           <el-select
-            v-model="selectedUnitType"
+            v-model="form.selectedUnitType"
             style="width: 160px"
             :placeholder="t('inventory.unitType')"
             @change="onUnitTypeChange"
@@ -48,12 +52,10 @@
             />
           </el-select>
         </el-form-item>
-      </el-form>
 
-      <!-- 現在在庫・訂正情報 -->
-      <template v-if="selectedInventory">
-        <el-divider content-position="left">{{ t('inventory.correctionTitle') }}</el-divider>
-        <el-form label-width="160px">
+        <!-- 現在在庫・訂正情報 -->
+        <template v-if="selectedInventory">
+          <el-divider content-position="left">{{ t('inventory.correctionTitle') }}</el-divider>
           <el-form-item :label="t('inventory.currentQty')">
             <span>{{ formatNumber(selectedInventory.quantity) }}</span>
           </el-form-item>
@@ -66,17 +68,17 @@
               }}
             </span>
           </el-form-item>
-          <el-form-item :label="t('inventory.newQty')" required>
-            <el-input-number v-model="newQty" :min="0" style="width: 160px" />
+          <el-form-item :label="t('inventory.newQty')" prop="newQty">
+            <el-input-number v-model="form.newQty" :min="0" style="width: 160px" />
           </el-form-item>
           <el-form-item :label="t('inventory.diff')">
             <span :class="diffClass">
               {{ diff != null ? (diff > 0 ? '+' : '') + formatNumber(diff) : '-' }}
             </span>
           </el-form-item>
-          <el-form-item :label="t('inventory.reason')" required>
+          <el-form-item :label="t('inventory.reason')" prop="reason">
             <el-input
-              v-model="reason"
+              v-model="form.reason"
               type="textarea"
               :rows="3"
               :maxlength="200"
@@ -85,8 +87,8 @@
               style="width: 400px"
             />
           </el-form-item>
-        </el-form>
-      </template>
+        </template>
+      </el-form>
 
       <!-- 訂正履歴（直近5件） -->
       <template v-if="selectedInventory">
@@ -143,7 +145,7 @@
         <el-button
           type="primary"
           :loading="submitting"
-          :disabled="!selectedInventory || newQty == null || !reason.trim()"
+          :disabled="!selectedInventory || form.newQty == null || !form.reason.trim()"
           @click="submitCorrection"
         >
           {{ t('common.save') }}
@@ -154,20 +156,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { FormInstance } from 'element-plus'
 import { useInventoryCorrection } from '@/composables/inventory/useInventoryCorrection'
 import { unitTypeLabel, formatNumber } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
+const formRef = ref<FormInstance>()
 
 const {
-  locationCode,
-  selectedProductId,
-  selectedUnitType,
+  form,
+  rules,
   selectedInventory,
-  newQty,
-  reason,
   diff,
   submitting,
   productOptions,
@@ -178,7 +179,7 @@ const {
   onUnitTypeChange,
   submitCorrection,
   goBack,
-} = useInventoryCorrection()
+} = useInventoryCorrection(formRef)
 
 function formatDateTime(dateStr: string): string {
   const d = new Date(dateStr)

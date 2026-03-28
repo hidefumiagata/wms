@@ -1,7 +1,8 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { type Ref, ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
@@ -21,7 +22,7 @@ interface InventoryOption {
   expiryDate?: string | null
 }
 
-export function useInventoryMove() {
+export function useInventoryMove(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const router = useRouter()
   const route = useRoute()
@@ -30,29 +31,71 @@ export function useInventoryMove() {
   const loading = ref(false)
   const submitting = ref(false)
 
+  // フォームモデル
+  const form = reactive({
+    fromLocationCode: '',
+    selectedProductId: null as number | null,
+    selectedUnitType: null as string | null,
+    toLocationCode: '',
+    moveQty: 1,
+  })
+
+  // バリデーションルール
+  const rules: FormRules = {
+    fromLocationCode: [
+      {
+        required: true,
+        message: () => t('inventory.validation.locationCodeRequired'),
+        trigger: 'blur',
+      },
+    ],
+    selectedProductId: [
+      {
+        required: true,
+        message: () => t('inventory.validation.productRequired'),
+        trigger: 'change',
+      },
+    ],
+    selectedUnitType: [
+      {
+        required: true,
+        message: () => t('inventory.validation.unitTypeRequired'),
+        trigger: 'change',
+      },
+    ],
+    toLocationCode: [
+      {
+        required: true,
+        message: () => t('inventory.validation.toLocationCodeRequired'),
+        trigger: 'blur',
+      },
+    ],
+    moveQty: [
+      {
+        required: true,
+        type: 'number',
+        message: () => t('inventory.validation.moveQtyRequired'),
+        trigger: 'change',
+      },
+    ],
+  }
+
   // 移動元
-  const fromLocationCode = ref('')
   const fromLocationId = ref<number | null>(null)
   const fromInventoryOptions = ref<InventoryOption[]>([])
-  const selectedProductId = ref<number | null>(null)
-  const selectedUnitType = ref<string | null>(null)
   const fromInventory = computed<InventoryOption | null>(() => {
-    if (!selectedProductId.value || !selectedUnitType.value) return null
+    if (!form.selectedProductId || !form.selectedUnitType) return null
     return (
       fromInventoryOptions.value.find(
-        (i) => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value,
+        (i) => i.productId === form.selectedProductId && i.unitType === form.selectedUnitType,
       ) ?? null
     )
   })
 
   // 移動先
-  const toLocationCode = ref('')
   const toLocationId = ref<number | null>(null)
   const toCurrentQty = ref<number | null>(null)
   const toMaxQty = ref<number | null>(null)
-
-  // 移動数量
-  const moveQty = ref(1)
 
   // --- AbortController ---
   let abortController: AbortController | null = null
@@ -64,7 +107,7 @@ export function useInventoryMove() {
 
   // --- 移動元ロケーション検索 ---
   async function fetchFromInventory() {
-    if (!fromLocationCode.value.trim()) return
+    if (!form.fromLocationCode.trim()) return
     abortController?.abort()
     abortController = new AbortController()
 
@@ -74,7 +117,7 @@ export function useInventoryMove() {
       const locRes = await apiClient.get('/master/locations', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCode: fromLocationCode.value.trim(),
+          locationCode: form.fromLocationCode.trim(),
           page: 0,
           size: 1,
         },
@@ -93,7 +136,7 @@ export function useInventoryMove() {
       const res = await apiClient.get('/inventory', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCodePrefix: fromLocationCode.value.trim(),
+          locationCodePrefix: form.fromLocationCode.trim(),
           viewType: 'LOCATION',
           page: 0,
           size: 100,
@@ -112,8 +155,8 @@ export function useInventoryMove() {
         lotNumber: i.lotNumber,
         expiryDate: i.expiryDate,
       }))
-      selectedProductId.value = null
-      selectedUnitType.value = null
+      form.selectedProductId = null
+      form.selectedUnitType = null
     } catch (err) {
       if (axios.isCancel(err)) return
       fromInventoryOptions.value = []
@@ -135,17 +178,17 @@ export function useInventoryMove() {
 
   // 荷姿選択肢（選択された商品でフィルタ）
   const unitTypeOptions = computed(() => {
-    if (!selectedProductId.value) return []
-    return fromInventoryOptions.value.filter((i) => i.productId === selectedProductId.value)
+    if (!form.selectedProductId) return []
+    return fromInventoryOptions.value.filter((i) => i.productId === form.selectedProductId)
   })
 
   function onProductChange() {
-    selectedUnitType.value = null
+    form.selectedUnitType = null
   }
 
   // --- 移動先ロケーション検索 ---
   async function fetchToLocationInfo() {
-    if (!toLocationCode.value.trim()) {
+    if (!form.toLocationCode.trim()) {
       toLocationId.value = null
       toCurrentQty.value = null
       toMaxQty.value = null
@@ -159,7 +202,7 @@ export function useInventoryMove() {
       const locRes = await apiClient.get('/master/locations', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCode: toLocationCode.value.trim(),
+          locationCode: form.toLocationCode.trim(),
           page: 0,
           size: 1,
         },
@@ -176,13 +219,13 @@ export function useInventoryMove() {
       toLocationId.value = locs[0].id
 
       // 移動先在庫数取得（同一荷姿の合計） + ロケーション上限取得
-      if (selectedProductId.value && selectedUnitType.value) {
+      if (form.selectedProductId && form.selectedUnitType) {
         const [invRes, capRes] = await Promise.all([
           apiClient.get('/inventory', {
             params: {
               warehouseId: warehouseStore.selectedWarehouseId,
-              locationCodePrefix: toLocationCode.value.trim(),
-              unitType: selectedUnitType.value,
+              locationCodePrefix: form.toLocationCode.trim(),
+              unitType: form.selectedUnitType,
               viewType: 'LOCATION',
               page: 0,
               size: 100,
@@ -190,7 +233,7 @@ export function useInventoryMove() {
             signal: toAbortController.signal,
           }),
           apiClient.get('/inventory/location-capacity', {
-            params: { unitType: selectedUnitType.value },
+            params: { unitType: form.selectedUnitType },
             signal: toAbortController.signal,
           }),
         ])
@@ -209,19 +252,23 @@ export function useInventoryMove() {
 
   // --- 登録 ---
   async function submitMove() {
+    // el-form バリデーション
+    const valid = await formRef.value?.validate().catch(() => false)
+    if (!valid) return
+
     if (!fromInventory.value || !toLocationId.value || !fromLocationId.value) return
 
-    // バリデーション
-    if (fromLocationCode.value.trim() === toLocationCode.value.trim()) {
+    // ビジネスバリデーション
+    if (form.fromLocationCode.trim() === form.toLocationCode.trim()) {
       ElMessage.error(t('inventory.sameLocationError'))
       return
     }
-    if (moveQty.value < 1 || moveQty.value > fromInventory.value.availableQty) {
+    if (form.moveQty < 1 || form.moveQty > fromInventory.value.availableQty) {
       ElMessage.error(t('inventory.moveQtyExceedsAvailable'))
       return
     }
     if (toMaxQty.value != null && toCurrentQty.value != null) {
-      const afterQty = toCurrentQty.value + moveQty.value
+      const afterQty = toCurrentQty.value + form.moveQty
       if (afterQty > toMaxQty.value) {
         const utLabel = unitTypeLabel(fromInventory.value.unitType, t)
         ElMessage.error(
@@ -239,10 +286,10 @@ export function useInventoryMove() {
     try {
       await ElMessageBox.confirm(
         t('inventory.moveConfirmMessage', {
-          from: fromLocationCode.value,
-          to: toLocationCode.value,
+          from: form.fromLocationCode,
+          to: form.toLocationCode,
           unitType: utLabel,
-          qty: moveQty.value,
+          qty: form.moveQty,
         }),
         t('common.confirm'),
         { type: 'warning' },
@@ -260,7 +307,7 @@ export function useInventoryMove() {
         lotNumber: fromInventory.value.lotNumber ?? null,
         expiryDate: fromInventory.value.expiryDate ?? null,
         toLocationId: toLocationId.value,
-        moveQty: moveQty.value,
+        moveQty: form.moveQty,
       })
       ElMessage.success(t('inventory.moveSuccess'))
       router.push({ name: 'inventory-list' })
@@ -280,10 +327,10 @@ export function useInventoryMove() {
   function initFromRoute() {
     const q = route.query
     if (q.locationCode) {
-      fromLocationCode.value = String(q.locationCode)
+      form.fromLocationCode = String(q.locationCode)
       fetchFromInventory().then(() => {
-        if (q.productId) selectedProductId.value = Number(q.productId)
-        if (q.unitType) selectedUnitType.value = String(q.unitType)
+        if (q.productId) form.selectedProductId = Number(q.productId)
+        if (q.unitType) form.selectedUnitType = String(q.unitType)
       })
     }
   }
@@ -293,18 +340,14 @@ export function useInventoryMove() {
   }
 
   return {
-    loading,
     submitting,
-    fromLocationCode,
+    form,
+    rules,
     fromInventoryOptions,
-    selectedProductId,
-    selectedUnitType,
     fromInventory,
-    toLocationCode,
     toLocationId,
     toCurrentQty,
     toMaxQty,
-    moveQty,
     productOptions,
     unitTypeOptions,
     onProductChange,

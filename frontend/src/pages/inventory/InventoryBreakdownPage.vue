@@ -7,20 +7,20 @@
         </div>
       </template>
 
-      <!-- ばらし元 -->
-      <el-divider content-position="left">{{ t('inventory.fromLocation') }}</el-divider>
-      <el-form label-width="180px">
-        <el-form-item :label="t('inventory.fromLocationCode')" required>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="180px">
+        <!-- ばらし元 -->
+        <el-divider content-position="left">{{ t('inventory.fromLocation') }}</el-divider>
+        <el-form-item :label="t('inventory.fromLocationCode')" prop="fromLocationCode">
           <el-input
-            v-model="fromLocationCode"
+            v-model="form.fromLocationCode"
             style="width: 280px"
             @keyup.enter="fetchFromInventory"
             @blur="fetchFromInventory"
           />
         </el-form-item>
-        <el-form-item :label="t('inventory.product')" required>
+        <el-form-item :label="t('inventory.product')" prop="selectedProductId">
           <el-select
-            v-model="selectedProductId"
+            v-model="form.selectedProductId"
             style="width: 320px"
             filterable
             :placeholder="t('inventory.product')"
@@ -34,9 +34,9 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item :label="t('inventory.fromUnitType')" required>
+        <el-form-item :label="t('inventory.fromUnitType')" prop="fromUnitType">
           <el-select
-            v-model="fromUnitType"
+            v-model="form.fromUnitType"
             style="width: 160px"
             :placeholder="t('inventory.unitType')"
             @change="onFromUnitTypeChange"
@@ -53,22 +53,20 @@
             {{ t('inventory.availableQty') }}: {{ formatNumber(fromInventory.availableQty) }}
           </span>
         </el-form-item>
-        <el-form-item :label="t('inventory.breakdownQty')" required>
+        <el-form-item :label="t('inventory.breakdownQty')" prop="breakdownQty">
           <el-input-number
-            v-model="breakdownQty"
+            v-model="form.breakdownQty"
             :min="1"
             :max="fromInventory?.availableQty ?? 1"
             style="width: 160px"
           />
         </el-form-item>
-      </el-form>
 
-      <!-- 変換プレビュー -->
-      <el-divider content-position="left">{{ t('inventory.conversionPreview') }}</el-divider>
-      <el-form label-width="180px">
-        <el-form-item :label="t('inventory.toUnitType')" required>
+        <!-- 変換プレビュー -->
+        <el-divider content-position="left">{{ t('inventory.conversionPreview') }}</el-divider>
+        <el-form-item :label="t('inventory.toUnitType')" prop="toUnitType">
           <el-select
-            v-model="toUnitType"
+            v-model="form.toUnitType"
             style="width: 160px"
             :placeholder="t('inventory.unitType')"
           >
@@ -82,9 +80,11 @@
         </el-form-item>
         <el-form-item v-if="convertedQty != null" :label="t('inventory.convertedQty')">
           <span class="preview-result">
-            {{ breakdownQty }} {{ fromUnitType ? unitTypeLabelFn(fromUnitType) : '' }}
+            {{ form.breakdownQty }}
+            {{ form.fromUnitType ? unitTypeLabelFn(form.fromUnitType) : '' }}
             →
-            {{ formatNumber(convertedQty) }} {{ toUnitType ? unitTypeLabelFn(toUnitType) : '' }}
+            {{ formatNumber(convertedQty) }}
+            {{ form.toUnitType ? unitTypeLabelFn(form.toUnitType) : '' }}
           </span>
         </el-form-item>
         <el-form-item v-if="conversionRate != null" :label="t('inventory.conversionRate')">
@@ -95,14 +95,12 @@
             {{ t('inventory.conversionRateNotSet') }}
           </el-alert>
         </el-form-item>
-      </el-form>
 
-      <!-- ばらし先ロケーション -->
-      <el-divider content-position="left">{{ t('inventory.toLocationOptional') }}</el-divider>
-      <el-form label-width="180px">
+        <!-- ばらし先ロケーション -->
+        <el-divider content-position="left">{{ t('inventory.toLocationOptional') }}</el-divider>
         <el-form-item :label="t('inventory.toLocationOptional')">
           <el-input
-            v-model="toLocationCode"
+            v-model="form.toLocationCode"
             style="width: 280px"
             :placeholder="t('inventory.toLocationSameHint')"
             @blur="fetchToLocationInfo"
@@ -119,7 +117,7 @@
         <el-button
           type="primary"
           :loading="submitting"
-          :disabled="!fromInventory || !toUnitType || !convertedQty"
+          :disabled="!fromInventory || !form.toUnitType || !convertedQty"
           @click="submitBreakdown"
         >
           {{ t('common.save') }}
@@ -130,21 +128,20 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { FormInstance } from 'element-plus'
 import { useInventoryBreakdown } from '@/composables/inventory/useInventoryBreakdown'
 import { unitTypeLabel, formatNumber } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
+const formRef = ref<FormInstance>()
 
 const {
-  fromLocationCode,
-  selectedProductId,
-  fromUnitType,
-  breakdownQty,
-  toUnitType,
-  toLocationCode,
-  toCurrentQty,
+  form,
+  rules,
   fromInventory,
+  toCurrentQty,
   submitting,
   productOptions,
   fromUnitTypeOptions,
@@ -157,7 +154,7 @@ const {
   fetchToLocationInfo,
   submitBreakdown,
   goBack,
-} = useInventoryBreakdown()
+} = useInventoryBreakdown(formRef)
 
 function unitTypeLabelFn(unitType: string): string {
   return unitTypeLabel(unitType, t)

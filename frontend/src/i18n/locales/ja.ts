@@ -663,6 +663,19 @@ export default {
     noResult: '検索条件に一致する在庫がありません。',
     inventoryReport: '在庫一覧レポート',
     transitionReport: '在庫推移レポート',
+    // バリデーション（INV-002〜004共通）
+    validation: {
+      locationCodeRequired: 'ロケーションコードを入力してください。',
+      productRequired: '商品を選択してください。',
+      unitTypeRequired: '荷姿を選択してください。',
+      toLocationCodeRequired: '移動先ロケーションコードを入力してください。',
+      moveQtyRequired: '移動数量を入力してください。',
+      breakdownQtyRequired: 'ばらし数量を入力してください。',
+      toUnitTypeRequired: 'ばらし後荷姿を選択してください。',
+      newQtyRequired: '訂正後数量を入力してください。',
+      reasonRequired: '訂正理由を入力してください。',
+      reasonMaxLength: '訂正理由は200文字以内で入力してください。',
+    },
     // INV-002 在庫移動
     moveTitle: '在庫移動登録',
     fromLocation: '移動元',

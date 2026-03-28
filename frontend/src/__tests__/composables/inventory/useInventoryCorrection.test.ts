@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { withSetup, mockAxiosResponse } from '../../helpers'
+import { withSetup, mockAxiosResponse, createMockFormRef } from '../../helpers'
 import { useInventoryCorrection } from '@/composables/inventory/useInventoryCorrection'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
 
 vi.mock('@/api/generated/models/inventory-location-item', () => ({}))
+vi.mock('@/api/generated/models/correction-history-item', () => ({}))
 vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/inventoryFormatters')>()
   return { ...actual }
@@ -37,54 +38,73 @@ describe('useInventoryCorrection', () => {
   })
 
   it('fetchInventory がロケーション検索+在庫を取得する', async () => {
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
     expect(result.inventoryOptions.value).toHaveLength(1)
     expect(result.locationId.value).toBe(100)
-    expect(result.selectedProductId.value).toBeNull()
-    expect(result.newQty.value).toBeNull()
-    expect(result.reason.value).toBe('')
+    expect(result.form.selectedProductId).toBeNull()
+    expect(result.form.newQty).toBeNull()
+    expect(result.form.reason).toBe('')
   })
 
   it('diff が自動計算される', async () => {
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
-    result.newQty.value = 15
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.form.newQty = 15
 
     expect(result.diff.value).toBe(5) // 15 - 10
   })
 
-  it('submitCorrection が数量<0でエラーする', async () => {
+  it('submitCorrection がフォームバリデーション失敗時に中断する', async () => {
+    const formRef = createMockFormRef()
+    formRef.value!.validate = vi.fn().mockRejectedValue(false)
+
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    await result.submitCorrection()
+
+    expect(apiClient.post).not.toHaveBeenCalled()
+    expect(ElMessageBox.confirm).not.toHaveBeenCalled()
+  })
+
+  it('submitCorrection が数量<0でエラーする', async () => {
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
-    result.newQty.value = -1
-    result.reason.value = 'test reason'
+    result.form.newQty = -1
+    result.form.reason = 'test reason'
 
     await result.submitCorrection()
 
@@ -93,20 +113,21 @@ describe('useInventoryCorrection', () => {
   })
 
   it('submitCorrection が引当数未満でエラーする', async () => {
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
-    result.newQty.value = 2 // below allocatedQty=3
-    result.reason.value = 'test reason'
+    result.form.newQty = 2 // below allocatedQty=3
+    result.form.reason = 'test reason'
 
     await result.submitCorrection()
 
@@ -116,48 +137,52 @@ describe('useInventoryCorrection', () => {
     expect(apiClient.post).not.toHaveBeenCalled()
   })
 
-  it('submitCorrection が理由未入力でエラーする', async () => {
+  it('submitCorrection が理由未入力でもフォームバリデーションで弾かれる', async () => {
+    const formRef = createMockFormRef()
+    formRef.value!.validate = vi.fn().mockRejectedValue(false)
+
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
-    result.newQty.value = 8
-    result.reason.value = ''
+    result.form.newQty = 8
+    result.form.reason = ''
 
     await result.submitCorrection()
 
-    expect(ElMessage.error).toHaveBeenCalled()
     expect(apiClient.post).not.toHaveBeenCalled()
   })
 
   it('submitCorrection が正常にPOSTする', async () => {
     vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse({}))
 
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
-    result.newQty.value = 8
-    result.reason.value = 'Counted mismatch'
+    result.form.newQty = 8
+    result.form.reason = 'Counted mismatch'
 
     await result.submitCorrection()
 
+    expect(formRef.value!.validate).toHaveBeenCalled()
     expect(ElMessageBox.confirm).toHaveBeenCalled()
     expect(apiClient.post).toHaveBeenCalledWith(
       '/inventory/correction',
@@ -174,13 +199,14 @@ describe('useInventoryCorrection', () => {
   })
 
   it('onProductChange が selectedUnitType と newQty と correctionHistory をリセットする', () => {
-    const { result } = withSetup(() => useInventoryCorrection())
-    result.selectedUnitType.value = 'CASE'
-    result.newQty.value = 10
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => useInventoryCorrection(formRef))
+    result.form.selectedUnitType = 'CASE'
+    result.form.newQty = 10
 
     result.onProductChange()
-    expect(result.selectedUnitType.value).toBeNull()
-    expect(result.newQty.value).toBeNull()
+    expect(result.form.selectedUnitType).toBeNull()
+    expect(result.form.newQty).toBeNull()
     expect(result.correctionHistory.value).toEqual([])
   })
 
@@ -194,43 +220,45 @@ describe('useInventoryCorrection', () => {
         executedByName: '山田太郎',
       },
     ]
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
     vi.mocked(apiClient.get).mockReset()
     vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse(mockHistory))
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
     await result.onUnitTypeChange()
 
-    expect(result.newQty.value).toBe(10)
+    expect(result.form.newQty).toBe(10)
     expect(result.correctionHistory.value).toHaveLength(1)
     expect(result.correctionHistory.value[0].reason).toBe('棚卸差異')
   })
 
   it('onUnitTypeChange で履歴取得に失敗しても空配列になる', async () => {
+    const formRef = createMockFormRef()
     const { result } = withSetup(() => {
       const ws = useWarehouseStore()
       ws.selectedWarehouseId = 1
-      return useInventoryCorrection()
+      return useInventoryCorrection(formRef)
     })
 
-    result.locationCode.value = 'A-01'
+    result.form.locationCode = 'A-01'
     await result.fetchInventory()
 
     vi.mocked(apiClient.get).mockReset()
     vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network error'))
 
-    result.selectedProductId.value = 1
-    result.selectedUnitType.value = 'CASE'
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
     result.locationId.value = 100
     await result.onUnitTypeChange()
 
@@ -238,8 +266,135 @@ describe('useInventoryCorrection', () => {
   })
 
   it('goBack が在庫一覧に遷移する', () => {
-    const { result } = withSetup(() => useInventoryCorrection())
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => useInventoryCorrection(formRef))
     result.goBack()
     expect(mockRouter.push).toHaveBeenCalledWith({ name: 'inventory-list' })
+  })
+
+  it('rules が正しく定義されている', () => {
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => useInventoryCorrection(formRef))
+
+    expect(result.rules.locationCode).toBeDefined()
+    expect(result.rules.selectedProductId).toBeDefined()
+    expect(result.rules.selectedUnitType).toBeDefined()
+    expect(result.rules.newQty).toBeDefined()
+    expect(result.rules.reason).toBeDefined()
+    // reason has 2 rules (required + max length)
+    expect(result.rules.reason).toHaveLength(2)
+  })
+
+  it('fetchInventory がAPI失敗時にエラーメッセージを表示する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.fetchError')
+    expect(result.inventoryOptions.value).toHaveLength(0)
+  })
+
+  it('fetchInventory でロケーション未検出時に警告する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ content: [], totalElements: 0 }))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'NOTEXIST'
+    await result.fetchInventory()
+
+    expect(ElMessage.warning).toHaveBeenCalledWith('inventory.locationNotFound')
+  })
+
+  it('submitCorrection がゼロ数量で追加確認メッセージを含める', async () => {
+    // allocatedQty=0 のデータを用意（0にしないとallocatedQtyチェックに引っかかる）
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(mockAxiosResponse({ content: [{ id: 100 }], totalElements: 1 }))
+      .mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [
+            {
+              productId: 1,
+              productCode: 'P001',
+              productName: 'Product 1',
+              unitType: 'CASE',
+              quantity: 5,
+              allocatedQty: 0,
+              availableQty: 5,
+              lotNumber: null,
+              expiryDate: null,
+            },
+          ],
+        }),
+      )
+    vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse({}))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.locationId.value = 100
+    result.form.newQty = 0
+    result.form.reason = 'Zero correction'
+
+    await result.submitCorrection()
+
+    // confirm メッセージにゼロ警告が含まれる
+    const confirmCall = vi.mocked(ElMessageBox.confirm).mock.calls[0]
+    expect(confirmCall[0]).toContain('inventory.correctionConfirmZeroMessage')
+    expect(apiClient.post).toHaveBeenCalled()
+  })
+
+  it('submitCorrection がAPI 500エラー時に汎用エラーメッセージを表示する', async () => {
+    const error500 = new Error('Server error') as Error & {
+      isAxiosError: boolean
+      response: { status: number; data: undefined }
+    }
+    error500.isAxiosError = true
+    error500.response = { status: 500, data: undefined }
+    vi.mocked(apiClient.post).mockRejectedValue(error500)
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.locationId.value = 100
+    result.form.newQty = 8
+    result.form.reason = 'Test reason'
+
+    await result.submitCorrection()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.correctionError')
   })
 })

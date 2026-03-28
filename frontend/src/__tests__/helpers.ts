@@ -1,9 +1,11 @@
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { flushPromises } from '@vue/test-utils'
+import { vi } from 'vitest'
 import { testI18n } from './test-i18n'
 import type { AxiosResponse } from 'axios'
+import type { FormInstance } from 'element-plus'
 
 export { flushPromises }
 
@@ -67,6 +69,17 @@ export function createAxiosError(status: number, data?: { errorCode?: string; me
   error.isAxiosError = true
   error.response = { status, data }
   return error
+}
+
+/**
+ * el-form の formRef モックを生成するヘルパー
+ */
+export function createMockFormRef(valid = true) {
+  return ref({
+    validate: vi.fn().mockResolvedValue(valid),
+    resetFields: vi.fn(),
+    clearValidate: vi.fn(),
+  } as unknown as FormInstance)
 }
 
 /**

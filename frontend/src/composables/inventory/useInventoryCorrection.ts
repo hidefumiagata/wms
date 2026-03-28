@@ -1,7 +1,8 @@
-import { ref, computed, onUnmounted } from 'vue'
+import { type Ref, ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
@@ -22,7 +23,7 @@ interface InventoryOption {
   expiryDate?: string | null
 }
 
-export function useInventoryCorrection() {
+export function useInventoryCorrection(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
@@ -30,16 +31,56 @@ export function useInventoryCorrection() {
   const loading = ref(false)
   const submitting = ref(false)
 
+  // フォームモデル
+  const form = reactive({
+    locationCode: '',
+    selectedProductId: null as number | null,
+    selectedUnitType: null as string | null,
+    newQty: null as number | null,
+    reason: '',
+  })
+
+  // バリデーションルール
+  const rules: FormRules = {
+    locationCode: [
+      {
+        required: true,
+        message: () => t('inventory.validation.locationCodeRequired'),
+        trigger: 'blur',
+      },
+    ],
+    selectedProductId: [
+      {
+        required: true,
+        message: () => t('inventory.validation.productRequired'),
+        trigger: 'change',
+      },
+    ],
+    selectedUnitType: [
+      {
+        required: true,
+        message: () => t('inventory.validation.unitTypeRequired'),
+        trigger: 'change',
+      },
+    ],
+    newQty: [
+      {
+        required: true,
+        type: 'number',
+        min: 0,
+        message: () => t('inventory.validation.newQtyRequired'),
+        trigger: 'change',
+      },
+    ],
+    reason: [
+      { required: true, message: () => t('inventory.validation.reasonRequired'), trigger: 'blur' },
+      { max: 200, message: () => t('inventory.validation.reasonMaxLength'), trigger: 'blur' },
+    ],
+  }
+
   // 対象在庫選択
-  const locationCode = ref('')
   const locationId = ref<number | null>(null)
   const inventoryOptions = ref<InventoryOption[]>([])
-  const selectedProductId = ref<number | null>(null)
-  const selectedUnitType = ref<string | null>(null)
-
-  // 訂正入力
-  const newQty = ref<number | null>(null)
-  const reason = ref('')
 
   // 訂正履歴
   const correctionHistory = ref<CorrectionHistoryItem[]>([])
@@ -52,18 +93,18 @@ export function useInventoryCorrection() {
 
   // 選択中の在庫
   const selectedInventory = computed<InventoryOption | null>(() => {
-    if (!selectedProductId.value || !selectedUnitType.value) return null
+    if (!form.selectedProductId || !form.selectedUnitType) return null
     return (
       inventoryOptions.value.find(
-        (i) => i.productId === selectedProductId.value && i.unitType === selectedUnitType.value,
+        (i) => i.productId === form.selectedProductId && i.unitType === form.selectedUnitType,
       ) ?? null
     )
   })
 
   // 差異（自動計算）
   const diff = computed(() => {
-    if (newQty.value == null || !selectedInventory.value) return null
-    return newQty.value - selectedInventory.value.quantity
+    if (form.newQty == null || !selectedInventory.value) return null
+    return form.newQty - selectedInventory.value.quantity
   })
 
   // 商品選択肢
@@ -78,13 +119,13 @@ export function useInventoryCorrection() {
 
   // 荷姿選択肢
   const unitTypeOptions = computed(() => {
-    if (!selectedProductId.value) return []
-    return inventoryOptions.value.filter((i) => i.productId === selectedProductId.value)
+    if (!form.selectedProductId) return []
+    return inventoryOptions.value.filter((i) => i.productId === form.selectedProductId)
   })
 
   // --- ロケーション検索 ---
   async function fetchInventory() {
-    if (!locationCode.value.trim()) return
+    if (!form.locationCode.trim()) return
     abortController?.abort()
     abortController = new AbortController()
     loading.value = true
@@ -93,7 +134,7 @@ export function useInventoryCorrection() {
       const locRes = await apiClient.get('/master/locations', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCode: locationCode.value.trim(),
+          locationCode: form.locationCode.trim(),
           page: 0,
           size: 1,
         },
@@ -112,7 +153,7 @@ export function useInventoryCorrection() {
       const res = await apiClient.get('/inventory', {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
-          locationCodePrefix: locationCode.value.trim(),
+          locationCodePrefix: form.locationCode.trim(),
           viewType: 'LOCATION',
           page: 0,
           size: 100,
@@ -131,10 +172,10 @@ export function useInventoryCorrection() {
         lotNumber: i.lotNumber,
         expiryDate: i.expiryDate,
       }))
-      selectedProductId.value = null
-      selectedUnitType.value = null
-      newQty.value = null
-      reason.value = ''
+      form.selectedProductId = null
+      form.selectedUnitType = null
+      form.newQty = null
+      form.reason = ''
     } catch (err) {
       if (axios.isCancel(err)) return
       inventoryOptions.value = []
@@ -145,13 +186,13 @@ export function useInventoryCorrection() {
   }
 
   function onProductChange() {
-    selectedUnitType.value = null
-    newQty.value = null
+    form.selectedUnitType = null
+    form.newQty = null
     correctionHistory.value = []
   }
 
   async function fetchCorrectionHistory() {
-    if (!locationId.value || !selectedProductId.value || !selectedUnitType.value) {
+    if (!locationId.value || !form.selectedProductId || !form.selectedUnitType) {
       correctionHistory.value = []
       return
     }
@@ -160,8 +201,8 @@ export function useInventoryCorrection() {
         params: {
           warehouseId: warehouseStore.selectedWarehouseId,
           locationId: locationId.value,
-          productId: selectedProductId.value,
-          unitType: selectedUnitType.value,
+          productId: form.selectedProductId,
+          unitType: form.selectedUnitType,
         },
         signal: abortController?.signal,
       })
@@ -174,20 +215,24 @@ export function useInventoryCorrection() {
 
   async function onUnitTypeChange() {
     if (selectedInventory.value) {
-      newQty.value = selectedInventory.value.quantity
+      form.newQty = selectedInventory.value.quantity
     }
     await fetchCorrectionHistory()
   }
 
   // --- 登録 ---
   async function submitCorrection() {
+    // el-form バリデーション
+    const valid = await formRef.value?.validate().catch(() => false)
+    if (!valid) return
+
     if (!selectedInventory.value || !locationId.value) return
 
-    if (newQty.value == null || newQty.value < 0) {
+    if (form.newQty == null || form.newQty < 0) {
       ElMessage.error(t('inventory.correctionError'))
       return
     }
-    if (newQty.value < selectedInventory.value.allocatedQty) {
+    if (form.newQty < selectedInventory.value.allocatedQty) {
       ElMessage.error(
         t('inventory.correctionBelowAllocated', {
           allocated: selectedInventory.value.allocatedQty,
@@ -195,23 +240,19 @@ export function useInventoryCorrection() {
       )
       return
     }
-    if (!reason.value.trim() || reason.value.length > 200) {
-      ElMessage.error(t('inventory.reason'))
-      return
-    }
 
     const utLabel = unitTypeLabel(selectedInventory.value.unitType, t)
     const confirmMsg = t('inventory.correctionConfirmMessage', {
-      loc: locationCode.value,
+      loc: form.locationCode,
       product: `${selectedInventory.value.productCode} ${selectedInventory.value.productName}`,
       unitType: utLabel,
       current: selectedInventory.value.quantity,
-      newQty: newQty.value,
+      newQty: form.newQty,
       diff: diff.value,
     })
 
     const fullMsg =
-      newQty.value === 0
+      form.newQty === 0
         ? `${confirmMsg}\n\n${t('inventory.correctionConfirmZeroMessage')}`
         : confirmMsg
 
@@ -229,8 +270,8 @@ export function useInventoryCorrection() {
         unitType: selectedInventory.value.unitType,
         lotNumber: selectedInventory.value.lotNumber ?? null,
         expiryDate: selectedInventory.value.expiryDate ?? null,
-        newQty: newQty.value,
-        reason: reason.value.trim(),
+        newQty: form.newQty,
+        reason: form.reason.trim(),
       })
       ElMessage.success(t('inventory.correctionSuccess'))
       router.push({ name: 'inventory-list' })
@@ -251,16 +292,12 @@ export function useInventoryCorrection() {
   }
 
   return {
-    loading,
     submitting,
-    locationCode,
+    form,
+    rules,
     locationId,
     inventoryOptions,
-    selectedProductId,
-    selectedUnitType,
     selectedInventory,
-    newQty,
-    reason,
     diff,
     productOptions,
     unitTypeOptions,

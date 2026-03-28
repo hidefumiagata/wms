@@ -7,20 +7,20 @@
         </div>
       </template>
 
-      <!-- 移動元 -->
-      <el-divider content-position="left">{{ t('inventory.fromLocation') }}</el-divider>
-      <el-form label-width="160px">
-        <el-form-item :label="t('inventory.fromLocationCode')" required>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="160px">
+        <!-- 移動元 -->
+        <el-divider content-position="left">{{ t('inventory.fromLocation') }}</el-divider>
+        <el-form-item :label="t('inventory.fromLocationCode')" prop="fromLocationCode">
           <el-input
-            v-model="fromLocationCode"
+            v-model="form.fromLocationCode"
             style="width: 280px"
             @keyup.enter="fetchFromInventory"
             @blur="fetchFromInventory"
           />
         </el-form-item>
-        <el-form-item :label="t('inventory.product')" required>
+        <el-form-item :label="t('inventory.product')" prop="selectedProductId">
           <el-select
-            v-model="selectedProductId"
+            v-model="form.selectedProductId"
             style="width: 320px"
             filterable
             :placeholder="t('inventory.product')"
@@ -34,9 +34,9 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item :label="t('inventory.unitType')" required>
+        <el-form-item :label="t('inventory.unitType')" prop="selectedUnitType">
           <el-select
-            v-model="selectedUnitType"
+            v-model="form.selectedUnitType"
             style="width: 160px"
             :placeholder="t('inventory.unitType')"
           >
@@ -59,14 +59,12 @@
             （{{ t('inventory.allocatedQty') }}: {{ fromInventory.allocatedQty }}）
           </span>
         </el-form-item>
-      </el-form>
 
-      <!-- 移動先 -->
-      <el-divider content-position="left">{{ t('inventory.toLocation') }}</el-divider>
-      <el-form label-width="160px">
-        <el-form-item :label="t('inventory.toLocationCode')" required>
+        <!-- 移動先 -->
+        <el-divider content-position="left">{{ t('inventory.toLocation') }}</el-divider>
+        <el-form-item :label="t('inventory.toLocationCode')" prop="toLocationCode">
           <el-input
-            v-model="toLocationCode"
+            v-model="form.toLocationCode"
             style="width: 280px"
             @keyup.enter="fetchToLocationInfo"
             @blur="fetchToLocationInfo"
@@ -78,14 +76,12 @@
         <el-form-item v-if="toMaxQty != null" :label="t('inventory.locationCapacity')">
           <span>{{ formatNumber(toMaxQty) }}</span>
         </el-form-item>
-      </el-form>
 
-      <!-- 移動数量 -->
-      <el-divider content-position="left">{{ t('inventory.moveQty') }}</el-divider>
-      <el-form label-width="160px">
-        <el-form-item :label="t('inventory.moveQty')" required>
+        <!-- 移動数量 -->
+        <el-divider content-position="left">{{ t('inventory.moveQty') }}</el-divider>
+        <el-form-item :label="t('inventory.moveQty')" prop="moveQty">
           <el-input-number
-            v-model="moveQty"
+            v-model="form.moveQty"
             :min="1"
             :max="fromInventory?.availableQty ?? 1"
             style="width: 160px"
@@ -99,7 +95,7 @@
         <el-button
           type="primary"
           :loading="submitting"
-          :disabled="!fromInventory || !toLocationId || moveQty < 1"
+          :disabled="!fromInventory || !toLocationId || form.moveQty < 1"
           @click="submitMove"
         >
           {{ t('common.save') }}
@@ -110,23 +106,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { FormInstance } from 'element-plus'
 import { useInventoryMove } from '@/composables/inventory/useInventoryMove'
 import { unitTypeLabel, formatNumber } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
+const formRef = ref<FormInstance>()
 
 const {
-  fromLocationCode,
-  selectedProductId,
-  selectedUnitType,
+  form,
+  rules,
   fromInventory,
-  toLocationCode,
   toLocationId,
   toCurrentQty,
   toMaxQty,
-  moveQty,
   submitting,
   productOptions,
   unitTypeOptions,
@@ -136,7 +131,7 @@ const {
   submitMove,
   initFromRoute,
   goBack,
-} = useInventoryMove()
+} = useInventoryMove(formRef)
 
 function unitTypeLabelFn(unitType: string): string {
   return unitTypeLabel(unitType, t)

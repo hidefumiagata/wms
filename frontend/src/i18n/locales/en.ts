@@ -667,6 +667,19 @@ export default {
     noResult: 'No inventory matching the search criteria.',
     inventoryReport: 'Inventory Report',
     transitionReport: 'Transition Report',
+    // Validation (INV-002~004)
+    validation: {
+      locationCodeRequired: 'Please enter a location code.',
+      productRequired: 'Please select a product.',
+      unitTypeRequired: 'Please select a unit type.',
+      toLocationCodeRequired: 'Please enter a destination location code.',
+      moveQtyRequired: 'Please enter a move quantity.',
+      breakdownQtyRequired: 'Please enter a breakdown quantity.',
+      toUnitTypeRequired: 'Please select a target unit type.',
+      newQtyRequired: 'Please enter a new quantity.',
+      reasonRequired: 'Please enter a reason.',
+      reasonMaxLength: 'Reason must be 200 characters or less.',
+    },
     // INV-002
     moveTitle: 'Move Inventory',
     fromLocation: 'From',
