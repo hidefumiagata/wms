@@ -29,9 +29,7 @@
 
 - **[RULE-DTO-002]** Controllerは Entity を直接レスポンスに返してはならない。必ずOpenAPI生成DTOに変換して返す。
 
-- **[RULE-DTO-003]** Entity→DTO変換は各DTOの `static from(Entity)` ファクトリメソッドで実装する（MapStruct不使用）。
-
-- **[RULE-DTO-004]** DTOの配置場所: 各モジュールの `dto/` パッケージ（例: `com.wms.master.dto/`）。
+- **[RULE-DTO-003]** Entity→DTO変換はController内の `private` メソッド（`toDetail()`, `toListItem()` 等）で実装する（MapStruct不使用）。関連Entityの情報を合成する場合はバッチフェッチ + Map合成パターンを使用する。
 
 ### 例外・エラーハンドリング
 
