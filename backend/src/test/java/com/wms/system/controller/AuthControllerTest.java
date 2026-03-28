@@ -16,6 +16,7 @@ import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,15 +26,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -430,6 +436,32 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnprocessableEntity())
                     .andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
+        }
+    }
+
+    // ========== getHttpServletResponse null response ==========
+
+    @Nested
+    @DisplayName("getHttpServletResponse edge case")
+    class ResponseNullTests {
+
+        @Test
+        @DisplayName("HttpServletResponseがnullの場合IllegalStateExceptionがスローされる")
+        void logout_nullResponse_throwsIllegalStateException() {
+            AuthController controller = new AuthController(
+                    authService, passwordService, rateLimiterService);
+
+            ServletRequestAttributes attrs = mock(ServletRequestAttributes.class);
+            when(attrs.getRequest()).thenReturn(mock(jakarta.servlet.http.HttpServletRequest.class));
+            when(attrs.getResponse()).thenReturn(null);
+
+            try (MockedStatic<RequestContextHolder> rch = mockStatic(RequestContextHolder.class)) {
+                rch.when(RequestContextHolder::currentRequestAttributes).thenReturn(attrs);
+
+                assertThatThrownBy(controller::logout)
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("HttpServletResponse is not available");
+            }
         }
     }
 }

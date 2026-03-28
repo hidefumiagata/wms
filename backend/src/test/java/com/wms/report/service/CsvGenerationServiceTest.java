@@ -3,7 +3,11 @@ package com.wms.report.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +15,10 @@ import java.util.List;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockConstruction;
 
 class CsvGenerationServiceTest {
 
@@ -271,6 +279,28 @@ class CsvGenerationServiceTest {
         @DisplayName("復帰文字で始まる値はシングルクォートが前置される")
         void crPrefix_sanitized() {
             assertThat(service.sanitizeFormulaInjection("\rdata")).isEqualTo("'\rdata");
+        }
+    }
+
+    @Nested
+    @DisplayName("IOException handling")
+    class IoExceptionHandling {
+
+        @Test
+        @DisplayName("IOExceptionが発生した場合UncheckedIOExceptionがスローされる")
+        void generate_ioException_throwsUncheckedIOException() {
+            ReportMeta meta = createMeta(
+                    new String[]{"名前"},
+                    obj -> new String[]{obj.toString()}
+            );
+
+            try (MockedConstruction<OutputStreamWriter> ignored = mockConstruction(
+                    OutputStreamWriter.class, (mock, ctx) -> {
+                        doThrow(new IOException("disk full")).when(mock).write(anyString());
+                    })) {
+                assertThatThrownBy(() -> service.generate(List.of("テスト"), meta))
+                        .isInstanceOf(UncheckedIOException.class);
+            }
         }
     }
 }

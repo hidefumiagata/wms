@@ -5,16 +5,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -93,6 +97,20 @@ class PdfGenerationServiceTest {
         assertThatThrownBy(() -> service.generatePdf(null, Map.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid template name");
+    }
+
+    @Test
+    @DisplayName("フォントリソースが読み込めない場合 IllegalStateException がスローされる")
+    void initFonts_resourceNotFound_throwsIllegalStateException() {
+        try (MockedConstruction<ClassPathResource> ignored = mockConstruction(
+                ClassPathResource.class, (mock, ctx) -> {
+                    when(mock.getURL()).thenThrow(new IOException("resource not found"));
+                })) {
+            PdfGenerationService svc = new PdfGenerationService(templateEngine);
+            assertThatThrownBy(svc::initFonts)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("フォントの読み込みに失敗");
+        }
     }
 
     @Test

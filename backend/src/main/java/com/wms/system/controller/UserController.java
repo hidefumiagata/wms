@@ -183,7 +183,7 @@ public class UserController implements MasterUserApi {
     }
 
     private Sort parseSort(String sort) {
-        if (sort == null || sort.isBlank()) {
+        if (sort.isBlank()) {
             return Sort.by(DEFAULT_SORT_DIRECTION, DEFAULT_SORT_PROPERTY);
         }
         String[] parts = sort.split(",");

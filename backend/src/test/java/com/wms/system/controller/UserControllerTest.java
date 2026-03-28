@@ -517,6 +517,21 @@ class UserControllerTest {
             mockMvc.perform(get(BASE_URL + "/exists").param("code", "USR001"))
                     .andExpect(status().isTooManyRequests());
         }
+
+        @Test
+        @DisplayName("認証情報がnullの場合でもレートリミットなしで正常応答する")
+        void exists_nullAuth_returnsOkWithoutRateLimit() throws Exception {
+            SecurityContextHolder.clearContext();
+            when(userService.existsByCode("USR001")).thenReturn(true);
+
+            try {
+                mockMvc.perform(get(BASE_URL + "/exists").param("code", "USR001"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.exists").value(true));
+            } finally {
+                setUpSecurityContext();
+            }
+        }
     }
 
     // ========== parseSort additional coverage ==========
