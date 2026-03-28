@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { type Ref, ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -23,7 +23,7 @@ interface InventoryOption {
   expiryDate?: string | null
 }
 
-export function useInventoryCorrection(formRef: ReturnType<typeof ref<FormInstance>>) {
+export function useInventoryCorrection(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
@@ -66,6 +66,8 @@ export function useInventoryCorrection(formRef: ReturnType<typeof ref<FormInstan
     newQty: [
       {
         required: true,
+        type: 'number',
+        min: 0,
         message: () => t('inventory.validation.newQtyRequired'),
         trigger: 'change',
       },
@@ -290,7 +292,6 @@ export function useInventoryCorrection(formRef: ReturnType<typeof ref<FormInstan
   }
 
   return {
-    loading,
     submitting,
     form,
     rules,

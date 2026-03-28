@@ -1,9 +1,7 @@
-import { ref } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
-import { withSetup, mockAxiosResponse } from '../../helpers'
+import { withSetup, mockAxiosResponse, createMockFormRef } from '../../helpers'
 import { useInventoryCorrection } from '@/composables/inventory/useInventoryCorrection'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
@@ -14,14 +12,6 @@ vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/inventoryFormatters')>()
   return { ...actual }
 })
-
-function createMockFormRef(valid = true) {
-  return ref({
-    validate: vi.fn().mockResolvedValue(valid),
-    resetFields: vi.fn(),
-    clearValidate: vi.fn(),
-  } as unknown as FormInstance)
-}
 
 describe('useInventoryCorrection', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
@@ -293,5 +283,118 @@ describe('useInventoryCorrection', () => {
     expect(result.rules.reason).toBeDefined()
     // reason has 2 rules (required + max length)
     expect(result.rules.reason).toHaveLength(2)
+  })
+
+  it('fetchInventory がAPI失敗時にエラーメッセージを表示する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.fetchError')
+    expect(result.inventoryOptions.value).toHaveLength(0)
+  })
+
+  it('fetchInventory でロケーション未検出時に警告する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ content: [], totalElements: 0 }))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'NOTEXIST'
+    await result.fetchInventory()
+
+    expect(ElMessage.warning).toHaveBeenCalledWith('inventory.locationNotFound')
+  })
+
+  it('submitCorrection がゼロ数量で追加確認メッセージを含める', async () => {
+    // allocatedQty=0 のデータを用意（0にしないとallocatedQtyチェックに引っかかる）
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(mockAxiosResponse({ content: [{ id: 100 }], totalElements: 1 }))
+      .mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [
+            {
+              productId: 1,
+              productCode: 'P001',
+              productName: 'Product 1',
+              unitType: 'CASE',
+              quantity: 5,
+              allocatedQty: 0,
+              availableQty: 5,
+              lotNumber: null,
+              expiryDate: null,
+            },
+          ],
+        }),
+      )
+    vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse({}))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.locationId.value = 100
+    result.form.newQty = 0
+    result.form.reason = 'Zero correction'
+
+    await result.submitCorrection()
+
+    // confirm メッセージにゼロ警告が含まれる
+    const confirmCall = vi.mocked(ElMessageBox.confirm).mock.calls[0]
+    expect(confirmCall[0]).toContain('inventory.correctionConfirmZeroMessage')
+    expect(apiClient.post).toHaveBeenCalled()
+  })
+
+  it('submitCorrection がAPI 500エラー時に汎用エラーメッセージを表示する', async () => {
+    const error500 = new Error('Server error') as Error & {
+      isAxiosError: boolean
+      response: { status: number; data: undefined }
+    }
+    error500.isAxiosError = true
+    error500.response = { status: 500, data: undefined }
+    vi.mocked(apiClient.post).mockRejectedValue(error500)
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryCorrection(formRef)
+    })
+
+    result.form.locationCode = 'A-01'
+    await result.fetchInventory()
+
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.locationId.value = 100
+    result.form.newQty = 8
+    result.form.reason = 'Test reason'
+
+    await result.submitCorrection()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.correctionError')
   })
 })

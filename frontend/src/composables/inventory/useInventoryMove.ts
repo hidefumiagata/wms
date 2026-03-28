@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { type Ref, ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -22,7 +22,7 @@ interface InventoryOption {
   expiryDate?: string | null
 }
 
-export function useInventoryMove(formRef: ReturnType<typeof ref<FormInstance>>) {
+export function useInventoryMove(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const router = useRouter()
   const route = useRoute()
@@ -73,6 +73,7 @@ export function useInventoryMove(formRef: ReturnType<typeof ref<FormInstance>>) 
     moveQty: [
       {
         required: true,
+        type: 'number',
         message: () => t('inventory.validation.moveQtyRequired'),
         trigger: 'change',
       },
@@ -339,7 +340,6 @@ export function useInventoryMove(formRef: ReturnType<typeof ref<FormInstance>>) 
   }
 
   return {
-    loading,
     submitting,
     form,
     rules,

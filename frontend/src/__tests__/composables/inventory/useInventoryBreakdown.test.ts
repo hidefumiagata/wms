@@ -1,9 +1,7 @@
-import { ref } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
-import { withSetup, mockAxiosResponse } from '../../helpers'
+import { withSetup, mockAxiosResponse, createMockFormRef } from '../../helpers'
 import { useInventoryBreakdown } from '@/composables/inventory/useInventoryBreakdown'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
@@ -13,14 +11,6 @@ vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/inventoryFormatters')>()
   return { ...actual }
 })
-
-function createMockFormRef(valid = true) {
-  return ref({
-    validate: vi.fn().mockResolvedValue(valid),
-    resetFields: vi.fn(),
-    clearValidate: vi.fn(),
-  } as unknown as FormInstance)
-}
 
 describe('useInventoryBreakdown', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
@@ -252,5 +242,128 @@ describe('useInventoryBreakdown', () => {
     expect(result.rules.fromUnitType).toBeDefined()
     expect(result.rules.breakdownQty).toBeDefined()
     expect(result.rules.toUnitType).toBeDefined()
+  })
+
+  it('submitBreakdown が数量超過でエラーする', async () => {
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryBreakdown(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    result.form.selectedProductId = 1
+    result.form.fromUnitType = 'CASE'
+    result.form.toUnitType = 'BALL'
+    result.form.breakdownQty = 999 // exceeds availableQty=8
+    result.fromLocationId.value = 100
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 12,
+      ballQuantity: 6,
+    }
+
+    await result.submitBreakdown()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.breakdownQtyExceedsAvailable')
+    expect(apiClient.post).not.toHaveBeenCalled()
+  })
+
+  it('submitBreakdown が変換レート0以下でエラーする', async () => {
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryBreakdown(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    result.form.selectedProductId = 1
+    result.form.fromUnitType = 'CASE'
+    result.form.toUnitType = 'BALL'
+    result.form.breakdownQty = 2
+    result.fromLocationId.value = 100
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 0, // rate = 0
+      ballQuantity: 6,
+    }
+
+    await result.submitBreakdown()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.conversionRateNotSet')
+    expect(apiClient.post).not.toHaveBeenCalled()
+  })
+
+  it('fetchFromInventory がAPI失敗時にエラーメッセージを表示する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryBreakdown(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.fetchError')
+  })
+
+  it('onFromUnitTypeChange が toUnitType をリセットする', () => {
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => useInventoryBreakdown(formRef))
+    result.form.toUnitType = 'PIECE'
+
+    result.onFromUnitTypeChange()
+    expect(result.form.toUnitType).toBeNull()
+  })
+
+  it('submitBreakdown がAPI 500エラー時に汎用エラーメッセージを表示する', async () => {
+    const error500 = new Error('Server error') as Error & {
+      isAxiosError: boolean
+      response: { status: number; data: undefined }
+    }
+    error500.isAxiosError = true
+    error500.response = { status: 500, data: undefined }
+    vi.mocked(apiClient.post).mockRejectedValue(error500)
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryBreakdown(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    result.form.selectedProductId = 1
+    result.form.fromUnitType = 'CASE'
+    result.form.toUnitType = 'BALL'
+    result.form.breakdownQty = 2
+    result.fromLocationId.value = 100
+    result.productInfo.value = {
+      id: 1,
+      productCode: 'P001',
+      productName: 'P1',
+      caseQuantity: 12,
+      ballQuantity: 6,
+    }
+
+    await result.submitBreakdown()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.breakdownError')
   })
 })

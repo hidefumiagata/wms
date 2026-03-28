@@ -1,9 +1,7 @@
-import { ref } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
-import { withSetup, mockAxiosResponse } from '../../helpers'
+import { withSetup, mockAxiosResponse, createMockFormRef } from '../../helpers'
 import { useInventoryMove } from '@/composables/inventory/useInventoryMove'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
@@ -13,14 +11,6 @@ vi.mock('@/utils/inventoryFormatters', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/utils/inventoryFormatters')>()
   return { ...actual }
 })
-
-function createMockFormRef(valid = true) {
-  return ref({
-    validate: vi.fn().mockResolvedValue(valid),
-    resetFields: vi.fn(),
-    clearValidate: vi.fn(),
-  } as unknown as FormInstance)
-}
 
 describe('useInventoryMove', () => {
   const mockLocationRes = { content: [{ id: 100 }], totalElements: 1 }
@@ -253,5 +243,137 @@ describe('useInventoryMove', () => {
     expect(result.rules.selectedUnitType).toBeDefined()
     expect(result.rules.toLocationCode).toBeDefined()
     expect(result.rules.moveQty).toBeDefined()
+  })
+
+  it('fetchFromInventory がAPI失敗時にエラーメッセージを表示する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.fetchError')
+    expect(result.fromInventoryOptions.value).toHaveLength(0)
+  })
+
+  it('fetchFromInventory が空コードでスキップする', async () => {
+    vi.mocked(apiClient.get).mockReset()
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => useInventoryMove(formRef))
+
+    result.form.fromLocationCode = ''
+    await result.fetchFromInventory()
+
+    expect(apiClient.get).not.toHaveBeenCalled()
+  })
+
+  it('fetchFromInventory でロケーション未検出時に警告する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ content: [], totalElements: 0 }))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.form.fromLocationCode = 'NOTEXIST'
+    await result.fetchFromInventory()
+
+    expect(ElMessage.warning).toHaveBeenCalledWith('inventory.locationNotFound')
+  })
+
+  it('fetchToLocationInfo がAPI失敗時にリセットする', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network error'))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.form.toLocationCode = 'B-01'
+    await result.fetchToLocationInfo()
+
+    expect(result.toLocationId.value).toBeNull()
+    expect(result.toCurrentQty.value).toBeNull()
+    expect(result.toMaxQty.value).toBeNull()
+  })
+
+  it('fetchToLocationInfo でロケーション未検出時に警告する', async () => {
+    vi.mocked(apiClient.get).mockReset()
+    vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse({ content: [], totalElements: 0 }))
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.form.toLocationCode = 'NOTEXIST'
+    await result.fetchToLocationInfo()
+
+    expect(ElMessage.warning).toHaveBeenCalledWith('inventory.locationNotFound')
+    expect(result.toLocationId.value).toBeNull()
+  })
+
+  it('submitMove がAPI 500エラー時に汎用エラーメッセージを表示する', async () => {
+    const error500 = new Error('Server error') as Error & {
+      isAxiosError: boolean
+      response: { status: number; data: undefined }
+    }
+    error500.isAxiosError = true
+    error500.response = { status: 500, data: undefined }
+    vi.mocked(apiClient.post).mockRejectedValue(error500)
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.form.fromLocationCode = 'A-01'
+    await result.fetchFromInventory()
+
+    result.form.selectedProductId = 1
+    result.form.selectedUnitType = 'CASE'
+    result.form.toLocationCode = 'B-01'
+    result.toLocationId.value = 200
+    result.form.moveQty = 3
+
+    await result.submitMove()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('inventory.moveError')
+  })
+
+  it('initFromRoute がクエリパラメータから初期値を設定する', async () => {
+    const { mockRoute } = await import('../../setup')
+    mockRoute.query = { locationCode: 'C-01', productId: '1', unitType: 'CASE' }
+
+    const formRef = createMockFormRef()
+    const { result } = withSetup(() => {
+      const ws = useWarehouseStore()
+      ws.selectedWarehouseId = 1
+      return useInventoryMove(formRef)
+    })
+
+    result.initFromRoute()
+    expect(result.form.fromLocationCode).toBe('C-01')
+
+    // クリーンアップ
+    mockRoute.query = {}
   })
 })

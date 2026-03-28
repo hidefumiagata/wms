@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onUnmounted } from 'vue'
+import { type Ref, ref, reactive, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -28,7 +28,7 @@ interface ProductInfo {
   ballQuantity: number
 }
 
-export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstance>>) {
+export function useInventoryBreakdown(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const router = useRouter()
   const warehouseStore = useWarehouseStore()
@@ -72,6 +72,7 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
     breakdownQty: [
       {
         required: true,
+        type: 'number',
         message: () => t('inventory.validation.breakdownQtyRequired'),
         trigger: 'change',
       },
@@ -98,8 +99,10 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
 
   // --- AbortController ---
   let abortController: AbortController | null = null
+  let toAbortController: AbortController | null = null
   onUnmounted(() => {
     abortController?.abort()
+    toAbortController?.abort()
   })
 
   // 選択中の在庫
@@ -246,6 +249,9 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
       toCurrentQty.value = null
       return
     }
+    toAbortController?.abort()
+    toAbortController = new AbortController()
+
     try {
       const locRes = await apiClient.get('/master/locations', {
         params: {
@@ -254,6 +260,7 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
           page: 0,
           size: 1,
         },
+        signal: toAbortController.signal,
       })
       const locs = locRes.data.content ?? []
       if (locs.length === 0) {
@@ -275,11 +282,13 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
             page: 0,
             size: 1,
           },
+          signal: toAbortController.signal,
         })
         const items: InventoryLocationItem[] = invRes.data.content ?? []
         toCurrentQty.value = items.length > 0 ? items[0].quantity : 0
       }
-    } catch {
+    } catch (err) {
+      if (axios.isCancel(err)) return
       toLocationId.value = null
       toCurrentQty.value = null
     }
@@ -350,7 +359,6 @@ export function useInventoryBreakdown(formRef: ReturnType<typeof ref<FormInstanc
   }
 
   return {
-    loading,
     submitting,
     form,
     rules,
