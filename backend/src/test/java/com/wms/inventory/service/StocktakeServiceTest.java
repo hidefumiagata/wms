@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -168,6 +169,9 @@ class StocktakeServiceTest {
             assertThat(result.targetDescription()).isEqualTo("A棟 全エリア");
             assertThat(result.totalLines()).isEqualTo(1);
             verify(locationRepository).saveAll(any());
+
+            // buildingId がヘッダに保存されていることを検証
+            verify(headerRepository).save(argThat(h -> h.getBuildingId().equals(2L)));
         }
 
         @Test @DisplayName("正常系: 棚卸開始（エリア指定）")

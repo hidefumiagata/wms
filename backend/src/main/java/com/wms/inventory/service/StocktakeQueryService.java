@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.wms.shared.util.LikeEscapeUtil;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -28,6 +30,7 @@ public class StocktakeQueryService {
 
     public Page<StocktakeHeader> search(Long warehouseId, String status,
                                          LocalDate dateFrom, LocalDate dateTo,
+                                         String stocktakeNumber, Long buildingId,
                                          Pageable pageable) {
         warehouseService.findById(warehouseId);
 
@@ -36,10 +39,13 @@ public class StocktakeQueryService {
         OffsetDateTime to = dateTo != null
                 ? dateTo.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC) : null;
 
-        log.debug("Stocktake search: warehouseId={}, status={}, dateFrom={}, dateTo={}",
-                warehouseId, status, dateFrom, dateTo);
+        String escapedNumber = LikeEscapeUtil.escape(stocktakeNumber);
 
-        return stocktakeHeaderRepository.search(warehouseId, status, from, to, pageable);
+        log.debug("Stocktake search: warehouseId={}, status={}, dateFrom={}, dateTo={}, stocktakeNumber={}, buildingId={}",
+                warehouseId, status, dateFrom, dateTo, stocktakeNumber, buildingId);
+
+        return stocktakeHeaderRepository.search(warehouseId, status, from, to,
+                escapedNumber, buildingId, pageable);
     }
 
     public StocktakeHeader findById(Long id) {
