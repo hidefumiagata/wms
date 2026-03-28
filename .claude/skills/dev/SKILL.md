@@ -230,15 +230,16 @@ const { errors, handleSubmit, setFieldError, defineField } = useForm({ validatio
 
 ## Phase 3: テストカバレッジ
 
-**目的**: C0/C1 100% を達成する
+**目的**: カバレッジ目標を達成する
 
-### Step 3.1: カバレッジ計測
+### カバレッジ目標
 
-```
-cd backend && ./gradlew test jacocoTestReport
-```
+| 対象 | C0（Stmts/LINE） | C1（Branch） | 計測コマンド |
+|------|-----------------|-------------|-------------|
+| バックエンド | 100% | 100% | `cd backend && ./gradlew test jacocoTestReport` |
+| フロントエンド | 100% | 95% | `cd frontend && npm run test:coverage` |
 
-### Step 3.2: カバレッジ分析
+### Step 3.1: バックエンド カバレッジ
 
 JaCoCo XML レポートを Python で解析する:
 ```bash
@@ -257,22 +258,29 @@ for pkg in root.findall('.//package'):
 PYEOF
 ```
 
-### Step 3.3: テスト追加
-
-未カバー箇所に対してテストを追加する。典型的な未カバーパターン:
-- null/空値の分岐
-- 条件分岐の false パス
-- 例外スローのパス（orElseThrow 等）
-- `&&` 演算子の短絡評価（JaCoCo制約で到達困難な場合あり）
-
-### Step 3.4: 100% 達成確認
-
-再度カバレッジを計測し、100% になるまで Step 3.2-3.3 を繰り返す。
-
-**許容される100%未達理由**:
+**BE許容される100%未達理由**:
 - `&&` 演算子の短絡評価によるJaCoCo制約
 - 到達不可能な防御コード（SHA-256 NoSuchAlgorithmException 等）
 - フレームワーク起因（Spring Boot main()、@PreAuthorize到達不可分岐等）
+
+### Step 3.2: フロントエンド カバレッジ
+
+`npm run test:coverage` のテキスト出力で Stmts / Branch を確認する。
+対象: `src/composables/`, `src/stores/`, `src/utils/`（vitest.config.ts で設定済み）
+
+**FE典型的な未カバーパターンと対処法**:
+- エラーハンドリング分岐（`!error.response`, `status === 409` 等）→ apiClientモックでステータスコードを変える
+- `axios.isCancel(err)` → `vi.mocked(axios.isCancel).mockReturnValue(true)`
+- `ElMessageBox.confirm` のキャンセル → `vi.mocked(ElMessageBox.confirm).mockRejectedValue('cancel')`
+
+**FE許容される95%未達理由**:
+- optional chaining (`?.`) がv8 coverageでブランチカウントされる
+- AbortController キャンセルタイミング依存の分岐
+- DOM操作依存（Blob URL生成等）
+
+### Step 3.3: テスト追加・達成確認
+
+未カバー箇所にテストを追加し、目標達成まで繰り返す。
 
 ---
 
@@ -306,10 +314,18 @@ Closes #{Issue番号}
 - 変更内容の箇条書き
 
 ## Test coverage
+
+### Backend (JaCoCo)
 | 指標 | 値 |
 |------|-----|
-| C0（ステートメント） | XX% |
-| C1（ブランチ） | XX% |
+| C0（LINE） | XX% |
+| C1（BRANCH） | XX% |
+
+### Frontend (v8) ※FE変更がある場合
+| 指標 | 値 |
+|------|-----|
+| Stmts | XX% |
+| Branch | XX% |
 
 ## Test plan
 - [x] テスト内容の箇条書き
@@ -422,7 +438,8 @@ Issue作成時のルール:
 
 以下がすべて満たされていることを確認:
 - [ ] 全テストがグリーン
-- [ ] C0/C1 カバレッジが100%（または理由付きで例外）
+- [ ] BE: C0/C1 カバレッジが100%（または理由付きで例外）
+- [ ] FE（変更がある場合）: C0 100% / C1 95%（または理由付きで例外）
 - [ ] PR本文にカバレッジ記載
 - [ ] 3種レビュー完了・結果をPRコメント
 - [ ] **全指摘事項の対応状況を一覧表でPRコメントに投稿済み**
