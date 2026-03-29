@@ -17,6 +17,9 @@ import com.wms.shared.util.LikeEscapeUtil;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +71,26 @@ public class StocktakeQueryService {
 
     public long countCountedLines(Long headerId) {
         return stocktakeLineRepository.countCountedByHeaderId(headerId);
+    }
+
+    public Map<Long, Long> countTotalLinesByHeaderIds(Set<Long> headerIds) {
+        if (headerIds.isEmpty()) {
+            return Map.of();
+        }
+        return stocktakeLineRepository.countTotalLinesByHeaderIds(headerIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]));
+    }
+
+    public Map<Long, Long> countCountedLinesByHeaderIds(Set<Long> headerIds) {
+        if (headerIds.isEmpty()) {
+            return Map.of();
+        }
+        return stocktakeLineRepository.countCountedLinesByHeaderIds(headerIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]));
     }
 
     public Page<com.wms.inventory.entity.StocktakeLine> searchLines(Long headerId, Boolean isCounted,

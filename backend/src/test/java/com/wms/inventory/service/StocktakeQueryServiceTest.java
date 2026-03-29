@@ -24,7 +24,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -178,5 +180,39 @@ class StocktakeQueryServiceTest {
 
         Page<StocktakeLine> result = service.searchLines(1L, null, null, PageRequest.of(0, 20));
         assertThat(result).isNotNull();
+    }
+
+    @Test
+    @DisplayName("countTotalLinesByHeaderIds: 複数ヘッダIDでバッチカウント")
+    void countTotalLinesByHeaderIds_success() {
+        when(lineRepository.countTotalLinesByHeaderIds(Set.of(1L, 2L)))
+                .thenReturn(List.of(new Object[]{1L, 5L}, new Object[]{2L, 3L}));
+
+        Map<Long, Long> result = service.countTotalLinesByHeaderIds(Set.of(1L, 2L));
+        assertThat(result).containsEntry(1L, 5L).containsEntry(2L, 3L);
+    }
+
+    @Test
+    @DisplayName("countTotalLinesByHeaderIds: 空セットで空Mapを返す")
+    void countTotalLinesByHeaderIds_emptySet() {
+        Map<Long, Long> result = service.countTotalLinesByHeaderIds(Set.of());
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("countCountedLinesByHeaderIds: 複数ヘッダIDでバッチカウント")
+    void countCountedLinesByHeaderIds_success() {
+        when(lineRepository.countCountedLinesByHeaderIds(Set.of(1L, 2L)))
+                .thenReturn(List.of(new Object[]{1L, 4L}, new Object[]{2L, 1L}));
+
+        Map<Long, Long> result = service.countCountedLinesByHeaderIds(Set.of(1L, 2L));
+        assertThat(result).containsEntry(1L, 4L).containsEntry(2L, 1L);
+    }
+
+    @Test
+    @DisplayName("countCountedLinesByHeaderIds: 空セットで空Mapを返す")
+    void countCountedLinesByHeaderIds_emptySet() {
+        Map<Long, Long> result = service.countCountedLinesByHeaderIds(Set.of());
+        assertThat(result).isEmpty();
     }
 }

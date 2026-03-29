@@ -7,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+import java.util.Set;
+
 public interface StocktakeLineRepository extends JpaRepository<StocktakeLine, Long> {
 
     @Query("SELECT COUNT(l) FROM StocktakeLine l WHERE l.stocktakeHeader.id = :headerId")
@@ -14,6 +17,12 @@ public interface StocktakeLineRepository extends JpaRepository<StocktakeLine, Lo
 
     @Query("SELECT COUNT(l) FROM StocktakeLine l WHERE l.stocktakeHeader.id = :headerId AND l.isCounted = true")
     long countCountedByHeaderId(@Param("headerId") Long headerId);
+
+    @Query("SELECT l.stocktakeHeader.id, COUNT(l) FROM StocktakeLine l WHERE l.stocktakeHeader.id IN :headerIds GROUP BY l.stocktakeHeader.id")
+    List<Object[]> countTotalLinesByHeaderIds(@Param("headerIds") Set<Long> headerIds);
+
+    @Query("SELECT l.stocktakeHeader.id, COUNT(l) FROM StocktakeLine l WHERE l.stocktakeHeader.id IN :headerIds AND l.isCounted = true GROUP BY l.stocktakeHeader.id")
+    List<Object[]> countCountedLinesByHeaderIds(@Param("headerIds") Set<Long> headerIds);
 
     @Query("""
             SELECT l FROM StocktakeLine l
