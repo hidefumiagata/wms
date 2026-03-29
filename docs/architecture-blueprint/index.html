@@ -459,7 +459,7 @@ export const useSystemStore = defineStore('system', () =&gt; {
 <tbody>
 <tr><td>業務モジュール → <code>shared</code></td><td>✅</td><td>全モジュールから共通基盤を参照</td></tr>
 <tr><td>業務モジュール → 他の業務モジュールの <strong>Service</strong></td><td>✅</td><td><code>outbound.AllocationService</code> → <code>inventory.InventoryService</code></td></tr>
-<tr><td>業務モジュール → 他の業務モジュールの <strong>Repository</strong></td><td>✗</td><td>他モジュールのDBアクセスは必ずService経由</td></tr>
+<tr><td>業務モジュール → 他の業務モジュールの <strong>Repository</strong></td><td>✗</td><td>他モジュールのDBアクセスは必ずService経由（※例外: レポートモジュールのread-onlyアクセス。<a href="../ARCHITECTURE-RULES.md" target="_blank">RULE-SVC-002</a> 参照）</td></tr>
 <tr><td>業務モジュール → 他の業務モジュールの <strong>Controller</strong></td><td>✗</td><td>Controller間の直接呼び出しは禁止</td></tr>
 <p></tbody><br></table></p>
 <blockquote>モジュール間の Service 直接呼び出しを許可する。イベント駆動やFacadeパターンによる間接化は、現時点ではオーバーヘッドが大きいため採用しない。</blockquote>
@@ -1243,6 +1243,16 @@ Log Analytics Workspace
 <tr><td><strong>VNet統合</strong></td><td>Container Apps・PostgreSQL をプライベートサブネットに配置</td></tr>
 <tr><td><strong>Blob Storage</strong></td><td><code>iffiles</code> コンテナはプライベート（バックエンドAPIのみアクセス）</td></tr>
 <tr><td><strong><code>$web</code> コンテナ</strong></td><td>フロントエンド静的ホスティング用に公開</td></tr>
+<p></tbody><br></table></p>
+<h3>クライアントIP解決</h3>
+<table>
+<thead><tr><th>項目</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td><strong>方式</strong></td><td>Tomcat RemoteIpValve（<code>server.forward-headers-strategy=native</code>）</td></tr>
+<tr><td><strong>信頼プロキシ</strong></td><td>Tomcatデフォルト <code>internal-proxies</code>（RFC 1918 プライベートIPレンジ）。Azure Container Apps のプロキシIPはプライベートIP帯のためデフォルトで含まれる</td></tr>
+<tr><td><strong>動作</strong></td><td>信頼プロキシ経由の場合、<code>X-Forwarded-For</code> ヘッダーからクライアント実IPを <code>request.getRemoteAddr()</code> に自動設定</td></tr>
+<tr><td><strong>用途</strong></td><td>レート制限（ログイン・パスワードリセット）のIP識別キー</td></tr>
+<tr><td><strong>アプリ側の制約</strong></td><td><code>X-Forwarded-For</code> ヘッダーの手動パース禁止。必ず <code>request.getRemoteAddr()</code> を使用する</td></tr>
 <p></tbody><br></table></p>
 <h2>ログ・監査</h2>
 <table>

@@ -40,7 +40,7 @@ flowchart TD
 |----------------|------|-----|
 | 業務モジュール → `shared` | ✅ | 全モジュールから共通基盤を参照 |
 | 業務モジュール → 他の業務モジュールの **Service** | ✅ | `outbound.AllocationService` → `inventory.InventoryService` |
-| 業務モジュール → 他の業務モジュールの **Repository** | ✗ | 他モジュールのDBアクセスは必ずService経由 |
+| 業務モジュール → 他の業務モジュールの **Repository** | ✗ | 他モジュールのDBアクセスは必ずService経由（※例外: レポートモジュールのread-onlyアクセス。[RULE-SVC-002](../ARCHITECTURE-RULES.md) 参照） |
 | 業務モジュール → 他の業務モジュールの **Controller** | ✗ | Controller間の直接呼び出しは禁止 |
 
 > モジュール間の Service 直接呼び出しを許可する。イベント駆動やFacadeパターンによる間接化は、現時点ではオーバーヘッドが大きいため採用しない。
