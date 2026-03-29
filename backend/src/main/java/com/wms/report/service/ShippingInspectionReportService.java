@@ -46,7 +46,7 @@ public class ShippingInspectionReportService {
     private static final int COL_PRODUCT_CODE = 3;
     private static final int COL_PRODUCT_NAME = 4;
     private static final int COL_UNIT_TYPE = 5;
-    private static final int COL_ORDERED_QTY = 6;
+    private static final int COL_PICKED_QTY = 6;
     private static final int COL_INSPECTED_QTY = 7;
 
     private static final String[] CSV_HEADERS = {
@@ -106,8 +106,8 @@ public class ShippingInspectionReportService {
         item.setProductName((String) row[COL_PRODUCT_NAME]);
         item.setUnitType((String) row[COL_UNIT_TYPE]);
 
-        Integer pickedQty = row[COL_ORDERED_QTY] != null
-                ? ((Number) row[COL_ORDERED_QTY]).intValue() : 0;
+        Integer pickedQty = row[COL_PICKED_QTY] != null
+                ? ((Number) row[COL_PICKED_QTY]).intValue() : 0;
         Integer inspectedQty = row[COL_INSPECTED_QTY] != null
                 ? ((Number) row[COL_INSPECTED_QTY]).intValue() : null;
 
