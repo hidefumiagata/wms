@@ -56,6 +56,24 @@
 | 商品名列 | 「合計」ラベル + 全伝票件数（例:「合計（15件）」） |
 | 数量(CS)列 | 全行のケース数量合計 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+
+**グループ小計**（`group.subtotals.*`、グルーピングキー: `customerName`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `subtotals.totalQuantityCas` | 出荷先別 数量(CS)小計 | グループ内全行の `totalQuantityCas` を合算 |
+| `subtotals.itemCount` | 出荷先別 明細件数 | グループ内の行数をカウント |
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `grandTotals.totalQuantityCas` | 数量(CS)合計 | 全行の `totalQuantityCas` を合算 |
+| `grandTotals.itemCount` | 総明細件数 | 全行の行数をカウント |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

@@ -55,6 +55,21 @@
 | 差異列 | 全行の差異合計 |
 | 判定列 | 差異合計が0: `ALL OK` / それ以外: `NG あり` |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+
+**グループ小計**: なし（フラットリスト）
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `grandTotals.pickedQuantity` | ピッキング数合計 | 全行の `pickedQuantity` を合算 |
+| `grandTotals.inspectedQuantity` | 検品数合計 | 全行の `inspectedQuantity` を合算 |
+| `grandTotals.diffQuantity` | 差異数合計 | 全行の `diffQuantity` を合算（null行は除外） |
+| `grandTotals.overallJudgment` | 総合判定 | `diffQuantity` 合計が0なら `ALL OK`、それ以外は `NG あり` |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

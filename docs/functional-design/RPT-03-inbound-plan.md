@@ -55,6 +55,24 @@
 | 予定数(ケース)列 | 全行の予定数(ケース)合計値 |
 | 予定数(バラ)列 | 全行の予定数(バラ)合計値 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+
+**グループ小計**（`group.subtotals.*`、グルーピングキー: `supplierName`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `subtotals.plannedQuantityCas` | 仕入先別 予定数(ケース)小計 | グループ内全行の `plannedQuantityCas` を合算 |
+| `subtotals.plannedQuantityPcs` | 仕入先別 予定数(バラ)小計 | グループ内全行の `plannedQuantityPcs` を合算 |
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `grandTotals.plannedQuantityCas` | 予定数(ケース)合計 | 全行の `plannedQuantityCas` を合算 |
+| `grandTotals.plannedQuantityPcs` | 予定数(バラ)合計 | 全行の `plannedQuantityPcs` を合算 |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

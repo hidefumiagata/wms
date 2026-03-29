@@ -59,6 +59,26 @@
 | 引当数量列 | 全行の引当数量合計 |
 | 有効在庫数列 | 全行の有効在庫数合計 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+
+**グループ小計**（`group.subtotals.*`、グルーピングキー: `productCode`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `subtotals.quantity` | 商品別 在庫数量小計 | グループ内全行の `quantity` を合算 |
+| `subtotals.allocatedQty` | 商品別 引当数量小計 | グループ内全行の `allocatedQty` を合算 |
+| `subtotals.availableQty` | 商品別 有効在庫数小計 | グループ内全行の `availableQty` を合算 |
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `grandTotals.quantity` | 在庫数量合計 | 全行の `quantity` を合算 |
+| `grandTotals.allocatedQty` | 引当数量合計 | 全行の `allocatedQty` を合算 |
+| `grandTotals.availableQty` | 有効在庫数合計 | 全行の `availableQty` を合算 |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

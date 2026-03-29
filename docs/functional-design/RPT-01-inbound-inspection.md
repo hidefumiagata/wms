@@ -63,6 +63,23 @@
 | 検品数(バラ)列 | 全行の `inspectedQuantityPcs` 合計値 |
 | 差異(バラ)列 | 全行の `diffQuantityPcs` 合計値 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+
+**グループ小計**: なし（フラットリスト）
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 内容 | 計算方法 |
+|--------|------|---------|
+| `grandTotals.plannedQuantityCas` | 予定数(ケース)合計 | 全行の `plannedQuantityCas` を合算 |
+| `grandTotals.inspectedQuantityCas` | 検品数(ケース)合計 | 全行の `inspectedQuantityCas` を合算（null行は除外） |
+| `grandTotals.diffQuantityCas` | 差異(ケース)合計 | 全行の `diffQuantityCas` を合算（null行は除外） |
+| `grandTotals.plannedQuantityPcs` | 予定数(バラ)合計 | 全行の `plannedQuantityPcs` を合算 |
+| `grandTotals.inspectedQuantityPcs` | 検品数(バラ)合計 | 全行の `inspectedQuantityPcs` を合算（null行は除外） |
+| `grandTotals.diffQuantityPcs` | 差異(バラ)合計 | 全行の `diffQuantityPcs` を合算（null行は除外） |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |
