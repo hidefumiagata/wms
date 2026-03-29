@@ -151,6 +151,10 @@ class XxxControllerTest {
 - 例外は `shared.exception` パッケージのカスタム例外を使用
 - エラーコードは `{RESOURCE}_{ERROR_TYPE}` 形式のリテラル
 
+**コード修正時の設計書チェック**:
+- コードを修正すると設計書のコード例が古くなる可能性がある。修正時は `Grep` で `docs/` 配下の参照箇所を洗い出し、乖離があれば設計書も更新する
+- パッケージ構造図、設定例、コードスニペットは設計書の複数箇所に散在していることが多い
+
 **DB migration（Flyway）**:
 - テーブル追加・変更時は `backend/src/main/resources/db/migration/V{n}__{description}.sql` を作成
 - 既存の最大バージョン番号を確認してインクリメント
