@@ -4900,6 +4900,8 @@ logging:
     org.springframework.security: DEBUG</code></pre>
 <hr>
 <h2>11. レポートモジュール設計</h2>
+<blockquote><strong>クロスモジュールアクセス例外</strong>: レポートモジュールは <a href="../ARCHITECTURE-RULES.md" target="_blank">RULE-SVC-002</a> の例外として、
+<p>他モジュールのRepositoryへのread-onlyアクセスが許可されている。<br>全Serviceに <code>@Transactional(readOnly = true)</code> を付与し、書き込み操作は一切行わない。</blockquote></p>
 <h3>11.1 パッケージ構成</h3>
 <pre><code class="lang-">com.wms.report/
 ├── controller/
