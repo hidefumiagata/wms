@@ -336,6 +336,50 @@ class StocktakeListReportServiceTest {
     }
 
     @Nested
+    @DisplayName("generate - hideBookQtyパラメータ")
+    class HideBookQty {
+
+        @BeforeEach
+        void setUpCommon() {
+            when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            when(stocktakeReportRepository.findStocktakeListByStocktakeId(10L)).thenReturn(List.of());
+            when(reportExportService.export(anyList(), any(), any()))
+                    .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
+        }
+
+        @Test
+        @DisplayName("hideBookQty=trueの場合、extraTemplateVarsにtrue")
+        void generate_hideBookQtyTrue_metaContainsTrue() {
+            service.generate(10L, null, null, true, ReportFormat.JSON);
+
+            ArgumentCaptor<ReportMeta> metaCaptor = ArgumentCaptor.forClass(ReportMeta.class);
+            verify(reportExportService).export(anyList(), any(), metaCaptor.capture());
+            assertThat(metaCaptor.getValue().extraTemplateVars().get("hideBookQty")).isEqualTo(true);
+        }
+
+        @Test
+        @DisplayName("hideBookQty=falseの場合、extraTemplateVarsにfalse")
+        void generate_hideBookQtyFalse_metaContainsFalse() {
+            service.generate(10L, null, null, false, ReportFormat.JSON);
+
+            ArgumentCaptor<ReportMeta> metaCaptor = ArgumentCaptor.forClass(ReportMeta.class);
+            verify(reportExportService).export(anyList(), any(), metaCaptor.capture());
+            assertThat(metaCaptor.getValue().extraTemplateVars().get("hideBookQty")).isEqualTo(false);
+        }
+
+        @Test
+        @DisplayName("hideBookQty=null（未指定）の場合、デフォルトtrue（非表示）")
+        void generate_hideBookQtyNull_defaultsToTrue() {
+            service.generate(10L, null, null, null, ReportFormat.JSON);
+
+            ArgumentCaptor<ReportMeta> metaCaptor = ArgumentCaptor.forClass(ReportMeta.class);
+            verify(reportExportService).export(anyList(), any(), metaCaptor.capture());
+            assertThat(metaCaptor.getValue().extraTemplateVars().get("hideBookQty")).isEqualTo(true);
+        }
+    }
+
+    @Nested
     @DisplayName("generate - データ変換")
     class DataConversion {
 
