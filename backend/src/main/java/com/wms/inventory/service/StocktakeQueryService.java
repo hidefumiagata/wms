@@ -24,6 +24,8 @@ import java.time.ZoneId;
 @Transactional(readOnly = true)
 public class StocktakeQueryService {
 
+    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
+
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
     private final StocktakeLineRepository stocktakeLineRepository;
     private final WarehouseService warehouseService;
@@ -35,9 +37,9 @@ public class StocktakeQueryService {
         warehouseService.findById(warehouseId);
 
         OffsetDateTime from = dateFrom != null
-                ? dateFrom.atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
+                ? dateFrom.atStartOfDay(JST).toOffsetDateTime() : null;
         OffsetDateTime to = dateTo != null
-                ? dateTo.plusDays(1).atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
+                ? dateTo.plusDays(1).atStartOfDay(JST).toOffsetDateTime() : null;
 
         String escapedNumber = LikeEscapeUtil.escape(stocktakeNumber);
 

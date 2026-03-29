@@ -54,6 +54,7 @@ import static com.wms.shared.util.LikeEscapeUtil.escape;
 @Transactional(readOnly = true)
 public class PickingService {
 
+    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final PickingInstructionRepository pickingInstructionRepository;
@@ -78,9 +79,9 @@ public class PickingService {
         String escapedNumber = instructionNumber != null ? escape(instructionNumber) : null;
 
         OffsetDateTime from = createdDateFrom != null
-                ? createdDateFrom.atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
+                ? createdDateFrom.atStartOfDay(JST).toOffsetDateTime() : null;
         OffsetDateTime to = createdDateTo != null
-                ? createdDateTo.plusDays(1).atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
+                ? createdDateTo.plusDays(1).atStartOfDay(JST).toOffsetDateTime() : null;
 
         log.debug("PickingInstruction search: warehouseId={}, instructionNumber={}, statuses={}",
                 warehouseId, instructionNumber, statuses);
