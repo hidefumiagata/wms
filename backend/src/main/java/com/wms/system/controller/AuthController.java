@@ -38,7 +38,8 @@ public class AuthController implements AuthApi {
         HttpServletResponse httpResponse = getHttpServletResponse();
 
         // レート制限: 同一IPから15分間に20回まで
-        if (!rateLimiterService.tryConsumeLogin(getClientIp(httpRequest))) {
+        // RemoteIpValve により remoteAddr は信頼プロキシ経由の場合クライアント実IPに解決済み
+        if (!rateLimiterService.tryConsumeLogin(httpRequest.getRemoteAddr())) {
             throw new RateLimitExceededException();
         }
 
@@ -85,7 +86,7 @@ public class AuthController implements AuthApi {
         HttpServletRequest httpRequest = getHttpServletRequest();
 
         // レート制限: 同一IPから15分間に5回、同一identifierから15分間に3回
-        String clientIp = getClientIp(httpRequest);
+        String clientIp = httpRequest.getRemoteAddr();
         String identifier = passwordResetRequestBody.getIdentifier();
         if (!rateLimiterService.tryConsumePasswordResetByIp(clientIp)
                 || !rateLimiterService.tryConsumePasswordResetByIdentifier(identifier)) {
@@ -137,14 +138,6 @@ public class AuthController implements AuthApi {
             }
         }
         return null;
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private HttpServletRequest getHttpServletRequest() {
