@@ -16,7 +16,7 @@ import com.wms.shared.util.LikeEscapeUtil;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -35,9 +35,9 @@ public class StocktakeQueryService {
         warehouseService.findById(warehouseId);
 
         OffsetDateTime from = dateFrom != null
-                ? dateFrom.atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? dateFrom.atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
         OffsetDateTime to = dateTo != null
-                ? dateTo.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? dateTo.plusDays(1).atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
 
         String escapedNumber = LikeEscapeUtil.escape(stocktakeNumber);
 

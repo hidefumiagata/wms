@@ -37,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -78,9 +78,9 @@ public class PickingService {
         String escapedNumber = instructionNumber != null ? escape(instructionNumber) : null;
 
         OffsetDateTime from = createdDateFrom != null
-                ? createdDateFrom.atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? createdDateFrom.atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
         OffsetDateTime to = createdDateTo != null
-                ? createdDateTo.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? createdDateTo.plusDays(1).atStartOfDay(ZoneId.of("Asia/Tokyo")).toOffsetDateTime() : null;
 
         log.debug("PickingInstruction search: warehouseId={}, instructionNumber={}, statuses={}",
                 warehouseId, instructionNumber, statuses);
