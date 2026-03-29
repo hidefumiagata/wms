@@ -92,7 +92,7 @@ class ShippingInspectionReportServiceTest {
 
     private Object[] createRow(String slipNumber, String partnerName, LocalDate plannedDate,
                                 String productCode, String productName, String unitType,
-                                Integer orderedQty, Integer inspectedQty) {
+                                Integer pickedQty, Integer inspectedQty) {
         return new Object[]{
                 slipNumber,                                             // 0: slip_number
                 partnerName,                                            // 1: partner_name
@@ -100,7 +100,7 @@ class ShippingInspectionReportServiceTest {
                 productCode,                                            // 3: product_code
                 productName,                                            // 4: product_name
                 unitType,                                               // 5: unit_type
-                orderedQty,                                             // 6: ordered_qty
+                pickedQty,                                              // 6: picked_qty (SUM)
                 inspectedQty                                            // 7: inspected_qty
         };
     }
@@ -167,7 +167,7 @@ class ShippingInspectionReportServiceTest {
         }
 
         @Test
-        @DisplayName("差異数量が正しく計算される（inspectedQty=8, orderedQty=10 → diff=-2）")
+        @DisplayName("差異数量が正しく計算される（inspectedQty=8, pickedQty=10 → diff=-2）")
         void generate_withDifference_calculatesCorrectly() {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
@@ -218,8 +218,8 @@ class ShippingInspectionReportServiceTest {
         }
 
         @Test
-        @DisplayName("null ORDERED_QTY → pickedQuantity=0")
-        void generate_nullOrderedQty_defaultsToZero() {
+        @DisplayName("null PICKED_QTY → pickedQuantity=0")
+        void generate_nullPickedQty_defaultsToZero() {
             Object[] row = createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
                     "P-001", "商品A", "CAS", null, 10);
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
