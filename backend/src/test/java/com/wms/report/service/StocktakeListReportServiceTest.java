@@ -283,7 +283,7 @@ class StocktakeListReportServiceTest {
             assertThatThrownBy(() -> service.generate(null, null, null, null, ReportFormat.JSON))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
-                            .isEqualTo("VALIDATION_ERROR"));
+                            .isEqualTo("REPORT_PARAMETER_REQUIRED"));
         }
 
         @Test
