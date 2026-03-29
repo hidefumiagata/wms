@@ -115,6 +115,16 @@ Spring Security で以下のレスポンスヘッダーを全APIに付与する�
 | **Blob Storage** | `iffiles` コンテナはプライベート（バックエンドAPIのみアクセス） |
 | **`$web` コンテナ** | フロントエンド静的ホスティング用に公開 |
 
+### クライアントIP解決
+
+| 項目 | 内容 |
+|------|------|
+| **方式** | Tomcat RemoteIpValve（`server.forward-headers-strategy=native`） |
+| **信頼プロキシ** | Tomcatデフォルト `internal-proxies`（RFC 1918 プライベートIPレンジ）。Azure Container Apps のプロキシIPはプライベートIP帯のためデフォルトで含まれる |
+| **動作** | 信頼プロキシ経由の場合、`X-Forwarded-For` ヘッダーからクライアント実IPを `request.getRemoteAddr()` に自動設定 |
+| **用途** | レート制限（ログイン・パスワードリセット）のIP識別キー |
+| **アプリ側の制約** | `X-Forwarded-For` ヘッダーの手動パース禁止。必ず `request.getRemoteAddr()` を使用する |
+
 ## ログ・監査
 
 | 項目 | 内容 |

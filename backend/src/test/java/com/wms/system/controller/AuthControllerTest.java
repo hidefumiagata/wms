@@ -177,11 +177,10 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("正常系: remoteAddrでパスワードリセットのIPレート制限が動作する")
-        void login_remoteAddr_passedToRateLimiter() throws Exception {
+        @DisplayName("正常系: setRemoteAddrで指定したIPがレート制限キーに使われる")
+        void login_customRemoteAddr_passedToRateLimiter() throws Exception {
             User user = createTestUser();
-            // 127.0.0.1 = MockMvc のデフォルト remoteAddr
-            when(rateLimiterService.tryConsumeLogin(eq("127.0.0.1"))).thenReturn(true);
+            when(rateLimiterService.tryConsumeLogin(eq("203.0.113.50"))).thenReturn(true);
             when(authService.login(eq("USR001"), eq("password123"), any())).thenReturn(user);
 
             LoginRequest request = new LoginRequest()
@@ -189,12 +188,12 @@ class AuthControllerTest {
                     .password("password123");
 
             mockMvc.perform(post("/api/v1/auth/login")
-                            .with(req -> { req.setRemoteAddr("127.0.0.1"); return req; })
+                            .with(req -> { req.setRemoteAddr("203.0.113.50"); return req; })
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
 
-            verify(rateLimiterService).tryConsumeLogin("127.0.0.1");
+            verify(rateLimiterService).tryConsumeLogin("203.0.113.50");
         }
     }
 

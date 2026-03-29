@@ -24,6 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+/**
+ * 認証コントローラ。
+ * <p>クライアントIPの解決は Tomcat RemoteIpValve（{@code server.forward-headers-strategy=native}）に依存する。
+ * {@code request.getRemoteAddr()} は信頼プロキシ経由の場合にクライアント実IPに解決済みとなる。</p>
+ */
 @RestController
 @RequiredArgsConstructor
 public class AuthController implements AuthApi {
