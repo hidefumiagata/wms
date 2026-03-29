@@ -144,18 +144,18 @@
 <tr><td>差異(バラ)列</td><td>全行の <code>diffQuantityPcs</code> 合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
 <p><strong>グループ小計</strong>: なし（フラットリスト）</p>
 <p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>grandTotals.plannedQuantityCas</code></td><td>予定数(ケース)合計</td><td>全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.inspectedQuantityCas</code></td><td>検品数(ケース)合計</td><td>全行の <code>inspectedQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.diffQuantityCas</code></td><td>差異(ケース)合計</td><td>全行の <code>diffQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.plannedQuantityPcs</code></td><td>予定数(バラ)合計</td><td>全行の <code>plannedQuantityPcs</code> を合算</td></tr>
-<tr><td><code>grandTotals.inspectedQuantityPcs</code></td><td>検品数(バラ)合計</td><td>全行の <code>inspectedQuantityPcs</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.diffQuantityPcs</code></td><td>差異(バラ)合計</td><td>全行の <code>diffQuantityPcs</code> を合算（null行は除外）</td></tr>
+<tr><td><code>grandTotals.plannedQuantityCas</code></td><td></td></tr>
+<tr><td><code>grandTotals.inspectedQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.diffQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.plannedQuantityPcs</code></td><td></td></tr>
+<tr><td><code>grandTotals.inspectedQuantityPcs</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.diffQuantityPcs</code></td><td>null行は除外</td></tr>
 <p></tbody><br></table></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
@@ -235,21 +235,9 @@
 <tr><td>予定数(バラ)列</td><td>全行の予定数(バラ)合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>supplierName</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.plannedQuantityCas</code></td><td>仕入先別 予定数(ケース)小計</td><td>グループ内全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>subtotals.plannedQuantityPcs</code></td><td>仕入先別 予定数(バラ)小計</td><td>グループ内全行の <code>plannedQuantityPcs</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.plannedQuantityCas</code></td><td>予定数(ケース)合計</td><td>全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.plannedQuantityPcs</code></td><td>予定数(バラ)合計</td><td>全行の <code>plannedQuantityPcs</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.plannedQuantityCas</code>, <code>subtotals.plannedQuantityPcs</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.plannedQuantityCas</code>, <code>grandTotals.plannedQuantityPcs</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -340,24 +328,24 @@
 <tr><td>返品数量列</td><td>全行の返品数量合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>supplierName</code>）</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>subtotals.plannedQuantityCas</code></td><td>仕入先別 予定数(ケース)小計</td><td>グループ内全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>subtotals.inspectedQuantityCas</code></td><td>仕入先別 検品数(ケース)小計</td><td>グループ内全行の <code>inspectedQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>subtotals.diffQuantityCas</code></td><td>仕入先別 差異(ケース)小計</td><td>グループ内全行の <code>diffQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>subtotals.returnQuantity</code></td><td>仕入先別 返品数量小計</td><td>グループ内全行の <code>returnQuantity</code> を合算（null行は除外）</td></tr>
+<tr><td><code>subtotals.plannedQuantityCas</code></td><td></td></tr>
+<tr><td><code>subtotals.inspectedQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>subtotals.diffQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>subtotals.returnQuantity</code></td><td>null行は除外</td></tr>
 <p></tbody><br></table></p>
 <p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>grandTotals.plannedQuantityCas</code></td><td>予定数(ケース)合計</td><td>全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.inspectedQuantityCas</code></td><td>検品数(ケース)合計</td><td>全行の <code>inspectedQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.diffQuantityCas</code></td><td>差異(ケース)合計</td><td>全行の <code>diffQuantityCas</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.returnQuantity</code></td><td>返品数量合計</td><td>全行の <code>returnQuantity</code> を合算（null行は除外）</td></tr>
+<tr><td><code>grandTotals.plannedQuantityCas</code></td><td></td></tr>
+<tr><td><code>grandTotals.inspectedQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.diffQuantityCas</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.returnQuantity</code></td><td>null行は除外</td></tr>
 <p></tbody><br></table></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
@@ -449,21 +437,9 @@
 <p></tbody><br></table></p>
 <p>加えて、総明細件数を合計行に表示する（例: 「合計 15件」）。</p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>supplierName</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.plannedQuantityCas</code></td><td>仕入先別 予定数(ケース)小計</td><td>グループ内全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>subtotals.itemCount</code></td><td>仕入先別 明細件数</td><td>グループ内の行数をカウント</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.plannedQuantityCas</code></td><td>予定数(ケース)合計</td><td>全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.itemCount</code></td><td>総明細件数</td><td>全行の行数をカウント</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.plannedQuantityCas</code>, <code>subtotals.itemCount</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.plannedQuantityCas</code>, <code>grandTotals.itemCount</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -558,21 +534,9 @@
 <p></tbody><br></table></p>
 <p>加えて、総明細件数を合計行に表示する（例: 「合計 15件」）。</p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>supplierName</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.plannedQuantityCas</code></td><td>仕入先別 予定数(ケース)小計</td><td>グループ内全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>subtotals.itemCount</code></td><td>仕入先別 明細件数</td><td>グループ内の行数をカウント</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.plannedQuantityCas</code></td><td>予定数(ケース)合計</td><td>全行の <code>plannedQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.itemCount</code></td><td>総明細件数</td><td>全行の行数をカウント</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.plannedQuantityCas</code>, <code>subtotals.itemCount</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.plannedQuantityCas</code>, <code>grandTotals.itemCount</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -667,23 +631,9 @@
 <tr><td>有効在庫数列</td><td>全行の有効在庫数合計</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>productCode</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.quantity</code></td><td>商品別 在庫数量小計</td><td>グループ内全行の <code>quantity</code> を合算</td></tr>
-<tr><td><code>subtotals.allocatedQty</code></td><td>商品別 引当数量小計</td><td>グループ内全行の <code>allocatedQty</code> を合算</td></tr>
-<tr><td><code>subtotals.availableQty</code></td><td>商品別 有効在庫数小計</td><td>グループ内全行の <code>availableQty</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.quantity</code></td><td>在庫数量合計</td><td>全行の <code>quantity</code> を合算</td></tr>
-<tr><td><code>grandTotals.allocatedQty</code></td><td>引当数量合計</td><td>全行の <code>allocatedQty</code> を合算</td></tr>
-<tr><td><code>grandTotals.availableQty</code></td><td>有効在庫数合計</td><td>全行の <code>availableQty</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.quantity</code>, <code>subtotals.allocatedQty</code>, <code>subtotals.availableQty</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.quantity</code>, <code>grandTotals.allocatedQty</code>, <code>grandTotals.availableQty</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -775,20 +725,9 @@
 <tr><td>変動数列</td><td>全行の変動数合計（期間中の純増減）</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>movementDate</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.quantityChange</code></td><td>日次変動数小計</td><td>グループ内全行の <code>quantityChange</code> を合算（正負混在）</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.quantityChange</code></td><td>期間変動数合計</td><td>全行の <code>quantityChange</code> を合算（正負混在）</td></tr>
-<p></tbody><br></table></p>
-<blockquote>表示時、正値には <code>+</code> を付加する（例: <code>+10</code>）。符号付与はテンプレート側の条件式で行う。</blockquote>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.quantityChange</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.quantityChange</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -876,15 +815,9 @@
 <tr><td>変動数列</td><td>全行の <code>quantityChange</code> の合計値（純増減）</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
 <p><strong>グループ小計</strong>: なし（フラットリスト）</p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.quantityChange</code></td><td>訂正数量合計</td><td>全行の <code>quantityChange</code> を合算（正負混在）</td></tr>
-<p></tbody><br></table></p>
-<blockquote>表示時、正値には <code>+</code> を付加する（例: <code>+10</code>）。符号付与はテンプレート側の条件式で行う。</blockquote>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.quantityChange</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -967,14 +900,9 @@
 <tr><td>実数（記入欄）列</td><td>全行数を表示（例: <code>120 行</code>）</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
 <p><strong>グループ小計</strong>: なし</p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.lineCount</code></td><td>合計行数</td><td>全行の行数をカウント</td></tr>
-<p></tbody><br></table></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.lineCount</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -1077,26 +1005,26 @@
 <tr><td>3行目</td><td>「差異あり明細数: {N} / {TOTAL} 件」</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>locationCode</code>）</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>subtotals.systemQuantity</code></td><td>ロケーション別 帳簿数小計</td><td>グループ内全行の <code>systemQuantity</code> を合算</td></tr>
-<tr><td><code>subtotals.actualQuantity</code></td><td>ロケーション別 実数小計</td><td>グループ内全行の <code>actualQuantity</code> を合算（null行は除外）</td></tr>
-<tr><td><code>subtotals.diffQuantity</code></td><td>ロケーション別 差異数小計</td><td>グループ内全行の <code>diffQuantity</code> を合算（null行は除外）</td></tr>
+<tr><td><code>subtotals.systemQuantity</code></td><td></td></tr>
+<tr><td><code>subtotals.actualQuantity</code></td><td>null行は除外</td></tr>
+<tr><td><code>subtotals.diffQuantity</code></td><td>null行は除外</td></tr>
 <p></tbody><br></table></p>
 <p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>grandTotals.systemQuantity</code></td><td>帳簿数合計</td><td>全行の <code>systemQuantity</code> を合算</td></tr>
-<tr><td><code>grandTotals.actualQuantity</code></td><td>実数合計</td><td>全行の <code>actualQuantity</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.diffQuantity</code></td><td>差異数合計</td><td>全行の <code>diffQuantity</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.surplusTotal</code></td><td>過剰（プラス差異）合計</td><td><code>diffQuantity &gt; 0</code> の行の <code>diffQuantity</code> を合算</td></tr>
-<tr><td><code>grandTotals.shortageTotal</code></td><td>不足（マイナス差異）合計</td><td><code>diffQuantity &lt; 0</code> の行の <code>diffQuantity</code> の絶対値を合算</td></tr>
-<tr><td><code>grandTotals.diffItemCount</code></td><td>差異あり明細数</td><td><code>diffQuantity != 0</code> の行数をカウント</td></tr>
-<tr><td><code>grandTotals.totalItemCount</code></td><td>総明細数</td><td>全行の行数をカウント</td></tr>
+<tr><td><code>grandTotals.systemQuantity</code></td><td></td></tr>
+<tr><td><code>grandTotals.actualQuantity</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.diffQuantity</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.surplusTotal</code></td><td>差異サマリー用: <code>diffQuantity &gt; 0</code> の合計</td></tr>
+<tr><td><code>grandTotals.shortageTotal</code></td><td>差異サマリー用: <code>diffQuantity &lt; 0</code> の絶対値合計</td></tr>
+<tr><td><code>grandTotals.diffItemCount</code></td><td>差異サマリー用: <code>diffQuantity != 0</code> の行数</td></tr>
+<tr><td><code>grandTotals.totalItemCount</code></td><td>差異サマリー用: 全行数</td></tr>
 <p></tbody><br></table></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
@@ -1209,19 +1137,9 @@
 <tr><td>指示数列</td><td>全行の指示数量合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>locationCode</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.instructedQuantity</code></td><td>ロケーション別 指示数量小計</td><td>グループ内全行の <code>instructedQuantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.instructedQuantity</code></td><td>指示数量合計</td><td>全行の <code>instructedQuantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.instructedQuantity</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.instructedQuantity</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -1310,16 +1228,16 @@
 <tr><td>判定列</td><td>差異合計が0: <code>ALL OK</code> / それ以外: <code>NG あり</code></td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
 <p><strong>グループ小計</strong>: なし（フラットリスト）</p>
 <p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
 <table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
+<thead><tr><th>変数名</th><th>備考</th></tr></thead>
 <tbody>
-<tr><td><code>grandTotals.pickedQuantity</code></td><td>ピッキング数合計</td><td>全行の <code>pickedQuantity</code> を合算</td></tr>
-<tr><td><code>grandTotals.inspectedQuantity</code></td><td>検品数合計</td><td>全行の <code>inspectedQuantity</code> を合算</td></tr>
-<tr><td><code>grandTotals.diffQuantity</code></td><td>差異数合計</td><td>全行の <code>diffQuantity</code> を合算（null行は除外）</td></tr>
-<tr><td><code>grandTotals.overallJudgment</code></td><td>総合判定</td><td><code>diffQuantity</code> 合計が0なら <code>ALL OK</code>、それ以外は <code>NG あり</code></td></tr>
+<tr><td><code>grandTotals.pickedQuantity</code></td><td></td></tr>
+<tr><td><code>grandTotals.inspectedQuantity</code></td><td></td></tr>
+<tr><td><code>grandTotals.diffQuantity</code></td><td>null行は除外</td></tr>
+<tr><td><code>grandTotals.overallJudgment</code></td><td>差異合計が0なら <code>ALL OK</code>、それ以外は <code>NG あり</code></td></tr>
 <p></tbody><br></table></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
@@ -1410,19 +1328,9 @@
 <tr><td>数量列</td><td>全伝票の数量合計</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>slipNumber</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.quantity</code></td><td>伝票別 数量小計</td><td>グループ内全行の <code>quantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.quantity</code></td><td>数量総合計</td><td>全行の <code>quantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.quantity</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.quantity</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -1526,21 +1434,9 @@
 <tr><td>数量(CS)列</td><td>全行のケース数量合計</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>customerName</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.totalQuantityCas</code></td><td>出荷先別 数量(CS)小計</td><td>グループ内全行の <code>totalQuantityCas</code> を合算</td></tr>
-<tr><td><code>subtotals.itemCount</code></td><td>出荷先別 明細件数</td><td>グループ内の行数をカウント</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.totalQuantityCas</code></td><td>数量(CS)合計</td><td>全行の <code>totalQuantityCas</code> を合算</td></tr>
-<tr><td><code>grandTotals.itemCount</code></td><td>総明細件数</td><td>全行の行数をカウント</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.totalQuantityCas</code>, <code>subtotals.itemCount</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.totalQuantityCas</code>, <code>grandTotals.itemCount</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -1633,19 +1529,9 @@
 <tr><td>数量(ケース)列</td><td>全行の <code>totalQuantityCas</code> 合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>slipNumber</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.totalQuantityCas</code></td><td>伝票別 数量(ケース)小計</td><td>グループ内全行の <code>totalQuantityCas</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.totalQuantityCas</code></td><td>数量(ケース)合計</td><td>全行の <code>totalQuantityCas</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.totalQuantityCas</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.totalQuantityCas</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
@@ -1725,22 +1611,9 @@
 <p></tbody><br></table></p>
 <blockquote>レイアウト形式: 2列のキー・バリュー形式（左に項目名、右に値）。幅合計: 95 + 95 = 190mm（A4縦の印字可能幅 190mm）</blockquote>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
 <p><strong>グループ小計</strong>: なし（倉庫ごとのセクションデータは各 <code>items</code> 要素が保持）</p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.inboundCount</code></td><td>入荷件数合計</td><td>全倉庫の <code>inboundCount</code> を合算</td></tr>
-<tr><td><code>grandTotals.inboundQuantityTotal</code></td><td>入荷数量合計</td><td>全倉庫の <code>inboundQuantityTotal</code> を合算</td></tr>
-<tr><td><code>grandTotals.outboundCount</code></td><td>出荷件数合計</td><td>全倉庫の <code>outboundCount</code> を合算</td></tr>
-<tr><td><code>grandTotals.outboundQuantityTotal</code></td><td>出荷数量合計</td><td>全倉庫の <code>outboundQuantityTotal</code> を合算</td></tr>
-<tr><td><code>grandTotals.returnCount</code></td><td>返品件数合計</td><td>全倉庫の <code>returnCount</code> を合算</td></tr>
-<tr><td><code>grandTotals.returnQuantityTotal</code></td><td>返品数量合計</td><td>全倉庫の <code>returnQuantityTotal</code> を合算</td></tr>
-<tr><td><code>grandTotals.inventoryQuantityTotal</code></td><td>在庫数量合計</td><td>全倉庫の <code>inventoryQuantityTotal</code> を合算</td></tr>
-<tr><td><code>grandTotals.unreceivedCount</code></td><td>未入荷件数合計</td><td>全倉庫の <code>unreceivedCount</code> を合算</td></tr>
-<tr><td><code>grandTotals.unshippedCount</code></td><td>未出荷件数合計</td><td>全倉庫の <code>unshippedCount</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.inboundCount</code>, <code>grandTotals.inboundQuantityTotal</code>, <code>grandTotals.outboundCount</code>, <code>grandTotals.outboundQuantityTotal</code>, <code>grandTotals.returnCount</code>, <code>grandTotals.returnQuantityTotal</code>, <code>grandTotals.inventoryQuantityTotal</code>, <code>grandTotals.unreceivedCount</code>, <code>grandTotals.unshippedCount</code></p>
 <h3>2.5. セクション2: 出荷サマリー</h3>
 <p>セクションタイトル: 「出荷実績」（10pt Bold、下線付き）</p>
 <table>
@@ -1923,19 +1796,9 @@
 <tr><td>数量列</td><td>全行の数量合計値</td></tr>
 <p></tbody><br></table></p>
 <h4>2.4.1. テンプレート変数（集計値）</h4>
-<p>以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（<code>#aggregates.sum()</code>等）は使用しない。</p>
-<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>、グルーピングキー: <code>returnTypeLabel</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>subtotals.quantity</code></td><td>返品種別 数量小計</td><td>グループ内全行の <code>quantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
-<p><strong>全体合計</strong>（<code>grandTotals.*</code>）</p>
-<table>
-<thead><tr><th>変数名</th><th>内容</th><th>計算方法</th></tr></thead>
-<tbody>
-<tr><td><code>grandTotals.quantity</code></td><td>数量合計</td><td>全行の <code>quantity</code> を合算</td></tr>
-<p></tbody><br></table></p>
+<blockquote>設計原則は <a href="_standard-report.md" target="_blank">_standard-report.md</a> の「集計値のテンプレート変数設計原則」を参照。</blockquote>
+<p><strong>グループ小計</strong>（<code>group.subtotals.*</code>）: <code>subtotals.quantity</code></p>
+<p><strong>全体合計</strong>（<code>grandTotals.*</code>）: <code>grandTotals.quantity</code></p>
 <h3>2.5. ページブレークルール</h3>
 <table>
 <thead><tr><th>ルール</th><th>内容</th></tr></thead>
