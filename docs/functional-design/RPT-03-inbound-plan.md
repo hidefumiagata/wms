@@ -55,6 +55,14 @@
 | 予定数(ケース)列 | 全行の予定数(ケース)合計値 |
 | 予定数(バラ)列 | 全行の予定数(バラ)合計値 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.plannedQuantityCas`, `subtotals.plannedQuantityPcs`
+
+**全体合計**（`grandTotals.*`）: `grandTotals.plannedQuantityCas`, `grandTotals.plannedQuantityPcs`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

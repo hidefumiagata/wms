@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>機能設計書 — 帳票設計 レビュー記録 — WMS ShowCase</title>
+  <style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif; background: #f5f7fa; color: #333; line-height: 1.7; }
+  header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px 60px; }
+  header h1 { font-size: 2rem; font-weight: 700; letter-spacing: 0.05em; }
+  header p { margin-top: 8px; opacity: 0.8; font-size: 0.95rem; }
+  nav.breadcrumb { background: white; padding: 12px 60px; border-bottom: 1px solid #e0e0e0; font-size: 0.9rem; }
+  nav.breadcrumb a { color: #0f3460; text-decoration: none; }
+  nav.breadcrumb a:hover { text-decoration: underline; }
+  main { max-width: 1100px; margin: 40px auto; padding: 0 40px; }
+  .toc { background: white; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .toc strong { color: #1a1a2e; display: block; margin-bottom: 12px; font-size: 1rem; }
+  .toc ol { padding-left: 24px; }
+  .toc li { margin: 6px 0; }
+  .toc a { color: #0f3460; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .doc-separator { border: none; border-top: 2px dashed #e0e8ff; margin: 48px 0; }
+  .markdown-body { background: white; border-radius: 12px; padding: 48px 56px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+  .markdown-body h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #0f3460; padding-bottom: 12px; margin: 0 0 28px; }
+  .markdown-body h2 { font-size: 1.3rem; color: #16213e; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; margin: 36px 0 16px; }
+  .markdown-body h3 { font-size: 1.1rem; color: #333; margin: 24px 0 12px; }
+  .markdown-body h4 { font-size: 1rem; color: #555; margin: 16px 0 8px; }
+  .markdown-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  .markdown-body th { background: #1a1a2e; color: white; padding: 10px 16px; text-align: left; }
+  .markdown-body td { padding: 10px 16px; border-bottom: 1px solid #f0f0f0; }
+  .markdown-body tr:hover td { background: #f8f9ff; }
+  .markdown-body code { background: #f0f4ff; color: #0f3460; padding: 2px 8px; border-radius: 4px; font-size: 0.88em; font-family: 'Consolas', monospace; }
+  .markdown-body pre { background: #1a1a2e; color: #e0e0e0; padding: 20px 24px; border-radius: 8px; overflow-x: auto; margin: 16px 0; }
+  .markdown-body pre code { background: none; color: inherit; padding: 0; }
+  .markdown-body blockquote { border-left: 4px solid #0f3460; background: #f0f4ff; padding: 12px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 12px 0; }
+  .markdown-body li { margin: 4px 0; }
+  .markdown-body p { margin: 12px 0; }
+  .markdown-body hr { border: none; border-top: 1px solid #ddd; margin: 24px 0; }
+  .markdown-body a { color: #0f3460; }
+  .mermaid { background: #f8f9ff; border-radius: 8px; padding: 24px; margin: 16px 0; text-align: center; overflow-x: auto; }
+  .drawio-container { margin: 20px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+  .drawio-title { background: #f0f4ff; color: #1a1a2e; font-size: 0.88rem; font-weight: 600; padding: 8px 16px; border-bottom: 1px solid #e0e0e0; }
+  .drawio-container .mxgraph { background: white; padding: 16px; border-radius: 0; border: none; margin: 0; text-align: left; }
+  footer { text-align: center; padding: 32px; color: #aaa; font-size: 0.85rem; margin-top: 60px; border-top: 1px solid #e0e0e0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏭 WMS ShowCase</h1>
+  <p>Warehouse Management System — Built with Claude Code</p>
+</header>
+<nav class="breadcrumb">
+  <a href="../../index.html">Home</a> &rsaquo; <a href="../index.html">機能設計書</a> &rsaquo; 機能設計書 — 帳票設計 レビュー記録
+</nav>
+<main>
+  <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <h1 style="font-size:1.6rem;color:#1a1a2e;">📋 機能設計書 — 帳票設計 レビュー記録</h1>
+      <p style="color:#888;margin-top:8px;font-size:0.9rem;">16 件のレビュー記録票</p>
+    </div>
+    <a href="../index-report.html" style="display:inline-block; background:#16213e; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-size:0.9rem;">
+      ← ドキュメントに戻る
+    </a>
+  </div>
+  <div class="toc">
+    <strong>目次</strong>
+    <ol>
+        <li><a href="#review-records-rpt-09-inventory-correction">1. レビュー記録票: RPT-09-inventory-correction.md</a></li>
+        <li><a href="#review-records-rpt-10-stocktake-list">2. レビュー記録票: RPT-10-stocktake-list.md</a></li>
+        <li><a href="#review-records-rpt-11-stocktake-result">3. レビュー記録票: RPT-11-stocktake-result.md</a></li>
+        <li><a href="#review-records-rpt-12-picking-instruction">4. レビュー記録票: RPT-12-picking-instruction.md</a></li>
+        <li><a href="#review-records-rpt-13-shipping-inspection">5. レビュー記録票: RPT-13-shipping-inspection.md</a></li>
+        <li><a href="#review-records-rpt-14-delivery-list">6. レビュー記録票: RPT-14-delivery-list.md</a></li>
+        <li><a href="#review-records-rpt-15-unshipped-realtime">7. レビュー記録票: RPT-15-unshipped-realtime.md</a></li>
+        <li><a href="#review-records-rpt-16-unshipped-confirmed">8. レビュー記録票: RPT-16-unshipped-confirmed.md</a></li>
+        <li><a href="#review-records-rpt-17-daily-summary">9. レビュー記録票: RPT-17-daily-summary.md</a></li>
+        <li><a href="#review-records-rpt-inbound-inspection">10. レビュー記録票: RPT-01-inbound-inspection.md</a></li>
+        <li><a href="#review-records-rpt-inbound-plan">11. レビュー記録票: RPT-03-inbound-plan.md</a></li>
+        <li><a href="#review-records-rpt-inbound-result">12. レビュー記録票: RPT-04-inbound-result.md</a></li>
+        <li><a href="#review-records-rpt-inventory-transition">13. レビュー記録票: RPT-08-inventory-transition.md</a></li>
+        <li><a href="#review-records-rpt-inventory">14. レビュー記録票: RPT-07-inventory.md</a></li>
+        <li><a href="#review-records-rpt-unreceived-confirmed">15. レビュー記録票: RPT-06-unreceived-confirmed.md</a></li>
+        <li><a href="#review-records-rpt-unreceived-realtime">16. レビュー記録票: RPT-05-unreceived-realtime.md</a></li>
+    </ol>
+  </div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-09-inventory-correction">
+<h1>レビュー記録票: RPT-09-inventory-correction.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-09-inventory-correction.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>4</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>7</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション2.3 ソート順</td><td>セクション4 特記事項</td><td>セクション2.3では「訂正日の昇順でソート」のみ記載されていたが、セクション4では「同一日内はロケーションコード昇順」という第2ソートキーも記載されていた。セクション2.3の記載が不完全</td><td>対象ファイル修正済み</td><td>セクション2.3に第2ソートキー（locationCode昇順）を追記した</td></tr>
+<tr><td>2</td><td>API-RPT-009 業務ロジック フローチャート</td><td>docs/functional-design/API-10-report.md（688行目付近）</td><td>API-RPT-009のフローチャートに <code>pdf</code> 分岐が欠落している。<code>json</code> と <code>csv</code> のみ記載されており、<code>pdf</code> 出力パスが含まれていない。他のレポートAPIと同様に <code>pdf</code> 分岐を追加すべき</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-009 フローチャートに <code>pdf</code> 分岐を追加する必要あり ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-009 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>API-RPT-009 データ取得仕様</th><th>docs/functional-design/API-10-report.md、docs/functional-design/_standard-report.md</th><th>_standard-report.md のガイドでは各レポートAPIに「データ取得仕様」サブセクション（主テーブル・結合、フィルタ条件マッピング、計算フィールド、ソート順）を必須としているが、API-RPT-009にはデータ取得仕様が未記載。特に <code>quantityBefore</code> が <code>quantity_after - quantity</code> で導出される計算フィールドであることを明示すべき</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-009 にデータ取得仕様セクションを追加する必要あり ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-009 にデータ取得仕様セクションを追加済み（quantityBefore計算フィールド定義含む）</blockquote>
+<table>
+<thead><tr><th>4</th><th>明細カラムとAPIレスポンスフィールドの整合性</th><th>docs/functional-design/API-10-report.md（716-731行目）</th><th>明細テーブルの全カラム（correctionDate, locationCode, productCode, productName, unitType, quantityBefore, quantityAfter, quantityChange, reason）がAPIレスポンスフィールドと一致している。operatorNameは特記事項で訂正理由列への括弧付き追記として明示されており、設計上の意図が明確</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>機能要件との整合性（含む情報項目）</th><th>docs/functional-requirements/05-reports.md（85-88行目）</th><th>機能要件の「訂正日時・対象ロケーション・商品・荷姿・訂正前数量・訂正後数量・訂正理由・実施者を含む」に対し、RPT-09は全項目を網羅している。要件では「訂正日時」だがレポートでは「訂正日」（日付のみ）としている点は、レポート用途（一覧の監査証跡）として日付粒度で十分と判断</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>幅合計・レイアウト</th><th>docs/functional-design/_standard-report.md</th><th>幅合計277mmはA4横の印字可能幅以内。レイアウトイメージも標準テンプレートのヘッダー/フッター仕様に準拠している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>呼び出し元画面との整合性</th><th>docs/functional-design/SCR-08-inventory-ops.md（INV-004セクション）</th><th>INV-004の <code>BTN-REPORT</code>（訂正一覧レポート）ボタンおよび <code>EVT-INV004-006</code> イベントでRPT-009を呼び出す設計と整合している</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-10-stocktake-list">
+<h1>レビュー記録票: RPT-10-stocktake-list.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-10-stocktake-list.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>4</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション2.2 カラム#6 荷姿の備考 <code>CASE</code>/<code>BALL</code>/<code>PIECE</code></td><td>API-10-report.md API-RPT-010 レスポンス仕様（<code>unitType: &quot;CAS&quot;</code>）、セクション3 レイアウトイメージ（<code>CAS</code>/<code>BAL</code>/<code>PCS</code>）</td><td>カラム定義の荷姿値が <code>CASE</code>/<code>BALL</code>/<code>PIECE</code> となっているが、APIレスポンスおよび同ファイル内レイアウトイメージでは <code>CAS</code>/<code>BAL</code>/<code>PCS</code> を使用。内部不一致かつAPIとも不一致</td><td>対象ファイル修正済み</td><td><code>CAS</code>/<code>BAL</code>/<code>PCS</code> に統一修正</td></tr>
+<tr><td>2</td><td>セクション3 レイアウトイメージ 期限日列</td><td>セクション2.2 カラム#8 書式 <code>yyyy-MM-dd</code></td><td>レイアウトイメージの期限日が <code>26-12-31</code>（yy-MM-dd）形式で表示されており、カラム定義の <code>yyyy-MM-dd</code> 書式と不一致</td><td>対象ファイル修正済み</td><td>レイアウトイメージを <code>2026-12-31</code> 等の <code>yyyy-MM-dd</code> 形式に修正</td></tr>
+<tr><td>3</td><td>セクション1 関連画面 <code>INV-012</code>/<code>INV-013</code></td><td>API-10-report.md API-RPT-010 <code>関連画面: INV-STK-001（棚卸画面）、RPT-001（レポート画面）</code></td><td>RPT-10では呼び出し元を <code>INV-012</code>/<code>INV-013</code> と正しく記載しているが、API-10-report.md の API-RPT-010 では <code>INV-STK-001</code>/<code>RPT-001</code> という存在しない画面IDを参照している。API側の修正が必要</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-010「関連画面」を <code>INV-012（棚卸開始）、INV-013（棚卸実施）</code> に修正すべき ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-010 関連画面をINV-012/INV-013に修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>セクション4 特記事項 帳簿数量非表示の設計判断</th><th>functional-requirements/05-reports.md セクション10「棚卸前在庫数を含む」</th><th>機能要件定義書では棚卸リストに「棚卸前在庫数」を含むと記載されているが、RPT-10のPDFレイアウトでは帳簿数量を意図的に非表示としている。設計書内で理由は明記されており妥当な設計判断だが、要件定義書との乖離がある。要件定義書側に「PDFでは帳簿数量を非表示とする（設計判断）」旨の注記を追加するか、要件定義を修正すべき</th><th>要対応（他ドキュメント）</th><th>functional-requirements/05-reports.md セクション10 に「ただし、PDF出力時は先入観排除のため帳簿数量を非表示とする（RPT-10参照）」の注記追加を推奨 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md RPT-10帳簿数量非表示の注記を追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>セクション1 レポート概要</th><th>_standard-report.md テンプレート</th><th>テンプレートの必須項目（レポートID、レポート名、用途、対応API、用紙サイズ、向き、呼び出し元画面）がすべて記載されている</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション2.2 幅合計 277mm</th><th>_standard-report.md「A4横: 約277mm」</th><th>幅合計が277mmでA4横の印字可能幅以内に収まっている</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション4 ソート順</th><th>functional-requirements/03-inventory-management.md、API-10-report.md ビジネスルール#4</th><th>ロケーションコード昇順ソートは要件定義書・API設計書と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション2.2 APIフィールド名</th><th>API-10-report.md API-RPT-010 レスポンス仕様</th><th><code>locationCode</code>, <code>areaName</code>, <code>productCode</code>, <code>productName</code>, <code>unitType</code>, <code>lotNumber</code>, <code>expiryDate</code> の各フィールド名がAPIレスポンス仕様と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-11-stocktake-result">
+<h1>レビュー記録票: RPT-11-stocktake-result.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: <code>docs/functional-design/RPT-11-stocktake-result.md</code><br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション3 レイアウトイメージ 荷姿列</td><td>data-model/03-transaction-tables.md（inventories, stocktake_lines）</td><td>レイアウトイメージ内の荷姿コードが <code>CAS</code>/<code>PCS</code>/<code>BAL</code> と表記されていたが、データモデルの定義は <code>CASE</code>/<code>BALL</code>/<code>PIECE</code>。セクション2.2のカラム定義（<code>CASE</code>/<code>BALL</code>/<code>PIECE</code>）とも不整合</td><td>対象ファイル修正済み</td><td>レイアウトイメージ内の荷姿コードを <code>CASE</code>/<code>PIECE</code>/<code>BALL</code>/<code>CASE</code> に修正</td></tr>
+<tr><td>2</td><td>セクション1 関連画面 <code>INV-014（棚卸確定）</code></td><td>API-10-report.md API-RPT-011 セクション1</td><td>RPT-11の呼び出し元画面は <code>INV-014（棚卸確定）</code> と記載（SCR-09-inventory-stocktake.md INV-014 の画面概要・イベント一覧とも整合）。一方、API-RPT-011の <code>関連画面</code> は <code>INV-STK-002（棚卸結果画面）、RPT-001（レポート画面）</code> と記載されており、画面IDが不一致。RPT-11側が正しい</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-011 <code>関連画面</code> を <code>INV-014（棚卸確定）</code> に修正する必要あり ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-011 関連画面をINV-014（棚卸確定）に修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>—</th><th>API-10-report.md API-RPT-011 セクション4 業務ロジック フローチャート</th><th>API-RPT-011の業務ロジックフローチャートで <code>format</code> 分岐が <code>json</code>/<code>csv</code> のみ記載され、<code>pdf</code> が欠落している。レポート共通仕様では <code>json</code>/<code>csv</code>/<code>pdf</code> の3形式が定義されている</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-011 フローチャートに <code>pdf</code> 分岐（<code>FORMAT --&gt;|pdf| RES_PDF[200 OK PDFダウンロード]</code>）を追加する必要あり ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-011 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>セクション2.2 カラム定義 APIフィールド名</th><th>API-10-report.md API-RPT-011 セクション3</th><th>RPT-11のカラム定義のAPIフィールド名（<code>locationCode</code>, <code>productCode</code>, <code>productName</code>, <code>unitType</code>, <code>systemQuantity</code>, <code>actualQuantity</code>, <code>diffQuantity</code>, <code>diffRate</code>, <code>lotNumber</code>）がAPI-RPT-011のレスポンスフィールド定義と完全一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>セクション2.1 ヘッダー ステータス値</th><th>data-model/03-transaction-tables.md stocktake_headers</th><th>ヘッダーに表示するステータス値 <code>CONFIRMED</code>/<code>STARTED</code> がデータモデルの <code>stocktake_headers.status</code> 定義と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション1 用途・呼び出し元画面</th><th>functional-requirements/03-inventory-management.md セクション5（棚卸）</th><th>機能要件の棚卸結果レポートの記述（「棚卸確定後に出力」「ロケーション・商品・荷姿・棚卸前数量・実数・差異数を含む」「差異があった明細を識別できる」）とRPT-11の設計内容が整合。追加項目（ロット番号・差異率）は要件の範囲を満たした上での拡充であり問題なし</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション4 特記事項 未確定時の出力</th><th>API-10-report.md API-RPT-011 ビジネスルール#3</th><th>RPT-11の「未確定時の出力」仕様（STARTED状態でも出力可能、未入力行は <code>—</code> 表示）がAPI-RPT-011のビジネスルール#3（「棚卸確定前でも出力可能（未入力行は <code>actualQuantity = null</code>）」）と整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション3 レイアウトイメージ 数値検算</th><th>—</th><th>レイアウトイメージ内の数値を検算。明細合計（帳簿数110=10+50+20+30、実数109=10+47+22+30、差異数-1=0+(-3)+2+0）、小計（第1グループ: 60/57/-3、第2グループ: 50/52/+2）、差異サマリー（過剰+2、不足-3、差異あり2/4件）すべて正確</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-12-picking-instruction">
+<h1>レビュー記録票: RPT-12-picking-instruction.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-12-picking-instruction.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1 レポート概要「呼び出し元画面」</td><td>SCR-10-outbound.md (OUT-011, OUT-013)</td><td>RPT-12では「OUT-012（ピッキング指示一覧）、OUT-013（ピッキング指示詳細）」と記載。SCR-10の画面設計ではOUT-011がピッキング指示一覧、OUT-012がピッキング指示作成、OUT-013がピッキング完了入力。RPT-012の出力ボタンはOUT-011（EVT-OUT-011-006）とOUT-013（EVT-OUT-013-003）に定義されている。RPT-12の記載「OUT-012」は「OUT-011」の誤り。</td><td>対象ファイル修正済み</td><td>OUT-012→OUT-011、OUT-013の画面名を「ピッキング完了入力」に修正</td></tr>
+<tr><td>2</td><td>セクション4 特記事項 ソート順</td><td>API-10-report.md (API-RPT-012)</td><td>RPT-12では「ロケーションコード昇順 → 商品コード昇順」と二次ソートを定義しているが、API-RPT-012の業務ロジックでは「ロケーションコード昇順」のみ記載。API側にも二次ソート（商品コード昇順）を追記すべき。</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-012 業務ロジックのソート順に「商品コード昇順」を二次ソートとして追記が必要 ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-012 ソート順に商品コード昇順を二次ソートとして追記済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>—</th><th>API-10-report.md (API-RPT-012) セクション1「関連画面」</th><th>API-RPT-012の関連画面が「OUT-002（ピッキング画面）、RPT-001（レポート画面）」と記載されているが、OUT-002は受注登録画面。正しくはOUT-011（ピッキング指示一覧）、OUT-013（ピッキング完了入力）。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-012 セクション1 関連画面を「OUT-011（ピッキング指示一覧）、OUT-013（ピッキング完了入力）」に修正が必要 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-012 関連画面をOUT-011/OUT-013に修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>セクション2.2 明細テーブル カラム定義</th><th>API-10-report.md (API-RPT-012) レスポンスフィールド</th><th>RPT-12のカラム定義のAPIフィールド名がAPI-RPT-012のレスポンスフィールドと一致していることを確認。全フィールド（locationCode, productCode, productName, unitType, instructedQuantity, lotNumber, outboundSlipNumber, customerName）が整合。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>セクション2.2 比率テーブル</th><th>—</th><th>比率合計: 4+15+11+17+6+6+11+13+13+4 = 100%。正しい。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション1 レポート概要</th><th>functional-requirements/05-reports.md セクション12</th><th>機能要件「ロケーション・商品・荷姿・ピッキング数量・対応受注番号を含む」「指定エリア内のロケーション順にソート」に対して、RPT-12はこれらの全項目をカバー。要件との整合OK。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション2.2 カラム定義</th><th>data-model/03-transaction-tables.md (picking_instruction_lines)</th><th><code>unit_type</code>フィールドの荷姿値（CASE/BALL/PIECE）がデータモデルの定義と一致。<code>lotNumber</code>がNULL可であることも<code>—</code>表示で対応済み。データモデルとの整合OK。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション2.5 ページブレークルール / セクション4 特記事項</th><th>_standard-report.md</th><th>文字サイズ10pt・行高さ8mmは標準テンプレートのデフォルト（9pt/6mm）からの明示的なオーバーライドとして正しく記載。標準テンプレートとの整合OK。</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-13-shipping-inspection">
+<h1>レビュー記録票: RPT-13-shipping-inspection.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-13-shipping-inspection.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>0</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>6</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1「用途」</td><td>functional-requirements/05-reports.md #13</td><td>機能要件定義書では出荷検品レポートを「指定期間・出荷先・商品で絞り込んだ出荷検品実績の一覧を出力する」と定義しているが、RPT-13設計書およびAPI-RPT-013では1出荷伝票単位のレポートとして設計されている。要件は一覧出力（複数伝票横断）を想定しているが、設計は単伝票レポートになっている。設計判断として意図的であれば要件側を更新すべき。</td><td>要対応（他ドキュメント）</td><td>functional-requirements/05-reports.md の #13 を更新して「受注伝票単位で出荷検品結果を出力する」旨に修正するか、設計側を一覧レポート形式に変更する ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md RPT-13対象定義を「受注伝票単位で出荷検品結果を出力」に修正済み</blockquote>
+<table>
+<thead><tr><th>2</th><th>セクション2.2 カラム#4 荷姿</th><th>API-10-report.md API-RPT-013 レスポンス例</th><th>RPT-13では <code>unitType</code> の表示値を <code>CASE/BALL/PIECE</code> としており、データモデル（outbound_slip_lines.unit_type）と一致している。しかしAPI-10-report.md のAPI-RPT-013レスポンスJSONサンプルでは <code>&quot;unitType&quot;: &quot;CAS&quot;</code> と記載されており、コード値が不一致（<code>CAS</code> vs <code>CASE</code>）。API側のサンプルが誤り。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-013 レスポンスJSONサンプルの <code>&quot;unitType&quot;: &quot;CAS&quot;</code> を <code>&quot;unitType&quot;: &quot;CASE&quot;</code> に修正する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-013 レスポンスJSONサンプルのunitType値をCASEに修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>セクション1「対応API」</th><th>API-10-report.md API-RPT-013 セクション1</th><th>RPT-13では関連画面を <code>OUT-021</code>（出荷検品画面）としているが、API-10-report.md の API-RPT-013 では関連画面を <code>OUT-003（出荷検品画面）、RPT-001（レポート画面）</code> としている。SCR-10-outbound.md ではOUT-021の btn-report が RPT-013 を呼び出す設計になっており、RPT-13の記載（OUT-021）が正しい。API側の関連画面IDを修正すべき。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-013 関連画面を <code>OUT-021（出荷検品画面）</code> に修正する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-013 関連画面をOUT-021（出荷検品画面）に修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>セクション2.2 カラム定義</th><th>data-model/03-transaction-tables.md outbound_slip_lines</th><th><code>pickedQuantity</code>（ピッキング数）は outbound_slip_lines に直接カラムとして存在せず、picking_instruction_lines.qty_picked を集計して導出する必要がある。ただしこれはAPI側のデータ取得仕様の問題であり、RPT-13ではAPIフィールド参照として正しく記載されている。</th><th>指摘なし</th><th>RPT-13の記載自体は問題ない。API-RPT-013のデータ取得仕様で結合・集計方法を記載すべき（現在未記載だが別途対応）</th></tr></thead>
+<thead><tr><th>5</th><th>セクション2.2 幅合計</th><th>_standard-report.md</th><th>幅合計277mmがA4横印字可能幅として計算されており、標準テンプレートの記載（A4横: 約277mm）と一致している。</th><th>指摘なし</th><th>問題なし</th></tr></thead>
+<thead><tr><th>6</th><th>セクション4 特記事項</th><th>_standard-report.md 共通仕様</th><th>差異行の強調表示（背景色ピンク、赤文字）、データ0件時のメッセージ表示、空値表示（<code>—</code>）など、標準テンプレートのルールに準拠して記載されている。</th><th>指摘なし</th><th>問題なし</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-14-delivery-list">
+<h1>レビュー記録票: RPT-14-delivery-list.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-14-delivery-list.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>4</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>RPT-14 1.レポート概要 用途</td><td>API-10-report.md API-RPT-014 1.API概要</td><td>RPT-14の用途が「出荷完了済みの配送情報一覧」と記載されているが、API-RPT-014は<code>status</code>パラメータがオプションであり、出荷完了以外のステータスも取得可能。API側概要も「出荷予定リストを配送用に出力する」と記載しており矛盾している</td><td>対象ファイル修正済み</td><td>「出荷済み・出荷予定の配送情報一覧」に修正し、ステータス絞り込みで出荷完了分のみの出力も可能と明記</td></tr>
+<tr><td>2</td><td>API-10-report.md API-RPT-014 3.レスポンス仕様 JSONサンプル</td><td>API-08-outbound.md ステータス定義</td><td>JSONサンプルの<code>&quot;status&quot;: &quot;ALLOCATED&quot;</code>は<code>outbound_slips</code>のステータス定義に存在しない値。正しくは全引当完了時は<code>PICKING_INSTRUCTED</code>（引当済=ピッキング指示済）、一部引当は<code>PARTIAL_ALLOCATED</code>。<code>&quot;statusLabel&quot;: &quot;引当済&quot;</code>も<code>PICKING_INSTRUCTED</code>の表示名としては「ピッキング指示済」が正しい</td><td>要対応（他ドキュメント）</td><td>API-10-report.md のAPI-RPT-014 JSONサンプルを修正する必要あり（<code>&quot;status&quot;: &quot;PICKING_INSTRUCTED&quot;</code>, <code>&quot;statusLabel&quot;: &quot;ピッキング指示済&quot;</code>等） ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-014 JSONサンプルのステータス値を修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>functional-requirements/05-reports.md #14 配送リスト</th><th>RPT-14 2.2.明細テーブル</th><th>機能要件では「出荷先・配送業者・送り状番号・<strong>商品</strong>・数量を含む」と記載されているが、RPT-14およびAPI-RPT-014のレスポンスには商品レベルの明細（商品コード・商品名）が含まれていない。伝票単位の数量合計のみ</th><th>要対応（他ドキュメント）</th><th>要件と設計の乖離。(a) 要件側を「伝票単位の数量合計」に修正するか、(b) API-RPT-014のレスポンスに商品明細を追加するか、方針決定が必要 ✅ 対応完了（2026-03-18修正）— 方針B（商品明細あり）を採用</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md RPT-14に商品明細を含む方針B（商品明細あり）を採用し修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>API-10-report.md API-RPT-014 4.業務ロジック フローチャート</th><th>API-10-report.md 共通仕様 format パラメータ</th><th>フローチャートの<code>format</code>分岐に<code>pdf</code>が欠落している。<code>json</code>と<code>csv</code>のみ記載。共通仕様ではPDF出力に対応と明記されている</th><th>要対応（他ドキュメント）</th><th>API-10-report.md のAPI-RPT-014 フローチャートにPDF分岐を追加する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-014 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>API-10-report.md API-RPT-014 5.補足事項 CSV出力ヘッダー</th><th>API-10-report.md API-RPT-014 3.レスポンス仕様</th><th>CSV出力時のヘッダー行に<code>配送業者</code>と<code>送り状番号</code>が含まれていない。JSONレスポンスには<code>carrier</code>と<code>trackingNumber</code>が存在するにもかかわらず、CSVヘッダーは<code>伝票番号,出荷先名,配送先住所,出荷予定日,ステータス,合計数量(ケース),合計数量(バラ)</code>のみ</th><th>要対応（他ドキュメント）</th><th>API-10-report.md のCSVヘッダー行に<code>配送業者,送り状番号</code>を追加する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-014 CSVヘッダーに配送業者・送り状番号を追加済み</blockquote>
+<table>
+<thead><tr><th>6</th><th>RPT-14 2.2.明細テーブル カラム定義</th><th>API-10-report.md API-RPT-014 3.レスポンス仕様</th><th>明細テーブルのカラム定義がAPIレスポンスフィールドと1対1で対応しており、フィールド名も一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>RPT-14 2.5.ページブレークルール</th><th>_standard-report.md テンプレート</th><th>標準テンプレートに準拠した形式で記載されている</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>RPT-14 3.レイアウトイメージ</th><th>RPT-14 2.2.明細テーブル</th><th>レイアウトイメージのカラムが明細テーブル定義と一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-15-unshipped-realtime">
+<h1>レビュー記録票: RPT-15-unshipped-realtime.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-15-unshipped-realtime.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>4</td></tr>
+<tr><td>指摘なし</td><td>4</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>9</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション3 レイアウトイメージのステータス表示名</td><td>API-08-outbound.md ステータス遷移定義（SSOT）</td><td>レイアウト例で使用しているステータス表示名が API-08-outbound.md のSSOT定義と不一致。「受注」→「受注済み」、「ﾋﾟｯｷﾝｸﾞ」→「ﾋﾟｯｷﾝｸﾞ完了」、「引当済」→「一部引当」（<code>ALLOCATED</code>ステータスはAPI-08に存在しない）、「検品中」→「出荷検品中」に修正</td><td>対象ファイル修正済み</td><td>レイアウトイメージ内の4つのステータス表示名をAPI-08-outbound.md定義に合わせて修正</td></tr>
+<tr><td>2</td><td>API-RPT-015 関連画面</td><td>API-10-report.md L1229 / RPT-15 L13</td><td>API-RPT-015の「関連画面」が <code>RPT-001（レポート画面）</code> のみだが、RPT-15では <code>OUT-001（受注一覧画面）</code> を呼び出し元画面と定義している。API側にもOUT-001を追記すべき</td><td>要対応</td><td>API-10-report.md の API-RPT-015 関連画面に <code>OUT-001（受注一覧画面）</code> を追記 ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-015 関連画面にOUT-001（受注一覧画面）を追記済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>機能要件の対象データ定義 vs API実装</th><th>functional-requirements/05-reports.md L126 / API-10-report.md L1280</th><th>機能要件では「現在営業日の出荷予定日の受注のうち、出荷完了していないもの」と定義（当日分のみ）。一方API-RPT-015は <code>planned_date &lt;= asOfDate</code> で当日以前の全未出荷を対象としている。APIの方が実用的だが、要件定義との整合を確認・更新すべき</th><th>要対応</th><th>functional-requirements/05-reports.md のRPT-15対象定義を「asOfDate以前の出荷予定日で未出荷のもの」に修正するか、意図的な差異であれば要件側に注記を追加 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md のRPT-15対象定義を修正済み（未出荷リスト対象範囲の明確化）</blockquote>
+<table>
+<thead><tr><th>4</th><th>SCR-10 ステータスコードマッピング</th><th>SCR-10-outbound.md L22-23 / API-08-outbound.md ステータス遷移</th><th>SCR-10の受注一覧ステータスマッピングで <code>ALLOCATED</code>（引当済）と <code>PICKING</code>（ピッキング中）を使用しているが、API-08-outbound.md（SSOT）には <code>ALLOCATED</code> ステータスが存在せず、<code>PICKING</code> も存在しない（<code>PICKING_INSTRUCTED</code> / <code>PICKING_COMPLETED</code> が正）。SCR-10のマッピングをSSOTに合わせるべき</th><th>要対応</th><th>SCR-10-outbound.md のステータスコードマッピングをAPI-08-outbound.md定義に合わせて修正 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SCR-10-outbound.md のステータスコードマッピングをSSOT（API-08-outbound.md）に合わせて修正済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>データモデル outbound_slips.status</th><th>data-model/03-transaction-tables.md L86 / API-08-outbound.md</th><th>データモデルの <code>outbound_slips.status</code> カラム説明に <code>PARTIAL_ALLOCATED</code>（一部引当）が含まれていないが、API-08-outbound.md では定義されている。データモデルのステータス一覧を更新すべき</th><th>要対応</th><th>data-model/03-transaction-tables.md の outbound_slips.status カラム説明に <code>PARTIAL_ALLOCATED</code> と <code>ALLOCATED</code>（該当する場合）を追加 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): data-model/03-transaction-tables.md の outbound_slips.status にPARTIAL_ALLOCATEDを追加済み</blockquote>
+<table>
+<thead><tr><th>6</th><th>カラム幅合計</th><th>_standard-report.md</th><th>幅合計277mmはA4横の印字可能幅（約277mm）以内で問題なし</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>APIフィールド名の整合性</th><th>API-10-report.md API-RPT-015 レスポンス仕様</th><th>RPT-15の明細テーブルで使用している全APIフィールド名（slipNumber, customerName, plannedShipDate, delayDays, productCode, productName, totalQuantityCas, statusLabel）がAPI-RPT-015のレスポンス定義と一致</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>グルーピング・小計・合計の定義</th><th>—</th><th>customerNameでのグルーピング、小計行（件数+CS合計）、合計行の定義が内部的に一貫しており、レイアウトイメージとも整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>特記事項の遅延度分類</th><th>—</th><th>遅延度の3段階分類（1日/2-3日/4日以上）と条件付き書式がレイアウトイメージの例と整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-16-unshipped-confirmed">
+<h1>レビュー記録票: RPT-16-unshipped-confirmed.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-16-unshipped-confirmed.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>10</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1 呼び出し元画面</td><td>SCR-10-outbound.md OUT-001</td><td>「OUT-001（出荷一覧画面）」と記載されていたが、SCR-10-outbound.md では OUT-001 は「受注一覧」画面である。RPT-15でも「受注一覧画面」と記載されている</td><td>対象ファイル修正済み</td><td>「出荷一覧画面」→「受注一覧画面」に修正</td></tr>
+<tr><td>2</td><td>セクション4 RPT-15との関係</td><td>RPT-15-unshipped-realtime.md</td><td>「同一のレイアウトを使用する。違いはデータ取得タイミングのみ」と記載されていたが、実際にはRPT-15は10列（遅延日数・遅延度列あり）・出荷先別グルーピング・グループヘッダーあり、RPT-16は8列・伝票番号別グルーピング・グループヘッダーなしと、レイアウトが大きく異なる</td><td>対象ファイル修正済み</td><td>レイアウトが異なることを明記し、具体的な違いを記述</td></tr>
+<tr><td>3</td><td>API-RPT-016 レスポンス例</td><td>API-10-report.md L1341</td><td>APIレスポンス例の <code>statusAtBatch</code> が <code>&quot;PICKING&quot;</code> となっているが、<code>outbound_slips.status</code> の定義値に <code>PICKING</code> は存在しない。正しくは <code>PICKING_INSTRUCTED</code> 等であるべき</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-016 レスポンス例の <code>statusAtBatch</code> 値を修正する必要あり ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-016 レスポンス例のstatusAtBatch値を修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>API-RPT-016 業務ロジックフローチャート</th><th>API-10-report.md L1359-1367</th><th>フローチャートに <code>pdf</code> 形式の分岐が欠落している。<code>json</code> と <code>csv</code> のみ記載されており、<code>pdf</code> 出力のパスがない</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-016 フローチャートに <code>pdf</code> 分岐を追加する必要あり ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-016 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>API-RPT-016 データ取得仕様</th><th>_standard-report.md API-10-report.md</th><th>_standard-report.md のガイドラインで要求されている「データ取得仕様」サブセクション（主テーブル・結合、フィルタ条件マッピング、計算フィールド、ソート順）が API-RPT-016 の業務ロジック内に記載されていない</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-016 に「データ取得仕様」サブセクションを追加する必要あり ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-016 にデータ取得仕様セクションを追加済み</blockquote>
+<table>
+<thead><tr><th>6</th><th>セクション2.2 カラム定義</th><th>API-10-report.md</th><th>明細テーブルカラム定義のAPIフィールド名（slipNumber, customerName, plannedShipDate, productCode, productName, totalQuantityCas, statusAtBatch）がAPIレスポンス仕様のフィールド名と一致している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション2.2 幅合計</th><th>_standard-report.md</th><th>幅合計277mmはA4横の印字可能幅以内に収まっている</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション4 ステータスマッピング</th><th>data-model/03-transaction-tables.md</th><th>RPT-16のステータスマッピング（ORDERED, PICKING_INSTRUCTED, PICKING_COMPLETED, INSPECTING）は outbound_slips.status の定義値のうち SHIPPED と CANCELLED を除いたものと整合している</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>セクション4 ソート順</th><th>API-10-report.md</th><th>ソート順（出荷予定日ASC→伝票番号ASC→商品コードASC）はグルーピングキー（slipNumber）を含み、合理的な順序である</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>10</th><th>セクション4 データ取得元</th><th>data-model/04-batch-tables.md</th><th>データ取得元として記載されている <code>unshipped_list_records</code> テーブルはデータモデル定義に存在し、<code>batch_business_date</code>, <code>slip_number</code>, <code>partner_name</code>, <code>planned_date</code>, <code>product_code</code>, <code>product_name</code>, <code>current_status</code> の各カラムが定義されている</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-17-daily-summary">
+<h1>レビュー記録票: RPT-17-daily-summary.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-17-daily-summary.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>4</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1 レポート概要「呼び出し元画面」</td><td>SCR-11-batch.md BAT-002</td><td>「BAT-002（日替処理結果画面）」と記載されていたが、BAT-002の正式名称は「バッチ実行履歴一覧」。また、ボタン名も「日次集計レポート」ではなく「日次集計レポート出力」が正しい</td><td>対象ファイル修正済み</td><td>「BAT-002（バッチ実行履歴一覧画面）から「日次集計レポート出力」ボタンで呼び出し」に修正</td></tr>
+<tr><td>2</td><td>セクション3 レイアウトイメージ</td><td>セクション4 特記事項</td><td>特記事項で「各項目名の末尾に（バラ換算）を付記する」と定義しているが、レイアウトイメージの入荷数量合計・出荷数量合計・在庫総数量に「（バラ換算）」が付記されていなかった（内部不整合）</td><td>対象ファイル修正済み</td><td>レイアウトイメージの該当箇所に「（バラ換算）」を追記（倉庫個別ブロック2箇所＋全倉庫合計セクション）</td></tr>
+<tr><td>3</td><td>セクション1 レポート概要「対応API」</td><td>API-10-report.md API-RPT-017</td><td>API-RPT-017の「関連画面」欄に「RPT-001（レポート画面）」と記載されているが、RPT-001は入荷検品レポートであり画面IDではない。正しくはBAT-002のRPT-017ダイアログを指すべき</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-017 関連画面を「BAT-002（バッチ実行履歴一覧）/ RPT-017ダイアログ」に修正すべき ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-017 関連画面をBAT-002（バッチ実行履歴一覧）に修正済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>—</th><th>SCR-11-batch.md EVT-BAT002-006</th><th>BAT-002のイベント一覧でAPIクエリパラメータが <code>?bizDate={date}</code> と記載されているが、API-10-report.md では <code>targetBusinessDate</code> が正しいパラメータ名</th><th>要対応（他ドキュメント）</th><th>SCR-11-batch.md の EVT-BAT002-006 のAPIパスを <code>?targetBusinessDate={date}&amp;format=pdf</code> に修正すべき ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SCR-11-batch.md EVT-BAT002-006のAPIパラメータは既に正しいことを確認済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>セクション2.4-2.7 カラム定義</th><th>API-10-report.md API-RPT-017 レスポンス仕様</th><th>APIフィールド名（inboundCount, inboundLineCount, inboundQuantityTotal 等）がAPIレスポンス仕様と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション2.8 全倉庫合計</th><th>API-10-report.md API-RPT-017</th><th>全倉庫合計の導出方法（各倉庫フィールドの合算）はAPIレスポンス仕様と整合。入荷明細行数・出荷明細行数の合計が含まれていないのは意図的な設計（明細行数は倉庫別でのみ表示）</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション4 特記事項「日替処理完了前提」</th><th>API-10-report.md API-RPT-017 エラーレスポンス</th><th>API側で <code>BATCH_EXECUTION_NOT_FOUND</code> (404) を返す仕様と整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション4 特記事項「データソース」</th><th>data-model/04-batch-tables.md</th><th>参照テーブル5件（inbound_summaries, outbound_summaries, inventory_snapshots, unreceived_list_records, unshipped_list_records）がデータモデルに定義されていることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-inbound-inspection">
+<h1>レビュー記録票: RPT-01-inbound-inspection.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-01-inbound-inspection.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>2</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1「呼び出し元画面」</td><td>SCR-07-inbound.md（INB-003 画面概要、EVT-INB003-007）</td><td>RPT-01では「INB-003（入荷検品画面）から『レポート出力』ボタン」と記載されていたが、INB-003の画面名は「入荷予定詳細」であり、ボタン名はEVT-INB003-007により「検品レポート」である。「入荷検品画面」はINB-004。</td><td>対象ファイル修正済み</td><td>「INB-003（入荷予定詳細画面）から「検品レポート」ボタンで呼び出し」に修正</td></tr>
+<tr><td>2</td><td>セクション2.2 カラム#4 <code>casQuantity</code></td><td>API-10-report.md（API-RPT-001 レスポンス仕様）、data-model/02-master-tables.md（products.case_quantity）</td><td>APIレスポンスフィールド名が <code>casQuantity</code> だが、DB上のカラム名は <code>case_quantity</code> であり、camelCase変換すると <code>caseQuantity</code> が自然。<code>casQuantity</code> は <code>cas</code> が不明瞭な略称。ただしSSOT（API-10-report.md）で <code>casQuantity</code> と定義されており、RPT-01はSSOTに従っている。修正する場合はAPI-10-report.md側を変更する必要がある。</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-001 レスポンスフィールド名 <code>casQuantity</code> を <code>caseQuantity</code> に変更を検討 ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-001 レスポンスフィールド名 <code>casQuantity</code> → <code>caseQuantity</code> 修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>セクション2.2 全体</th><th>functional-requirements/05-reports.md（入荷検品レポート）、functional-requirements/02-inbound-management.md</th><th>機能要件 05-reports.md では入荷検品レポートに「荷姿」を含むと記載（「商品コード・商品名・荷姿・入荷予定数・入荷数記入欄」）。しかしRPT-01のカラム定義には荷姿（unit_type）列が存在しない。ケース/バラ分離表示で実質的に荷姿情報は表現されているが、要件の「荷姿」列の明示的な不在は確認が必要。</th><th>要対応（他ドキュメント）</th><th>要件側の「荷姿」が、レポートのケース/バラ分離表示で充足されるか確認。不足であれば荷姿列の追加、または要件の文言修正を検討 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md RPT-01荷姿列の要件文言を修正済み（ケース/バラ分離表示で充足）</blockquote>
+<table>
+<thead><tr><th>4</th><th>—</th><th>API-10-report.md（API-RPT-001 業務ロジック フローチャート）</th><th>API-RPT-001のフローチャートで <code>format</code> 分岐が <code>json</code> と <code>csv</code> のみで、<code>pdf</code> 分岐が欠落している。レポートAPI共通仕様では <code>pdf</code> 形式もサポートと定義されている。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-001 フローチャートに <code>pdf</code> 分岐を追加 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-001 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>セクション2.1 ヘッダー</th><th>_standard-report.md（PDFヘッダー共通仕様）</th><th>標準テンプレートでは共通ヘッダーに「条件: {抽出条件のサマリー}」行があるが、RPT-01は単一伝票指定のため抽出条件サマリーが不要。RPT-01は「共通ヘッダーに加え」と記載しており、共通ヘッダー自体は参照している。単一伝票レポートのため抽出条件行が不要であることは妥当。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション2.2 幅合計</th><th>—</th><th>元の幅合計が「269mm」と記載されていたが、実際の合計は 10+30+60+20+22+22+20+20+20+18+25+22 = <strong>289mm</strong> であり、A4横の印字可能幅 277mm を <strong>超過</strong> していた。各カラム幅を縮小し、合計262mmに収まるよう修正した。</th><th>対象ファイル修正済み</th><th>各カラム幅を調整（No.→8, 商品コード→28, 商品名→50, ケース入数→18, 予定CS→20, 検品CS→20, 差異CS→18, 予定pc→20, 検品pc→20, 差異pc→18, ロット→22, 期限日→20）。合計262mm</th></tr></thead>
+<thead><tr><th>7</th><th>セクション3 レイアウトイメージ</th><th>API-10-report.md（API-RPT-001 レスポンス仕様）</th><th>レイアウトイメージ内のサンプルデータが、APIレスポンスのサンプルデータと一致している。合計行の計算値も正しい。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション4 特記事項</th><th>data-model/02-master-tables.md（products テーブル）、data-model/03-transaction-tables.md（inbound_slip_lines テーブル）</th><th><code>lot_manage_flag</code>、<code>expiry_manage_flag</code> の参照は products テーブルと整合。<code>inspected_qty</code> が NULL の場合の扱い（特記事項5番目）もデータモデルの定義と整合。</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<h2>補足: 幅合計の再計算（No.6）</h2>
+<p>修正前のカラム幅:</p>
+<ul><li style="margin-left:0px">No.(10) + 商品コード(30) + 商品名(60) + ケース入数(20) + 予定CS(22) + 検品CS(22) + 差異CS(20) + 予定pc(20) + 検品pc(20) + 差異pc(18) + ロット(25) + 期限日(22)</li><li style="margin-left:0px">= <strong>289mm</strong>（ドキュメントには誤って「269mm」と記載されていた）</li></ul>
+<p>修正後のカラム幅:</p>
+<ul><li style="margin-left:0px">No.(8) + 商品コード(28) + 商品名(50) + ケース入数(18) + 予定CS(20) + 検品CS(20) + 差異CS(18) + 予定pc(20) + 検品pc(20) + 差異pc(18) + ロット(22) + 期限日(20)</li><li style="margin-left:0px">= <strong>262mm</strong>（A4横の印字可能幅 277mm 以内）</li></ul>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-inbound-plan">
+<h1>レビュー記録票: RPT-03-inbound-plan.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-03-inbound-plan.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>0</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>4</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>9</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>RPT-03 §1 呼び出し元画面「INB-001（入荷予定一覧画面）から出力ボタンで呼び出し」</td><td>SCR-07-inbound.md</td><td>SCR-07-inbound.md にはINB-001の定義が含まれていない（旧ファイル <code>03-screen-inbound-list.md</code> から移行済みか不明）。INB-001画面にRPT-03出力ボタンが定義されているか確認できない。入荷予定一覧画面の設計にRPT-03出力ボタンのイベント定義を追加する必要がある</td><td>要対応</td><td>INB-001画面設計にRPT-03（入荷予定レポート）出力ボタンとイベントを追加すること ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): SCR-07 INB-001にRPT-03出力ボタンを追加済み</blockquote>
+<table>
+<thead><tr><th>2</th><th>RPT-03 §2.2 カラム定義の<code>plannedQuantityCas</code>/<code>plannedQuantityPcs</code></th><th>API-10-report.md（API-RPT-003 §2）</th><th>API-RPT-003のクエリパラメータに<code>partnerId</code>（仕入先ID）フィルタが存在しない。機能要件定義書（05-reports.md §3）では「指定期間・仕入先・ステータスで絞り込んだ入荷予定の一覧を出力する」と明記されているが、APIに仕入先絞り込みパラメータがない</th><th>要対応</th><th>API-RPT-003のクエリパラメータに<code>partnerId</code>（任意、仕入先ID）を追加すること ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-003 にpartnerIdクエリパラメータを追加済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>RPT-03 §1 対応API「API-RPT-003」</th><th>API-10-report.md（API-RPT-003 §4 業務ロジック）</th><th>API-RPT-003のフローチャートにPDF出力分岐がない（json/csvのみ定義）。レポートAPIの共通仕様として<code>format=pdf</code>が定義されているため、フローチャートにもpdf分岐を追加すべき</th><th>要対応</th><th>API-RPT-003の業務ロジックフローチャートに<code>format=pdf</code>の分岐を追加すること ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-003 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>4</th><th>RPT-03 全体</th><th>API-10-report.md（API-RPT-003）、_standard-report.md（API-10-report.md 業務ロジック記載ガイド）</th><th>標準テンプレート（_standard-report.md）で必須とされている「データ取得仕様」サブセクション（主テーブル・結合、フィルタ条件マッピング、計算フィールド、ソート順、集計）がAPI-RPT-003の業務ロジック内に存在しない</th><th>要対応</th><th>API-RPT-003の業務ロジックセクションに「データ取得仕様」を追記すること（論理SQL、フィルタ条件マッピング、計算フィールド、ソート順、集計定義） ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-003 にデータ取得仕様セクションを追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>RPT-03 §2.2 カラム定義</th><th>API-10-report.md（API-RPT-003 §3）</th><th>APIフィールド名（<code>slipNumber</code>, <code>supplierName</code>, <code>plannedDate</code>, <code>productCode</code>, <code>productName</code>, <code>plannedQuantityCas</code>, <code>plannedQuantityPcs</code>, <code>statusLabel</code>）がAPI-RPT-003のレスポンス仕様と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>RPT-03 §2.2 幅合計257mm</th><th>_standard-report.md（用紙共通設定）</th><th>A4横の印字可能幅（約277mm）以内に収まっている。残余20mmがパディングに使用される旨も明記されており問題なし</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>RPT-03 §2.3 グルーピング <code>supplierName</code></th><th>API-10-report.md（API-RPT-003 §3）</th><th>グルーピングキーの<code>supplierName</code>はAPIレスポンスに含まれるフィールドであり整合性あり</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>RPT-03 §4 ステータス <code>CANCELLED</code>/<code>STORED</code> の条件付き書式</th><th>data-model/03-transaction-tables.md（inbound_slips.status）</th><th><code>CANCELLED</code>と<code>STORED</code>はデータモデルで定義されている有効なステータス値であり、条件付き書式の対象として適切</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>9</th><th>RPT-03 §3 レイアウトイメージ</th><th>RPT-03 §2（カラム定義・グルーピング・合計行）</th><th>レイアウトイメージがカラム定義（8列）、グルーピング（仕入先別）、小計行、合計行、ページフッターの仕様と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-inbound-result">
+<h1>レビュー記録票: RPT-04-inbound-result.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-04-inbound-result.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>0</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>5</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>RPT-04 セクション1「呼び出し元画面」</td><td>SCR-07-inbound.md INB-006</td><td>RPT-04は「INB-006（入庫実績照会画面）」と記載しており、画面設計書SCR-07のINB-006（入荷実績照会）と整合している。正しい。</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>2</td><td>RPT-04 セクション1「呼び出し元画面」vs API-10-report.md API-RPT-004</td><td>API-10-report.md 266行目</td><td>API-RPT-004の「関連画面」が <code>INB-004（入庫実績照会画面）</code> となっているが、正しくは <code>INB-006（入荷実績照会）</code>。INB-004は入荷検品画面である。RPT-04側は正しい。</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-004 関連画面を <code>INB-006（入荷実績照会）</code> に修正する ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-004 関連画面IDをINB-006（入荷実績照会）に修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>RPT-04 セクション2.2 カラム定義</th><th>API-10-report.md API-RPT-004 レスポンス仕様</th><th>RPT-04の明細カラム（slipNumber, storedDate, productCode, productName, plannedQuantityCas, inspectedQuantityCas, diffQuantityCas, storedLocationCode）がAPI-RPT-004のレスポンスフィールドと完全に一致している。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>4</th><th>RPT-04 セクション2.3 グルーピングキー <code>supplierName</code></th><th>API-10-report.md API-RPT-004 レスポンス仕様</th><th>グルーピングキー <code>supplierName</code> はAPIレスポンスに含まれるフィールドであり整合している。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>RPT-04 セクション4 対象データ条件 <code>status = 'STORED'</code></th><th>data-model/03-transaction-tables.md, API-10-report.md</th><th>inbound_slipsテーブルのstatusに <code>STORED</code>（入庫完了）が定義されており、API-RPT-004のビジネスルール#2とも一致。正しい。</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>RPT-04 セクション4 ソート順</th><th>API-10-report.md API-RPT-004</th><th>RPT-04のソート順は「仕入先名（昇順）→入庫日（昇順）→伝票番号（昇順）」。API-RPT-004にはソート順の明示的な記載がない。API側にデータ取得仕様（ソート順含む）を追加すべき。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-004 にデータ取得仕様セクション（_standard-report.md テンプレートで定義）を追加し、ソート順を明記する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-004 にデータ取得仕様セクション（ソート順含む）を追加済み</blockquote>
+<table>
+<thead><tr><th>7</th><th>API-RPT-004 業務ロジック フローチャート</th><th>API-10-report.md 312-322行目</th><th>API-RPT-004のフローチャートにPDF出力分岐（<code>format=pdf</code>）が記載されていない。json/csvのみ。共通仕様でPDFをサポートしているため追記が必要。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-004 フローチャートに <code>format=pdf</code> の分岐を追加する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-004 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>8</th><th>RPT-04 全体構成</th><th>_standard-report.md テンプレート</th><th>テンプレートの構成（1.レポート概要、2.PDFレイアウト、3.レイアウトイメージ、4.特記事項）に準拠しており、必要な全セクションが記載されている。</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-inventory-transition">
+<h1>レビュー記録票: RPT-08-inventory-transition.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-08-inventory-transition.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>1</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>4</td></tr>
+<tr><td>指摘なし</td><td>3</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>8</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション2.2 カラム#6 ロット番号「---」表記、セクション4 特記事項「---」表記</td><td><code>_standard-report.md</code> 数値書式共通ルール（空値は「—」emダッシュ）</td><td>標準テンプレートでは空値の表記は「—」（emダッシュ）と定められているが、RPT-08では「---」（ハイフン3つ）になっていた</td><td>対象ファイル修正済み</td><td>「---」を「—」（emダッシュ）に修正</td></tr>
+<tr><td>2</td><td>セクション4 特記事項 movementType一覧</td><td><code>API-10-report.md</code> L646 movementType定義</td><td>API設計書のmovementType定義では <code>MOVE / BREAKDOWN / STOCKTAKE</code> と記載されているが、データモデル（<code>inventory_movements</code>テーブル）およびRPT-08の特記事項では <code>MOVE_OUT / MOVE_IN / BREAKDOWN_OUT / BREAKDOWN_IN / STOCKTAKE_ADJUSTMENT</code> と分離されている。RPT-08はデータモデルと整合しており正しい。API設計書の <code>movementType</code> フィールド説明（L646）を修正すべき</td><td>要対応（他ドキュメント）</td><td>API-10-report.md のAPI-RPT-008 レスポンス仕様のmovementTypeフィールド説明を、データモデルのmovement_type値（INBOUND / OUTBOUND / MOVE_OUT / MOVE_IN / BREAKDOWN_OUT / BREAKDOWN_IN / CORRECTION / STOCKTAKE_ADJUSTMENT / INBOUND_CANCEL）に合わせて修正が必要 ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-008 movementType値をデータモデル定義に合わせて修正済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>セクション2.2 カラム#7 <code>quantityBefore</code></th><th><code>data-model/03-transaction-tables.md</code> inventory_movementsテーブル定義</th><th><code>inventory_movements</code> テーブルには <code>quantity_before</code> カラムが存在しない。<code>quantity</code>（変動数）と <code>quantity_after</code>（変動後数量）のみ。<code>quantityBefore</code> は <code>quantity_after - quantity</code> で導出する計算フィールドだが、API設計書の業務ロジック（データ取得仕様）に計算フィールドとして記載されていない</th><th>要対応（他ドキュメント）</th><th>API-10-report.md のAPI-RPT-008 業務ロジックに「データ取得仕様」サブセクションを追加し、<code>quantityBefore</code> = <code>quantity_after - quantity</code> の導出方法を明記すべき ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-008 にデータ取得仕様セクションを追加済み（quantityBefore計算フィールド定義含む）</blockquote>
+<table>
+<thead><tr><th>4</th><th>セクション2.2 カラム#5 荷姿表示「CAS/BAL/PCS」</th><th><code>data-model/03-transaction-tables.md</code> inventory_movements.unit_type</th><th>データモデルでは荷姿の値は <code>CASE / BALL / PIECE</code> だが、RPT-08のカラム定義備考では「CAS/BAL/PCS表示」と記載されている。これは表示時の短縮表記であり、変換ロジックが必要だがAPI設計書に変換仕様の記載がない</th><th>要対応（他ドキュメント）</th><th>API-10-report.md のAPI-RPT-008にunitType表示変換仕様（CASE→CAS、BALL→BAL、PIECE→PCS）を追記するか、RPT-08側で表示変換はPDFテンプレート側の責務であることを明記すべき ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-008 にunitType表示変換仕様を追記済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>セクション1 レポート概要 関連画面「INV-001」</th><th><code>API-10-report.md</code> L610、<code>SCR-08-inventory-ops.md</code></th><th>RPT-08の呼び出し元画面は「INV-001（在庫一覧画面）」と記載されておりSCR-08と整合。しかしAPI-10-report.md L610ではAPI-RPT-008の関連画面が「RPT-001（レポート画面）」となっている</th><th>要対応（他ドキュメント）</th><th>API-10-report.md のAPI-RPT-008の関連画面を「INV-001（在庫一覧照会画面）」に修正すべき ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-008 関連画面をINV-001（在庫一覧照会画面）に修正済み</blockquote>
+<table>
+<thead><tr><th>6</th><th>セクション2.2 カラム定義全体</th><th><code>API-10-report.md</code> API-RPT-008 レスポンス仕様</th><th>レポートのカラム定義のAPIフィールド名とAPIレスポンスフィールド名が一致していることを確認。movementDate, movementTypeLabel, locationCode, unitType, lotNumber, quantityBefore, quantityChange, quantityAfter, referenceNumber はすべてAPI仕様と整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>7</th><th>セクション4 特記事項 デフォルト期間</th><th><code>API-10-report.md</code> API-RPT-008 ビジネスルール#3</th><th>RPT-08の「dateFrom未指定時は当月1日、dateTo未指定時は本日がデフォルト（API側で制御）」はAPI設計書のビジネスルール#3と整合</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>8</th><th>セクション2.5 ページブレークルール・セクション2.3 グルーピング</th><th><code>_standard-report.md</code> テンプレート</th><th>標準テンプレートの必須セクション（2.1-2.5）がすべて記載されている。グルーピング・小計・合計行・ページブレークルールが適切に定義されている</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-inventory">
+<h1>レビュー記録票: RPT-07-inventory.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-07-inventory.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>3</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>3</td></tr>
+<tr><td>指摘なし</td><td>0</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>6</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>RPT-07 2.2 カラム定義 #6, #7 備考 / 4. 特記事項</td><td>_standard-report.md 数値書式共通ルール</td><td>空値表示に「---」（ハイフン3つ）を使用していたが、標準テンプレートでは「—」（emダッシュ）と定義されている。</td><td>対象ファイル修正済み</td><td>「---」を「—」に統一。カラム定義備考、特記事項、レイアウトイメージの3箇所を修正</td></tr>
+<tr><td>2</td><td>RPT-07 4. 特記事項 ソート順</td><td>RPT-07 2.3 グルーピング・小計</td><td>ソート順が「エリアコード昇順→ロケーションコード昇順→商品コード昇順」と記載されていたが、グルーピングキーが <code>productCode</code> であるため、商品コードが第1ソートキーでなければグルーピングが正しく機能しない。</td><td>対象ファイル修正済み</td><td>ソート順を「商品コード昇順（グルーピングキー）→エリアコード昇順→ロケーションコード昇順（グループ内ソート）」に修正</td></tr>
+<tr><td>3</td><td>RPT-07 3. レイアウトイメージ</td><td>—</td><td>レイアウトイメージ内のロット管理OFF/期限管理OFFの表示が「---」だったため「—」に修正。</td><td>対象ファイル修正済み</td><td>レイアウトイメージ内の空値表示を「—」に統一</td></tr>
+<tr><td>4</td><td>API-10-report.md API-RPT-007 3. レスポンス仕様</td><td>RPT-07 2.2 カラム定義 #9, #10</td><td>RPT-07では <code>allocatedQty</code>（引当数量）と <code>availableQty</code>（有効在庫数）をカラムとして定義しているが、API-RPT-007のレスポンス仕様にこれらのフィールドが存在しない。APIレスポンスにこの2フィールドを追加する必要がある。</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-007 レスポンス仕様に <code>allocatedQty</code> (Integer, 引当数量) と <code>availableQty</code> (Integer, 有効在庫数 = quantity - allocatedQty) を追加する必要がある。サンプルJSONにも追加すること。 ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-007 レスポンス仕様にallocatedQty・availableQtyフィールドを追加済み</blockquote>
+<table>
+<thead><tr><th>5</th><th>API-10-report.md API-RPT-007 3. レスポンス仕様 フィールド表</th><th>データモデル inventories テーブル / RPT-07 2.2 カラム定義 #5</th><th><code>unitType</code> フィールドの説明が「<code>CAS</code> / <code>PCS</code>」のみで <code>BAL</code>（ボール）が欠落している。RPT-07では <code>CAS/BAL/PCS</code> と記載されている。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-007 レスポンス仕様のフィールド表で <code>unitType</code> の説明を「<code>CAS</code> / <code>BAL</code> / <code>PCS</code>」に修正する必要がある。 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-007 unitTypeフィールド説明にBALを追加済み</blockquote>
+<table>
+<thead><tr><th>6</th><th>API-10-report.md API-RPT-007 2. リクエスト仕様</th><th>data-model/02-master-tables.md (products.storage_condition, areas.storage_condition)</th><th><code>storageCondition</code> パラメータの値が <code>NORMAL</code> / <code>REFRIGERATED</code> / <code>FROZEN</code> と記載されているが、データモデルでは <code>AMBIENT</code> / <code>REFRIGERATED</code> / <code>FROZEN</code> と定義されている。<code>NORMAL</code> は <code>AMBIENT</code> の誤り。</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-007 リクエスト仕様で <code>storageCondition</code> の値を <code>AMBIENT</code> / <code>REFRIGERATED</code> / <code>FROZEN</code> に修正する必要がある。 ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-007 storageCondition値をNORMAL→AMBIENTに修正済み</blockquote>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-unreceived-confirmed">
+<h1>レビュー記録票: RPT-06-unreceived-confirmed.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-06-unreceived-confirmed.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>0</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>1</td></tr>
+<tr><td>指摘なし</td><td>8</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>9</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>RPT-06 §1 レポート概要</td><td>functional-requirements/05-reports.md §6</td><td>機能要件「前日以前の入荷予定日を過ぎても入庫完了していない入荷予定（日替処理確定済み）」「入荷予定日・仕入先・商品・予定数量・現在ステータスを含む」と一致。用途記述も要件に整合している</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>2</td><td>RPT-06 §1 対応API</td><td>API-10-report.md API-RPT-006</td><td><code>API-RPT-006</code> の参照が正しい。パスも <code>/api/v1/reports/unreceived-confirmed</code> で一致</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>3</td><td>RPT-06 §2.2 カラム定義</td><td>API-10-report.md API-RPT-006 §3</td><td>APIフィールド名（<code>slipNumber</code>, <code>plannedDate</code>, <code>productCode</code>, <code>productName</code>, <code>plannedQuantityCas</code>, <code>statusAtBatch</code>）がAPI-RPT-006のレスポンス仕様と一致。<code>supplierName</code> はグルーピングキーとして使用されており、これもAPIレスポンスに含まれる</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>4</td><td>RPT-06 §2.2 カラム#4 遅延日数</td><td>API-10-report.md API-RPT-006 §3</td><td>API-RPT-006のレスポンスには <code>delayDays</code> フィールドが含まれない。RPT-06はカラム定義で「（計算値）」、特記事項で「PDF生成時に <code>batchBusinessDate - plannedDate</code> で算出」と正しく記述している。RPT-05（リアルタイム版）のAPI-RPT-005には <code>delayDays</code> が含まれる点との差異も適切に反映されている</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>5</td><td>RPT-06 §2.2 カラム#8 バッチ時点ステータス</td><td>API-10-report.md API-RPT-006 §3 / RPT-05 §2.2</td><td>RPT-05が <code>statusLabel</code>（リアルタイムの日本語ラベル）を使用するのに対し、RPT-06は <code>statusAtBatch</code>（バッチ時点のステータスコード）を使用。カラム名も「バッチ時点ステータス」として区別されており、適切に差別化されている</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>6</td><td>RPT-06 §2.2 幅合計</td><td>_standard-report.md</td><td>幅合計 277mm（10+40+28+20+30+60+25+30+34）が正しく計算されており、A4横の印字可能幅以内。RPT-05と同一のカラム幅構成で一貫性がある</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>7</td><td>RPT-06 §4 特記事項 データソース</td><td>data-model/04-batch-tables.md <code>unreceived_list_records</code></td><td><code>unreceived_list_records</code> テーブルの参照が正しい。テーブルのカラム（<code>batch_business_date</code>, <code>slip_number</code>, <code>planned_date</code>, <code>partner_name</code>, <code>product_code</code>, <code>product_name</code>, <code>planned_qty</code>, <code>current_status</code>）とAPIレスポンスフィールドの対応が整合している</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>8</td><td>RPT-06 §4 特記事項 除外ステータス</td><td>functional-requirements/06-batch-processing.md</td><td>「STORED（入庫完了）およびCANCELLED（キャンセル）のステータスは含まれない」の記述は、機能要件の「入庫完了していない入荷予定」と整合。詳細はAPI-RPT-006に委譲しておりSSOTルールに準拠</td><td>指摘なし</td><td>—</td></tr>
+<tr><td>9</td><td>API-10-report.md API-RPT-006 §4 フローチャート</td><td>API-10-report.md API-RPT-006 §4</td><td>API-RPT-006のフローチャートに <code>pdf</code> フォーマット分岐が欠落している。<code>json</code> と <code>csv</code> の分岐のみ記載されているが、<code>format</code> パラメータは <code>json</code>/<code>csv</code>/<code>pdf</code> の3値を取る（§2 リクエスト仕様）。RPT-06はPDF出力レポートであるため、API側のフローチャートに <code>pdf</code> 分岐を追加すべき</td><td>要対応（他ドキュメント）</td><td>API-10-report.md の API-RPT-006 §4 フローチャートに <code>FORMAT --&gt;|pdf| RES_PDF[200 OK PDFダウンロード\nfilename: unreceived_confirmed_YYYYMMDD.pdf]</code> 分岐を追加する ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-006 フローチャートにPDF分岐を追加済み</blockquote>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="review-records-rpt-unreceived-realtime">
+<h1>レビュー記録票: RPT-05-unreceived-realtime.md</h1>
+<p><strong>レビュー実施日</strong>: 2026-03-18<br><strong>対象ファイル</strong>: docs/functional-design/RPT-05-unreceived-realtime.md<br><strong>レビュアー</strong>: Claude Code (自動レビュー)</p>
+<h2>サマリー</h2>
+<table>
+<thead><tr><th>分類</th><th>件数</th></tr></thead>
+<tbody>
+<tr><td>対象ファイル修正済み</td><td>0</td></tr>
+<tr><td>要対応（他ドキュメント）</td><td>2</td></tr>
+<tr><td>指摘なし</td><td>4</td></tr>
+<tr><td><strong>合計</strong></td><td><strong>6</strong></td></tr>
+<p></tbody><br></table></p>
+<h2>詳細指摘テーブル</h2>
+<table>
+<thead><tr><th>No</th><th>対象箇所</th><th>参照ドキュメント</th><th>指摘内容</th><th>分類</th><th>対応内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>セクション1 レポート概要</td><td>functional-requirements/05-reports.md セクション5</td><td>機能要件定義書では未入荷リスト（リアルタイム）の対象を「現在営業日の入荷予定日の入荷予定のうち、入庫完了していないもの」と記載しているが、API-RPT-005の仕様では <code>planned_date &lt;= asOfDate</code>（基準日以前の全未入荷）を対象としており、要件定義書より広い範囲を抽出する。レポート設計書はAPI仕様に整合しているが、要件定義書との間に齟齬がある。要件定義書の記述を「基準日以前の入荷予定日で入庫完了していないもの」に修正すべき</td><td>要対応（他ドキュメント）</td><td>functional-requirements/05-reports.md セクション5の対象定義を修正する ✅ 対応完了（2026-03-18修正）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): functional-requirements/05-reports.md RPT-05対象範囲の定義を「基準日以前の入荷予定日で未入庫のもの」に修正済み</blockquote>
+<table>
+<thead><tr><th>2</th><th>セクション4 業務ロジックフローチャート</th><th>API-10-report.md API-RPT-005 セクション4</th><th>API-RPT-005の業務ロジックフローチャートにおいて、<code>format</code> の分岐が <code>json</code> と <code>csv</code> のみ記載されており、<code>pdf</code> 分岐が欠落している。レポート共通仕様では <code>json</code>/<code>csv</code>/<code>pdf</code> の3形式をサポートするとされているため、フローチャートに <code>pdf</code> 分岐を追加すべき</th><th>要対応（他ドキュメント）</th><th>API-10-report.md の API-RPT-005 フローチャートに pdf 分岐を追加する ✅ 対応完了（2026-03-18修正）</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+<blockquote><strong>対応完了</strong> (2026-03-19): API-10-report.md の API-RPT-005 フローチャートにPDF分岐を追加済み</blockquote>
+<table>
+<thead><tr><th>3</th><th>セクション2.2 カラム定義</th><th>API-10-report.md API-RPT-005 セクション3</th><th>APIフィールド名（<code>slipNumber</code>, <code>plannedDate</code>, <code>delayDays</code>, <code>productCode</code>, <code>productName</code>, <code>plannedQuantityCas</code>, <code>statusLabel</code>）がAPI-RPT-005のレスポンス仕様と一致していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>4</th><th>セクション2.2 幅合計</th><th>_standard-report.md</th><th>幅合計 277mm がA4横の印字可能幅（約277mm）以内であることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>5</th><th>セクション4 特記事項</th><th>API-10-report.md API-RPT-005 セクション5</th><th>件数上限10,000件、STORED/CANCELLED除外、ソート順（仕入先名昇順→入荷予定日昇順）がAPI仕様と整合していることを確認</th><th>指摘なし</th><th>—</th></tr></thead>
+<thead><tr><th>6</th><th>セクション全体 テンプレート準拠</th><th>_standard-report.md</th><th>標準テンプレートに準拠した構成（1.レポート概要、2.PDFレイアウト、3.レイアウトイメージ、4.特記事項）であることを確認。SSOTルールに従い、入力パラメータや業務ロジックの詳細はAPI-10-report.mdへの参照のみとしている</th><th>指摘なし</th><th>—</th></tr></thead>
+<tbody>
+<p></tbody><br></table></p>
+</div>
+</main>
+<footer>WMS ShowCase — Generated by build-docs.js</footer>
+
+</body>
+</html>

@@ -56,6 +56,14 @@
 | 商品名列 | 「合計」ラベル + 全伝票件数（例:「合計（15件）」） |
 | 数量(CS)列 | 全行のケース数量合計 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.totalQuantityCas`, `subtotals.itemCount`
+
+**全体合計**（`grandTotals.*`）: `grandTotals.totalQuantityCas`, `grandTotals.itemCount`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

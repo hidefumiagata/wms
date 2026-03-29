@@ -58,6 +58,14 @@
 | No.〜ロケーションコード列 | 「期間合計」ラベル（太字） |
 | 変動数列 | 全行の変動数合計（期間中の純増減） |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantityChange`
+
+**全体合計**（`grandTotals.*`）: `grandTotals.quantityChange`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

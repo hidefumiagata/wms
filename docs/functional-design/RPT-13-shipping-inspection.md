@@ -55,6 +55,21 @@
 | 差異列 | 全行の差異合計 |
 | 判定列 | 差異合計が0: `ALL OK` / それ以外: `NG あり` |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**: なし（フラットリスト）
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.pickedQuantity` | |
+| `grandTotals.inspectedQuantity` | |
+| `grandTotals.diffQuantity` | null行は除外 |
+| `grandTotals.overallJudgment` | 差異合計が0なら `ALL OK`、それ以外は `NG あり` |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

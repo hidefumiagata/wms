@@ -50,6 +50,14 @@
 | 商品名列 | 「合計」ラベル |
 | 変動数列 | 全行の `quantityChange` の合計値（純増減） |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**: なし（フラットリスト）
+
+**全体合計**（`grandTotals.*`）: `grandTotals.quantityChange`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

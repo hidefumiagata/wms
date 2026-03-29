@@ -68,6 +68,14 @@
 | 商品名列 | 「総合計」ラベル |
 | 数量列 | 全伝票の数量合計 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantity`
+
+**全体合計**（`grandTotals.*`）: `grandTotals.quantity`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

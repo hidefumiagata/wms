@@ -59,6 +59,14 @@
 | 引当数量列 | 全行の引当数量合計 |
 | 有効在庫数列 | 全行の有効在庫数合計 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantity`, `subtotals.allocatedQty`, `subtotals.availableQty`
+
+**全体合計**（`grandTotals.*`）: `grandTotals.quantity`, `grandTotals.allocatedQty`, `grandTotals.availableQty`
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

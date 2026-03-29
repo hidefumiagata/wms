@@ -75,6 +75,30 @@
 | 2行目 | 「不足（マイナス差異）合計: -{N}」（差異数 < 0 の行の差異数絶対値合計） |
 | 3行目 | 「差異あり明細数: {N} / {TOTAL} 件」 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**（`group.subtotals.*`）
+
+| 変数名 | 備考 |
+|--------|------|
+| `subtotals.systemQuantity` | |
+| `subtotals.actualQuantity` | null行は除外 |
+| `subtotals.diffQuantity` | null行は除外 |
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.systemQuantity` | |
+| `grandTotals.actualQuantity` | null行は除外 |
+| `grandTotals.diffQuantity` | null行は除外 |
+| `grandTotals.surplusTotal` | 差異サマリー用: `diffQuantity > 0` の合計 |
+| `grandTotals.shortageTotal` | 差異サマリー用: `diffQuantity < 0` の絶対値合計 |
+| `grandTotals.diffItemCount` | 差異サマリー用: `diffQuantity != 0` の行数 |
+| `grandTotals.totalItemCount` | 差異サマリー用: 全行数 |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

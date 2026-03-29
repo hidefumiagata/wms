@@ -61,6 +61,14 @@
 
 > レイアウト形式: 2列のキー・バリュー形式（左に項目名、右に値）。幅合計: 95 + 95 = 190mm（A4縦の印字可能幅 190mm）
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**: なし（倉庫ごとのセクションデータは各 `items` 要素が保持）
+
+**全体合計**（`grandTotals.*`）: `grandTotals.inboundCount`, `grandTotals.inboundQuantityTotal`, `grandTotals.outboundCount`, `grandTotals.outboundQuantityTotal`, `grandTotals.returnCount`, `grandTotals.returnQuantityTotal`, `grandTotals.inventoryQuantityTotal`, `grandTotals.unreceivedCount`, `grandTotals.unshippedCount`
+
 ### 2.5. セクション2: 出荷サマリー
 
 セクションタイトル: 「出荷実績」（10pt Bold、下線付き）

@@ -131,6 +131,23 @@
 | {カラム名}列 | 「合計」ラベル |
 | {数量列}列 | 全行の合計値 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は「集計値のテンプレート変数設計原則」セクションを参照。
+
+セクション2.3・2.4で定義した集計対象フィールドに対応するテンプレート変数名を列挙する。
+集計の内容・計算方法は2.3・2.4がSSOT — ここでは変数名のマッピングのみ定義する。
+
+**グループ小計**（`group.subtotals.*`）: `subtotals.{field1}`, `subtotals.{field2}`, ...
+
+**全体合計**（`grandTotals.*`）: `grandTotals.{field1}`, `grandTotals.{field2}`, ...
+
+備考が必要な場合（null除外・導出変数等）はテーブル形式で記載:
+
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.{field}` | null行は除外 / 導出ロジックの説明 |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |
@@ -277,6 +294,55 @@ ORDER BY {ソート条件}
 | **PDFレイアウト（カラム定義・幅・配置・書式）** | **RPT-XX-*.md（ここが唯一の定義場所）** | — |
 | **グルーピング・小計・ページブレーク** | **RPT-XX-*.md（ここが唯一の定義場所）** | — |
 | **条件付き書式（差異行の強調等）** | **RPT-XX-*.md（ここが唯一の定義場所）** | — |
+| **テンプレート変数（集計値）** | **RPT-XX-*.md（こ���が唯一の定義場所）** | — |
+
+---
+
+## 集計値のテンプレート変数設計原則
+
+### 基本方針
+
+**集計値（小計・合計）はJava側のServiceで事前計算し、テンプレート変数としてThymeleafに渡す。**
+テンプレート内でSpEL集計式（`#aggregates.sum()` / `.?[]` / `.![]`）を使った計算は行わない。
+
+### 理由
+
+- テンプレート内のSpEL集計式は可読性・保守性が低い
+- null安全なフィルタリング（`.?[field != null].![field].isEmpty() ? 0 : ...`）がテンプレートを複雑にする
+- 集計ロジックのテスト容易性（Java側で単体テスト可能）
+
+### テンプレートに渡すデータ構造
+
+グルーピングがあるレポートでは、Java側で以下の構造を構築してテンプレートに渡す:
+
+```
+groups: List<GroupData>（グループのリスト）
+  ├── groupKey: String（グループキーの表示値）
+  ├── items: List<RowData>（グループ内の明細行）
+  └── subtotals: Map<String, Number>（グループ小計 ← Java側で事前計算）
+grandTotals: Map<String, Number>（全���合計 ← Java側で事前計算）
+```
+
+フラットリスト（グルーピングなし）のレポートでは:
+
+```
+items: List<RowData>（明細行リスト）
+grandTotals: Map<String, Number>（全体合計 ← Java側で事前計算）
+```
+
+### テンプレートでの参照例
+
+```html
+<!-- 小計行（グループごと） -->
+<td th:text="${#numbers.formatInteger(group.subtotals.plannedQuantityCas, 1, 'COMMA')}">15</td>
+
+<!-- 合計行（全体） -->
+<td th:text="${#numbers.formatInteger(grandTotals.plannedQuantityCas, 1, 'COMMA')}">35</td>
+```
+
+### 個別レポート設計書への記載
+
+各レポート設計書（RPT-XX-*.md）のセクション2.4の後に **「2.4.1. テンプレート変数（集計値）」** を設け、Java側で事前計算してテンプレートに��す変数を一覧化する。
 
 ---
 
@@ -337,6 +403,10 @@ A4縦の印字可能幅: `190mm`（左右余白10mm × 2を除く）
 
 ### Thymeleafテンプレート雛形（m-18）
 
+> 集計値（小計・合計）はJava側で事前計算してテンプレート変数として渡す。
+> テンプレート内で `#aggregates.sum()` 等のSpEL集計式は使用しない。
+> 詳細は「集計値のテンプレート変数設計原則」セクションを参照。
+
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -364,7 +434,7 @@ A4縦の印字可能幅: `190mm`（左右余白10mm × 2を除く）
     <span th:text="'倉庫: ' + ${warehouseName}">倉庫: 東京DC</span>
   </div>
 
-  <!-- 明細テーブル -->
+  <!-- 明細テーブル（グルーピングありの場合） -->
   <table>
     <thead>
       <tr>
@@ -372,26 +442,27 @@ A4縦の印字可能幅: `190mm`（左右余白10mm × 2を除く）
         <th style="width: 52mm;">カラム2</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody th:each="group : ${groups}">
       <!-- グループヘッダー -->
-      <tr th:each="group : ${groups}" class="group-header">
-        <td th:colspan="2" th:text="${group.name}">グループ名</td>
+      <tr class="group-header">
+        <td th:colspan="2" th:text="${group.groupKey}">グループ名</td>
       </tr>
       <!-- 明細行 -->
-      <tr th:each="row : ${group.rows}">
+      <tr th:each="row : ${group.items}">
         <td th:text="${row.field1}">値1</td>
         <td class="text-right" th:text="${#numbers.formatInteger(row.field2, 1, 'COMMA')}">1,234</td>
       </tr>
-      <!-- 小計行 -->
+      <!-- 小計行（Java側で事前計算済みの値を表示） -->
       <tr class="subtotal-row">
         <td>小計</td>
-        <td class="text-right" th:text="${#numbers.formatInteger(group.subtotal, 1, 'COMMA')}">5,678</td>
+        <td class="text-right" th:text="${#numbers.formatInteger(group.subtotals.field2, 1, 'COMMA')}">5,678</td>
       </tr>
     </tbody>
     <tfoot>
+      <!-- 合計行（Java側で事前計算済みの値を表示） -->
       <tr class="total-row">
         <td>合計</td>
-        <td class="text-right" th:text="${#numbers.formatInteger(grandTotal, 1, 'COMMA')}">99,999</td>
+        <td class="text-right" th:text="${#numbers.formatInteger(grandTotals.field2, 1, 'COMMA')}">99,999</td>
       </tr>
     </tfoot>
   </table>

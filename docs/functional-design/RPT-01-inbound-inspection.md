@@ -63,6 +63,23 @@
 | 検品数(バラ)列 | 全行の `inspectedQuantityPcs` 合計値 |
 | 差異(バラ)列 | 全行の `diffQuantityPcs` 合計値 |
 
+#### 2.4.1. テンプレート変数（集計値）
+
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
+
+**グループ小計**: なし（フラットリスト）
+
+**全体合計**（`grandTotals.*`）
+
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.plannedQuantityCas` | |
+| `grandTotals.inspectedQuantityCas` | null行は除外 |
+| `grandTotals.diffQuantityCas` | null行は除外 |
+| `grandTotals.plannedQuantityPcs` | |
+| `grandTotals.inspectedQuantityPcs` | null行は除外 |
+| `grandTotals.diffQuantityPcs` | null行は除外 |
+
 ### 2.5. ページブレークルール
 
 | ルール | 内容 |

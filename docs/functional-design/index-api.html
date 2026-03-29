@@ -5510,7 +5510,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px"><code>locationCodePrefix</code> は <code>LIKE 'A-01%'</code> として適用する（前方一致）。</li><li style="margin-left:0px"><code>storageCondition</code> は <code>locations</code> テーブルの <code>storage_condition</code> カラムを JOIN して絞り込む。</li><li style="margin-left:0px"><code>viewType=PRODUCT_SUMMARY</code> の <code>totalPieceEquivalent</code> は <code>products.case_quantity</code> および <code>products.ball_quantity</code> を参照して算出する。</li><li style="margin-left:0px">ソートのデフォルトは <code>locationCode,asc</code>（LOCATION時）/ <code>productCode,asc</code>（PRODUCT_SUMMARY時）。</li></ul>
+<ul><li style="margin-left:0px"><code>locationCodePrefix</code> は <code>LIKE 'A-01%'</code> として適用する（前方一致）。</li><li style="margin-left:0px"><code>storageCondition</code> は <code>areas</code> テーブルの <code>storage_condition</code> カラムを JOIN して絞り込む（<code>locations</code> → <code>areas</code> → <code>areas.storage_condition</code>）。</li><li style="margin-left:0px"><code>viewType=PRODUCT_SUMMARY</code> の <code>totalPieceEquivalent</code> は <code>products.case_quantity</code> および <code>products.ball_quantity</code> を参照して算出する。</li><li style="margin-left:0px">ソートのデフォルトは <code>locationCode,asc</code>（LOCATION時）/ <code>productCode,asc</code>（PRODUCT_SUMMARY時）。</li></ul>
 <hr>
 <hr>
 <h2>API-INV-002: 在庫移動登録</h2>
