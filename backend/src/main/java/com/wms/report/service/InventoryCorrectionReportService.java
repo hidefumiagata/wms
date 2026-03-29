@@ -27,6 +27,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.JST;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -82,7 +83,7 @@ public class InventoryCorrectionReportService {
                 "在庫訂正一覧",
                 "rpt-09-inventory-correction",
                 "inventory_correction_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 conditionsSummary,
                 CSV_HEADERS,

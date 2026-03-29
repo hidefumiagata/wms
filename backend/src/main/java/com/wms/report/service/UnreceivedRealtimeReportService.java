@@ -25,6 +25,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.INBOUND_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.loadProductMap;
@@ -74,7 +75,7 @@ public class UnreceivedRealtimeReportService {
                 "未入荷リスト（リアルタイム）",
                 "rpt-05-unreceived-realtime",
                 "unreceived_realtime_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 "基準日: " + fmtDate(effectiveDate),
                 CSV_HEADERS,

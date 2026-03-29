@@ -24,6 +24,7 @@ import java.util.Map;
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.loadProductMap;
@@ -78,7 +79,7 @@ public class InboundResultReportService {
                 "入庫実績レポート",
                 "rpt-04-inbound-result",
                 "inbound_result_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 conditionsSummary,
                 CSV_HEADERS,

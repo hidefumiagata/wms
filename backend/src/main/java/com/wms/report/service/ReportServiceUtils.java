@@ -2,6 +2,7 @@ package com.wms.report.service;
 
 import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.master.entity.Product;
+import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.ProductRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -68,6 +69,16 @@ final class ReportServiceUtils {
     /** 現在のJST日付をファイル名用にフォーマットする（例: "20260327"） */
     static String todayFileDate() {
         return LocalDate.now(JST).format(FILE_DATE_FMT);
+    }
+
+    /** 倉庫名を「倉庫名 (コード)」形式にフォーマットする */
+    static String formatWarehouseName(Warehouse warehouse) {
+        return warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
+    }
+
+    /** 倉庫名・コードから「倉庫名 (コード)」形式にフォーマットする */
+    static String formatWarehouseName(String name, String code) {
+        return name + " (" + code + ")";
     }
 
     /** SecurityContextから現在のユーザー名を取得する */
