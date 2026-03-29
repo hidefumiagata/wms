@@ -24,6 +24,7 @@ import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.OUTBOUND_STATUS_LABELS;
 import static com.wms.report.service.ReportServiceUtils.escapeLikePattern;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -72,7 +73,7 @@ public class DeliveryListReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + warehouseId));
 
-        String warehouseName = warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
+        String warehouseName = formatWarehouseName(warehouse);
 
         String carrierLike = carrier != null ? "%" + escapeLikePattern(carrier) + "%" : null;
 

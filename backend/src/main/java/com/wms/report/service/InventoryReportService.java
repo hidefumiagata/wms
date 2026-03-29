@@ -20,6 +20,7 @@ import java.util.List;
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -78,7 +79,7 @@ public class InventoryReportService {
                 "在庫一覧レポート",
                 "rpt-07-inventory",
                 "inventory_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 conditionsSummary,
                 CSV_HEADERS,

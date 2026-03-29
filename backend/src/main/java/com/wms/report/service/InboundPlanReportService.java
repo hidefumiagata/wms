@@ -23,6 +23,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.INBOUND_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.loadProductMap;
@@ -70,7 +71,7 @@ public class InboundPlanReportService {
                 "入荷予定レポート",
                 "rpt-03-inbound-plan",
                 "inbound_plan_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 conditionsSummary,
                 CSV_HEADERS,

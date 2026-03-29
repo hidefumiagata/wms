@@ -20,6 +20,7 @@ import java.util.Map;
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCaseQuantity;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.loadProductMap;
@@ -63,7 +64,7 @@ public class InboundInspectionReportService {
                 "入荷検品レポート",
                 "rpt-01-inbound-inspection",
                 "inbound_inspection_" + todayFileDate(),
-                slip.getWarehouseName() + " (" + slip.getWarehouseCode() + ")",
+                formatWarehouseName(slip.getWarehouseName(), slip.getWarehouseCode()),
                 getCurrentUserName(),
                 "伝票番号: " + slip.getSlipNumber(),
                 CSV_HEADERS,

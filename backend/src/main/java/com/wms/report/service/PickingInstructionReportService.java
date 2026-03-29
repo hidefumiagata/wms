@@ -22,6 +22,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.PICKING_STATUS_LABELS;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -69,7 +70,7 @@ public class PickingInstructionReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                         "倉庫が見つかりません: warehouseId=" + instruction.getWarehouseId()));
 
-        String warehouseName = warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
+        String warehouseName = formatWarehouseName(warehouse);
 
         List<Object[]> rows = outboundReportRepository.findPickingInstructionReportData(pickingInstructionId);
 

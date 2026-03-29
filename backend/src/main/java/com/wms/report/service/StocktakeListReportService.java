@@ -24,6 +24,7 @@ import java.util.Map;
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -81,7 +82,7 @@ public class StocktakeListReportService {
             Warehouse warehouse = warehouseRepository.findById(header.getWarehouseId())
                     .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                             "倉庫が見つかりません: warehouseId=" + header.getWarehouseId()));
-            warehouseName = warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
+            warehouseName = formatWarehouseName(warehouse);
             conditionsSummary = "棚卸番号: " + header.getStocktakeNumber();
             if (header.getTargetDescription() != null) {
                 conditionsSummary += " / 対象: " + header.getTargetDescription();
@@ -94,7 +95,7 @@ public class StocktakeListReportService {
             Warehouse warehouse = warehouseRepository.findById(building.getWarehouseId())
                     .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
                             "倉庫が見つかりません: warehouseId=" + building.getWarehouseId()));
-            warehouseName = warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")";
+            warehouseName = formatWarehouseName(warehouse);
             conditionsSummary = "棟: " + building.getBuildingName() + " (" + building.getBuildingCode() + ") [プレビュー]";
             rows = stocktakeReportRepository.findStocktakeListByBuildingId(buildingId, areaId);
         }

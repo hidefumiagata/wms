@@ -25,6 +25,7 @@ import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
 import static com.wms.report.service.CsvGenerationService.fmtOrDash;
 import static com.wms.report.service.ReportServiceUtils.JST;
+import static com.wms.report.service.ReportServiceUtils.formatWarehouseName;
 import static com.wms.report.service.ReportServiceUtils.getCurrentUserName;
 import static com.wms.report.service.ReportServiceUtils.todayFileDate;
 
@@ -95,7 +96,7 @@ public class InventoryTransitionReportService {
                 "在庫推移レポート",
                 "rpt-08-inventory-transition",
                 "inventory_transition_" + todayFileDate(),
-                warehouse.getWarehouseName() + " (" + warehouse.getWarehouseCode() + ")",
+                formatWarehouseName(warehouse),
                 getCurrentUserName(),
                 "対象商品: " + product.getProductCode() + " " + product.getProductName()
                         + " / " + conditionsSummary,
