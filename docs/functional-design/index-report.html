@@ -856,7 +856,7 @@
 <tbody>
 <tr><td><strong>レポートID</strong></td><td><code>RPT-10</code></td></tr>
 <tr><td><strong>レポート名</strong></td><td>棚卸リスト</td></tr>
-<tr><td><strong>用途</strong></td><td>棚卸開始時に現場スタッフへ配布する実数入力用リスト。ロケーション×商品の一覧を印刷し、スタッフが現場を回りながら実数を手書きで記入する。帳簿数量はあえて表示しない（先入観なく実数を数えてもらうため）</td></tr>
+<tr><td><strong>用途</strong></td><td>棚卸開始時に現場スタッフへ配布する実数入力用リスト。ロケーション×商品の一覧を印刷し、スタッフが現場を回りながら実数を手書きで記入する。帳簿数量はデフォルトで非表示（<code>hideBookQty=true</code>）だが、<code>hideBookQty=false</code> で表示も可能</td></tr>
 <tr><td><strong>対応API</strong></td><td><code>API-RPT-010</code>（<a href="API-10-report.md" target="_blank">API-10-report.md</a> を参照）</td></tr>
 <tr><td><strong>用紙サイズ</strong></td><td>A4</td></tr>
 <tr><td><strong>向き</strong></td><td>横（Landscape）</td></tr>
@@ -873,6 +873,7 @@
 <tr><td>対象範囲</td><td><code>target_description</code>（例: <code>A棟 1F全エリア</code>）</td></tr>
 <p></tbody><br></table></p>
 <h3>2.2. 明細テーブル カラム定義</h3>
+<h4>hideBookQty=true（デフォルト）— 帳簿数量非表示</h4>
 <table>
 <thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
 <tbody>
@@ -887,6 +888,23 @@
 <tr><td>9</td><td>実数（記入欄）</td><td>—</td><td>35</td><td>—</td><td>—</td><td><strong>空欄（枠線のみ）</strong>。手書き記入用</td></tr>
 <p></tbody><br></table></p>
 <blockquote>幅合計: 10 + 42 + 35 + 30 + 55 + 15 + 30 + 25 + 35 = <strong>277mm</strong>（A4横の印字可能幅以内）</blockquote>
+<h4>hideBookQty=false — 帳簿数量表示</h4>
+<table>
+<thead><tr><th>#</th><th>カラム名</th><th>APIフィールド</th><th>幅(mm)</th><th>配置</th><th>書式</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>No.</td><td>（行番号）</td><td>10</td><td>右</td><td>整数</td><td>自動採番</td></tr>
+<tr><td>2</td><td>ロケーション</td><td><code>locationCode</code></td><td>42</td><td>左</td><td>文字列</td><td>ロケーションコード</td></tr>
+<tr><td>3</td><td>エリア名</td><td><code>areaName</code></td><td>35</td><td>左</td><td>文字列</td><td>エリア名</td></tr>
+<tr><td>4</td><td>商品コード</td><td><code>productCode</code></td><td>30</td><td>左</td><td>文字列</td><td>—</td></tr>
+<tr><td>5</td><td>商品名</td><td><code>productName</code></td><td>45</td><td>左</td><td>文字列</td><td>長い場合は末尾省略（...）</td></tr>
+<tr><td>6</td><td>荷姿</td><td><code>unitType</code></td><td>15</td><td>中</td><td>文字列</td><td><code>CAS</code>/<code>BAL</code>/<code>PCS</code></td></tr>
+<tr><td>7</td><td>ロット番号</td><td><code>lotNumber</code></td><td>30</td><td>左</td><td>文字列</td><td>ロット管理対象外は <code>—</code></td></tr>
+<tr><td>8</td><td>期限日</td><td><code>expiryDate</code></td><td>25</td><td>中</td><td><code>yyyy-MM-dd</code></td><td>期限管理対象外は <code>—</code></td></tr>
+<tr><td>9</td><td>帳簿数量</td><td><code>systemQuantity</code></td><td>20</td><td>右</td><td>整数（3桁カンマ）</td><td>システム在庫数</td></tr>
+<tr><td>10</td><td>実数（記入欄）</td><td>—</td><td>25</td><td>—</td><td>—</td><td><strong>空欄（枠線のみ）</strong>。手書き記入用</td></tr>
+<p></tbody><br></table></p>
+<blockquote>幅合計: 10 + 42 + 35 + 30 + 45 + 15 + 30 + 25 + 20 + 25 = <strong>277mm</strong>（A4横の印字可能幅以内）
+<p>商品名列を55mm→45mm、実数記入欄を35mm→25mmに縮小して帳簿数量列20mmを確保</blockquote></p>
 <h3>2.3. グルーピング・小計</h3>
 <pre><code class="lang-">グルーピングキー: locationCode（ロケーションコード）
 小計行: なし（実数記入用リストのため数量集計は不要）
@@ -912,6 +930,7 @@
 <tr><td>孤立行防止</td><td>同一ロケーションの最終行が次ページに1行だけ送られる場合、ロケーショングループごと改ページする</td></tr>
 <p></tbody><br></table></p>
 <h2>3. レイアウトイメージ</h2>
+<h3>hideBookQty=true（デフォルト）</h3>
 <pre><code class="lang-">┌─────────────────────────────────────────────────────────────────────────────┐
 │ 棚卸リスト                                        出力日時: 2026-03-17 14:30│
 │ 倉庫: 東京第一倉庫 (WH-001)                        出力者: admin           │
@@ -930,8 +949,26 @@
 ├───────────────────────────────┴──────────┴────┴───────┴──────┴──────────┤
 │ WMS ShowCase                                           Page 1 / 4       │
 └─────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h3>hideBookQty=false</h3>
+<pre><code class="lang-">┌──────────────────────────────────────────────────────────────────────────────┐
+│ 棚卸リスト                                         出力日時: 2026-03-17 14:30│
+│ 倉庫: 東京第一倉庫 (WH-001)                         出力者: admin           │
+│ 棚卸番号: ST-2026-00042  対象: A棟 1F全エリア                                │
+├────┬──────────┬────────┬───────┬────────┬────┬───────┬──────┬──────┬───────┤
+│ No.│ロケーション│エリア名 │商品ｺｰﾄﾞ│商品名   │荷姿│ﾛｯﾄ番号 │期限日 │帳簿数│実数   │
+├────┼──────────┼────────┼───────┼────────┼────┼───────┼──────┼──────┼───────┤
+│  1 │A-01-A-01 │保管A    │P-001  │商品AAAA │CAS │LOT-001│2026-12│   100│       │
+│  2 │A-01-A-01 │保管A    │P-002  │商品BBBB │PCS │—      │—     │    50│       │
+│────│──────────│────────│───────│────────│────│───────│──────│──────│───────│
+│  3 │A-01-A-02 │保管A    │P-003  │商品CCCC │BAL │LOT-003│2027-06│    30│       │
+│  : │   :      │   :    │  :    │  :     │ :  │  :    │  :   │   :  │       │
+├────┴──────────┴────────┴───────┼────────┼────┼───────┼──────┼──────┼───────┤
+│                               │合計行数 │    │       │      │      │120 行 │
+├───────────────────────────────┴────────┴────┴───────┴──────┴──────┴───────┤
+│ WMS ShowCase                                            Page 1 / 4        │
+└──────────────────────────────────────────────────────────────────────────────┘</code></pre>
 <h2>4. 特記事項</h2>
-<ul><li style="margin-left:0px"><strong>帳簿数量（systemQuantity）はPDFに表示しない</strong>: 先入観なく実数を数えてもらうため、意図的に帳簿数量カラムを除外している。JSON/CSV出力では <code>systemQuantity</code> フィールドが含まれるが、PDFテンプレートでは描画しない</li><li style="margin-left:0px"><strong>実数記入欄</strong>: 列9はデータを持たない空の枠線列であり、現場スタッフが手書きで実数を記入するためのスペース。枠線は黒（#000000）、内部は白（#FFFFFF）で描画する。行高さは通常の6mmではなく <strong>8mm</strong> とし、手書きしやすいスペースを確保する</li><li style="margin-left:0px"><strong>ソート順</strong>: ロケーションコード昇順（第1キー）→ 商品コード昇順（第2キー）。現場の動線に合わせてロケーション順に巡回できるようにする</li><li style="margin-left:0px"><strong>ロケーション区切り</strong>: ロケーションコードが切り替わる行の上に太い区切り線（1pt）を描画し、ロケーションの変わり目を視覚的に識別しやすくする</li><li style="margin-left:0px">データ0件の場合は「対象データがありません」メッセージをテーブル領域の中央に表示する</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を <code>—</code> で表示する</li><li style="margin-left:0px">期限管理フラグOFFの商品は期限日列を <code>—</code> で表示する</li></ul>
+<ul><li style="margin-left:0px"><strong>帳簿数量（systemQuantity）の表示制御</strong>: <code>hideBookQty</code> パラメータ（デフォルト: <code>true</code>）でPDF上の帳簿数量カラムの表示/非表示を切り替える。現場カウント時は非表示推奨（先入観なく実数を数えてもらうため）。管理者による事後確認用途では <code>hideBookQty=false</code> で帳簿数量を表示できる。JSON/CSV出力では <code>systemQuantity</code> フィールドは常に含まれる（パラメータの影響を受けない）</li><li style="margin-left:0px"><strong>実数記��欄</strong>: 最終列はデータを持たない空の枠線列であり、現場スタッフが手���きで���数を記入するための���ペース。枠線は黒（#000000）、内部は白��#FFFFFF）で描画する。行高さは通常の6mmではな�� <strong>8mm</strong> とし、手書きしやすいスペースを確保する</li><li style="margin-left:0px"><strong>ソート順</strong>: ロケーションコード昇順（第1キー）→ 商品コード昇順（第2キー）。現場の動線に合わせてロケーション順に巡回できるようにする</li><li style="margin-left:0px"><strong>ロケーション区切り</strong>: ロケーションコードが切り替わる行の上に太い区切り線（1pt）を描画し、ロケーションの変わり目を視覚的に識別しやすくする</li><li style="margin-left:0px">データ0件の場合は「対象データがありません」メッセージをテーブル領域の中央に表示する</li><li style="margin-left:0px">ロット管理フラグOFFの商品はロット番号列を <code>—</code> で表示する</li><li style="margin-left:0px">期限管理フラグOFFの商品は期限日列を <code>—</code> で表示する</li></ul>
 </div>
 
 <hr class="doc-separator">

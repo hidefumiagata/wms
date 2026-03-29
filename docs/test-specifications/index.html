@@ -6737,7 +6737,7 @@ VALUES
 <tr><td>SC-RPT09-001</td><td>RPT-09</td><td>正常系: 増加訂正の薄青/減少訂正の薄赤背景</td><td>中</td><td>増減両方のデータ存在</td><td>○</td><td>—</td></tr>
 <tr><td>SC-RPT09-002</td><td>RPT-09</td><td>正常系: 訂正理由への実施者名追記</td><td>中</td><td>訂正データ存在</td><td>○</td><td>—</td></tr>
 <tr><td>SC-RPT10-001</td><td>RPT-10</td><td>正常系: PDF出力時の帳簿数量非表示（hideBookQty=true）</td><td>高</td><td>棚卸データ存在</td><td>○</td><td>○</td></tr>
-<tr><td>SC-RPT10-002</td><td>RPT-10</td><td>正常系: PDF出力時の帳簿数量表示（hideBookQty=false/未指定）</td><td>高</td><td>棚卸データ存在</td><td>○</td><td>—</td></tr>
+<tr><td>SC-RPT10-002</td><td>RPT-10</td><td>正常系: PDF出力時の帳簿数量表示（hideBookQty=false）</td><td>高</td><td>棚卸データ存在</td><td>○</td><td>○</td></tr>
 <tr><td>SC-RPT10-003</td><td>RPT-10</td><td>正常系: JSON/CSVにsystemQuantityフィールドが含まれること</td><td>中</td><td>棚卸データ存在</td><td>○</td><td>—</td></tr>
 <tr><td>SC-RPT10-004</td><td>RPT-10</td><td>正常系: ロケーション区切り太線の確認</td><td>低</td><td>複数ロケーションデータ存在</td><td>○</td><td>—</td></tr>
 <tr><td>SC-RPT11-001</td><td>RPT-11</td><td>正常系: 差異行のピンク背景表示</td><td>中</td><td>差異ありデータ存在</td><td>○</td><td>—</td></tr>
@@ -6999,22 +6999,24 @@ VALUES
 <tr><td>4</td><td>PDFテキスト抽出で「実数（記入欄）」列を確認</td><td>空欄の枠線列が存在する</td><td>PDF構造</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<h3>SC-RPT10-002: RPT-10 PDF出力時も帳簿数量が非表示であること（hideBookQty未指定）</h3>
+<h3>SC-RPT10-002: RPT-10 PDF出力時の帳簿数量表示（hideBookQty=false）</h3>
 <table>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td>シナリオID</td><td>SC-RPT10-002</td></tr>
-<tr><td>シナリオ名</td><td>正常系: hideBookQty未指定の場合でも、PDFに帳簿数量が表示されない（設計書の仕様通り）</td></tr>
-<tr><td>前提条件</td><td>WAREHOUSE_MANAGERでログイン済み。棚卸対象データが存在</td></tr>
+<tr><td>シナリオ名</td><td>正常系: hideBookQty=falseの場合、PDFに帳簿数量カラムが表示される</td></tr>
+<tr><td>前提条件</td><td>WAREHOUSE_MANAGERでログイン済み。棚卸対象データが存在（systemQuantityを持つ）</td></tr>
 <p></tbody><br></table></p>
 <p><strong>テストステップ:</strong></p>
 <table>
 <thead><tr><th>#</th><th>操作</th><th>期待結果</th><th>確認方法</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><code>GET /api/v1/reports/stocktake-list?...&amp;format=pdf</code>（hideBookQty省略）</td><td>PDFが生成される</td><td>PDFバイナリ</td></tr>
-<tr><td>2</td><td>PDFテキスト抽出を確認</td><td>帳簿数量（systemQuantity）がPDFに含まれないこと</td><td>PDFBox</td></tr>
+<tr><td>1</td><td><code>GET /api/v1/reports/stocktake-list?...&amp;hideBookQty=false&amp;format=pdf</code></td><td>PDFが生成される</td><td>PDFバイナリ</td></tr>
+<tr><td>2</td><td>PDFテキスト抽出で「帳簿数量」カラムヘッダーの有無を確認</td><td>「帳簿数量」カラムヘッダーが含まれる</td><td>PDFBox</td></tr>
+<tr><td>3</td><td>PDFテキスト抽出で帳簿数量の値を確認</td><td>各行に <code>systemQuantity</code> の値が表示されている</td><td>PDFBox</td></tr>
+<tr><td>4</td><td><code>GET /api/v1/reports/stocktake-list?...&amp;format=pdf</code>（hideBookQty省略）</td><td>デフォルト <code>true</code> のため帳簿数量カラムが表示されないこと</td><td>PDFBox</td></tr>
 <p></tbody><br></table></p>
-<blockquote><strong>根拠</strong>: RPT-10設計書の特記事項に「帳簿数量（systemQuantity）はPDFに表示しない」「PDFテンプレートでは描画しない」と明記されている。hideBookQtyパラメータの有無にかかわらず、PDFでは常に帳簿数量は非表示である。JSON/CSV出力には <code>systemQuantity</code> フィールドが含まれる。</blockquote>
+<blockquote><strong>根拠</strong>: <code>hideBookQty</code> パラメータのデフォルトは <code>true</code>（非表示）。<code>false</code> を明示指定した場合のみ帳簿数量カラムをPDFに表示する。JSON/CSV出力では <code>systemQuantity</code> フィールドは常に含まれる（パラメータの影響を受けない）。</blockquote>
 <hr>
 <h3>SC-RPT14-001: RPT-14 伝票ヘッダー+商品明細のネスト構造表示</h3>
 <table>
@@ -7271,7 +7273,7 @@ async function verifyPdfReport(page: Page, apiPath: string, params: Record&lt;st
     expect(pdf.length).toBeGreaterThan(0);
   });
 });</code></pre>
-<h3>SC-RPT10-001 固有テスト例</h3>
+<h3>SC-RPT10-001 / SC-RPT10-002 固有テスト例</h3>
 <pre><code class="lang-typescript">test('SC-RPT10-001: hideBookQty=true でPDF帳簿数量非表示', async ({ page }) =&gt; {
   await loginAs(page, 'WAREHOUSE_MANAGER');
 
@@ -7283,14 +7285,32 @@ async function verifyPdfReport(page: Page, apiPath: string, params: Record&lt;st
   expect(jsonData.length).toBeGreaterThan(0);
   expect(jsonData[0]).toHaveProperty('systemQuantity');
 
-  // PDF出力: hideBookQty=true
+  // PDF出力: hideBookQty=true（デフォルト）
   const pdfHidden = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
     stocktakeId: '1',
     hideBookQty: 'true',
   });
   // PDFのテキスト抽出で帳簿数量のヘッダーが含まれないことを確認
-  // ※ 実装時はPDFBoxを使用してテキスト抽出し検証する
   expect(pdfHidden.length).toBeGreaterThan(0);
+});
+
+test('SC-RPT10-002: hideBookQty=false でPDF帳簿数量表示', async ({ page }) =&gt; {
+  await loginAs(page, 'WAREHOUSE_MANAGER');
+
+  // PDF出力: hideBookQty=false → 帳簿数量カラムが表示される
+  const pdfVisible = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
+    stocktakeId: '1',
+    hideBookQty: 'false',
+  });
+  // PDFのテキスト抽出で帳簿数量のヘッダーが含まれることを確認
+  expect(pdfVisible.length).toBeGreaterThan(0);
+
+  // PDF出力: hideBookQty省略 → デフォルトtrue → 帳簿数量非表示
+  const pdfDefault = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
+    stocktakeId: '1',
+  });
+  // 帳簿数量ヘッダーが含まれないことを確認
+  expect(pdfDefault.length).toBeGreaterThan(0);
 });</code></pre>
 <h3>SC-RPT17-001 固有テスト例</h3>
 <pre><code class="lang-typescript">test('SC-RPT17-001: 倉庫別セクション+全倉庫合計', async ({ page }) =&gt; {

@@ -8688,7 +8688,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>buildingId</code></td><td>Long</td><td>※1</td><td>棟ID（プレビュー用）</td></tr>
 <tr><td><code>areaId</code></td><td>Long</td><td>—</td><td>エリアID（プレビュー用・絞り込み）</td></tr>
 <tr><td><code>format</code></td><td>String</td><td>—</td><td><code>json</code>（デフォルト）/ <code>csv</code> / <code>pdf</code></td></tr>
-<tr><td><code>hideBookQty</code></td><td>Boolean</td><td>—</td><td>false</td><td><code>true</code>の場合、PDF出力時に帳簿数量カラムを非表示にする（カウント作業の先入観防止）</td></tr>
+<tr><td><code>hideBookQty</code></td><td>Boolean</td><td>—</td><td>PDF出力時の帳簿数量（systemQuantity）カラム表示を制御する。<code>true</code>（デフォルト）: 非表示、<code>false</code>: 表示。現場カウント時は非表示推奨（先入観防止）。JSON/CSV出力では本パラメータの影響を受けず <code>systemQuantity</code> は常に含まれる</td></tr>
 <p></tbody><br></table></p>
 <blockquote>※1: <code>stocktakeId</code> または <code>buildingId</code> のどちらか一方が必須</blockquote>
 <h4>3. レスポンス仕様（JSON）</h4>
