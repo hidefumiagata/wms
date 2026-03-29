@@ -580,8 +580,8 @@ class InventoryControllerTest {
             wh.setWarehouseName("メイン倉庫");
             when(warehouseService.findById(1L)).thenReturn(wh);
 
-            when(stocktakeQueryService.countTotalLines(1L)).thenReturn(50L);
-            when(stocktakeQueryService.countCountedLines(1L)).thenReturn(50L);
+            when(stocktakeQueryService.countTotalLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of(1L, 50L));
+            when(stocktakeQueryService.countCountedLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of(1L, 50L));
 
             mockMvc.perform(get("/api/v1/inventory/stocktakes").param("warehouseId", "1"))
                     .andExpect(status().isOk())
@@ -608,8 +608,8 @@ class InventoryControllerTest {
             wh.setWarehouseName("メイン倉庫");
             when(warehouseService.findById(1L)).thenReturn(wh);
 
-            when(stocktakeQueryService.countTotalLines(1L)).thenReturn(30L);
-            when(stocktakeQueryService.countCountedLines(1L)).thenReturn(10L);
+            when(stocktakeQueryService.countTotalLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of(1L, 30L));
+            when(stocktakeQueryService.countCountedLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of(1L, 10L));
 
             mockMvc.perform(get("/api/v1/inventory/stocktakes").param("warehouseId", "1"))
                     .andExpect(status().isOk())
@@ -644,8 +644,8 @@ class InventoryControllerTest {
             when(warehouseService.findById(1L))
                     .thenThrow(new ResourceNotFoundException("WAREHOUSE_NOT_FOUND", "倉庫が見つかりません"));
 
-            when(stocktakeQueryService.countTotalLines(1L)).thenReturn(10L);
-            when(stocktakeQueryService.countCountedLines(1L)).thenReturn(0L);
+            when(stocktakeQueryService.countTotalLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of(1L, 10L));
+            when(stocktakeQueryService.countCountedLinesByHeaderIds(Set.of(1L))).thenReturn(Map.of());
 
             mockMvc.perform(get("/api/v1/inventory/stocktakes").param("warehouseId", "1"))
                     .andExpect(status().isOk())

@@ -306,15 +306,16 @@ public class InventoryController implements InventoryApi {
                 trimmedNumber, buildingId,
                 PageRequest.of(page, size, sortObj));
 
-        // ユーザー名・倉庫名のバッチ取得（N+1回避）
         Set<Long> userIds = new java.util.HashSet<>();
         Set<Long> warehouseIds = new java.util.HashSet<>();
+        Set<Long> headerIds = new java.util.HashSet<>();
         for (StocktakeHeader h : resultPage.getContent()) {
             userIds.add(h.getStartedBy());
             if (h.getConfirmedBy() != null) {
                 userIds.add(h.getConfirmedBy());
             }
             warehouseIds.add(h.getWarehouseId());
+            headerIds.add(h.getId());
         }
         Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
         Map<Long, String> warehouseNameMap = new java.util.HashMap<>();
@@ -326,9 +327,11 @@ public class InventoryController implements InventoryApi {
                 log.warn("Failed to resolve warehouse name for warehouseId={}: {}", wId, e.getMessage());
             }
         }
+        Map<Long, Long> totalLinesMap = stocktakeQueryService.countTotalLinesByHeaderIds(headerIds);
+        Map<Long, Long> countedLinesMap = stocktakeQueryService.countCountedLinesByHeaderIds(headerIds);
 
         List<StocktakeSummary> items = resultPage.getContent().stream()
-                .map(h -> toStocktakeSummary(h, userNameMap, warehouseNameMap))
+                .map(h -> toStocktakeSummary(h, userNameMap, warehouseNameMap, totalLinesMap, countedLinesMap))
                 .toList();
 
         StocktakeSummaryPageResponse response = new StocktakeSummaryPageResponse()
@@ -337,16 +340,14 @@ public class InventoryController implements InventoryApi {
                 .size(resultPage.getSize())
                 .totalElements(resultPage.getTotalElements())
                 .totalPages(resultPage.getTotalPages());
-
         return ResponseEntity.ok(response);
     }
 
     private StocktakeSummary toStocktakeSummary(StocktakeHeader h,
                                                  Map<Long, String> userNameMap,
-                                                 Map<Long, String> warehouseNameMap) {
-        long totalLines = stocktakeQueryService.countTotalLines(h.getId());
-        long countedLines = stocktakeQueryService.countCountedLines(h.getId());
-
+                                                 Map<Long, String> warehouseNameMap,
+                                                 Map<Long, Long> totalLinesMap,
+                                                 Map<Long, Long> countedLinesMap) {
         return new StocktakeSummary()
                 .id(h.getId())
                 .stocktakeNumber(h.getStocktakeNumber())
@@ -354,8 +355,8 @@ public class InventoryController implements InventoryApi {
                 .warehouseName(warehouseNameMap.getOrDefault(h.getWarehouseId(), ""))
                 .targetDescription(h.getTargetDescription())
                 .status(StocktakeStatus.fromValue(h.getStatus()))
-                .totalLines((int) totalLines)
-                .countedLines((int) countedLines)
+                .totalLines(totalLinesMap.getOrDefault(h.getId(), 0L).intValue())
+                .countedLines(countedLinesMap.getOrDefault(h.getId(), 0L).intValue())
                 .startedAt(h.getStartedAt())
                 .startedByName(userNameMap.getOrDefault(h.getStartedBy(), ""))
                 .confirmedAt(h.getConfirmedAt())
