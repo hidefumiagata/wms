@@ -70,19 +70,11 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
-**グループ小計**（`group.subtotals.*`、グルーピングキー: `slipNumber`）
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantity`
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `subtotals.quantity` | 伝票別 数量小計 | グループ内全行の `quantity` を合算 |
-
-**全体合計**（`grandTotals.*`）
-
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.quantity` | 数量総合計 | 全行の `quantity` を合算 |
+**全体合計**（`grandTotals.*`）: `grandTotals.quantity`
 
 ### 2.5. ページブレークルール
 

@@ -61,25 +61,25 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
-**グループ小計**（`group.subtotals.*`、グルーピングキー: `supplierName`）
+**グループ小計**（`group.subtotals.*`）
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `subtotals.plannedQuantityCas` | 仕入先別 予定数(ケース)小計 | グループ内全行の `plannedQuantityCas` を合算 |
-| `subtotals.inspectedQuantityCas` | 仕入先別 検品数(ケース)小計 | グループ内全行の `inspectedQuantityCas` を合算（null行は除外） |
-| `subtotals.diffQuantityCas` | 仕入先別 差異(ケース)小計 | グループ内全行の `diffQuantityCas` を合算（null行は除外） |
-| `subtotals.returnQuantity` | 仕入先別 返品数量小計 | グループ内全行の `returnQuantity` を合算（null行は除外） |
+| 変数名 | 備考 |
+|--------|------|
+| `subtotals.plannedQuantityCas` | |
+| `subtotals.inspectedQuantityCas` | null行は除外 |
+| `subtotals.diffQuantityCas` | null行は除外 |
+| `subtotals.returnQuantity` | null行は除外 |
 
 **全体合計**（`grandTotals.*`）
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.plannedQuantityCas` | 予定数(ケース)合計 | 全行の `plannedQuantityCas` を合算 |
-| `grandTotals.inspectedQuantityCas` | 検品数(ケース)合計 | 全行の `inspectedQuantityCas` を合算（null行は除外） |
-| `grandTotals.diffQuantityCas` | 差異(ケース)合計 | 全行の `diffQuantityCas` を合算（null行は除外） |
-| `grandTotals.returnQuantity` | 返品数量合計 | 全行の `returnQuantity` を合算（null行は除外） |
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.plannedQuantityCas` | |
+| `grandTotals.inspectedQuantityCas` | null行は除外 |
+| `grandTotals.diffQuantityCas` | null行は除外 |
+| `grandTotals.returnQuantity` | null行は除外 |
 
 ### 2.5. ページブレークルール
 

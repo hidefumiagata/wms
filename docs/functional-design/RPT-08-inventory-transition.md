@@ -60,21 +60,11 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
-**グループ小計**（`group.subtotals.*`、グルーピングキー: `movementDate`）
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantityChange`
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `subtotals.quantityChange` | 日次変動数小計 | グループ内全行の `quantityChange` を合算（正負混在） |
-
-**全体合計**（`grandTotals.*`）
-
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.quantityChange` | 期間変動数合計 | 全行の `quantityChange` を合算（正負混在） |
-
-> 表示時、正値には `+` を付加する（例: `+10`）。符号付与はテンプレート側の条件式で行う。
+**全体合計**（`grandTotals.*`）: `grandTotals.quantityChange`
 
 ### 2.5. ページブレークルール
 

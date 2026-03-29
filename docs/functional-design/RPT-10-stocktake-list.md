@@ -59,15 +59,11 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
 **グループ小計**: なし
 
-**全体合計**（`grandTotals.*`）
-
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.lineCount` | 合計行数 | 全行の行数をカウント |
+**全体合計**（`grandTotals.*`）: `grandTotals.lineCount`
 
 ### 2.5. ページブレークルール
 

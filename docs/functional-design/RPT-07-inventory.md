@@ -61,23 +61,11 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
-**グループ小計**（`group.subtotals.*`、グルーピングキー: `productCode`）
+**グループ小計**（`group.subtotals.*`）: `subtotals.quantity`, `subtotals.allocatedQty`, `subtotals.availableQty`
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `subtotals.quantity` | 商品別 在庫数量小計 | グループ内全行の `quantity` を合算 |
-| `subtotals.allocatedQty` | 商品別 引当数量小計 | グループ内全行の `allocatedQty` を合算 |
-| `subtotals.availableQty` | 商品別 有効在庫数小計 | グループ内全行の `availableQty` を合算 |
-
-**全体合計**（`grandTotals.*`）
-
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.quantity` | 在庫数量合計 | 全行の `quantity` を合算 |
-| `grandTotals.allocatedQty` | 引当数量合計 | 全行の `allocatedQty` を合算 |
-| `grandTotals.availableQty` | 有効在庫数合計 | 全行の `availableQty` を合算 |
+**全体合計**（`grandTotals.*`）: `grandTotals.quantity`, `grandTotals.allocatedQty`, `grandTotals.availableQty`
 
 ### 2.5. ページブレークルール
 

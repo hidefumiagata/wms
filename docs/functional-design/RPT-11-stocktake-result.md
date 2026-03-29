@@ -77,27 +77,27 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
-**グループ小計**（`group.subtotals.*`、グルーピングキー: `locationCode`）
+**グループ小計**（`group.subtotals.*`）
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `subtotals.systemQuantity` | ロケーション別 帳簿数小計 | グループ内全行の `systemQuantity` を合算 |
-| `subtotals.actualQuantity` | ロケーション別 実数小計 | グループ内全行の `actualQuantity` を合算（null行は除外） |
-| `subtotals.diffQuantity` | ロケーション別 差異数小計 | グループ内全行の `diffQuantity` を合算（null行は除外） |
+| 変数名 | 備考 |
+|--------|------|
+| `subtotals.systemQuantity` | |
+| `subtotals.actualQuantity` | null行は除外 |
+| `subtotals.diffQuantity` | null行は除外 |
 
 **全体合計**（`grandTotals.*`）
 
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.systemQuantity` | 帳簿数合計 | 全行の `systemQuantity` を合算 |
-| `grandTotals.actualQuantity` | 実数合計 | 全行の `actualQuantity` を合算（null行は除外） |
-| `grandTotals.diffQuantity` | 差異数合計 | 全行の `diffQuantity` を合算（null行は除外） |
-| `grandTotals.surplusTotal` | 過剰（プラス差異）合計 | `diffQuantity > 0` の行の `diffQuantity` を合算 |
-| `grandTotals.shortageTotal` | 不足（マイナス差異）合計 | `diffQuantity < 0` の行の `diffQuantity` の絶対値を合算 |
-| `grandTotals.diffItemCount` | 差異あり明細数 | `diffQuantity != 0` の行数をカウント |
-| `grandTotals.totalItemCount` | 総明細数 | 全行の行数をカウント |
+| 変数名 | 備考 |
+|--------|------|
+| `grandTotals.systemQuantity` | |
+| `grandTotals.actualQuantity` | null行は除外 |
+| `grandTotals.diffQuantity` | null行は除外 |
+| `grandTotals.surplusTotal` | 差異サマリー用: `diffQuantity > 0` の合計 |
+| `grandTotals.shortageTotal` | 差異サマリー用: `diffQuantity < 0` の絶対値合計 |
+| `grandTotals.diffItemCount` | 差異サマリー用: `diffQuantity != 0` の行数 |
+| `grandTotals.totalItemCount` | 差異サマリー用: 全行数 |
 
 ### 2.5. ページブレークルール
 

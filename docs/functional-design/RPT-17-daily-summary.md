@@ -63,23 +63,11 @@
 
 #### 2.4.1. テンプレート変数（集計値）
 
-以下の集計値はJava側（Service層）で事前計算し、テンプレート変数としてThymeleafに渡す。テンプレート内でSpEL集計式（`#aggregates.sum()`等）は使用しない。
+> 設計原則は [_standard-report.md](_standard-report.md) の「集計値のテンプレート変数設計原則」を参照。
 
 **グループ小計**: なし（倉庫ごとのセクションデータは各 `items` 要素が保持）
 
-**全体合計**（`grandTotals.*`）
-
-| 変数名 | 内容 | 計算方法 |
-|--------|------|---------|
-| `grandTotals.inboundCount` | 入荷件数合計 | 全倉庫の `inboundCount` を合算 |
-| `grandTotals.inboundQuantityTotal` | 入荷数量合計 | 全倉庫の `inboundQuantityTotal` を合算 |
-| `grandTotals.outboundCount` | 出荷件数合計 | 全倉庫の `outboundCount` を合算 |
-| `grandTotals.outboundQuantityTotal` | 出荷数量合計 | 全倉庫の `outboundQuantityTotal` を合算 |
-| `grandTotals.returnCount` | 返品件数合計 | 全倉庫の `returnCount` を合算 |
-| `grandTotals.returnQuantityTotal` | 返品数量合計 | 全倉庫の `returnQuantityTotal` を合算 |
-| `grandTotals.inventoryQuantityTotal` | 在庫数量合計 | 全倉庫の `inventoryQuantityTotal` を合算 |
-| `grandTotals.unreceivedCount` | 未入荷件数合計 | 全倉庫の `unreceivedCount` を合算 |
-| `grandTotals.unshippedCount` | 未出荷件数合計 | 全倉庫の `unshippedCount` を合算 |
+**全体合計**（`grandTotals.*`）: `grandTotals.inboundCount`, `grandTotals.inboundQuantityTotal`, `grandTotals.outboundCount`, `grandTotals.outboundQuantityTotal`, `grandTotals.returnCount`, `grandTotals.returnQuantityTotal`, `grandTotals.inventoryQuantityTotal`, `grandTotals.unreceivedCount`, `grandTotals.unshippedCount`
 
 ### 2.5. セクション2: 出荷サマリー
 
