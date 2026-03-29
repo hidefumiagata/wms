@@ -57,7 +57,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
               JOIN outbound_slips os ON osl.outbound_slip_id = os.id
               LEFT JOIN picking_instruction_lines pil ON pil.outbound_slip_line_id = osl.id
             WHERE os.id = :slipId
-            GROUP BY os.slip_number, os.partner_name, os.planned_date,
+            GROUP BY osl.id, os.slip_number, os.partner_name, os.planned_date,
                      osl.product_code, osl.product_name, osl.unit_type,
                      osl.inspected_qty
             ORDER BY osl.product_code ASC

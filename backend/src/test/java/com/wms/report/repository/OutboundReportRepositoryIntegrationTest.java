@@ -287,5 +287,80 @@ class OutboundReportRepositoryIntegrationTest {
             assertThat(((Number) row[6]).intValue()).isEqualTo(15);        // picked_qty = 15 (受注数50ではない)
             assertThat(((Number) row[7]).intValue()).isEqualTo(15);        // inspected_qty = 15
         }
+
+        @Test
+        @DisplayName("同一商品コードの複数出荷明細行が別行として返される（GROUP BY osl.id）")
+        void sameProductCode_multipleLines_notMerged() {
+            // 新しい出荷伝票を作成
+            jdbcTemplate.update("""
+                    INSERT INTO outbound_slips (slip_number, slip_type, warehouse_id, warehouse_code,
+                                                warehouse_name, partner_name, planned_date, status,
+                                                version, created_by, updated_by,
+                                                created_at, updated_at)
+                    VALUES ('OUT-TEST-003', 'NORMAL', 1, 'WH-T01', 'テスト倉庫', 'テスト出荷先C',
+                            '2026-03-17', 'INSPECTING', 0, 1, 1,
+                            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """);
+            Long slipId3 = jdbcTemplate.queryForObject(
+                    "SELECT id FROM outbound_slips WHERE slip_number = 'OUT-TEST-003'", Long.class);
+
+            // 同一商品P-001で2つの明細行（ロット違い等を想定）
+            jdbcTemplate.update("""
+                    INSERT INTO outbound_slip_lines (outbound_slip_id, line_no, product_id, product_code,
+                                                      product_name, unit_type, ordered_qty, inspected_qty,
+                                                      shipped_qty, line_status,
+                                                      created_at, updated_at)
+                    VALUES (?, 1, 1, 'P-001', '商品A', 'CASE', 20, 20,
+                            0, 'INSPECTING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """, slipId3);
+            jdbcTemplate.update("""
+                    INSERT INTO outbound_slip_lines (outbound_slip_id, line_no, product_id, product_code,
+                                                      product_name, unit_type, ordered_qty, inspected_qty,
+                                                      shipped_qty, line_status,
+                                                      created_at, updated_at)
+                    VALUES (?, 2, 1, 'P-001', '商品A', 'CASE', 10, 10,
+                            0, 'INSPECTING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """, slipId3);
+
+            Long oslId3a = jdbcTemplate.queryForObject(
+                    "SELECT id FROM outbound_slip_lines WHERE outbound_slip_id = ? AND line_no = 1",
+                    Long.class, slipId3);
+            Long oslId3b = jdbcTemplate.queryForObject(
+                    "SELECT id FROM outbound_slip_lines WHERE outbound_slip_id = ? AND line_no = 2",
+                    Long.class, slipId3);
+
+            // ピッキング指示
+            jdbcTemplate.update("""
+                    INSERT INTO picking_instructions (id, instruction_number, warehouse_id, area_id,
+                                                       status, created_by, created_at)
+                    VALUES (3, 'PI-TEST-003', 1, 1, 'COMPLETED', 1, CURRENT_TIMESTAMP)
+                    """);
+            jdbcTemplate.update("""
+                    INSERT INTO picking_instruction_lines (picking_instruction_id, line_no,
+                        outbound_slip_line_id, location_id, location_code,
+                        product_id, product_code, product_name, unit_type,
+                        qty_to_pick, qty_picked, line_status,
+                        created_at, updated_at)
+                    VALUES (3, 1, ?, 1, 'LOC-001', 1, 'P-001', '商品A', 'CASE', 20, 20, 'COMPLETED',
+                            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """, oslId3a);
+            jdbcTemplate.update("""
+                    INSERT INTO picking_instruction_lines (picking_instruction_id, line_no,
+                        outbound_slip_line_id, location_id, location_code,
+                        product_id, product_code, product_name, unit_type,
+                        qty_to_pick, qty_picked, line_status,
+                        created_at, updated_at)
+                    VALUES (3, 2, ?, 2, 'LOC-002', 1, 'P-001', '商品A', 'CASE', 10, 10, 'COMPLETED',
+                            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    """, oslId3b);
+
+            List<Object[]> results = outboundReportRepository
+                    .findShippingInspectionReportData(slipId3);
+
+            // 同一商品でも2行が別々に返される（集約されない）
+            assertThat(results).hasSize(2);
+            assertThat(((Number) results.get(0)[6]).intValue()).isEqualTo(20);  // Line 1: picked_qty = 20
+            assertThat(((Number) results.get(1)[6]).intValue()).isEqualTo(10);  // Line 2: picked_qty = 10
+        }
     }
 }
