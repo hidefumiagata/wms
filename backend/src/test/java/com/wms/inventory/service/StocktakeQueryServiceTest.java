@@ -9,6 +9,7 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,6 +22,7 @@ import com.wms.inventory.entity.StocktakeLine;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,15 +59,26 @@ class StocktakeQueryServiceTest {
     }
 
     @Test
-    @DisplayName("フィルタ指定で検索")
-    void search_withFilters() {
+    @DisplayName("フィルタ指定で検索 — 日付変換がJST（+09:00）であること")
+    void search_withFilters_dateConvertedToJst() {
         when(warehouseService.findById(1L)).thenReturn(new Warehouse());
         when(headerRepository.search(eq(1L), eq("STARTED"), any(), any(), any(), any(), any(Pageable.class)))
                 .thenReturn(Page.empty());
 
-        Page<StocktakeHeader> result = service.search(1L, "STARTED",
+        service.search(1L, "STARTED",
                 LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31), null, null, PageRequest.of(0, 20));
-        assertThat(result.getContent()).isEmpty();
+
+        ArgumentCaptor<OffsetDateTime> fromCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        ArgumentCaptor<OffsetDateTime> toCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(headerRepository).search(eq(1L), eq("STARTED"), fromCaptor.capture(), toCaptor.capture(),
+                any(), any(), any(Pageable.class));
+
+        OffsetDateTime from = fromCaptor.getValue();
+        OffsetDateTime to = toCaptor.getValue();
+        assertThat(from.getOffset()).isEqualTo(ZoneOffset.ofHours(9));
+        assertThat(from.toLocalDate()).isEqualTo(LocalDate.of(2026, 3, 1));
+        assertThat(to.getOffset()).isEqualTo(ZoneOffset.ofHours(9));
+        assertThat(to.toLocalDate()).isEqualTo(LocalDate.of(2026, 4, 1));
     }
 
     @Test

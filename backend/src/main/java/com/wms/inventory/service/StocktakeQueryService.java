@@ -16,13 +16,15 @@ import com.wms.shared.util.LikeEscapeUtil;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
 public class StocktakeQueryService {
+
+    private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
     private final StocktakeHeaderRepository stocktakeHeaderRepository;
     private final StocktakeLineRepository stocktakeLineRepository;
@@ -35,9 +37,9 @@ public class StocktakeQueryService {
         warehouseService.findById(warehouseId);
 
         OffsetDateTime from = dateFrom != null
-                ? dateFrom.atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? dateFrom.atStartOfDay(JST).toOffsetDateTime() : null;
         OffsetDateTime to = dateTo != null
-                ? dateTo.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC) : null;
+                ? dateTo.plusDays(1).atStartOfDay(JST).toOffsetDateTime() : null;
 
         String escapedNumber = LikeEscapeUtil.escape(stocktakeNumber);
 

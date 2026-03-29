@@ -34,6 +34,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +48,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -248,8 +250,8 @@ class PickingServiceTest {
         }
 
         @Test
-        @DisplayName("指示番号・日付範囲指定で検索する")
-        void search_withFilters() {
+        @DisplayName("指示番号・日付範囲指定で検索する — 日付変換がJST（+09:00）であること")
+        void search_withFilters_dateConvertedToJst() {
             Warehouse wh = new Warehouse();
             setField(wh, "id", 1L);
             when(warehouseService.findById(1L)).thenReturn(wh);
@@ -261,7 +263,17 @@ class PickingServiceTest {
                     List.of("CREATED"), LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 31),
                     PageRequest.of(0, 20));
 
-            verify(pickingInstructionRepository).search(eq(1L), any(), any(), any(), any(), any(Pageable.class));
+            ArgumentCaptor<OffsetDateTime> fromCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+            ArgumentCaptor<OffsetDateTime> toCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+            verify(pickingInstructionRepository).search(eq(1L), any(), any(),
+                    fromCaptor.capture(), toCaptor.capture(), any(Pageable.class));
+
+            OffsetDateTime from = fromCaptor.getValue();
+            OffsetDateTime to = toCaptor.getValue();
+            assertThat(from.getOffset()).isEqualTo(ZoneOffset.ofHours(9));
+            assertThat(from.toLocalDate()).isEqualTo(LocalDate.of(2026, 3, 1));
+            assertThat(to.getOffset()).isEqualTo(ZoneOffset.ofHours(9));
+            assertThat(to.toLocalDate()).isEqualTo(LocalDate.of(2026, 4, 1));
         }
 
         @Test
