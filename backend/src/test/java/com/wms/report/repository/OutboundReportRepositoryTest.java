@@ -15,15 +15,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * OutboundReportRepository 結合テスト。
+ * OutboundReportRepository JPAスライステスト。
  * H2（PostgreSQLモード）+ Hibernate ddl-auto=create-drop で実行。
  * 特に1つの出荷明細が複数のピッキング指示明細に分割されるケースを検証する。
  */
 @DataJpaTest
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
-@DisplayName("OutboundReportRepository 結合テスト")
-class OutboundReportRepositoryIntegrationTest {
+@DisplayName("OutboundReportRepository")
+class OutboundReportRepositoryTest {
 
     @Autowired
     private OutboundReportRepository outboundReportRepository;
