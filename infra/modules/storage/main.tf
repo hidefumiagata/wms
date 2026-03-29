@@ -7,11 +7,6 @@ resource "azurerm_storage_account" "main" {
   account_kind             = "StorageV2"
   min_tls_version          = "TLS1_2"
 
-  static_website {
-    index_document     = "index.html"
-    error_404_document = "index.html"
-  }
-
   blob_properties {
     cors_rule {
       allowed_headers    = ["*"]
@@ -23,6 +18,12 @@ resource "azurerm_storage_account" "main" {
   }
 
   tags = var.common_tags
+}
+
+resource "azurerm_storage_account_static_website" "main" {
+  storage_account_id = azurerm_storage_account.main.id
+  index_document     = "index.html"
+  error_404_document = "index.html"
 }
 
 resource "azurerm_storage_container" "iffiles" {
