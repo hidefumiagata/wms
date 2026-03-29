@@ -62,3 +62,9 @@ server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
+  # Tomcat RemoteIpValve でプロキシヘッダー（X-Forwarded-For 等）を処理する。
+  # 信頼するプロキシは internal-proxies（デフォルト: RFC 1918 プライベートIP）に限定される。
+  # Azure Container Apps のプロキシIPはプライベートIP帯のためデフォルトで含まれる。
+  # これにより request.getRemoteAddr() がクライアント実IPを返すようになり、
+  # アプリケーション側で X-Forwarded-For を手動パースする必要がなくなる。
+  forward-headers-strategy: native

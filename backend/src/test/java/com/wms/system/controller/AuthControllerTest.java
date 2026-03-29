@@ -132,10 +132,10 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("正常系: X-Forwarded-ForヘッダからクライアントIPを取得する")
-        void login_withXForwardedFor_usesFirstIp() throws Exception {
+        @DisplayName("正常系: remoteAddrをレート制限のキーとして使用する")
+        void login_usesRemoteAddr_forRateLimit() throws Exception {
             User user = createTestUser();
-            when(rateLimiterService.tryConsumeLogin(eq("203.0.113.1"))).thenReturn(true);
+            when(rateLimiterService.tryConsumeLogin(eq("127.0.0.1"))).thenReturn(true);
             when(authService.login(eq("USR001"), eq("password123"), any())).thenReturn(user);
 
             LoginRequest request = new LoginRequest()
@@ -143,12 +143,11 @@ class AuthControllerTest {
                     .password("password123");
 
             mockMvc.perform(post("/api/v1/auth/login")
-                            .header("X-Forwarded-For", "203.0.113.1, 10.0.0.1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
 
-            verify(rateLimiterService).tryConsumeLogin("203.0.113.1");
+            verify(rateLimiterService).tryConsumeLogin("127.0.0.1");
         }
 
         @Test
@@ -178,10 +177,10 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("正常系: X-Forwarded-Forが空文字の場合はremoteAddrを使用する")
-        void login_withBlankXForwardedFor_usesRemoteAddr() throws Exception {
+        @DisplayName("正常系: setRemoteAddrで指定したIPがレート制限キーに使われる")
+        void login_customRemoteAddr_passedToRateLimiter() throws Exception {
             User user = createTestUser();
-            when(rateLimiterService.tryConsumeLogin(anyString())).thenReturn(true);
+            when(rateLimiterService.tryConsumeLogin(eq("203.0.113.50"))).thenReturn(true);
             when(authService.login(eq("USR001"), eq("password123"), any())).thenReturn(user);
 
             LoginRequest request = new LoginRequest()
@@ -189,10 +188,12 @@ class AuthControllerTest {
                     .password("password123");
 
             mockMvc.perform(post("/api/v1/auth/login")
-                            .header("X-Forwarded-For", "  ")
+                            .with(req -> { req.setRemoteAddr("203.0.113.50"); return req; })
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());
+
+            verify(rateLimiterService).tryConsumeLogin("203.0.113.50");
         }
     }
 
