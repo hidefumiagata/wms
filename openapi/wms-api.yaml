@@ -4422,8 +4422,8 @@ paths:
           in: query
           schema:
             type: boolean
-            default: false
-          description: PDF出力時に帳簿数量を非表示
+            default: true
+          description: PDF出力時に帳簿数量を非表示（デフォルト true=非表示）
         - $ref: '#/components/parameters/ReportFormat'
       responses:
         '200':

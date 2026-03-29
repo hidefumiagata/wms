@@ -5,6 +5,7 @@
     <title th:text="${reportTitle}">棚卸リスト</title>
     <th:block th:replace="~{reports/_base-layout :: common-styles('A4', 'landscape')}" />
     <style>
+        /* hideBookQty=true（デフォルト）: 帳簿数量非表示レイアウト */
         .col-no { width: 10mm; }
         .col-location { width: 42mm; }
         .col-area { width: 35mm; }
@@ -14,6 +15,11 @@
         .col-lot { width: 30mm; }
         .col-expiry { width: 25mm; }
         .col-actual { width: 35mm; }
+        .col-system-qty { width: 20mm; }
+
+        /* hideBookQty=false: 帳簿数量表示時の幅調整 */
+        .show-book-qty .col-product-name { width: 45mm; }
+        .show-book-qty .col-actual { width: 25mm; }
 
         /* 実数記入欄: 行高さ8mm（手書き用スペース確保） */
         .input-cell {
@@ -33,7 +39,7 @@
     <div th:if="${items.isEmpty()}" th:replace="~{reports/_base-layout :: no-data-message}" />
 
     <th:block th:if="${!items.isEmpty()}">
-        <table>
+        <table th:classappend="${!hideBookQty} ? 'show-book-qty' : ''">
             <thead>
                 <tr>
                     <th class="col-no">No.</th>
@@ -44,6 +50,7 @@
                     <th class="col-unit">荷姿</th>
                     <th class="col-lot">ロット番号</th>
                     <th class="col-expiry">期限日</th>
+                    <th th:unless="${hideBookQty}" class="col-system-qty">帳簿数量</th>
                     <th class="col-actual">実数（記入欄）</th>
                 </tr>
             </thead>
@@ -58,6 +65,8 @@
                     <td class="text-center" th:text="${item.unitType}">CAS</td>
                     <td th:text="${item.lotNumber != null ? item.lotNumber : '—'}">LOT-001</td>
                     <td class="text-center" th:text="${item.expiryDate != null ? #temporals.format(item.expiryDate, 'yyyy-MM-dd') : '—'}">2026-12-31</td>
+                    <td th:unless="${hideBookQty}" class="text-right"
+                        th:text="${item.systemQuantity != null ? #numbers.formatInteger(item.systemQuantity, 1, 'COMMA') : '—'}">10</td>
                     <td class="input-cell"></td>
                 </tr>
             </tbody>
@@ -65,7 +74,7 @@
                 <tr class="total-row">
                     <td colspan="4"></td>
                     <td>合計行数</td>
-                    <td colspan="3"></td>
+                    <td th:colspan="${hideBookQty} ? 3 : 4"></td>
                     <td class="text-right" th:text="${items.size() + ' 行'}">120 行</td>
                 </tr>
             </tfoot>

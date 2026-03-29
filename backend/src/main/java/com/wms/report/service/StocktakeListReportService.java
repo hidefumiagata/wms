@@ -112,7 +112,7 @@ public class StocktakeListReportService {
                 conditionsSummary,
                 CSV_HEADERS,
                 row -> csvRowMapper((StocktakeListReportItem) row),
-                Map.of("hideBookQty", Boolean.TRUE.equals(hideBookQty))
+                Map.of("hideBookQty", !Boolean.FALSE.equals(hideBookQty))
         );
 
         log.info("RPT-10 棚卸リスト生成完了: 件数={}", items.size());
