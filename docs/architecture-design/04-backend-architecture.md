@@ -1915,6 +1915,10 @@ logging:
 
 ## 11. レポートモジュール設計
 
+> **クロスモジュールアクセス例外**: レポートモジュールは [RULE-SVC-002](../ARCHITECTURE-RULES.md) の例外として、
+> 他モジュールのRepositoryへのread-onlyアクセスが許可されている。
+> 全Serviceに `@Transactional(readOnly = true)` を付与し、書き込み操作は一切行わない。
+
 ### 11.1 パッケージ構成
 
 ```

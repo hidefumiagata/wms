@@ -50,6 +50,11 @@
 - **[RULE-SVC-001]** `@Transactional` はService層にのみ付与する（Controller・Repository層には付与しない）。
 
 - **[RULE-SVC-002]** 他モジュールのRepositoryを直接呼び出すことは禁止。他モジュールへのアクセスは必ずそのモジュールのService経由。Controller間の直接呼び出しも禁止。
+  - **例外: レポートモジュールのread-onlyクロスモジュールアクセス** — レポートモジュール（`report` パッケージ）のServiceは、以下の全条件を満たす場合に限り、他モジュールのRepositoryを直接使用できる:
+    1. `@Transactional(readOnly = true)` が付与されていること
+    2. 読み取り専用の集約クエリ（複数テーブルJOIN等）であること
+    3. 書き込み操作（INSERT/UPDATE/DELETE）を一切含まないこと
+  - **理由**: レポートはread-onlyの集約クエリが必要で、既存Serviceの公開APIでは非効率。レポート固有のJPQL結合クエリを他モジュールのService経由で提供する設計は過剰な結合を生むため。
 
 - **[RULE-SVC-003]** バリデーションはController層（Jakarta Bean Validation）と Service層（ビジネスルール）の2層で実施。
 
