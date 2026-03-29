@@ -102,7 +102,7 @@
 | SC-RPT09-001 | RPT-09 | 正常系: 増加訂正の薄青/減少訂正の薄赤背景 | 中 | 増減両方のデータ存在 | ○ | — |
 | SC-RPT09-002 | RPT-09 | 正常系: 訂正理由への実施者名追記 | 中 | 訂正データ存在 | ○ | — |
 | SC-RPT10-001 | RPT-10 | 正常系: PDF出力時の帳簿数量非表示（hideBookQty=true） | 高 | 棚卸データ存在 | ○ | ○ |
-| SC-RPT10-002 | RPT-10 | 正常系: PDF出力時の帳簿数量表示（hideBookQty=false/未指定） | 高 | 棚卸データ存在 | ○ | — |
+| SC-RPT10-002 | RPT-10 | 正常系: PDF出力時の帳簿数量表示（hideBookQty=false） | 高 | 棚卸データ存在 | ○ | ○ |
 | SC-RPT10-003 | RPT-10 | 正常系: JSON/CSVにsystemQuantityフィールドが含まれること | 中 | 棚卸データ存在 | ○ | — |
 | SC-RPT10-004 | RPT-10 | 正常系: ロケーション区切り太線の確認 | 低 | 複数ロケーションデータ存在 | ○ | — |
 | SC-RPT11-001 | RPT-11 | 正常系: 差異行のピンク背景表示 | 中 | 差異ありデータ存在 | ○ | — |
@@ -377,22 +377,24 @@
 
 ---
 
-### SC-RPT10-002: RPT-10 PDF出力時も帳簿数量が非表示であること（hideBookQty未指定）
+### SC-RPT10-002: RPT-10 PDF出力時の帳簿数量表示（hideBookQty=false）
 
 | 項目 | 内容 |
 |------|------|
 | シナリオID | SC-RPT10-002 |
-| シナリオ名 | 正常系: hideBookQty未指定の場合でも、PDFに帳簿数量が表示されない（設計書の仕様通り） |
-| 前提条件 | WAREHOUSE_MANAGERでログイン済み。棚卸対象データが存在 |
+| シナリオ名 | 正常系: hideBookQty=falseの場合、PDFに帳簿数量カラムが表示される |
+| 前提条件 | WAREHOUSE_MANAGERでログイン済み。棚卸対象データが存在（systemQuantityを持つ） |
 
 **テストステップ:**
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | `GET /api/v1/reports/stocktake-list?...&format=pdf`（hideBookQty省略） | PDFが生成される | PDFバイナリ |
-| 2 | PDFテキスト抽出を確認 | 帳簿数量（systemQuantity）がPDFに含まれないこと | PDFBox |
+| 1 | `GET /api/v1/reports/stocktake-list?...&hideBookQty=false&format=pdf` | PDFが生成される | PDFバイナリ |
+| 2 | PDFテキスト抽出で「帳簿数量」カラムヘッダーの有無を確認 | 「帳簿数量」カラムヘッダーが含まれる | PDFBox |
+| 3 | PDFテキスト抽出で帳簿数量の値を確認 | 各行に `systemQuantity` の値が表示されている | PDFBox |
+| 4 | `GET /api/v1/reports/stocktake-list?...&format=pdf`（hideBookQty省略） | デフォルト `true` のため帳簿数量カラムが表示されないこと | PDFBox |
 
-> **根拠**: RPT-10設計書の特記事項に「帳簿数量（systemQuantity）はPDFに表示しない」「PDFテンプレートでは描画しない」と明記されている。hideBookQtyパラメータの有無にかかわらず、PDFでは常に帳簿数量は非表示である。JSON/CSV出力には `systemQuantity` フィールドが含まれる。
+> **根拠**: `hideBookQty` パラメータのデフォルトは `true`（非表示）。`false` を明示指定した場合のみ帳簿数量カラムをPDFに表示する。JSON/CSV出力では `systemQuantity` フィールドは常に含まれる（パラメータの影響を受けない）。
 
 ---
 
@@ -670,7 +672,7 @@ test.describe('RPT-01: 入荷検品レポート - 共通パターン', () => {
 });
 ```
 
-### SC-RPT10-001 固有テスト例
+### SC-RPT10-001 / SC-RPT10-002 固有テスト例
 
 ```typescript
 test('SC-RPT10-001: hideBookQty=true でPDF帳簿数量非表示', async ({ page }) => {
@@ -684,14 +686,32 @@ test('SC-RPT10-001: hideBookQty=true でPDF帳簿数量非表示', async ({ page
   expect(jsonData.length).toBeGreaterThan(0);
   expect(jsonData[0]).toHaveProperty('systemQuantity');
 
-  // PDF出力: hideBookQty=true
+  // PDF出力: hideBookQty=true（デフォルト）
   const pdfHidden = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
     stocktakeId: '1',
     hideBookQty: 'true',
   });
   // PDFのテキスト抽出で帳簿数量のヘッダーが含まれないことを確認
-  // ※ 実装時はPDFBoxを使用してテキスト抽出し検証する
   expect(pdfHidden.length).toBeGreaterThan(0);
+});
+
+test('SC-RPT10-002: hideBookQty=false でPDF帳簿数量表示', async ({ page }) => {
+  await loginAs(page, 'WAREHOUSE_MANAGER');
+
+  // PDF出力: hideBookQty=false → 帳簿数量カラムが表示される
+  const pdfVisible = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
+    stocktakeId: '1',
+    hideBookQty: 'false',
+  });
+  // PDFのテキスト抽出で帳簿数量のヘッダーが含まれることを確認
+  expect(pdfVisible.length).toBeGreaterThan(0);
+
+  // PDF出力: hideBookQty省略 → デフォルトtrue → 帳簿数量非表示
+  const pdfDefault = await verifyPdfReport(page, '/api/v1/reports/stocktake-list', {
+    stocktakeId: '1',
+  });
+  // 帳簿数量ヘッダーが含まれないことを確認
+  expect(pdfDefault.length).toBeGreaterThan(0);
 });
 ```
 

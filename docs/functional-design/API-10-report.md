@@ -875,7 +875,7 @@ flowchart TD
 | `buildingId` | Long | ※1 | 棟ID（プレビュー用） |
 | `areaId` | Long | — | エリアID（プレビュー用・絞り込み） |
 | `format` | String | — | `json`（デフォルト）/ `csv` / `pdf` |
-| `hideBookQty` | Boolean | — | false | `true`の場合、PDF出力時に帳簿数量カラムを非表示にする（カウント作業の先入観防止） |
+| `hideBookQty` | Boolean | — | PDF出力時の帳簿数量（systemQuantity）カラム表示を制御する。`true`（デフォルト）: 非表示、`false`: 表示。現場カウント時は非表示推奨（先入観防止）。JSON/CSV出力では本パラメータの影響を受けず `systemQuantity` は常に含まれる |
 
 > ※1: `stocktakeId` または `buildingId` のどちらか一方が必須
 
