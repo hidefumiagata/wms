@@ -82,6 +82,9 @@
         <li><a href="#11-monitoring-operations">11. 監視・運用設計書</a></li>
         <li><a href="#12-development-deploy">12. 開発・デプロイ設計書</a></li>
         <li><a href="#13-non-functional-requirements">13. 非機能要件設計書</a></li>
+        <li><a href="#environment-variables">14. 環境変数定義 — Environment Variables Registry</a></li>
+        <li><a href="#error-codes">15. エラーコード定義 — Error Code Registry</a></li>
+        <li><a href="#status-enums">16. ステータス・Enum 定義一覧（SSOT）</a></li>
     </ol>
   </div>
 
@@ -6174,22 +6177,7 @@ startup_probe {
   failure_count_threshold = 30
 }</code></pre>
 <h3>2.5 環境変数一覧</h3>
-<table>
-<thead><tr><th>環境変数</th><th>説明</th><th>Secret</th><th>dev値</th><th>prd値</th></tr></thead>
-<tbody>
-<tr><td><code>SPRING_PROFILES_ACTIVE</code></td><td>Springプロファイル</td><td>No</td><td><code>dev</code></td><td><code>prd</code></td></tr>
-<tr><td><code>LOG_LEVEL</code></td><td>ログレベル</td><td>No</td><td><code>DEBUG</code></td><td><code>INFO</code></td></tr>
-<tr><td><code>SPRING_DATASOURCE_URL</code></td><td>DB接続文字列</td><td>Yes</td><td>(環境依存)</td><td>(環境依存)</td></tr>
-<tr><td><code>SPRING_DATASOURCE_USERNAME</code></td><td>DBユーザー名</td><td>Yes</td><td><code>wmsadmin</code></td><td><code>wmsadmin</code></td></tr>
-<tr><td><code>SPRING_DATASOURCE_PASSWORD</code></td><td>DBパスワード</td><td>Yes</td><td>(Secretsから)</td><td>(Secretsから)</td></tr>
-<tr><td><code>AZURE_STORAGE_ACCOUNT_NAME</code></td><td>Blob Storageアカウント名（Managed Identity方式）</td><td>No</td><td><code>stwmsdev</code></td><td><code>stwmsprdeast</code></td></tr>
-<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン</td><td>No</td><td>Blob Static URL</td><td>Front Door URL</td></tr>
-<tr><td><code>JWT_SECRET</code></td><td>JWTトークン署名鍵</td><td>Yes</td><td>(Secretsから)</td><td>(Secretsから)</td></tr>
-<tr><td><code>ACS_CONNECTION_STRING</code></td><td>Communication Services接続文字列</td><td>Yes</td><td>(環境依存)</td><td>(環境依存)</td></tr>
-<tr><td><code>ACS_SENDER_ADDRESS</code></td><td>メール送信元アドレス</td><td>No</td><td><code>DoNotReply@...</code></td><td><code>DoNotReply@...</code></td></tr>
-<tr><td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td><td>Application Insights接続文字列</td><td>No</td><td>(環境依存)</td><td>(環境依存)</td></tr>
-<tr><td><code>AZURE_FRONTDOOR_ID</code></td><td>Front Door ID（X-Azure-FDIDヘッダー検証用）</td><td>No</td><td>(未設定)</td><td>(Front Door ID)</td></tr>
-<p></tbody><br></table></p>
+<blockquote><strong>SSOT</strong>: 環境変数の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。</blockquote>
 <h3>2.6 Front Door X-Azure-FDID 検証（prd環境）</h3>
 <p>prd環境ではAzure Front Door経由のアクセスのみを受け付けるため、Spring Bootフィルターで <code>X-Azure-FDID</code> ヘッダーを検証する。</p>
 <table>
@@ -10539,388 +10527,9 @@ export function formatDateTimeFull(isoDateTime: string): string {
 <tr><td><strong>システムパラメータ</strong></td><td><code>system_parameters</code> テーブル</td><td>管理画面から変更可</td></tr>
 <tr><td><strong>マスタデータ</strong></td><td>各マスタテーブル</td><td>業務画面から変更可</td></tr>
 <p></tbody><br></table></p>
-<h3>6.2 バックエンド — Enum 定義パターン</h3>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/**
- * 保管条件。
- * DBには文字列値（&quot;AMBIENT&quot; 等）で保存する。
- */
-public enum StorageCondition {
-    AMBIENT(&quot;常温&quot;),
-    REFRIGERATED(&quot;冷蔵&quot;),
-    FROZEN(&quot;冷凍&quot;);
-
-    private final String displayName;
-
-    StorageCondition(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 取引先種別 */
-public enum PartnerType {
-    SUPPLIER(&quot;仕入先&quot;),
-    CUSTOMER(&quot;出荷先&quot;),
-    BOTH(&quot;両方&quot;);
-
-    private final String displayName;
-
-    PartnerType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** ユーザーロール */
-public enum UserRole {
-    SYSTEM_ADMIN(&quot;システム管理者&quot;),
-    WAREHOUSE_MANAGER(&quot;倉庫管理者&quot;),
-    WAREHOUSE_STAFF(&quot;倉庫スタッフ&quot;),
-    VIEWER(&quot;閲覧者&quot;);
-
-    private final String displayName;
-
-    UserRole(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 荷姿 */
-public enum UnitType {
-    CASE(&quot;ケース&quot;),
-    BALL(&quot;ボール&quot;),
-    PIECE(&quot;バラ&quot;);
-
-    private final String displayName;
-
-    UnitType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** エリア種別 */
-public enum AreaType {
-    STOCK(&quot;在庫エリア&quot;),
-    INBOUND(&quot;入荷エリア&quot;),
-    OUTBOUND(&quot;出荷エリア&quot;),
-    RETURN(&quot;返品エリア&quot;);
-
-    private final String displayName;
-
-    AreaType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 入荷伝票ステータス */
-public enum InboundStatus {
-    PLANNED(&quot;入荷予定&quot;),
-    CONFIRMED(&quot;入荷確認済&quot;),
-    INSPECTING(&quot;検品中&quot;),
-    PARTIAL_STORED(&quot;一部入庫&quot;),
-    STORED(&quot;入庫完了&quot;),
-    CANCELLED(&quot;キャンセル&quot;);
-
-    private final String displayName;
-
-    InboundStatus(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 出荷伝票ステータス */
-public enum OutboundStatus {
-    ORDERED(&quot;受注&quot;),
-    PARTIAL_ALLOCATED(&quot;一部引当&quot;),
-    ALLOCATED(&quot;引当完了（ピッキング指示済み）&quot;),
-    PICKING_COMPLETED(&quot;ピッキング完了&quot;),
-    INSPECTING(&quot;出荷検品中&quot;),
-    SHIPPED(&quot;出荷完了&quot;),
-    CANCELLED(&quot;キャンセル&quot;);
-
-    private final String displayName;
-
-    OutboundStatus(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 在庫変動種別 */
-public enum MovementType {
-    INBOUND(&quot;入庫&quot;),
-    OUTBOUND(&quot;出庫&quot;),
-    MOVE_OUT(&quot;移動元出庫&quot;),
-    MOVE_IN(&quot;移動先入庫&quot;),
-    BREAKDOWN_OUT(&quot;ばらし元出庫&quot;),
-    BREAKDOWN_IN(&quot;ばらし先入庫&quot;),
-    CORRECTION(&quot;在庫訂正&quot;),
-    STOCKTAKE_ADJUSTMENT(&quot;棚卸差異調整&quot;),
-    INBOUND_CANCEL(&quot;入荷キャンセル戻し&quot;),
-    RETURN_OUT(&quot;返品出庫&quot;);
-
-    private final String displayName;
-
-    MovementType(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** 棚卸ステータス */
-public enum StocktakeStatus {
-    STARTED(&quot;棚卸中&quot;),
-    CONFIRMED(&quot;確定済&quot;);
-
-    private final String displayName;
-
-    StocktakeStatus(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<pre><code class="lang-java">package com.wms.shared.enums;
-
-/** ばらし指示ステータス */
-public enum UnpackInstructionStatus {
-    INSTRUCTED(&quot;指示済&quot;),
-    COMPLETED(&quot;完了&quot;);
-
-    private final String displayName;
-
-    UnpackInstructionStatus(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayName() { return displayName; }
-}</code></pre>
-<h3>6.3 バックエンド — JPA Enum マッピング</h3>
-<pre><code class="lang-java">// Entity 内での Enum マッピング
-@Enumerated(EnumType.STRING)
-@Column(name = &quot;storage_condition&quot;, nullable = false)
-private StorageCondition storageCondition;</code></pre>
-<h3>6.4 フロントエンド — Enum / 定数定義</h3>
-<pre><code class="lang-typescript">// src/constants/enums.ts
-
-export const StorageCondition = {
-  AMBIENT: 'AMBIENT',
-  REFRIGERATED: 'REFRIGERATED',
-  FROZEN: 'FROZEN',
-} as const
-
-export type StorageCondition =
-  typeof StorageCondition[keyof typeof StorageCondition]
-
-export const StorageConditionLabel: Record&lt;StorageCondition, string&gt; = {
-  AMBIENT: '常温',
-  REFRIGERATED: '冷蔵',
-  FROZEN: '冷凍',
-}
-
-export const PartnerType = {
-  SUPPLIER: 'SUPPLIER',
-  CUSTOMER: 'CUSTOMER',
-  BOTH: 'BOTH',
-} as const
-
-export type PartnerType = typeof PartnerType[keyof typeof PartnerType]
-
-export const PartnerTypeLabel: Record&lt;PartnerType, string&gt; = {
-  SUPPLIER: '仕入先',
-  CUSTOMER: '出荷先',
-  BOTH: '両方',
-}
-
-export const UserRole = {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  WAREHOUSE_MANAGER: 'WAREHOUSE_MANAGER',
-  WAREHOUSE_STAFF: 'WAREHOUSE_STAFF',
-  VIEWER: 'VIEWER',
-} as const
-
-export type UserRole = typeof UserRole[keyof typeof UserRole]
-
-export const UserRoleLabel: Record&lt;UserRole, string&gt; = {
-  SYSTEM_ADMIN: 'システム管理者',
-  WAREHOUSE_MANAGER: '倉庫管理者',
-  WAREHOUSE_STAFF: '倉庫スタッフ',
-  VIEWER: '閲覧者',
-}
-
-export const UnitType = {
-  CASE: 'CASE',
-  BALL: 'BALL',
-  PIECE: 'PIECE',
-} as const
-
-export type UnitType = typeof UnitType[keyof typeof UnitType]
-
-export const UnitTypeLabel: Record&lt;UnitType, string&gt; = {
-  CASE: 'ケース',
-  BALL: 'ボール',
-  PIECE: 'バラ',
-}
-
-export const AreaType = {
-  STOCK: 'STOCK',
-  INBOUND: 'INBOUND',
-  OUTBOUND: 'OUTBOUND',
-  RETURN: 'RETURN',
-} as const
-
-export type AreaType = typeof AreaType[keyof typeof AreaType]
-
-export const AreaTypeLabel: Record&lt;AreaType, string&gt; = {
-  STOCK: '在庫エリア',
-  INBOUND: '入荷エリア',
-  OUTBOUND: '出荷エリア',
-  RETURN: '返品エリア',
-}
-
-export const InboundStatus = {
-  PLANNED: 'PLANNED',
-  CONFIRMED: 'CONFIRMED',
-  INSPECTING: 'INSPECTING',
-  PARTIAL_STORED: 'PARTIAL_STORED',
-  STORED: 'STORED',
-  CANCELLED: 'CANCELLED',
-} as const
-
-export type InboundStatus =
-  typeof InboundStatus[keyof typeof InboundStatus]
-
-export const InboundStatusLabel: Record&lt;InboundStatus, string&gt; = {
-  PLANNED: '入荷予定',
-  CONFIRMED: '入荷確認済',
-  INSPECTING: '検品中',
-  PARTIAL_STORED: '一部入庫',
-  STORED: '入庫完了',
-  CANCELLED: 'キャンセル',
-}
-
-export const OutboundStatus = {
-  ORDERED: 'ORDERED',
-  PARTIAL_ALLOCATED: 'PARTIAL_ALLOCATED',
-  ALLOCATED: 'ALLOCATED',
-  PICKING_COMPLETED: 'PICKING_COMPLETED',
-  INSPECTING: 'INSPECTING',
-  SHIPPED: 'SHIPPED',
-  CANCELLED: 'CANCELLED',
-} as const
-
-export type OutboundStatus =
-  typeof OutboundStatus[keyof typeof OutboundStatus]
-
-export const OutboundStatusLabel: Record&lt;OutboundStatus, string&gt; = {
-  ORDERED: '受注',
-  PARTIAL_ALLOCATED: '一部引当',
-  ALLOCATED: '引当完了（ピッキング指示済み）',
-  PICKING_COMPLETED: 'ピッキング完了',
-  INSPECTING: '出荷検品中',
-  SHIPPED: '出荷完了',
-  CANCELLED: 'キャンセル',
-}
-
-export const MovementType = {
-  INBOUND: 'INBOUND',
-  OUTBOUND: 'OUTBOUND',
-  MOVE_OUT: 'MOVE_OUT',
-  MOVE_IN: 'MOVE_IN',
-  BREAKDOWN_OUT: 'BREAKDOWN_OUT',
-  BREAKDOWN_IN: 'BREAKDOWN_IN',
-  CORRECTION: 'CORRECTION',
-  STOCKTAKE_ADJUSTMENT: 'STOCKTAKE_ADJUSTMENT',
-  INBOUND_CANCEL: 'INBOUND_CANCEL',
-  RETURN_OUT: 'RETURN_OUT',
-} as const
-
-export type MovementType =
-  typeof MovementType[keyof typeof MovementType]
-
-export const MovementTypeLabel: Record&lt;MovementType, string&gt; = {
-  INBOUND: '入庫',
-  OUTBOUND: '出庫',
-  MOVE_OUT: '移動元出庫',
-  MOVE_IN: '移動先入庫',
-  BREAKDOWN_OUT: 'ばらし元出庫',
-  BREAKDOWN_IN: 'ばらし先入庫',
-  CORRECTION: '在庫訂正',
-  STOCKTAKE_ADJUSTMENT: '棚卸差異調整',
-  INBOUND_CANCEL: '入荷キャンセル戻し',
-  RETURN_OUT: '返品出庫',
-}
-
-export const StocktakeStatus = {
-  STARTED: 'STARTED',
-  CONFIRMED: 'CONFIRMED',
-} as const
-
-export type StocktakeStatus =
-  typeof StocktakeStatus[keyof typeof StocktakeStatus]
-
-export const StocktakeStatusLabel: Record&lt;StocktakeStatus, string&gt; = {
-  STARTED: '棚卸中',
-  CONFIRMED: '確定済',
-}
-
-export const UnpackInstructionStatus = {
-  INSTRUCTED: 'INSTRUCTED',
-  COMPLETED: 'COMPLETED',
-} as const
-
-export type UnpackInstructionStatus =
-  typeof UnpackInstructionStatus[keyof typeof UnpackInstructionStatus]
-
-export const UnpackInstructionStatusLabel: Record&lt;UnpackInstructionStatus, string&gt; = {
-  INSTRUCTED: '指示済',
-  COMPLETED: '完了',
-}</code></pre>
-<h3>6.5 フロントエンド — Enum をセレクトボックスに変換するヘルパー</h3>
-<pre><code class="lang-typescript">// src/utils/enum-helper.ts
-
-export interface SelectOption {
-  value: string
-  label: string
-}
-
-/**
- * ラベルマップを Element Plus の el-select 用オプション配列に変換する。
- */
-export function toSelectOptions(
-  labelMap: Record&lt;string, string&gt;,
-): SelectOption[] {
-  return Object.entries(labelMap).map(([value, label]) =&gt; ({
-    value,
-    label,
-  }))
-}
-
-// 使用例:
-// const storageOptions = toSelectOptions(StorageConditionLabel)
-// → [{ value: 'AMBIENT', label: '常温' }, ...]</code></pre>
+<h3>6.2 Enum 定義（Java / TypeScript）</h3>
+<blockquote><strong>SSOT</strong>: 全 Enum 定義は <a href="./status-enums.md" target="_blank">status-enums.md</a> に集約されている。
+<p>Java Enum・TypeScript 定数・JPA マッピングパターン・セレクトボックスヘルパーは同ファイルを参照。</blockquote></p>
 <hr>
 <h2>7. 共通メッセージ管理設計</h2>
 <h3>7.1 バックエンド — メッセージ管理</h3>
@@ -14216,14 +13825,8 @@ volumes:
 <tr><td><strong>シークレット</strong></td><td>GitHub Actions Secrets</td><td>ACR認証情報・Azure認証情報等</td></tr>
 <p></tbody><br></table></p>
 <h4>ローカル環境変数テンプレート</h4>
-<p>バックエンド（<code>backend/.env.example</code>）:</p>
-<pre><code class="lang-properties">SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/wms
-SPRING_DATASOURCE_USERNAME=wms
-SPRING_DATASOURCE_PASSWORD=wms
-JWT_SECRET=local-dev-secret-key-minimum-32-characters-long
-LOG_LEVEL=DEBUG</code></pre>
-<p>フロントエンド（<code>frontend/.env.example</code>）:</p>
-<pre><code class="lang-properties">VITE_API_BASE_URL=http://localhost:8080</code></pre>
+<blockquote>環境変数名とデフォルト値の一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。
+<p>ローカル開発用テンプレートはセクション1（アプリケーション環境変数）およびセクション3（ローカル開発環境変数）を参照。</blockquote></p>
 <h3>1.5 初回セットアップ手順</h3>
 <pre><code class="lang-bash"># 1. リポジトリクローン
 git clone https://github.com/&lt;org&gt;/wms.git
@@ -14362,34 +13965,11 @@ docs(api): API設計書を更新 / Update API design document</code></pre>
 <tr><td><code>terraform.yml</code></td><td><code>infra/</code> 配下の変更</td><td>Terraform plan/apply</td><td>2〜5分</td></tr>
 <p></tbody><br></table></p>
 <h3>3.3 GitHub Actions Secrets</h3>
-<table>
-<thead><tr><th>Secret名</th><th>用途</th><th>設定タイミング</th></tr></thead>
-<tbody>
-<tr><td><code>AZURE_CREDENTIALS</code></td><td>Azure サービスプリンシパル（JSON）</td><td>初回構築時。※OIDC Federated Credential（Workload Identity Federation）への移行は見送り。ShowCaseプロジェクトのため環境の作成・破棄が頻繁であり、Entra ID側のFederated Credential維持コストに見合わない</td></tr>
-<tr><td><code>ACR_LOGIN_SERVER</code></td><td>ACRのログインサーバーURL</td><td>初回構築時</td></tr>
-<tr><td><code>ACR_USERNAME</code></td><td>ACR管理者ユーザー名</td><td>初回構築時</td></tr>
-<tr><td><code>ACR_PASSWORD</code></td><td>ACR管理者パスワード</td><td>初回構築時</td></tr>
-<tr><td><code>ARM_CLIENT_ID</code></td><td>Terraform用SP クライアントID</td><td>初回構築時</td></tr>
-<tr><td><code>ARM_CLIENT_SECRET</code></td><td>Terraform用SP シークレット</td><td>初回構築時</td></tr>
-<tr><td><code>ARM_SUBSCRIPTION_ID</code></td><td>Terraform対象サブスクリプションID</td><td>初回構築時</td></tr>
-<tr><td><code>ARM_TENANT_ID</code></td><td>Azure AD テナントID</td><td>初回構築時</td></tr>
-<tr><td><code>DEV_DB_PASSWORD</code></td><td>dev環境のDB接続パスワード</td><td>dev環境構築時</td></tr>
-<tr><td><code>PRD_DB_PASSWORD</code></td><td>prd環境のDB接続パスワード</td><td>prd環境構築時</td></tr>
-<tr><td><code>JWT_SECRET_DEV</code></td><td>dev環境のJWTシークレット</td><td>dev環境構築時</td></tr>
-<tr><td><code>JWT_SECRET_PRD</code></td><td>prd環境のJWTシークレット</td><td>prd環境構築時</td></tr>
-<p></tbody><br></table></p>
+<blockquote><strong>SSOT</strong>: GitHub Actions Secrets の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> セクション4を参照。</blockquote>
 <blockquote><strong><code>AZURE_CREDENTIALS</code> と <code>ARM_*</code> の使い分け:</strong>
 <ul><li style="margin-left:0px"><strong>CI/CD（cd-dev.yml / cd-prd.yml）</strong>: <code>AZURE_CREDENTIALS</code>（Azure CLI認証用のJSON一括形式）</li><li style="margin-left:0px"><strong>Terraform（terraform.yml）</strong>: <code>ARM_CLIENT_ID</code> / <code>ARM_CLIENT_SECRET</code> / <code>ARM_SUBSCRIPTION_ID</code> / <code>ARM_TENANT_ID</code>（Terraform AzureRM providerが要求する個別4変数）</blockquote></li></ul>
 <h3>3.3a GitHub Actions Variables</h3>
-<p>GitHub Actions の Repository Variables（<code>vars.*</code>）で管理する非機密値の一覧。</p>
-<table>
-<thead><tr><th>Variable名</th><th>用途</th><th>設定タイミング</th></tr></thead>
-<tbody>
-<tr><td><code>CONTAINER_APPS_DOMAIN</code></td><td>dev Container Appsドメイン</td><td>Terraform apply後に手動設定</td></tr>
-<tr><td><code>PRD_API_BASE_URL</code></td><td>prd APIベースURL</td><td>Terraform apply後に手動設定</td></tr>
-<tr><td><code>PRD_FRONTEND_URL</code></td><td>prd フロントエンドURL</td><td>Terraform apply後に手動設定</td></tr>
-<p></tbody><br></table></p>
-<blockquote>これらの値はTerraform outputから取得し、GitHub リポジトリの Settings → Secrets and variables → Actions → Variables タブで設定する。Terraform Destroy/Apply でインフラを再作成した場合は値の再設定が必要。</blockquote>
+<blockquote><strong>SSOT</strong>: GitHub Actions Variables の一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> セクション5を参照。</blockquote>
 <h3>3.4 CI ワークフロー詳細（ci.yml）</h3>
 <pre><code class="lang-yaml"># .github/workflows/ci.yml
 name: CI
@@ -15674,6 +15254,674 @@ az acr credential show --name acrwms
 <tr><td>6</td><td>バッチ処理の30分制限内に全ステップが完了するか</td><td>1.1, 9.2</td><td>実装時に検証</td></tr>
 <tr><td>7</td><td>PostgreSQL B1ms のスペックで要件を満たせるか</td><td>3.2, 9.2</td><td>負荷テストで検証</td></tr>
 <p></tbody><br></table></p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="environment-variables">
+<h1>環境変数定義 — Environment Variables Registry</h1>
+<blockquote>本ファイルは全環境変数名のSSOT（Single Source of Truth）である。
+<p>他の設計書からは本ファイルへの参照リンクのみとし、変数名・値の複製を禁止する。</blockquote></p>
+<h2>1. アプリケーション環境変数</h2>
+<p>Container Apps に設定する環境変数。バックエンド Spring Boot アプリケーションが参照する。</p>
+<table>
+<thead><tr><th>環境変数</th><th>説明</th><th>Secret</th><th>application.yml プロパティ</th><th>dev デフォルト</th><th>prd デフォルト</th></tr></thead>
+<tbody>
+<tr><td><code>SPRING_PROFILES_ACTIVE</code></td><td>Spring プロファイル</td><td>No</td><td><code>spring.profiles.active</code></td><td><code>dev</code></td><td><code>prd</code></td></tr>
+<tr><td><code>LOG_LEVEL</code></td><td>ログレベル</td><td>No</td><td><code>logging.level.root</code></td><td><code>DEBUG</code></td><td><code>INFO</code></td></tr>
+<tr><td><code>SPRING_DATASOURCE_URL</code></td><td>DB接続文字列</td><td>Yes</td><td><code>spring.datasource.url</code></td><td><code>jdbc:postgresql://localhost:5432/wms</code></td><td>(環境依存)</td></tr>
+<tr><td><code>SPRING_DATASOURCE_USERNAME</code></td><td>DBユーザー名</td><td>Yes</td><td><code>spring.datasource.username</code></td><td><code>wms</code></td><td><code>wmsadmin</code></td></tr>
+<tr><td><code>SPRING_DATASOURCE_PASSWORD</code></td><td>DBパスワード</td><td>Yes</td><td><code>spring.datasource.password</code></td><td><code>wms</code></td><td>(Secrets)</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>JWTトークン署名鍵</td><td>Yes</td><td><code>wms.jwt.secret</code></td><td><code>local-dev-secret-key-minimum-32-characters-long</code></td><td>(Secrets)</td></tr>
+<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン</td><td>No</td><td><code>wms.cors.allowed-origins</code></td><td><code>http://localhost:5173</code></td><td>Front Door URL</td></tr>
+<tr><td><code>AZURE_STORAGE_ACCOUNT_NAME</code></td><td>Blob Storageアカウント名（Managed Identity）</td><td>No</td><td><code>wms.storage.account-name</code></td><td><code>devstorageaccount</code></td><td><code>stwmsprdeast</code></td></tr>
+<tr><td><code>ACS_CONNECTION_STRING</code></td><td>Azure Communication Services接続文字列</td><td>Yes</td><td><code>wms.acs.connection-string</code></td><td>(環境依存)</td><td>(環境依存)</td></tr>
+<tr><td><code>ACS_SENDER_ADDRESS</code></td><td>メール送信元アドレス</td><td>No</td><td><code>wms.acs.sender-address</code></td><td><code>DoNotReply@...</code></td><td><code>DoNotReply@...</code></td></tr>
+<tr><td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td><td>Application Insights接続文字列</td><td>No</td><td>(自動検出)</td><td>(環境依存)</td><td>(環境依存)</td></tr>
+<tr><td><code>AZURE_FRONTDOOR_ID</code></td><td>Front Door ID（X-Azure-FDIDヘッダー検証用）</td><td>No</td><td><code>wms.frontdoor.id</code></td><td>(未設定)</td><td>(Front Door ID)</td></tr>
+<p></tbody><br></table></p>
+<h2>2. フロントエンド環境変数</h2>
+<p>Vite ビルド時に埋め込まれる環境変数。</p>
+<table>
+<thead><tr><th>環境変数</th><th>説明</th><th>ビルド時注入</th></tr></thead>
+<tbody>
+<tr><td><code>VITE_API_BASE_URL</code></td><td>APIベースURL</td><td>Yes</td></tr>
+<p></tbody><br></table></p>
+<h2>3. ローカル開発環境変数</h2>
+<p>Docker Compose（PostgreSQL）用。</p>
+<table>
+<thead><tr><th>環境変数</th><th>説明</th><th>デフォルト値</th></tr></thead>
+<tbody>
+<tr><td><code>POSTGRES_DB</code></td><td>データベース名</td><td><code>wms</code></td></tr>
+<tr><td><code>POSTGRES_USER</code></td><td>DBユーザー名</td><td><code>wms</code></td></tr>
+<tr><td><code>POSTGRES_PASSWORD</code></td><td>DBパスワード</td><td><code>wms</code></td></tr>
+<tr><td><code>TZ</code></td><td>タイムゾーン</td><td><code>Asia/Tokyo</code></td></tr>
+<p></tbody><br></table></p>
+<h2>4. GitHub Actions Secrets</h2>
+<p>CI/CD パイプラインで使用するシークレット。</p>
+<table>
+<thead><tr><th>Secret名</th><th>用途</th><th>設定タイミング</th></tr></thead>
+<tbody>
+<tr><td><code>AZURE_CREDENTIALS</code></td><td>Azure サービスプリンシパル（JSON）</td><td>初回構築時</td></tr>
+<tr><td><code>ACR_LOGIN_SERVER</code></td><td>ACR ログインサーバーURL</td><td>初回構築時</td></tr>
+<tr><td><code>ACR_USERNAME</code></td><td>ACR 管理者ユーザー名</td><td>初回構築時</td></tr>
+<tr><td><code>ACR_PASSWORD</code></td><td>ACR 管理者パスワード</td><td>初回構築時</td></tr>
+<tr><td><code>ARM_CLIENT_ID</code></td><td>Terraform用SP クライアントID</td><td>初回構築時</td></tr>
+<tr><td><code>ARM_CLIENT_SECRET</code></td><td>Terraform用SP シークレット</td><td>初回構築時</td></tr>
+<tr><td><code>ARM_SUBSCRIPTION_ID</code></td><td>Terraform対象サブスクリプションID</td><td>初回構築時</td></tr>
+<tr><td><code>ARM_TENANT_ID</code></td><td>Azure AD テナントID</td><td>初回構築時</td></tr>
+<tr><td><code>DEV_DB_PASSWORD</code></td><td>dev環境 DB接続パスワード</td><td>dev環境構築時</td></tr>
+<tr><td><code>PRD_DB_PASSWORD</code></td><td>prd環境 DB接続パスワード</td><td>prd環境構築時</td></tr>
+<tr><td><code>JWT_SECRET_DEV</code></td><td>dev環境 JWTシークレット</td><td>dev環境構築時</td></tr>
+<tr><td><code>JWT_SECRET_PRD</code></td><td>prd環境 JWTシークレット</td><td>prd環境構築時</td></tr>
+<p></tbody><br></table></p>
+<h2>5. GitHub Actions Variables</h2>
+<p>Repository Variables（非機密値）。</p>
+<table>
+<thead><tr><th>Variable名</th><th>用途</th><th>設定タイミング</th></tr></thead>
+<tbody>
+<tr><td><code>CONTAINER_APPS_DOMAIN</code></td><td>dev Container Appsドメイン</td><td>Terraform apply後</td></tr>
+<tr><td><code>PRD_API_BASE_URL</code></td><td>prd APIベースURL</td><td>Terraform apply後</td></tr>
+<tr><td><code>PRD_FRONTEND_URL</code></td><td>prd フロントエンドURL</td><td>Terraform apply後</td></tr>
+<p></tbody><br></table></p>
+<blockquote><code>AZURE_CREDENTIALS</code> と <code>ARM_*</code> の使い分け: CI/CD（cd-dev.yml / cd-prd.yml）は <code>AZURE_CREDENTIALS</code>（JSON一括形式）、Terraform（terraform.yml）は <code>ARM_*</code>（個別4変数）を使用。</blockquote>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="error-codes">
+<h1>エラーコード定義 — Error Code Registry</h1>
+<blockquote><strong>SSOT</strong>: このファイルは全エラーコード定義の単一情報源（SSOT）です。
+<p>例外クラス階層・GlobalExceptionHandlerマッピングについては <a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照してください。</blockquote></p>
+<hr>
+<h2>1. エラーコード体系</h2>
+<p><strong>命名規則</strong>: <code>{RESOURCE}_{ERROR_TYPE}</code> または <code>{ERROR_TYPE}</code>（リソース非依存の場合）</p>
+<p>エラーコードはServiceレイヤーの例外スロー時に文字列リテラルで指定します（定数クラスは設けません）。</p>
+<hr>
+<h2>2. 共通エラーコード</h2>
+<p>全モジュールまたは複数モジュールにまたがって使用されるエラーコードです。</p>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th><th>使用モジュール</th></tr></thead>
+<tbody>
+<tr><td><code>VALIDATION_ERROR</code></td><td>400</td><td>入力バリデーションエラー</td><td>全モジュール</td></tr>
+<tr><td><code>UNAUTHORIZED</code></td><td>401</td><td>認証エラー</td><td>全モジュール</td></tr>
+<tr><td><code>FORBIDDEN</code></td><td>403</td><td>権限不足</td><td>全モジュール</td></tr>
+<tr><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td><td>409</td><td>楽観的ロック競合</td><td>マスタ管理系</td></tr>
+<tr><td><code>DUPLICATE_CODE</code></td><td>409</td><td>コード重複</td><td>マスタ管理系</td></tr>
+<tr><td><code>INVALID_SORT_FIELD</code></td><td>400</td><td>不正なソートフィールド</td><td>一覧取得API</td></tr>
+<tr><td><code>INTERNAL_SERVER_ERROR</code></td><td>500</td><td>サーバー内部エラー</td><td>全モジュール</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>3. モジュール別エラーコード</h2>
+<h3>3.1 認証 (auth)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>INVALID_CREDENTIALS</code></td><td>401</td><td>認証失敗（ユーザー不在またはパスワード不一致）</td></tr>
+<tr><td><code>REFRESH_TOKEN_EXPIRED</code></td><td>401</td><td>リフレッシュトークン期限切れ</td></tr>
+<tr><td><code>TOKEN_EXPIRED</code></td><td>401</td><td>アクセストークン期限切れ</td></tr>
+<tr><td><code>INVALID_TOKEN</code></td><td>401</td><td>トークン不正</td></tr>
+<tr><td><code>SAME_PASSWORD</code></td><td>422</td><td>新旧パスワード同一</td></tr>
+<tr><td><code>RATE_LIMIT_EXCEEDED</code></td><td>429</td><td>レート制限超過</td></tr>
+<tr><td><code>ACCOUNT_INACTIVE</code></td><td>403</td><td>アカウント無効</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.2 施設管理 (master-facility)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>WAREHOUSE_NOT_FOUND</code></td><td>404</td><td>倉庫が見つからない</td></tr>
+<tr><td><code>BUILDING_NOT_FOUND</code></td><td>404</td><td>棟が見つからない</td></tr>
+<tr><td><code>AREA_NOT_FOUND</code></td><td>404</td><td>エリアが見つからない</td></tr>
+<tr><td><code>LOCATION_NOT_FOUND</code></td><td>404</td><td>ロケーションが見つからない</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_HAS_CHILDREN</code></td><td>422</td><td>子リソースが存在するため無効化不可</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_HAS_INVENTORY</code></td><td>422</td><td>在庫が存在するため無効化不可</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS</code></td><td>422</td><td>棚卸中のため無効化不可</td></tr>
+<tr><td><code>AREA_LOCATION_LIMIT_EXCEEDED</code></td><td>422</td><td>入荷/出荷/返品エリアのロケーション上限超過</td></tr>
+<tr><td><code>INVALID_PARAMETER</code></td><td>400</td><td>クエリパラメータ不正</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.3 取引先管理 (master-partner)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>PARTNER_NOT_FOUND</code></td><td>404</td><td>取引先が見つからない</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code></td><td>422</td><td>アクティブな入荷があるため無効化不可</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code></td><td>422</td><td>アクティブな出荷があるため無効化不可</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.4 商品管理 (master-product)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>PRODUCT_NOT_FOUND</code></td><td>404</td><td>商品が見つからない</td></tr>
+<tr><td><code>PRODUCT_INACTIVE</code></td><td>422</td><td>商品が無効状態</td></tr>
+<tr><td><code>CANNOT_CHANGE_LOT_MANAGE_FLAG</code></td><td>422</td><td>ロット管理フラグ変更不可</td></tr>
+<tr><td><code>CANNOT_CHANGE_EXPIRY_MANAGE_FLAG</code></td><td>422</td><td>賞味期限管理フラグ変更不可</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.5 ユーザー管理 (master-user)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>USER_NOT_FOUND</code></td><td>404</td><td>ユーザーが見つからない</td></tr>
+<tr><td><code>CANNOT_CHANGE_SELF_ROLE</code></td><td>422</td><td>自身のロール変更不可</td></tr>
+<tr><td><code>CANNOT_DEACTIVATE_SELF</code></td><td>422</td><td>自身の無効化不可</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.6 入荷管理 (inbound)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>INBOUND_SLIP_NOT_FOUND</code></td><td>404</td><td>入荷伝票が見つからない</td></tr>
+<tr><td><code>INBOUND_LINE_NOT_FOUND</code></td><td>404</td><td>入荷明細が見つからない</td></tr>
+<tr><td><code>INBOUND_INVALID_STATUS</code></td><td>409</td><td>入荷ステータス不正</td></tr>
+<tr><td><code>INBOUND_PARTNER_NOT_SUPPLIER</code></td><td>422</td><td>取引先が仕入先でない</td></tr>
+<tr><td><code>INBOUND_PARTNER_REQUIRED</code></td><td>422</td><td>仕入先IDが必要</td></tr>
+<tr><td><code>INBOUND_LINE_ALREADY_STORED</code></td><td>422</td><td>入荷明細は入庫済み</td></tr>
+<tr><td><code>INBOUND_LOCATION_AREA_MISMATCH</code></td><td>422</td><td>入荷エリア外のロケーション</td></tr>
+<tr><td><code>INBOUND_CANCEL</code></td><td>409</td><td>入荷キャンセル</td></tr>
+<tr><td><code>DUPLICATE_LINE_IN_REQUEST</code></td><td>422</td><td>リクエスト内に重複行</td></tr>
+<tr><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>422</td><td>同一商品の重複行</td></tr>
+<tr><td><code>EXPIRY_DATE_EXPIRED</code></td><td>422</td><td>賞味期限切れ</td></tr>
+<tr><td><code>EXPIRY_DATE_REQUIRED</code></td><td>422</td><td>賞味期限が必要</td></tr>
+<tr><td><code>LOT_NUMBER_REQUIRED</code></td><td>422</td><td>ロット番号が必要</td></tr>
+<tr><td><code>PLANNED_DATE_TOO_EARLY</code></td><td>422</td><td>予定日が営業日より前</td></tr>
+<tr><td><code>LOCATION_PRODUCT_MISMATCH</code></td><td>422</td><td>ロケーションに異なる商品が存在</td></tr>
+<tr><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>422</td><td>棚卸中ロケーション</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.7 在庫管理 (inventory)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>INVENTORY_NOT_FOUND</code></td><td>404</td><td>在庫が見つからない</td></tr>
+<tr><td><code>INVENTORY_INSUFFICIENT</code></td><td>422</td><td>在庫不足</td></tr>
+<tr><td><code>INVENTORY_CAPACITY_EXCEEDED</code></td><td>422</td><td>ロケーション容量超過</td></tr>
+<tr><td><code>INVENTORY_STOCKTAKE_NOT_ALL_COUNTED</code></td><td>422</td><td>棚卸未完了項目あり</td></tr>
+<tr><td><code>STOCKTAKE_NOT_FOUND</code></td><td>404</td><td>棚卸が見つからない</td></tr>
+<tr><td><code>STOCKTAKE_LINE_NOT_FOUND</code></td><td>404</td><td>棚卸明細が見つからない</td></tr>
+<tr><td><code>STOCKTAKE_INVALID_STATUS</code></td><td>409</td><td>棚卸ステータス不正</td></tr>
+<tr><td><code>CORRECTION_BELOW_ALLOCATED</code></td><td>422</td><td>訂正数量が引当数量未満</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.8 出荷管理 (outbound)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>OUTBOUND_SLIP_NOT_FOUND</code></td><td>404</td><td>出荷伝票が見つからない</td></tr>
+<tr><td><code>OUTBOUND_INVALID_STATUS</code></td><td>409</td><td>出荷ステータス不正</td></tr>
+<tr><td><code>OUTBOUND_PARTNER_NOT_CUSTOMER</code></td><td>422</td><td>取引先が出荷先でない</td></tr>
+<tr><td><code>OUTBOUND_PARTNER_REQUIRED</code></td><td>422</td><td>出荷先IDが必要</td></tr>
+<tr><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td><td>422</td><td>商品が出荷停止</td></tr>
+<tr><td><code>PICKING_NOT_FOUND</code></td><td>404</td><td>ピッキング指示が見つからない</td></tr>
+<tr><td><code>UNPACK_NOT_COMPLETED</code></td><td>422</td><td>ばらし指示未完了</td></tr>
+<tr><td><code>ALLOCATION_INSUFFICIENT</code></td><td>422</td><td>引当不足</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.9 バッチ処理 (batch)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>BATCH_ALREADY_RUNNING</code></td><td>409</td><td>バッチ実行中</td></tr>
+<tr><td><code>BATCH_EXECUTION_NOT_FOUND</code></td><td>404</td><td>バッチ実行が見つからない</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.10 システムパラメータ (system-parameters)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>PARAM_NOT_FOUND</code></td><td>404</td><td>パラメータが見つからない</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.11 在庫引当 (allocation)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>INVALID_STATUS</code></td><td>409</td><td>引当不可ステータス</td></tr>
+<tr><td><code>ALREADY_COMPLETED</code></td><td>422</td><td>ばらし指示完了済み</td></tr>
+<tr><td><code>BREAKDOWN_INSTRUCTION_NOT_FOUND</code></td><td>404</td><td>ばらし指示が見つからない</td></tr>
+<tr><td><code>RELEASE_NOT_ALLOWED</code></td><td>422</td><td>引当解除不可（ピッキング指示作成済み）</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.12 返品管理 (returns)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>EXCESS_QUANTITY</code></td><td>422</td><td>返品数量超過</td></tr>
+<tr><td><code>RETURN_ALLOCATED_INVENTORY</code></td><td>422</td><td>引当済み在庫は返品不可</td></tr>
+<tr><td><code>RETURN_INSUFFICIENT_QUANTITY</code></td><td>422</td><td>返品数量が在庫数量超過</td></tr>
+<tr><td><code>RETURN_STOCKTAKE_LOCKED</code></td><td>422</td><td>棚卸中ロケーションは返品不可</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>4. エラーレスポンス形式</h2>
+<p>エラーレスポンスのJSON形式・例外クラス階層・GlobalExceptionHandlerマッピングの詳細については、<a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照してください。</p>
+</div>
+
+<hr class="doc-separator">
+<div class="markdown-body" id="status-enums">
+<h1>ステータス・Enum 定義一覧（SSOT）</h1>
+<blockquote><strong>本書はシステム全体で使用するすべての Enum・区分値定義の SSOT（Single Source of Truth）である。</strong>
+<p>Enum の追加・変更は必ず本書を先に更新し、バックエンド・フロントエンドの実装はこの定義に従うこと。</blockquote><br>></p>
+<blockquote>JPA マッピングパターン・セレクトボックスヘルパー等の <strong>実装パターン</strong> については
+<p><a href="./08-common-infrastructure.md#6-共通コード管理設計" target="_blank">08-common-infrastructure.md セクション 6</a> を参照。</blockquote></p>
+<hr>
+<h2>Enum 一覧（サマリー）</h2>
+<table>
+<thead><tr><th>Enum 名</th><th>説明</th><th>値の数</th><th>パッケージ</th></tr></thead>
+<tbody>
+<tr><td><code>StorageCondition</code></td><td>保管条件</td><td>3</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>PartnerType</code></td><td>取引先種別</td><td>3</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>UserRole</code></td><td>ユーザーロール</td><td>4</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>UnitType</code></td><td>荷姿</td><td>3</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>AreaType</code></td><td>エリア種別</td><td>4</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>InboundStatus</code></td><td>入荷伝票ステータス</td><td>6</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>OutboundStatus</code></td><td>出荷伝票ステータス</td><td>7</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>MovementType</code></td><td>在庫変動種別</td><td>10</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>StocktakeStatus</code></td><td>棚卸ステータス</td><td>2</td><td><code>com.wms.shared.enums</code></td></tr>
+<tr><td><code>UnpackInstructionStatus</code></td><td>ばらし指示ステータス</td><td>2</td><td><code>com.wms.shared.enums</code></td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>1. バックエンド — Java Enum 定義</h2>
+<blockquote>DBには文字列値（例: <code>&quot;AMBIENT&quot;</code>）で保存する（<code>@Enumerated(EnumType.STRING)</code>）。
+<p>JPA マッピングパターンは <a href="./08-common-infrastructure.md#63-バックエンド--jpa-enum-マッピング" target="_blank">08-common-infrastructure.md セクション 6.3</a> を参照。</blockquote></p>
+<h3>StorageCondition（保管条件）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/**
+ * 保管条件。
+ * DBには文字列値（&quot;AMBIENT&quot; 等）で保存する。
+ */
+public enum StorageCondition {
+    AMBIENT(&quot;常温&quot;),
+    REFRIGERATED(&quot;冷蔵&quot;),
+    FROZEN(&quot;冷凍&quot;);
+
+    private final String displayName;
+
+    StorageCondition(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>PartnerType（取引先種別）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 取引先種別 */
+public enum PartnerType {
+    SUPPLIER(&quot;仕入先&quot;),
+    CUSTOMER(&quot;出荷先&quot;),
+    BOTH(&quot;両方&quot;);
+
+    private final String displayName;
+
+    PartnerType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>UserRole（ユーザーロール）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** ユーザーロール */
+public enum UserRole {
+    SYSTEM_ADMIN(&quot;システム管理者&quot;),
+    WAREHOUSE_MANAGER(&quot;倉庫管理者&quot;),
+    WAREHOUSE_STAFF(&quot;倉庫スタッフ&quot;),
+    VIEWER(&quot;閲覧者&quot;);
+
+    private final String displayName;
+
+    UserRole(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>UnitType（荷姿）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 荷姿 */
+public enum UnitType {
+    CASE(&quot;ケース&quot;),
+    BALL(&quot;ボール&quot;),
+    PIECE(&quot;バラ&quot;);
+
+    private final String displayName;
+
+    UnitType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>AreaType（エリア種別）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** エリア種別 */
+public enum AreaType {
+    STOCK(&quot;在庫エリア&quot;),
+    INBOUND(&quot;入荷エリア&quot;),
+    OUTBOUND(&quot;出荷エリア&quot;),
+    RETURN(&quot;返品エリア&quot;);
+
+    private final String displayName;
+
+    AreaType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>InboundStatus（入荷伝票ステータス）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 入荷伝票ステータス */
+public enum InboundStatus {
+    PLANNED(&quot;入荷予定&quot;),
+    CONFIRMED(&quot;入荷確認済&quot;),
+    INSPECTING(&quot;検品中&quot;),
+    PARTIAL_STORED(&quot;一部入庫&quot;),
+    STORED(&quot;入庫完了&quot;),
+    CANCELLED(&quot;キャンセル&quot;);
+
+    private final String displayName;
+
+    InboundStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>OutboundStatus（出荷伝票ステータス）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 出荷伝票ステータス */
+public enum OutboundStatus {
+    ORDERED(&quot;受注&quot;),
+    PARTIAL_ALLOCATED(&quot;一部引当&quot;),
+    ALLOCATED(&quot;引当完了（ピッキング指示済み）&quot;),
+    PICKING_COMPLETED(&quot;ピッキング完了&quot;),
+    INSPECTING(&quot;出荷検品中&quot;),
+    SHIPPED(&quot;出荷完了&quot;),
+    CANCELLED(&quot;キャンセル&quot;);
+
+    private final String displayName;
+
+    OutboundStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>MovementType（在庫変動種別）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 在庫変動種別 */
+public enum MovementType {
+    INBOUND(&quot;入庫&quot;),
+    OUTBOUND(&quot;出庫&quot;),
+    MOVE_OUT(&quot;移動元出庫&quot;),
+    MOVE_IN(&quot;移動先入庫&quot;),
+    BREAKDOWN_OUT(&quot;ばらし元出庫&quot;),
+    BREAKDOWN_IN(&quot;ばらし先入庫&quot;),
+    CORRECTION(&quot;在庫訂正&quot;),
+    STOCKTAKE_ADJUSTMENT(&quot;棚卸差異調整&quot;),
+    INBOUND_CANCEL(&quot;入荷キャンセル戻し&quot;),
+    RETURN_OUT(&quot;返品出庫&quot;);
+
+    private final String displayName;
+
+    MovementType(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>StocktakeStatus（棚卸ステータス）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** 棚卸ステータス */
+public enum StocktakeStatus {
+    STARTED(&quot;棚卸中&quot;),
+    CONFIRMED(&quot;確定済&quot;);
+
+    private final String displayName;
+
+    StocktakeStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<h3>UnpackInstructionStatus（ばらし指示ステータス）</h3>
+<pre><code class="lang-java">package com.wms.shared.enums;
+
+/** ばらし指示ステータス */
+public enum UnpackInstructionStatus {
+    INSTRUCTED(&quot;指示済&quot;),
+    COMPLETED(&quot;完了&quot;);
+
+    private final String displayName;
+
+    UnpackInstructionStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() { return displayName; }
+}</code></pre>
+<hr>
+<h2>2. バックエンド — JPA Enum マッピングパターン</h2>
+<pre><code class="lang-java">// Entity 内での Enum マッピング
+@Enumerated(EnumType.STRING)
+@Column(name = &quot;storage_condition&quot;, nullable = false)
+private StorageCondition storageCondition;</code></pre>
+<hr>
+<h2>3. フロントエンド — TypeScript 定数定義</h2>
+<blockquote><code>as const</code> パターンを使用し、型と値オブジェクトを同名で export する。
+<p>セレクトボックス変換ヘルパーは <a href="#4-フロントエンド--enum-をセレクトボックスに変換するヘルパー" target="_blank">セクション 4</a> を参照。</blockquote></p>
+<pre><code class="lang-typescript">// src/constants/enums.ts
+
+export const StorageCondition = {
+  AMBIENT: 'AMBIENT',
+  REFRIGERATED: 'REFRIGERATED',
+  FROZEN: 'FROZEN',
+} as const
+
+export type StorageCondition =
+  typeof StorageCondition[keyof typeof StorageCondition]
+
+export const StorageConditionLabel: Record&lt;StorageCondition, string&gt; = {
+  AMBIENT: '常温',
+  REFRIGERATED: '冷蔵',
+  FROZEN: '冷凍',
+}
+
+export const PartnerType = {
+  SUPPLIER: 'SUPPLIER',
+  CUSTOMER: 'CUSTOMER',
+  BOTH: 'BOTH',
+} as const
+
+export type PartnerType = typeof PartnerType[keyof typeof PartnerType]
+
+export const PartnerTypeLabel: Record&lt;PartnerType, string&gt; = {
+  SUPPLIER: '仕入先',
+  CUSTOMER: '出荷先',
+  BOTH: '両方',
+}
+
+export const UserRole = {
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+  WAREHOUSE_MANAGER: 'WAREHOUSE_MANAGER',
+  WAREHOUSE_STAFF: 'WAREHOUSE_STAFF',
+  VIEWER: 'VIEWER',
+} as const
+
+export type UserRole = typeof UserRole[keyof typeof UserRole]
+
+export const UserRoleLabel: Record&lt;UserRole, string&gt; = {
+  SYSTEM_ADMIN: 'システム管理者',
+  WAREHOUSE_MANAGER: '倉庫管理者',
+  WAREHOUSE_STAFF: '倉庫スタッフ',
+  VIEWER: '閲覧者',
+}
+
+export const UnitType = {
+  CASE: 'CASE',
+  BALL: 'BALL',
+  PIECE: 'PIECE',
+} as const
+
+export type UnitType = typeof UnitType[keyof typeof UnitType]
+
+export const UnitTypeLabel: Record&lt;UnitType, string&gt; = {
+  CASE: 'ケース',
+  BALL: 'ボール',
+  PIECE: 'バラ',
+}
+
+export const AreaType = {
+  STOCK: 'STOCK',
+  INBOUND: 'INBOUND',
+  OUTBOUND: 'OUTBOUND',
+  RETURN: 'RETURN',
+} as const
+
+export type AreaType = typeof AreaType[keyof typeof AreaType]
+
+export const AreaTypeLabel: Record&lt;AreaType, string&gt; = {
+  STOCK: '在庫エリア',
+  INBOUND: '入荷エリア',
+  OUTBOUND: '出荷エリア',
+  RETURN: '返品エリア',
+}
+
+export const InboundStatus = {
+  PLANNED: 'PLANNED',
+  CONFIRMED: 'CONFIRMED',
+  INSPECTING: 'INSPECTING',
+  PARTIAL_STORED: 'PARTIAL_STORED',
+  STORED: 'STORED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+export type InboundStatus =
+  typeof InboundStatus[keyof typeof InboundStatus]
+
+export const InboundStatusLabel: Record&lt;InboundStatus, string&gt; = {
+  PLANNED: '入荷予定',
+  CONFIRMED: '入荷確認済',
+  INSPECTING: '検品中',
+  PARTIAL_STORED: '一部入庫',
+  STORED: '入庫完了',
+  CANCELLED: 'キャンセル',
+}
+
+export const OutboundStatus = {
+  ORDERED: 'ORDERED',
+  PARTIAL_ALLOCATED: 'PARTIAL_ALLOCATED',
+  ALLOCATED: 'ALLOCATED',
+  PICKING_COMPLETED: 'PICKING_COMPLETED',
+  INSPECTING: 'INSPECTING',
+  SHIPPED: 'SHIPPED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+export type OutboundStatus =
+  typeof OutboundStatus[keyof typeof OutboundStatus]
+
+export const OutboundStatusLabel: Record&lt;OutboundStatus, string&gt; = {
+  ORDERED: '受注',
+  PARTIAL_ALLOCATED: '一部引当',
+  ALLOCATED: '引当完了（ピッキング指示済み）',
+  PICKING_COMPLETED: 'ピッキング完了',
+  INSPECTING: '出荷検品中',
+  SHIPPED: '出荷完了',
+  CANCELLED: 'キャンセル',
+}
+
+export const MovementType = {
+  INBOUND: 'INBOUND',
+  OUTBOUND: 'OUTBOUND',
+  MOVE_OUT: 'MOVE_OUT',
+  MOVE_IN: 'MOVE_IN',
+  BREAKDOWN_OUT: 'BREAKDOWN_OUT',
+  BREAKDOWN_IN: 'BREAKDOWN_IN',
+  CORRECTION: 'CORRECTION',
+  STOCKTAKE_ADJUSTMENT: 'STOCKTAKE_ADJUSTMENT',
+  INBOUND_CANCEL: 'INBOUND_CANCEL',
+  RETURN_OUT: 'RETURN_OUT',
+} as const
+
+export type MovementType =
+  typeof MovementType[keyof typeof MovementType]
+
+export const MovementTypeLabel: Record&lt;MovementType, string&gt; = {
+  INBOUND: '入庫',
+  OUTBOUND: '出庫',
+  MOVE_OUT: '移動元出庫',
+  MOVE_IN: '移動先入庫',
+  BREAKDOWN_OUT: 'ばらし元出庫',
+  BREAKDOWN_IN: 'ばらし先入庫',
+  CORRECTION: '在庫訂正',
+  STOCKTAKE_ADJUSTMENT: '棚卸差異調整',
+  INBOUND_CANCEL: '入荷キャンセル戻し',
+  RETURN_OUT: '返品出庫',
+}
+
+export const StocktakeStatus = {
+  STARTED: 'STARTED',
+  CONFIRMED: 'CONFIRMED',
+} as const
+
+export type StocktakeStatus =
+  typeof StocktakeStatus[keyof typeof StocktakeStatus]
+
+export const StocktakeStatusLabel: Record&lt;StocktakeStatus, string&gt; = {
+  STARTED: '棚卸中',
+  CONFIRMED: '確定済',
+}
+
+export const UnpackInstructionStatus = {
+  INSTRUCTED: 'INSTRUCTED',
+  COMPLETED: 'COMPLETED',
+} as const
+
+export type UnpackInstructionStatus =
+  typeof UnpackInstructionStatus[keyof typeof UnpackInstructionStatus]
+
+export const UnpackInstructionStatusLabel: Record&lt;UnpackInstructionStatus, string&gt; = {
+  INSTRUCTED: '指示済',
+  COMPLETED: '完了',
+}</code></pre>
+<hr>
+<h2>4. フロントエンド — Enum をセレクトボックスに変換するヘルパー</h2>
+<pre><code class="lang-typescript">// src/utils/enum-helper.ts
+
+export interface SelectOption {
+  value: string
+  label: string
+}
+
+/**
+ * ラベルマップを Element Plus の el-select 用オプション配列に変換する。
+ */
+export function toSelectOptions(
+  labelMap: Record&lt;string, string&gt;,
+): SelectOption[] {
+  return Object.entries(labelMap).map(([value, label]) =&gt; ({
+    value,
+    label,
+  }))
+}
+
+// 使用例:
+// const storageOptions = toSelectOptions(StorageConditionLabel)
+// → [{ value: 'AMBIENT', label: '常温' }, ...]</code></pre>
+<hr>
+<h2>5. Enum 追加・変更手順</h2>
+<ol><li><strong>本書を先に更新する</strong>（SSOT のため）</li><li>バックエンド: <code>com.wms.shared.enums</code> パッケージの Java ファイルを更新する</li><li>フロントエンド: <code>src/constants/enums.ts</code> を更新する</li><li>OpenAPI (<code>wms-api.yaml</code>) で当該 Enum を使用している箇所も合わせて更新する</li><li>関連する画面設計書・API 設計書のステータス遷移表を確認し、必要に応じて更新する</li></ol>
 </div>
 </main>
 <footer>WMS ShowCase — Generated by build-docs.js</footer>

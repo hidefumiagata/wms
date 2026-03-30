@@ -1009,17 +1009,8 @@ Log Analytics Workspace
 <p></tbody><br></table></p>
 <blockquote><strong>原則:</strong> Service 層は上記のカスタム例外をスローする。Repository 層の例外（<code>DataIntegrityViolationException</code> 等）は Service 層でキャッチしてカスタム例外に変換する。Controller 層は例外処理を行わず、<code>GlobalExceptionHandler</code> に委譲する。</blockquote>
 <h3>エラーコード体系</h3>
-<p>エラーコードは英語の定数名を使用する。命名規則は <code>{RESOURCE}_{ERROR_TYPE}</code> または <code>{ERROR_TYPE}</code>（リソース非依存の場合）とする。</p>
-<pre><code class="lang-">例：
-  WAREHOUSE_NOT_FOUND        — 倉庫が見つからない
-  DUPLICATE_CODE             — コード重複
-  OPTIMISTIC_LOCK_CONFLICT   — 楽観的ロック競合
-  VALIDATION_ERROR           — 入力バリデーションエラー
-  INVALID_SORT_FIELD         — 不正なソートフィールド
-  INTERNAL_SERVER_ERROR      — サーバー内部エラー
-  FORBIDDEN                  — 権限不足
-  UNAUTHORIZED               — 認証エラー</code></pre>
-<p>エラーコードは各モジュールの Service 層で定義する。定数クラスの作成は行わず、各例外スロー箇所でリテラルとして記述する（エラーコードの検索性をIDEのテキスト検索で確保する）。</p>
+<blockquote><strong>SSOT</strong>: エラーコードの完全な一覧は <a href="../architecture-design/error-codes.md" target="_blank">architecture-design/error-codes.md</a> を参照。</blockquote>
+<p>エラーコードは英語の定数名を使用する。命名規則は <code>{RESOURCE}_{ERROR_TYPE}</code> または <code>{ERROR_TYPE}</code>（リソース非依存の場合）とする。<br>エラーコードは各モジュールの Service 層で定義する。定数クラスの作成は行わず、各例外スロー箇所でリテラルとして記述する（エラーコードの検索性をIDEのテキスト検索で確保する）。</p>
 <h2>その他共通設定</h2>
 <table>
 <thead><tr><th>項目</th><th>設定</th></tr></thead>

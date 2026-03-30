@@ -286,20 +286,7 @@ startup_probe {
 
 ### 2.5 環境変数一覧
 
-| 環境変数 | 説明 | Secret | dev値 | prd値 |
-|---------|------|--------|------|------|
-| `SPRING_PROFILES_ACTIVE` | Springプロファイル | No | `dev` | `prd` |
-| `LOG_LEVEL` | ログレベル | No | `DEBUG` | `INFO` |
-| `SPRING_DATASOURCE_URL` | DB接続文字列 | Yes | (環境依存) | (環境依存) |
-| `SPRING_DATASOURCE_USERNAME` | DBユーザー名 | Yes | `wmsadmin` | `wmsadmin` |
-| `SPRING_DATASOURCE_PASSWORD` | DBパスワード | Yes | (Secretsから) | (Secretsから) |
-| `AZURE_STORAGE_ACCOUNT_NAME` | Blob Storageアカウント名（Managed Identity方式） | No | `stwmsdev` | `stwmsprdeast` |
-| `CORS_ALLOWED_ORIGINS` | CORS許可オリジン | No | Blob Static URL | Front Door URL |
-| `JWT_SECRET` | JWTトークン署名鍵 | Yes | (Secretsから) | (Secretsから) |
-| `ACS_CONNECTION_STRING` | Communication Services接続文字列 | Yes | (環境依存) | (環境依存) |
-| `ACS_SENDER_ADDRESS` | メール送信元アドレス | No | `DoNotReply@...` | `DoNotReply@...` |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights接続文字列 | No | (環境依存) | (環境依存) |
-| `AZURE_FRONTDOOR_ID` | Front Door ID（X-Azure-FDIDヘッダー検証用） | No | (未設定) | (Front Door ID) |
+> **SSOT**: 環境変数の完全な一覧は [environment-variables.md](./environment-variables.md) を参照。
 
 ### 2.6 Front Door X-Azure-FDID 検証（prd環境）
 

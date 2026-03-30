@@ -1,6 +1,8 @@
 # 機能設計書 — API設計 在庫引当（ALL）
 
 > **関連ファイル**: [08-api-overview.md](08-api-overview.md)（共通仕様・エラーコード一覧）
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
 
 ---
 

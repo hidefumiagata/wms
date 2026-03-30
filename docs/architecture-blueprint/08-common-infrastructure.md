@@ -150,20 +150,9 @@ public abstract class WmsException extends RuntimeException {
 
 ### エラーコード体系
 
+> **SSOT**: エラーコードの完全な一覧は [architecture-design/error-codes.md](../architecture-design/error-codes.md) を参照。
+
 エラーコードは英語の定数名を使用する。命名規則は `{RESOURCE}_{ERROR_TYPE}` または `{ERROR_TYPE}`（リソース非依存の場合）とする。
-
-```
-例：
-  WAREHOUSE_NOT_FOUND        — 倉庫が見つからない
-  DUPLICATE_CODE             — コード重複
-  OPTIMISTIC_LOCK_CONFLICT   — 楽観的ロック競合
-  VALIDATION_ERROR           — 入力バリデーションエラー
-  INVALID_SORT_FIELD         — 不正なソートフィールド
-  INTERNAL_SERVER_ERROR      — サーバー内部エラー
-  FORBIDDEN                  — 権限不足
-  UNAUTHORIZED               — 認証エラー
-```
-
 エラーコードは各モジュールの Service 層で定義する。定数クラスの作成は行わず、各例外スロー箇所でリテラルとして記述する（エラーコードの検索性をIDEのテキスト検索で確保する）。
 
 ## その他共通設定

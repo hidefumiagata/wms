@@ -6,6 +6,8 @@
 
 > **アクセス制限**: 本ドキュメントに記載するAPIはすべて **SYSTEM_ADMIN ロールのみ** アクセス可能。
 > WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER からのリクエストは `403 FORBIDDEN` を返す。
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
 
 ---
 

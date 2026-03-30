@@ -2,6 +2,8 @@
 
 > 共通仕様（ベースURL・認証・エラーフォーマット・ページング）は [`_standard-api.md`](_standard-api.md) を参照。
 > 返品の業務フロー・ビジネスルールは [`../functional-requirements/08-returns.md`](../functional-requirements/08-returns.md) を参照。
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
 
 ---
 
