@@ -644,6 +644,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
+                            .isEqualTo("PICKING_NO_ALLOCATION_CANDIDATES"))
                     .hasMessageContaining("ピッキング対象の引当明細が存在しません");
         }
     }
@@ -845,6 +847,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.completePickingInstruction(50L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
+                            .isEqualTo("PICKING_LINE_NOT_FOUND"))
                     .hasMessageContaining("lineIdが当該ピッキング指示に存在しません");
         }
 
@@ -865,6 +869,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.completePickingInstruction(50L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
+                            .isEqualTo("PICKING_QTY_EXCEEDED"))
                     .hasMessageContaining("ピッキング完了数量がピッキング予定数量を超えています");
         }
 
