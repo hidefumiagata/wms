@@ -204,7 +204,7 @@ public class PickingService {
         }
 
         if (candidates.isEmpty()) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("PICKING_NO_ALLOCATION_CANDIDATES",
                     "ピッキング対象の引当明細が存在しません");
         }
 
@@ -273,12 +273,12 @@ public class PickingService {
         for (CompletePickingLineRequest lineReq : request.getLines()) {
             PickingInstructionLine line = lineMap.get(lineReq.getLineId());
             if (line == null) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("PICKING_LINE_NOT_FOUND",
                         "指定されたlineIdが当該ピッキング指示に存在しません (lineId=" + lineReq.getLineId() + ")");
             }
 
             if (lineReq.getQtyPicked() > line.getQtyToPick()) {
-                throw new BusinessRuleViolationException("VALIDATION_ERROR",
+                throw new BusinessRuleViolationException("PICKING_QTY_EXCEEDED",
                         "ピッキング完了数量がピッキング予定数量を超えています (lineId=" + lineReq.getLineId()
                                 + ", qtyPicked=" + lineReq.getQtyPicked()
                                 + ", qtyToPick=" + line.getQtyToPick() + ")");

@@ -67,7 +67,7 @@ public class StocktakeListReportService {
                 stocktakeId, buildingId, hideBookQty, format);
 
         if (stocktakeId == null && buildingId == null) {
-            throw new BusinessRuleViolationException("VALIDATION_ERROR",
+            throw new BusinessRuleViolationException("REPORT_PARAMETER_REQUIRED",
                     "stocktakeId または buildingId のどちらか一方を指定してください");
         }
 
