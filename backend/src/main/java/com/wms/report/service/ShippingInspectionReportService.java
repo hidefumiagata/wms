@@ -7,6 +7,7 @@ import com.wms.master.repository.WarehouseRepository;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.ShippingInspectionRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,16 +40,6 @@ public class ShippingInspectionReportService {
     private final WarehouseRepository warehouseRepository;
     private final ReportExportService reportExportService;
 
-    // --- ネイティブクエリのカラムインデックス定数 ---
-    private static final int COL_SLIP_NUMBER = 0;
-    private static final int COL_PARTNER_NAME = 1;
-    private static final int COL_PLANNED_DATE = 2;
-    private static final int COL_PRODUCT_CODE = 3;
-    private static final int COL_PRODUCT_NAME = 4;
-    private static final int COL_UNIT_TYPE = 5;
-    private static final int COL_PICKED_QTY = 6;
-    private static final int COL_INSPECTED_QTY = 7;
-
     private static final String[] CSV_HEADERS = {
             "伝票番号", "出荷先名", "出荷予定日", "商品コード", "商品名",
             "荷姿", "ピッキング数", "検品数", "差異数"
@@ -69,7 +60,7 @@ public class ShippingInspectionReportService {
 
         String warehouseName = formatWarehouseName(warehouse);
 
-        List<Object[]> rows = outboundReportRepository.findShippingInspectionReportData(slipId);
+        List<ShippingInspectionRow> rows = outboundReportRepository.findShippingInspectionReportData(slipId);
 
         List<ShippingInspectionReportItem> items = rows.stream()
                 .map(this::toReportItem)
@@ -96,20 +87,17 @@ public class ShippingInspectionReportService {
         return reportExportService.export(items, format, meta);
     }
 
-    private ShippingInspectionReportItem toReportItem(Object[] row) {
+    private ShippingInspectionReportItem toReportItem(ShippingInspectionRow row) {
         ShippingInspectionReportItem item = new ShippingInspectionReportItem();
-        item.setSlipNumber((String) row[COL_SLIP_NUMBER]);
-        item.setCustomerName((String) row[COL_PARTNER_NAME]);
-        item.setPlannedShipDate(row[COL_PLANNED_DATE] != null
-                ? ((java.sql.Date) row[COL_PLANNED_DATE]).toLocalDate() : null);
-        item.setProductCode((String) row[COL_PRODUCT_CODE]);
-        item.setProductName((String) row[COL_PRODUCT_NAME]);
-        item.setUnitType((String) row[COL_UNIT_TYPE]);
+        item.setSlipNumber(row.getSlipNumber());
+        item.setCustomerName(row.getPartnerName());
+        item.setPlannedShipDate(row.getPlannedDate());
+        item.setProductCode(row.getProductCode());
+        item.setProductName(row.getProductName());
+        item.setUnitType(row.getUnitType());
 
-        Integer pickedQty = row[COL_PICKED_QTY] != null
-                ? ((Number) row[COL_PICKED_QTY]).intValue() : 0;
-        Integer inspectedQty = row[COL_INSPECTED_QTY] != null
-                ? ((Number) row[COL_INSPECTED_QTY]).intValue() : null;
+        Integer pickedQty = row.getPickedQty() != null ? row.getPickedQty() : 0;
+        Integer inspectedQty = row.getInspectedQty();
 
         item.setPickedQuantity(pickedQty);
         item.setInspectedQuantity(inspectedQty);

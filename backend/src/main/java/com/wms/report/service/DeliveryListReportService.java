@@ -6,6 +6,8 @@ import com.wms.generated.model.ReportFormat;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.DeliveryListHeaderRow;
+import com.wms.report.repository.projection.DeliveryListLineRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,23 +43,6 @@ public class DeliveryListReportService {
     private final WarehouseRepository warehouseRepository;
     private final ReportExportService reportExportService;
 
-    // --- ヘッダー行カラムインデックス ---
-    private static final int H_COL_ID = 0;
-    private static final int H_COL_SLIP_NUMBER = 1;
-    private static final int H_COL_PARTNER_NAME = 2;
-    private static final int H_COL_PLANNED_DATE = 3;
-    private static final int H_COL_STATUS = 4;
-    private static final int H_COL_CARRIER = 5;
-    private static final int H_COL_TRACKING_NUMBER = 6;
-    private static final int H_COL_ADDRESS = 7;
-
-    // --- 明細行カラムインデックス ---
-    private static final int L_COL_SLIP_ID = 0;
-    private static final int L_COL_PRODUCT_CODE = 1;
-    private static final int L_COL_PRODUCT_NAME = 2;
-    private static final int L_COL_UNIT_TYPE = 3;
-    private static final int L_COL_ORDERED_QTY = 4;
-
     private static final String[] CSV_HEADERS = {
             "伝票番号", "出荷先名", "配送先住所", "出荷予定日", "ステータス",
             "配送業者", "送り状番号", "商品コード", "商品名", "荷姿", "数量"
@@ -77,7 +62,7 @@ public class DeliveryListReportService {
 
         String carrierLike = carrier != null ? "%" + escapeLikePattern(carrier) + "%" : null;
 
-        List<Object[]> headerRows = outboundReportRepository.findDeliveryListHeaderData(
+        List<DeliveryListHeaderRow> headerRows = outboundReportRepository.findDeliveryListHeaderData(
                 warehouseId, plannedDateFrom, plannedDateTo, status, carrierLike);
 
         List<DeliveryListReportItem> items;
@@ -85,15 +70,14 @@ public class DeliveryListReportService {
             items = List.of();
         } else {
             List<Long> slipIds = headerRows.stream()
-                    .map(row -> ((Number) row[H_COL_ID]).longValue())
+                    .map(DeliveryListHeaderRow::getId)
                     .toList();
 
-            List<Object[]> lineRows = outboundReportRepository.findDeliveryListLineData(slipIds);
+            List<DeliveryListLineRow> lineRows = outboundReportRepository.findDeliveryListLineData(slipIds);
 
-            Map<Long, List<Object[]>> linesBySlipId = new LinkedHashMap<>();
-            for (Object[] lineRow : lineRows) {
-                Long slipId = ((Number) lineRow[L_COL_SLIP_ID]).longValue();
-                linesBySlipId.computeIfAbsent(slipId, k -> new ArrayList<>()).add(lineRow);
+            Map<Long, List<DeliveryListLineRow>> linesBySlipId = new LinkedHashMap<>();
+            for (DeliveryListLineRow lineRow : lineRows) {
+                linesBySlipId.computeIfAbsent(lineRow.getOutboundSlipId(), k -> new ArrayList<>()).add(lineRow);
             }
 
             items = headerRows.stream()
@@ -122,31 +106,30 @@ public class DeliveryListReportService {
         return reportExportService.export(exportItems, format, meta);
     }
 
-    private DeliveryListReportItem toReportItem(Object[] headerRow, Map<Long, List<Object[]>> linesBySlipId) {
-        Long slipId = ((Number) headerRow[H_COL_ID]).longValue();
-        String statusCode = (String) headerRow[H_COL_STATUS];
+    private DeliveryListReportItem toReportItem(DeliveryListHeaderRow headerRow,
+                                                 Map<Long, List<DeliveryListLineRow>> linesBySlipId) {
+        Long slipId = headerRow.getId();
+        String statusCode = headerRow.getStatus();
 
         DeliveryListReportItem item = new DeliveryListReportItem();
-        item.setSlipNumber((String) headerRow[H_COL_SLIP_NUMBER]);
-        item.setCustomerName((String) headerRow[H_COL_PARTNER_NAME]);
-        item.setDeliveryAddress((String) headerRow[H_COL_ADDRESS]);
-        item.setPlannedShipDate(headerRow[H_COL_PLANNED_DATE] != null
-                ? ((java.sql.Date) headerRow[H_COL_PLANNED_DATE]).toLocalDate() : null);
+        item.setSlipNumber(headerRow.getSlipNumber());
+        item.setCustomerName(headerRow.getPartnerName());
+        item.setDeliveryAddress(headerRow.getAddress());
+        item.setPlannedShipDate(headerRow.getPlannedDate());
         item.setStatus(statusCode);
         item.setStatusLabel(OUTBOUND_STATUS_LABELS.getOrDefault(statusCode, statusCode));
-        item.setCarrier((String) headerRow[H_COL_CARRIER]);
-        item.setTrackingNumber((String) headerRow[H_COL_TRACKING_NUMBER]);
+        item.setCarrier(headerRow.getCarrier());
+        item.setTrackingNumber(headerRow.getTrackingNumber());
 
         List<DeliveryListLineItem> lines = new ArrayList<>();
         int totalQtyPcs = 0;
-        List<Object[]> lineData = linesBySlipId.getOrDefault(slipId, List.of());
-        for (Object[] lineRow : lineData) {
+        List<DeliveryListLineRow> lineData = linesBySlipId.getOrDefault(slipId, List.of());
+        for (DeliveryListLineRow lineRow : lineData) {
             DeliveryListLineItem lineItem = new DeliveryListLineItem();
-            lineItem.setProductCode((String) lineRow[L_COL_PRODUCT_CODE]);
-            lineItem.setProductName((String) lineRow[L_COL_PRODUCT_NAME]);
-            lineItem.setUnitType((String) lineRow[L_COL_UNIT_TYPE]);
-            int qty = lineRow[L_COL_ORDERED_QTY] != null
-                    ? ((Number) lineRow[L_COL_ORDERED_QTY]).intValue() : 0;
+            lineItem.setProductCode(lineRow.getProductCode());
+            lineItem.setProductName(lineRow.getProductName());
+            lineItem.setUnitType(lineRow.getUnitType());
+            int qty = lineRow.getOrderedQty() != null ? lineRow.getOrderedQty() : 0;
             lineItem.setQuantity(qty);
             lines.add(lineItem);
             totalQtyPcs += qty;

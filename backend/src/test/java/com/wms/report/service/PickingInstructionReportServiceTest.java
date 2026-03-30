@@ -7,6 +7,7 @@ import com.wms.master.repository.WarehouseRepository;
 import com.wms.outbound.entity.PickingInstruction;
 import com.wms.outbound.repository.PickingInstructionRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.PickingInstructionRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,25 +82,22 @@ class PickingInstructionReportServiceTest {
         }
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createRow(String locationCode, String productCode, String productName,
-                                String unitType, Integer qtyToPick, String slipNumber,
-                                String partnerName, LocalDate plannedDate, String lotNumber) {
-        return new Object[]{
-                locationCode,                                         // 0: location_code
-                productCode,                                          // 1: product_code
-                productName,                                          // 2: product_name
-                unitType,                                             // 3: unit_type
-                qtyToPick,                                            // 4: qty_to_pick
-                slipNumber,                                           // 5: slip_number
-                partnerName,                                          // 6: partner_name
-                plannedDate != null ? Date.valueOf(plannedDate) : null, // 7: planned_date
-                lotNumber                                             // 8: lot_number
-        };
+    private static PickingInstructionRow mockRow(String locationCode, String productCode,
+                                                  String productName, String unitType,
+                                                  Integer qtyToPick, String slipNumber,
+                                                  String partnerName, LocalDate plannedDate,
+                                                  String lotNumber) {
+        PickingInstructionRow row = mock(PickingInstructionRow.class);
+        when(row.getLocationCode()).thenReturn(locationCode);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getQtyToPick()).thenReturn(qtyToPick);
+        when(row.getSlipNumber()).thenReturn(slipNumber);
+        when(row.getPartnerName()).thenReturn(partnerName);
+        when(row.getPlannedDate()).thenReturn(plannedDate);
+        when(row.getLotNumber()).thenReturn(lotNumber);
+        return row;
     }
 
     @Nested
@@ -112,12 +109,12 @@ class PickingInstructionReportServiceTest {
         void generate_success_returnsItems() {
             when(pickingInstructionRepository.findById(1L)).thenReturn(Optional.of(pickingInstruction));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
+                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), "LOT-001");
+            var row2 = mockRow("A-01-A-02", "P-002", "商品B", "PCS", 5,
+                    "OUT-002", "テスト出荷先B", LocalDate.of(2026, 3, 16), "LOT-002");
             when(outboundReportRepository.findPickingInstructionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
-                                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), "LOT-001"),
-                            createRow("A-01-A-02", "P-002", "商品B", "PCS", 5,
-                                    "OUT-002", "テスト出荷先B", LocalDate.of(2026, 3, 16), "LOT-002")));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -168,10 +165,10 @@ class PickingInstructionReportServiceTest {
         void generate_withNullLotNumber_showsDash() {
             when(pickingInstructionRepository.findById(1L)).thenReturn(Optional.of(pickingInstruction));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
+                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), null);
             when(outboundReportRepository.findPickingInstructionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
-                                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -200,14 +197,12 @@ class PickingInstructionReportServiceTest {
         @Test
         @DisplayName("null QTY_TO_PICK → instructedQuantity=0")
         void generate_nullQtyToPick_defaultsToZero() {
-            Object[] row = new Object[]{
-                "A-01-001", "P-001", "商品A", "CAS",
-                null, "OUT-001", "出荷先A", Date.valueOf("2026-03-15"), "LOT-01"
-            };
+            PickingInstructionRow row = mockRow("A-01-001", "P-001", "商品A", "CAS",
+                    null, "OUT-001", "出荷先A", LocalDate.of(2026, 3, 15), "LOT-01");
             when(pickingInstructionRepository.findById(1L))
                 .thenReturn(Optional.of(PickingInstruction.builder().id(1L).instructionNumber("PICK-001").warehouseId(1L).status("ACTIVE").build()));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(outboundReportRepository.findPickingInstructionReportData(1L)).thenReturn(List.<Object[]>of(row));
+            when(outboundReportRepository.findPickingInstructionReportData(1L)).thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                 .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -219,14 +214,12 @@ class PickingInstructionReportServiceTest {
         @Test
         @DisplayName("null PLANNED_DATE → plannedShipDate=null")
         void generate_nullPlannedDate_setsNull() {
-            Object[] row = new Object[]{
-                "A-01-001", "P-001", "商品A", "CAS",
-                5, "OUT-001", "出荷先A", null, "LOT-01"
-            };
+            PickingInstructionRow row = mockRow("A-01-001", "P-001", "商品A", "CAS",
+                    5, "OUT-001", "出荷先A", null, "LOT-01");
             when(pickingInstructionRepository.findById(1L))
                 .thenReturn(Optional.of(PickingInstruction.builder().id(1L).instructionNumber("PICK-001").warehouseId(1L).status("ACTIVE").build()));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(outboundReportRepository.findPickingInstructionReportData(1L)).thenReturn(List.<Object[]>of(row));
+            when(outboundReportRepository.findPickingInstructionReportData(1L)).thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                 .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -262,24 +255,24 @@ class PickingInstructionReportServiceTest {
         void generate_csvRowMapper_formatsCorrectly() {
             when(pickingInstructionRepository.findById(1L)).thenReturn(Optional.of(pickingInstruction));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
+                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), "LOT-001");
             when(outboundReportRepository.findPickingInstructionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("A-01-A-01", "P-001", "商品A", "CAS", 10,
-                                    "OUT-001", "テスト出荷先A", LocalDate.of(2026, 3, 15), "LOT-001")));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row).hasSize(9);
-                        assertThat(row[0]).isEqualTo("A-01-A-01");
-                        assertThat(row[1]).isEqualTo("P-001");
-                        assertThat(row[2]).isEqualTo("商品A");
-                        assertThat(row[3]).isEqualTo("CAS");
-                        assertThat(row[5]).isEqualTo("OUT-001");
-                        assertThat(row[6]).isEqualTo("テスト出荷先A");
-                        assertThat(row[7]).isEqualTo("2026-03-15");
-                        assertThat(row[8]).isEqualTo("LOT-001");
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow).hasSize(9);
+                        assertThat(csvRow[0]).isEqualTo("A-01-A-01");
+                        assertThat(csvRow[1]).isEqualTo("P-001");
+                        assertThat(csvRow[2]).isEqualTo("商品A");
+                        assertThat(csvRow[3]).isEqualTo("CAS");
+                        assertThat(csvRow[5]).isEqualTo("OUT-001");
+                        assertThat(csvRow[6]).isEqualTo("テスト出荷先A");
+                        assertThat(csvRow[7]).isEqualTo("2026-03-15");
+                        assertThat(csvRow[8]).isEqualTo("LOT-001");
                         return ResponseEntity.ok(data);
                     });
 
