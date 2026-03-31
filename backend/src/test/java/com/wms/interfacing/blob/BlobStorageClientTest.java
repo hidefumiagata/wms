@@ -105,6 +105,21 @@ class BlobStorageClientTest {
         }
 
         @Test
+        @DisplayName("connectionStringが空白のみの場合、containerClientはnullのまま")
+        void init_blankConnectionString_containerClientNull() throws Exception {
+            BlobStorageClient blankClient = new BlobStorageClient();
+            java.lang.reflect.Field csField = BlobStorageClient.class.getDeclaredField("connectionString");
+            csField.setAccessible(true);
+            csField.set(blankClient, "   ");
+            java.lang.reflect.Method initMethod = BlobStorageClient.class.getDeclaredMethod("init");
+            initMethod.setAccessible(true);
+            initMethod.invoke(blankClient);
+
+            assertThatThrownBy(() -> blankClient.listPendingFiles("test"))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
         @DisplayName("connectionStringがnullの場合、containerClientはnullのまま")
         void init_nullConnectionString_containerClientNull() throws Exception {
             BlobStorageClient nullClient = new BlobStorageClient();

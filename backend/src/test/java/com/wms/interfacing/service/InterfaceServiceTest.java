@@ -486,6 +486,27 @@ class InterfaceServiceTest {
         }
 
         @Test
+        @DisplayName("異常系 — importFileでファイルサイズ超過はBusinessRuleViolationException")
+        void importFile_fileSizeExceeded_throwsException() {
+            when(blobStorageClient.getFileSize("inbound-plan", "big.csv"))
+                    .thenReturn(51L * 1024 * 1024);
+
+            assertThatThrownBy(() -> interfaceService.importFile(
+                    "IFX-001", "big.csv", 1L, "SUCCESS_ONLY"))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("50MB");
+        }
+
+        @Test
+        @DisplayName("異常系 — fileNameがnullでBusinessRuleViolationException")
+        void importFile_nullFileName_throwsException() {
+            assertThatThrownBy(() -> interfaceService.importFile(
+                    "IFX-001", null, 1L, "SUCCESS_ONLY"))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("ファイル名が不正");
+        }
+
+        @Test
         @DisplayName("SUCCESS_ONLYでヘッダ検証エラーはBusinessRuleViolationException")
         void importFile_successOnly_headerError_throwsException() {
             when(blobStorageClient.getFileSize("inbound-plan", "bad.csv")).thenReturn(100L);

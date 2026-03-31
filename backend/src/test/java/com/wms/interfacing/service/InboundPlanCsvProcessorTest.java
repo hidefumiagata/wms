@@ -686,6 +686,26 @@ class InboundPlanCsvProcessorTest {
 
             assertThat(result.getErrorCount()).isEqualTo(1);
         }
+
+        @Test
+        @DisplayName("境界値 — 空配列の行でもNullPointerにならない")
+        void validate_emptyRow_handledGracefully() {
+            List<String[]> rows = List.<String[]>of(new String[]{});
+            InboundPlanCsvProcessor.ValidationResult result =
+                    processor.validate(rows, masterCache, businessDate);
+
+            assertThat(result.getErrorCount()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("境界値 — カラム数1の行でもNullPointerにならない")
+        void validate_singleColumnRow_handledGracefully() {
+            List<String[]> rows = List.<String[]>of(new String[]{"SUP-0001"});
+            InboundPlanCsvProcessor.ValidationResult result =
+                    processor.validate(rows, masterCache, businessDate);
+
+            assertThat(result.getErrorCount()).isEqualTo(1);
+        }
     }
 
     @Nested
