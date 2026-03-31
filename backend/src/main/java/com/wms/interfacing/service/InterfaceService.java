@@ -24,6 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -70,6 +73,15 @@ public class InterfaceService {
     private final WarehouseRepository warehouseRepository;
     private final BusinessDateProvider businessDateProvider;
     private final TransactionTemplate transactionTemplate;
+
+    /**
+     * 取り込み履歴一覧を取得する。
+     */
+    public Page<IfExecution> listExecutions(String ifType, OffsetDateTime dateFrom,
+                                             OffsetDateTime dateTo, String status,
+                                             String fileName, Pageable pageable) {
+        return ifExecutionRepository.search(ifType, dateFrom, dateTo, status, fileName, pageable);
+    }
 
     /**
      * pendingフォルダのファイル一覧を取得する。

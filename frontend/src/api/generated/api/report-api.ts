@@ -721,7 +721,7 @@ export const ReportApiAxiosParamCreator = function (configuration?: Configuratio
          * @param {number} [stocktakeId] 棚卸ID（棚卸開始後）
          * @param {number} [buildingId] 棟ID（プレビュー用）
          * @param {number} [areaId] エリアID（プレビュー用）
-         * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示
+         * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示（デフォルト true&#x3D;非表示）
          * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1220,7 +1220,7 @@ export const ReportApiFp = function(configuration?: Configuration) {
          * @param {number} [stocktakeId] 棚卸ID（棚卸開始後）
          * @param {number} [buildingId] 棟ID（プレビュー用）
          * @param {number} [areaId] エリアID（プレビュー用）
-         * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示
+         * @param {boolean} [hideBookQty] PDF出力時に帳簿数量を非表示（デフォルト true&#x3D;非表示）
          * @param {ReportFormat} [format] 出力フォーマット（json/csv/pdf）
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -1929,7 +1929,7 @@ export interface ReportApiGetStocktakeListReportRequest {
     readonly areaId?: number
 
     /**
-     * PDF出力時に帳簿数量を非表示
+     * PDF出力時に帳簿数量を非表示（デフォルト true&#x3D;非表示）
      * @type {boolean}
      * @memberof ReportApiGetStocktakeListReport
      */

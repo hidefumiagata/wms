@@ -5368,6 +5368,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/interface/executions:
+    get:
+      operationId: listInterfaceExecutions
+      summary: I/F取り込み履歴一覧取得
+      description: I/Fファイル取り込み実行履歴をページング形式で取得する
+      tags: [interface]
+      parameters:
+        - name: ifType
+          in: query
+          schema:
+            $ref: '#/components/schemas/InterfaceType'
+          description: I/F種別でフィルタ
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 実行日From（yyyy-MM-dd）
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+          description: 実行日To（yyyy-MM-dd）
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/IfExecutionStatus'
+          description: 結果ステータスでフィルタ
+        - name: fileName
+          in: query
+          schema:
+            type: string
+          description: ファイル名（部分一致）
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: sort
+          in: query
+          schema:
+            type: string
+            default: executedAt,desc
+          description: ソート指定
+      responses:
+        '200':
+          description: 取り込み履歴一覧
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IfExecutionPageResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
 components:
   # ============================================================
   # Security Schemes
@@ -9891,6 +9947,75 @@ components:
           type: string
           enum: [COMPLETED, DISCARDED, FAILED]
           description: 取り込みステータス
+
+    IfExecutionStatus:
+      type: string
+      enum: [COMPLETED, DISCARDED, FAILED]
+      description: 取り込み実行結果ステータス
+
+    IfExecutionItem:
+      type: object
+      required: [id, ifType, fileName, totalCount, successCount, errorCount, mode, status, blobMoveFailed, warehouseId, executedAt, executedBy, executedByName]
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 実行履歴ID
+        ifType:
+          type: string
+          description: I/F種別（IFX-001 / IFX-002）
+        fileName:
+          type: string
+          description: 元ファイル名
+        totalCount:
+          type: integer
+          description: CSVデータ総行数
+        successCount:
+          type: integer
+          description: バリデーション成功行数
+        errorCount:
+          type: integer
+          description: バリデーションエラー行数
+        mode:
+          $ref: '#/components/schemas/ImportMode'
+        status:
+          $ref: '#/components/schemas/IfExecutionStatus'
+        blobMoveFailed:
+          type: boolean
+          description: Blob移動失敗フラグ
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        executedAt:
+          type: string
+          format: date-time
+          description: 実行日時
+        executedBy:
+          type: integer
+          format: int64
+          description: 実行ユーザーID
+        executedByName:
+          type: string
+          description: 実行ユーザー氏名
+
+    IfExecutionPageResponse:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/IfExecutionItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
 
   # ============================================================
   # Parameters
