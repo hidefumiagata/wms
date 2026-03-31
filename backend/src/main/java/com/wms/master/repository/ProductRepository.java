@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -33,4 +34,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p WHERE (:isActive IS NULL OR p.isActive = :isActive) ORDER BY p.productCode ASC")
     List<Product> findAllSimple(@Param("isActive") Boolean isActive);
+
+    List<Product> findByProductCodeIn(Collection<String> productCodes);
 }

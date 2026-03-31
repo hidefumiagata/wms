@@ -50,6 +50,8 @@ tags:
     description: 在庫引当
   - name: returns
     description: 返品管理
+  - name: interface
+    description: 外部連携I/F管理
 
 paths:
   # ============================================================
@@ -5265,6 +5267,107 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  # ============================================================
+  # INTERFACE - 外部連携I/F管理
+  # ============================================================
+
+  /api/v1/interface/{ifId}/files:
+    get:
+      operationId: listInterfaceFiles
+      summary: pendingフォルダのファイル一覧取得
+      description: 指定されたI/F種別のpendingフォルダに配置されたCSVファイル一覧を返す
+      tags: [interface]
+      parameters:
+        - name: ifId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/InterfaceType'
+          description: I/F種別（IFX-001 / IFX-002）
+      responses:
+        '200':
+          description: ファイル一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceFileListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/interface/{ifId}/validate:
+    post:
+      operationId: validateInterfaceFile
+      summary: CSVバリデーション実行
+      description: 指定されたCSVファイルのバリデーションを実行し、行単位の検証結果を返す。DBへの書き込みは行わない
+      tags: [interface]
+      parameters:
+        - name: ifId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/InterfaceType'
+          description: I/F種別（IFX-001 / IFX-002）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InterfaceValidateRequest'
+      responses:
+        '200':
+          description: バリデーション結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceValidationResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/v1/interface/{ifId}/import:
+    post:
+      operationId: importInterfaceFile
+      summary: CSV取り込み実行
+      description: 指定されたCSVファイルの取り込みを実行する。再バリデーション→DB登録→Blob移動→履歴保存をトランザクション内で行う
+      tags: [interface]
+      parameters:
+        - name: ifId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/InterfaceType'
+          description: I/F種別（IFX-001 / IFX-002）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InterfaceImportRequest'
+      responses:
+        '200':
+          description: 取り込み結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterfaceImportResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          description: 業務ルール違反（L1ファイルエラー等）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   # ============================================================
   # Security Schemes
@@ -9635,6 +9738,155 @@ components:
           format: int64
         totalPages:
           type: integer
+
+    # ----------------------------------------------------------
+    # Interface - 外部連携I/F管理
+    # ----------------------------------------------------------
+    InterfaceType:
+      type: string
+      enum: [IFX-001, IFX-002]
+      description: I/F種別（IFX-001=入荷予定, IFX-002=受注）
+
+    ImportMode:
+      type: string
+      enum: [SUCCESS_ONLY, DISCARD]
+      description: 取り込みモード
+
+    InterfaceFileInfo:
+      type: object
+      required: [fileName, fileSize, createdAt]
+      properties:
+        fileName:
+          type: string
+          description: CSVファイル名
+          example: INB-PLAN-001.csv
+        fileSize:
+          type: integer
+          format: int64
+          description: ファイルサイズ（バイト）
+          example: 12288
+        createdAt:
+          type: string
+          format: date-time
+          description: Blob Storageへの配置日時
+
+    InterfaceFileListResponse:
+      type: object
+      required: [files, totalCount]
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterfaceFileInfo'
+        totalCount:
+          type: integer
+          description: ファイル件数
+
+    InterfaceValidateRequest:
+      type: object
+      required: [fileName, warehouseId]
+      properties:
+        fileName:
+          type: string
+          description: CSVファイル名
+          example: INB-PLAN-001.csv
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+
+    InterfaceValidationResult:
+      type: object
+      required: [fileName, totalRows, successCount, errorCount, rows]
+      properties:
+        fileName:
+          type: string
+          description: CSVファイル名
+        totalRows:
+          type: integer
+          description: 総データ行数（ヘッダ除く）
+        successCount:
+          type: integer
+          description: バリデーション成功行数
+        errorCount:
+          type: integer
+          description: バリデーションエラー行数
+        fileError:
+          $ref: '#/components/schemas/InterfaceFileError'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterfaceValidationRow'
+          description: エラー行のみ含む
+
+    InterfaceFileError:
+      type: object
+      required: [errorCode, message]
+      properties:
+        errorCode:
+          type: string
+          description: ファイルレベルエラーコード（WMS-E-IFX-001〜006）
+        message:
+          type: string
+          description: エラーメッセージ
+
+    InterfaceValidationRow:
+      type: object
+      required: [rowNumber, errors]
+      properties:
+        rowNumber:
+          type: integer
+          description: CSV行番号（ヘッダ除いたデータ行の番号、1始まり）
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/InterfaceValidationError'
+
+    InterfaceValidationError:
+      type: object
+      required: [column, errorCode, message]
+      properties:
+        column:
+          type: string
+          description: エラーのあるカラム名
+        errorCode:
+          type: string
+          description: エラーコード
+        message:
+          type: string
+          description: エラーメッセージ
+
+    InterfaceImportRequest:
+      type: object
+      required: [fileName, warehouseId, mode]
+      properties:
+        fileName:
+          type: string
+          description: CSVファイル名
+          example: INB-PLAN-001.csv
+        warehouseId:
+          type: integer
+          format: int64
+          description: 倉庫ID
+        mode:
+          $ref: '#/components/schemas/ImportMode'
+
+    InterfaceImportResult:
+      type: object
+      required: [successCount, errorCount, mode, status]
+      properties:
+        successCount:
+          type: integer
+          description: 取り込み成功行数
+        errorCount:
+          type: integer
+          description: バリデーションエラー行数
+        mode:
+          $ref: '#/components/schemas/ImportMode'
+        status:
+          type: string
+          enum: [COMPLETED, DISCARDED, FAILED]
+          description: 取り込みステータス
 
   # ============================================================
   # Parameters
