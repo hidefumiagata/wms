@@ -347,7 +347,7 @@ const router = createRouter({
           component: () => import('@/pages/outbound/PickingDetailPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
         },
-        // 返品登録 — RTN-001: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        // 返品登録 — RTN-001: SYSTEM_ADMIN, WAREHOUSE_MANAGER, WAREHOUSE_STAFF
         {
           path: 'returns/new',
           name: 'return-new',

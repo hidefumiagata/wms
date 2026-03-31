@@ -422,13 +422,10 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     showRelatedSlip,
     showLotNumber,
     showExpiryDate,
-    isReasonOther,
     hasAllocated,
     onReturnTypeChange,
     searchProduct,
-    selectProduct,
     onUnitTypeChange,
-    fetchLocationCandidates,
     submitReturn,
     resetForm,
   }

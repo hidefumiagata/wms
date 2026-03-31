@@ -104,12 +104,14 @@ describe('useReturnForm', () => {
       expect(result.showExpiryDate.value).toBe(true)
     })
 
-    it('isReasonOther は OTHER 選択時に true', () => {
+    it('OTHER 選択時に備考必須ルールが追加される', () => {
       const { result } = setup()
       result.form.returnReason = 'OTHER'
-      expect(result.isReasonOther.value).toBe(true)
+      const r = result.rules.value
+      expect((r.returnReasonNote as { required?: boolean }[])[0].required).toBe(true)
       result.form.returnReason = 'DAMAGED'
-      expect(result.isReasonOther.value).toBe(false)
+      const r2 = result.rules.value
+      expect(r2.returnReasonNote).toHaveLength(1) // maxLength only
     })
   })
 
@@ -230,9 +232,9 @@ describe('useReturnForm', () => {
     })
   })
 
-  // --- ロケーション候補取得 ---
-  describe('fetchLocationCandidates', () => {
-    it('在庫返品で商品・荷姿選択後にロケーション候補を取得', async () => {
+  // --- ロケーション候補取得（onUnitTypeChange 経由） ---
+  describe('ロケーション候補取得', () => {
+    it('在庫返品で荷姿変更後にロケーション候補を取得', async () => {
       vi.mocked(apiClient.get).mockResolvedValueOnce(
         mockAxiosResponse({
           content: [
@@ -248,7 +250,6 @@ describe('useReturnForm', () => {
       )
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
-      result.form.unitType = 'CASE'
       result.selectedProduct.value = {
         id: 1,
         productCode: 'P001',
@@ -256,8 +257,10 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       }
-      await result.fetchLocationCandidates()
-      expect(result.locationOptions.value).toHaveLength(1)
+      result.form.unitType = 'CASE'
+      result.onUnitTypeChange()
+      // Wait for the async fetch
+      await vi.waitFor(() => expect(result.locationOptions.value).toHaveLength(1))
       expect(result.locationOptions.value[0].locationCode).toBe('A-01-01')
     })
 
@@ -267,7 +270,6 @@ describe('useReturnForm', () => {
       )
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
-      result.form.unitType = 'CASE'
       result.selectedProduct.value = {
         id: 1,
         productCode: 'P001',
@@ -275,15 +277,16 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       }
-      await result.fetchLocationCandidates()
-      expect(ElMessage.info).toHaveBeenCalledWith('returns.locationCandidateEmpty')
+      result.form.unitType = 'CASE'
+      result.onUnitTypeChange()
+      await vi.waitFor(() => expect(ElMessage.info).toHaveBeenCalledWith('returns.locationCandidateEmpty'))
     })
 
-    it('商品未選択では取得しない', async () => {
+    it('商品未選択では取得しない', () => {
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
       result.form.unitType = 'CASE'
-      await result.fetchLocationCandidates()
+      result.onUnitTypeChange()
       expect(apiClient.get).not.toHaveBeenCalled()
     })
 
@@ -291,7 +294,6 @@ describe('useReturnForm', () => {
       vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('fail'))
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
-      result.form.unitType = 'CASE'
       result.selectedProduct.value = {
         id: 1,
         productCode: 'P001',
@@ -299,7 +301,9 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       }
-      await result.fetchLocationCandidates()
+      result.form.unitType = 'CASE'
+      result.onUnitTypeChange()
+      await vi.waitFor(() => expect(apiClient.get).toHaveBeenCalled())
       expect(result.locationOptions.value).toEqual([])
     })
 
@@ -309,7 +313,6 @@ describe('useReturnForm', () => {
       vi.mocked(axios.isCancel).mockReturnValueOnce(true)
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
-      result.form.unitType = 'CASE'
       result.selectedProduct.value = {
         id: 1,
         productCode: 'P001',
@@ -317,8 +320,9 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       }
-      await result.fetchLocationCandidates()
-      // locationOptions should remain unchanged (empty)
+      result.form.unitType = 'CASE'
+      result.onUnitTypeChange()
+      await vi.waitFor(() => expect(apiClient.get).toHaveBeenCalled())
       expect(result.locationOptions.value).toEqual([])
     })
   })
@@ -440,42 +444,61 @@ describe('useReturnForm', () => {
     })
   })
 
-  // --- selectProduct ---
-  describe('selectProduct', () => {
-    it('商品情報をセットしロケーションをリセット', () => {
+  // --- 商品選択時の動作（searchProduct 経由） ---
+  describe('商品選択時の動作', () => {
+    it('商品選択でロケーションがリセットされる', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [
+            {
+              id: 2,
+              productCode: 'P002',
+              productName: 'Product 2',
+              lotManageFlag: false,
+              expiryManageFlag: false,
+            },
+          ],
+          totalElements: 1,
+        }),
+      )
       const { result } = setup()
       result.form.locationId = 100
       result.locationOptions.value = [
         { locationId: 100, locationCode: 'A-01', quantity: 10, allocatedQty: 0, availableQty: 10 },
       ]
-      result.selectProduct({
-        id: 2,
-        productCode: 'P002',
-        productName: 'Product 2',
-        lotManageFlag: false,
-        expiryManageFlag: false,
-      })
+      result.form.productCode = 'P002'
+      await result.searchProduct()
       expect(result.selectedProduct.value?.id).toBe(2)
       expect(result.form.productCode).toBe('P002')
       expect(result.form.locationId).toBeNull()
       expect(result.locationOptions.value).toEqual([])
     })
 
-    it('在庫返品かつ荷姿選択済みならロケーション候補取得', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(
-        mockAxiosResponse({ content: [] }),
-      )
+    it('在庫返品かつ荷姿選択済みなら商品選択後にロケーション候補取得', async () => {
+      // 商品検索API → ロケーション候補API
+      vi.mocked(apiClient.get)
+        .mockResolvedValueOnce(
+          mockAxiosResponse({
+            content: [
+              {
+                id: 3,
+                productCode: 'P003',
+                productName: 'Product 3',
+                lotManageFlag: false,
+                expiryManageFlag: false,
+              },
+            ],
+            totalElements: 1,
+          }),
+        )
+        .mockResolvedValueOnce(mockAxiosResponse({ content: [] }))
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
       result.form.unitType = 'CASE'
-      result.selectProduct({
-        id: 3,
-        productCode: 'P003',
-        productName: 'Product 3',
-        lotManageFlag: false,
-        expiryManageFlag: false,
-      })
-      expect(apiClient.get).toHaveBeenCalled()
+      result.form.productCode = 'P003'
+      await result.searchProduct()
+      // searchProduct → selectProduct → fetchLocationCandidates
+      expect(apiClient.get).toHaveBeenCalledTimes(2)
     })
   })
 
