@@ -16,7 +16,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = "springdoc.swagger-ui.enabled=false")
+@TestPropertySource(properties = {
+        "springdoc.swagger-ui.enabled=false",
+        "springdoc.api-docs.enabled=false"
+})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @DisplayName("SecurityConfig: Swagger無効化時のアクセス制御")
 class SecurityConfigTest {
