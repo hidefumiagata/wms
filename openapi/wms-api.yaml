@@ -9789,6 +9789,8 @@ components:
         fileName:
           type: string
           description: CSVファイル名
+          pattern: '^[a-zA-Z0-9_\-]+\.csv$'
+          maxLength: 255
           example: INB-PLAN-001.csv
         warehouseId:
           type: integer
@@ -9863,6 +9865,8 @@ components:
         fileName:
           type: string
           description: CSVファイル名
+          pattern: '^[a-zA-Z0-9_\-]+\.csv$'
+          maxLength: 255
           example: INB-PLAN-001.csv
         warehouseId:
           type: integer

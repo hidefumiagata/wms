@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,8 @@ class InterfaceServiceTest {
     private WarehouseRepository warehouseRepository;
     @Mock
     private BusinessDateProvider businessDateProvider;
+    @Mock
+    private TransactionTemplate transactionTemplate;
 
     @InjectMocks
     private InterfaceService interfaceService;
@@ -86,6 +89,14 @@ class InterfaceServiceTest {
             }
         }
         throw new RuntimeException("Field not found: " + fieldName);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setupTransactionTemplate() {
+        when(transactionTemplate.execute(any())).thenAnswer(inv -> {
+            org.springframework.transaction.support.TransactionCallback<?> callback = inv.getArgument(0);
+            return callback.doInTransaction(null);
+        });
     }
 
     private void setupSecurityContext() {
@@ -181,6 +192,15 @@ class InterfaceServiceTest {
         }
 
         @Test
+        @DisplayName("異常系 — パストラバーサルを含むファイル名で拒否")
+        void validate_pathTraversal_throwsException() {
+            assertThatThrownBy(() -> interfaceService.validate(
+                    "IFX-001", "../../secret.csv", 1L))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("ファイル名が不正");
+        }
+
+        @Test
         @DisplayName("異常系 — ファイルサイズ超過でBusinessRuleViolationException")
         void validate_fileSizeExceeded_throwsException() {
             when(blobStorageClient.getFileSize("inbound-plan", "big.csv"))
@@ -240,8 +260,11 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("正常系 — SUCCESS_ONLYモードで取り込み成功")
         void importFile_successOnly_completed() {
+            setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
 
             String csvContent = "partner_code,planned_date,product_code,unit_type,planned_qty,lot_number,expiry_date,note\n"
                     + "SUP-0001,2026-03-25,PRD-001,CASE,100,,,\n";
@@ -314,9 +337,11 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("正常系 — DISCARDモードでDB登録なし")
         void importFile_discard_noDbInsert() {
+            setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
 
@@ -341,9 +366,11 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("異常系 — DISCARDモードでCSVパースエラーでも破棄可能")
         void importFile_discard_csvParseError_stillDiscards() {
+            setupTransactionTemplate();
             String fileName = "bad.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(100L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream("".getBytes()));
             when(csvParser.parse(any())).thenThrow(
@@ -364,6 +391,7 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("異常系 — SUCCESS_ONLYでCSVパースエラーはBusinessRuleViolationException")
         void importFile_successOnly_csvParseError_throwsException() {
+            when(blobStorageClient.getFileSize("inbound-plan", "bad.csv")).thenReturn(100L);
             when(blobStorageClient.downloadFile("inbound-plan", "bad.csv"))
                     .thenReturn(new ByteArrayInputStream("".getBytes()));
             when(csvParser.parse(any())).thenThrow(
@@ -377,9 +405,11 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("異常系 — Blob移動失敗時はblobMoveFailedがtrueになる")
         void importFile_blobMoveFailed_flaggedButCompleted() {
+            setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
 
@@ -405,17 +435,15 @@ class InterfaceServiceTest {
     @DisplayName("importFile — additional coverage")
     class ImportFileAdditional {
 
-        @BeforeEach
-        void setUp() {
-            setupSecurityContext();
-        }
-
         @Test
         @DisplayName("SUCCESS_ONLYで全行エラーの場合、saveAllが呼ばれない")
         void importFile_successOnly_allErrors_noSave() {
+            setupSecurityContext();
+            setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream("csv".getBytes()));
 
@@ -460,6 +488,7 @@ class InterfaceServiceTest {
         @Test
         @DisplayName("SUCCESS_ONLYでヘッダ検証エラーはBusinessRuleViolationException")
         void importFile_successOnly_headerError_throwsException() {
+            when(blobStorageClient.getFileSize("inbound-plan", "bad.csv")).thenReturn(100L);
             when(blobStorageClient.downloadFile("inbound-plan", "bad.csv"))
                     .thenReturn(new ByteArrayInputStream("a,b\n1,2\n".getBytes()));
 
@@ -593,6 +622,7 @@ class InterfaceServiceTest {
         @BeforeEach
         void setUp() {
             setupSecurityContext();
+            setupTransactionTemplate();
         }
 
         @Test
@@ -601,6 +631,7 @@ class InterfaceServiceTest {
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream(
                             "csv".getBytes(StandardCharsets.UTF_8)));
@@ -642,15 +673,11 @@ class InterfaceServiceTest {
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
-            // buildSlipsが実際のgenerateSlipNumberを使うよう、実装を通すモック設定
-            // generateSlipNumberは内部で findMaxSequenceByDate を呼ぶ
             when(inboundSlipRepository.findMaxSequenceByDate(any())).thenReturn(9999);
 
-            // buildSlipsはモックでgenerateSlipNumberコールバックを実際に呼ぶよう設定
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
                         InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
-                        // ここでgenerateSlipNumberが呼ばれ、9999超過で例外
                         gen.generate(LocalDate.of(2026, 3, 20));
                         return List.of();
                     });
@@ -667,6 +694,7 @@ class InterfaceServiceTest {
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
 
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
             when(blobStorageClient.downloadFile("inbound-plan", fileName))
                     .thenReturn(new ByteArrayInputStream(
                             "csv".getBytes(StandardCharsets.UTF_8)));
@@ -702,14 +730,13 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of(product));
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
-            when(inboundSlipRepository.findMaxSequenceByDate("20260320")).thenReturn(5);
+            when(inboundSlipRepository.findMaxSequenceByDate("INB-20260320-")).thenReturn(5);
 
             InboundPlanCsvProcessor.ValidationResult validationResult =
                     new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
-            // Capture the slip number generated by the callback
             final String[] capturedSlipNumber = new String[1];
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
@@ -727,5 +754,6 @@ class InterfaceServiceTest {
 
             assertThat(capturedSlipNumber[0]).isEqualTo("INB-20260320-0006");
         }
+
     }
 }
