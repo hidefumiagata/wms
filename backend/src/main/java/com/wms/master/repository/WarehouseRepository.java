@@ -13,6 +13,8 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     boolean existsByWarehouseCode(String warehouseCode);
 
+    java.util.Optional<Warehouse> findByWarehouseCode(String warehouseCode);
+
     @Query("SELECT w FROM Warehouse w WHERE "
             + "(:warehouseCode IS NULL OR w.warehouseCode LIKE CONCAT(:warehouseCode, '%') ESCAPE '\\') "
             + "AND (:warehouseName IS NULL OR w.warehouseName LIKE CONCAT('%', :warehouseName, '%') ESCAPE '\\') "

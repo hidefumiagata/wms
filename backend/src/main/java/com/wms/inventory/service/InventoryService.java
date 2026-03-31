@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -179,6 +180,72 @@ public class InventoryService {
         inventoryMovementRepository.save(movement);
 
         log.info("Inventory rollback: locationId={}, productId={}, qty=-{}, after={}",
+                cmd.locationId(), cmd.productId(), cmd.quantity(), newQty);
+    }
+
+    public record DeductReturnCommand(
+            Long warehouseId, Long locationId, String locationCode,
+            Long productId, String productCode, String productName,
+            String unitType, int quantity, Long referenceId,
+            Long userId, OffsetDateTime executedAt) {}
+
+    /**
+     * 在庫返品時に在庫を減算し、RETURN_OUT移動記録を作成する。
+     * 在庫チェックは location_id + product_id + unit_type の3フィールドで検索する。
+     */
+    @Transactional
+    public void deductReturnStock(DeductReturnCommand cmd) {
+        List<Inventory> inventories = inventoryRepository
+                .findByLocationIdAndProductIdAndUnitType(
+                        cmd.locationId(), cmd.productId(), cmd.unitType());
+
+        if (inventories.isEmpty()) {
+            throw new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                    "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+        }
+
+        boolean hasAllocated = inventories.stream().anyMatch(i -> i.getAllocatedQty() > 0);
+        if (hasAllocated) {
+            throw new BusinessRuleViolationException("RETURN_ALLOCATED_INVENTORY",
+                    "引当済み在庫は返品できません");
+        }
+
+        int totalAvailable = inventories.stream()
+                .mapToInt(i -> i.getQuantity() - i.getAllocatedQty()).sum();
+        if (cmd.quantity() > totalAvailable) {
+            throw new BusinessRuleViolationException("RETURN_INSUFFICIENT_QUANTITY",
+                    "返品数量が在庫数を超えています (available=" + totalAvailable + ", requested=" + cmd.quantity() + ")");
+        }
+
+        Inventory inventory = inventories.get(0);
+        int newQty = inventory.getQuantity() - cmd.quantity();
+        inventory.setQuantity(newQty);
+        try {
+            inventoryRepository.save(inventory);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
+                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+        }
+
+        InventoryMovement movement = InventoryMovement.builder()
+                .warehouseId(cmd.warehouseId())
+                .locationId(cmd.locationId())
+                .locationCode(cmd.locationCode())
+                .productId(cmd.productId())
+                .productCode(cmd.productCode())
+                .productName(cmd.productName())
+                .unitType(cmd.unitType())
+                .movementType("RETURN_OUT")
+                .quantity(-cmd.quantity())
+                .quantityAfter(newQty)
+                .referenceId(cmd.referenceId())
+                .referenceType("RETURN_SLIP")
+                .executedAt(cmd.executedAt())
+                .executedBy(cmd.userId())
+                .build();
+        inventoryMovementRepository.save(movement);
+
+        log.info("Inventory return deducted: locationId={}, productId={}, qty=-{}, after={}",
                 cmd.locationId(), cmd.productId(), cmd.quantity(), newQty);
     }
 }
