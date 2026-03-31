@@ -211,7 +211,11 @@ public class OrderCsvProcessor {
             }
         }
 
-        // L4: IFX-002には業務ルールバリデーションなし（日付前方チェックはIFX-001のみ）
+        // L4: IFX-002には業務ルールバリデーションなし
+        // （日付前方チェックはIFX-001のみ。09-interface-architecture.md セクション6.6参照）
+
+        // note: CSVの note カラムはバリデーション対象だがDB登録時には保存しない
+        // （IF-02-order.md セクション2.5参照）
 
         return errors;
     }

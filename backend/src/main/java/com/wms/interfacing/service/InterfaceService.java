@@ -242,8 +242,11 @@ public class InterfaceService {
     private void validateHeaderByIfId(String ifId, String[] header) {
         if ("IFX-001".equals(ifId)) {
             inboundPlanCsvProcessor.validateHeader(header);
-        } else {
+        } else if ("IFX-002".equals(ifId)) {
             orderCsvProcessor.validateHeader(header);
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
         }
     }
 
@@ -252,8 +255,11 @@ public class InterfaceService {
             InboundPlanCsvProcessor.MasterCache masterCache, LocalDate businessDate) {
         if ("IFX-001".equals(ifId)) {
             return inboundPlanCsvProcessor.validate(dataRows, masterCache, businessDate);
-        } else {
+        } else if ("IFX-002".equals(ifId)) {
             return orderCsvProcessor.validate(dataRows, masterCache, businessDate);
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
         }
     }
 
@@ -270,7 +276,7 @@ public class InterfaceService {
                 inboundSlipRepository.saveAll(slips);
                 log.info("IFX-001 import: {} slips created from {}", slips.size(), fileName);
             }
-        } else {
+        } else if ("IFX-002".equals(ifId)) {
             List<OutboundSlip> slips = orderCsvProcessor.buildSlips(
                     dataRows, validationResult, masterCache, warehouseId,
                     this::generateOutboundSlipNumber, businessDate, currentUserId);
@@ -278,6 +284,9 @@ public class InterfaceService {
                 outboundSlipRepository.saveAll(slips);
                 log.info("IFX-002 import: {} slips created from {}", slips.size(), fileName);
             }
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
         }
     }
 
