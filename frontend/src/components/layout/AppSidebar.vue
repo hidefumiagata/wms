@@ -115,6 +115,18 @@
       </el-menu-item>
     </el-sub-menu>
 
+    <!-- 返品管理 -->
+    <el-sub-menu index="returns">
+      <template #title>
+        <el-icon><RefreshLeft /></el-icon>
+        <span>{{ t('nav.returns') }}</span>
+      </template>
+      <el-menu-item index="/returns/new">
+        <el-icon><DocumentAdd /></el-icon>
+        <span>{{ t('nav.returnsNew') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
     <!-- システム管理 -->
     <el-sub-menu index="system">
       <template #title>
@@ -155,6 +167,8 @@ import {
   EditPen,
   Notebook,
   HomeFilled,
+  RefreshLeft,
+  DocumentAdd,
 } from '@element-plus/icons-vue'
 
 defineProps<{
