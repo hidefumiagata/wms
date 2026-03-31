@@ -217,4 +217,65 @@ class InterfaceControllerTest {
                     .andExpect(status().isUnprocessableEntity());
         }
     }
+
+    @Nested
+    @DisplayName("IFX-002 endpoints")
+    class Ifx002Endpoints {
+
+        @Test
+        @DisplayName("GET /api/v1/interface/IFX-002/files — 200ファイル一覧")
+        void listFiles_ifx002_returns200() throws Exception {
+            var file = new BlobStorageClient.BlobFileInfo(
+                    "ORD-001.csv", 8192, OffsetDateTime.parse("2026-03-22T10:00:00+09:00"));
+            when(interfaceService.listFiles("IFX-002")).thenReturn(List.of(file));
+
+            mockMvc.perform(get("/api/v1/interface/IFX-002/files"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalCount").value(1))
+                    .andExpect(jsonPath("$.files[0].fileName").value("ORD-001.csv"));
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/interface/IFX-002/validate — 200バリデーション成功")
+        void validate_ifx002_returns200() throws Exception {
+            InterfaceService.InterfaceValidationResponse resp =
+                    InterfaceService.InterfaceValidationResponse.success("ORD-001.csv",
+                            new InboundPlanCsvProcessor.ValidationResult(5, 5, 0, List.of()));
+            when(interfaceService.validate(eq("IFX-002"), eq("ORD-001.csv"), eq(1L)))
+                    .thenReturn(resp);
+
+            InterfaceValidateRequest request = new InterfaceValidateRequest()
+                    .fileName("ORD-001.csv")
+                    .warehouseId(1L);
+
+            mockMvc.perform(post("/api/v1/interface/IFX-002/validate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.fileName").value("ORD-001.csv"))
+                    .andExpect(jsonPath("$.successCount").value(5));
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/interface/IFX-002/import — 200 SUCCESS_ONLY")
+        void importFile_ifx002_returns200() throws Exception {
+            InterfaceService.InterfaceImportResponse resp =
+                    new InterfaceService.InterfaceImportResponse(3, 2, "SUCCESS_ONLY", "COMPLETED");
+            when(interfaceService.importFile(eq("IFX-002"), any(), any(), eq("SUCCESS_ONLY")))
+                    .thenReturn(resp);
+
+            InterfaceImportRequest request = new InterfaceImportRequest()
+                    .fileName("ORD-001.csv")
+                    .warehouseId(1L)
+                    .mode(ImportMode.SUCCESS_ONLY);
+
+            mockMvc.perform(post("/api/v1/interface/IFX-002/import")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.successCount").value(3))
+                    .andExpect(jsonPath("$.errorCount").value(2))
+                    .andExpect(jsonPath("$.status").value("COMPLETED"));
+        }
+    }
 }
