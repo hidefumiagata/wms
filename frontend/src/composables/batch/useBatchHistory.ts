@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { downloadReport } from '@/utils/reportDownload'
 import type { BatchExecutionDetail } from '@/api/generated/models/batch-execution-detail'
 import type { BatchExecutionPageResponse } from '@/api/generated/models/batch-execution-page-response'
 import type { BatchExecutionStatus } from '@/api/generated/models/batch-execution-status'
@@ -134,6 +135,84 @@ export function useBatchHistory() {
     fetchList()
   }
 
+  // --- レポートダイアログ ---
+  type ReportType = 'rpt006' | 'rpt016'
+  const reportDialogVisible = ref(false)
+  const activeReportType = ref<ReportType | null>(null)
+  const reportBusinessDate = ref<string | null>(null)
+  const processedDates = ref<string[]>([])
+  const processedDatesLoading = ref(false)
+  const downloadingReport = ref(false)
+
+  async function fetchProcessedDates() {
+    processedDatesLoading.value = true
+    try {
+      const res = await apiClient.get<BatchExecutionPageResponse>('/batch/executions', {
+        params: { status: 'SUCCESS', size: 1000, sort: 'targetBusinessDate,desc' },
+      })
+      const dates = (res.data.content ?? [])
+        .map((e) => e.targetBusinessDate)
+        .filter((d): d is string => !!d)
+      processedDates.value = [...new Set(dates)]
+      reportBusinessDate.value = processedDates.value.length > 0 ? processedDates.value[0] : null
+    } catch {
+      processedDates.value = []
+      reportBusinessDate.value = null
+    } finally {
+      processedDatesLoading.value = false
+    }
+  }
+
+  function openReportDialog(type: ReportType) {
+    activeReportType.value = type
+    reportDialogVisible.value = true
+    fetchProcessedDates()
+  }
+
+  function closeReportDialog() {
+    reportDialogVisible.value = false
+    activeReportType.value = null
+    reportBusinessDate.value = null
+    processedDates.value = []
+  }
+
+  function isDateDisabled(date: Date): boolean {
+    const dateStr = formatDate(date)
+    return !processedDates.value.includes(dateStr)
+  }
+
+  async function downloadConfirmedReport() {
+    if (downloadingReport.value) return
+    if (!reportBusinessDate.value) {
+      ElMessage.warning(t('batch.history.reportBusinessDateRequired'))
+      return
+    }
+
+    downloadingReport.value = true
+    try {
+      const isRpt006 = activeReportType.value === 'rpt006'
+      const path = isRpt006
+        ? '/reports/unreceived-confirmed'
+        : '/reports/unshipped-confirmed'
+      const filenameBase = isRpt006
+        ? `unreceived_confirmed_${reportBusinessDate.value.replace(/-/g, '')}`
+        : `unshipped_confirmed_${reportBusinessDate.value.replace(/-/g, '')}`
+
+      await downloadReport({
+        path,
+        params: { targetBusinessDate: reportBusinessDate.value },
+        format: 'pdf',
+        filenameBase,
+      })
+      ElMessage.success(t('batch.history.reportDownloading'))
+      closeReportDialog()
+    } catch {
+      ElMessage.error(t('batch.history.reportDownloadError'))
+    } finally {
+      downloadingReport.value = false
+    }
+  }
+
   return {
     items,
     loading,
@@ -151,5 +230,16 @@ export function useBatchHistory() {
     handleReset,
     handlePageChange,
     handleSizeChange,
+    // レポート
+    reportDialogVisible,
+    activeReportType,
+    reportBusinessDate,
+    processedDates,
+    processedDatesLoading,
+    downloadingReport,
+    openReportDialog,
+    closeReportDialog,
+    isDateDisabled,
+    downloadConfirmedReport,
   }
 }

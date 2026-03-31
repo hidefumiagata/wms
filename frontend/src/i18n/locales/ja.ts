@@ -970,6 +970,16 @@ export default {
       stepFailed: '失敗',
       stepSkipped: 'スキップ（完了済み）',
       errorMessage: 'エラー内容',
+      // レポート
+      reportUnreceivedConfirmed: '未入荷リスト（確定）',
+      reportUnshippedConfirmed: '未出荷リスト（確定）',
+      reportDialogTitle: 'レポート出力',
+      reportBusinessDate: '対象営業日',
+      reportBusinessDateRequired: '対象営業日は必須です',
+      reportOutput: 'PDF出力',
+      reportDownloading: 'ダウンロードを開始しました',
+      reportNoExecution: '{date} の日替処理実行履歴が存在しません。対象営業日を確認してください。',
+      reportDownloadError: 'レポートの生成に失敗しました。しばらく経ってから再試行してください。',
       // メッセージ
       fetchError: 'バッチ実行履歴の取得に失敗しました',
       detailFetchError: 'バッチ実行詳細の取得に失敗しました',

@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import apiClient from '@/api/client'
 import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useBatchHistory } from '@/composables/batch/useBatchHistory'
+import { downloadReport } from '@/utils/reportDownload'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+
+vi.mock('@/utils/reportDownload', () => ({
+  downloadReport: vi.fn().mockResolvedValue(undefined),
+}))
 
 describe('useBatchHistory', () => {
   const createMockResponse = () => ({
@@ -77,6 +82,16 @@ describe('useBatchHistory', () => {
     expect(result.items.value).toHaveLength(1)
     expect(result.items.value[0].id).toBe(1)
     expect(result.total.value).toBe(1)
+  })
+
+  it('fetchList でcontent/totalElementsがnullの場合デフォルト値を使う', async () => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce(
+      mockAxiosResponse({ content: null, totalElements: null, totalPages: 0, page: 0, size: 20 }),
+    )
+    const { result } = withSetup(() => useBatchHistory())
+    await result.fetchList()
+    expect(result.items.value).toEqual([])
+    expect(result.total.value).toBe(0)
   })
 
   it('fetchList がsignalを渡す（AbortController対応）', async () => {
@@ -244,6 +259,180 @@ describe('useBatchHistory', () => {
 
       expect(result.drawerVisible.value).toBe(false)
       expect(result.selectedDetail.value).toBeNull()
+    })
+  })
+
+  describe('レポートダイアログ', () => {
+    const processedDatesResponse = () => ({
+      content: [
+        { id: 1, targetBusinessDate: '2026-03-14', status: 'SUCCESS' },
+        { id: 2, targetBusinessDate: '2026-03-13', status: 'SUCCESS' },
+        { id: 3, targetBusinessDate: '2026-03-13', status: 'SUCCESS' },
+      ],
+      totalElements: 3,
+      totalPages: 1,
+      page: 0,
+      size: 1000,
+    })
+
+    it('openReportDialog がダイアログを開き処理済み営業日を取得する', async () => {
+      vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(processedDatesResponse()))
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.openReportDialog('rpt006')
+      await flushPromises()
+
+      expect(result.reportDialogVisible.value).toBe(true)
+      expect(result.activeReportType.value).toBe('rpt006')
+      expect(result.processedDates.value).toEqual(['2026-03-14', '2026-03-13'])
+      expect(result.reportBusinessDate.value).toBe('2026-03-14')
+    })
+
+    it('openReportDialog でrpt016が設定される', async () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.openReportDialog('rpt016')
+      await flushPromises()
+
+      expect(result.activeReportType.value).toBe('rpt016')
+    })
+
+    it('fetchProcessedDates エラー時にprocessedDatesが空になる', async () => {
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('fail'))
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.openReportDialog('rpt006')
+      await flushPromises()
+
+      expect(result.processedDates.value).toEqual([])
+      expect(result.reportBusinessDate.value).toBeNull()
+    })
+
+    it('closeReportDialog がダイアログ状態をリセットする', () => {
+      const { result } = withSetup(() => useBatchHistory())
+
+      result.reportDialogVisible.value = true
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = '2026-03-14'
+      result.processedDates.value = ['2026-03-14']
+
+      result.closeReportDialog()
+
+      expect(result.reportDialogVisible.value).toBe(false)
+      expect(result.activeReportType.value).toBeNull()
+      expect(result.reportBusinessDate.value).toBeNull()
+      expect(result.processedDates.value).toEqual([])
+    })
+
+    it('isDateDisabled が処理済み日付はfalse、未処理日付はtrueを返す', () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.processedDates.value = ['2026-03-14', '2026-03-13']
+
+      expect(result.isDateDisabled(new Date('2026-03-14'))).toBe(false)
+      expect(result.isDateDisabled(new Date('2026-03-12'))).toBe(true)
+    })
+
+    it('downloadConfirmedReport(rpt006) がunreceived-confirmedをダウンロードする', async () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = '2026-03-14'
+      result.reportDialogVisible.value = true
+
+      await result.downloadConfirmedReport()
+
+      expect(downloadReport).toHaveBeenCalledWith({
+        path: '/reports/unreceived-confirmed',
+        params: { targetBusinessDate: '2026-03-14' },
+        format: 'pdf',
+        filenameBase: 'unreceived_confirmed_20260314',
+      })
+      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportDownloading')
+      expect(result.reportDialogVisible.value).toBe(false)
+    })
+
+    it('downloadConfirmedReport(rpt016) がunshipped-confirmedをダウンロードする', async () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt016'
+      result.reportBusinessDate.value = '2026-03-13'
+      result.reportDialogVisible.value = true
+
+      await result.downloadConfirmedReport()
+
+      expect(downloadReport).toHaveBeenCalledWith({
+        path: '/reports/unshipped-confirmed',
+        params: { targetBusinessDate: '2026-03-13' },
+        format: 'pdf',
+        filenameBase: 'unshipped_confirmed_20260313',
+      })
+      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportDownloading')
+    })
+
+    it('downloadConfirmedReport が営業日未選択時に警告を表示する', async () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = null
+
+      await result.downloadConfirmedReport()
+
+      expect(downloadReport).not.toHaveBeenCalled()
+      expect(ElMessage.warning).toHaveBeenCalledWith('batch.history.reportBusinessDateRequired')
+    })
+
+    it('downloadConfirmedReport がダウンロード中の二重実行を防止する', async () => {
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = '2026-03-14'
+      result.downloadingReport.value = true
+
+      await result.downloadConfirmedReport()
+
+      expect(downloadReport).not.toHaveBeenCalled()
+    })
+
+    it('fetchProcessedDates でcontentがnullの場合は空配列になる', async () => {
+      vi.mocked(apiClient.get).mockResolvedValue(
+        mockAxiosResponse({ content: null, totalElements: 0, totalPages: 0, page: 0, size: 1000 }),
+      )
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.openReportDialog('rpt006')
+      await flushPromises()
+
+      expect(result.processedDates.value).toEqual([])
+      expect(result.reportBusinessDate.value).toBeNull()
+    })
+
+    it('fetchProcessedDates でtargetBusinessDateがnullのレコードはフィルタされる', async () => {
+      vi.mocked(apiClient.get).mockResolvedValue(
+        mockAxiosResponse({
+          content: [
+            { id: 1, targetBusinessDate: '2026-03-14', status: 'SUCCESS' },
+            { id: 2, targetBusinessDate: null, status: 'SUCCESS' },
+          ],
+          totalElements: 2,
+          totalPages: 1,
+          page: 0,
+          size: 1000,
+        }),
+      )
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.openReportDialog('rpt006')
+      await flushPromises()
+
+      expect(result.processedDates.value).toEqual(['2026-03-14'])
+    })
+
+    it('downloadConfirmedReport エラー時にエラーメッセージを表示する', async () => {
+      vi.mocked(downloadReport).mockRejectedValueOnce(new Error('fail'))
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = '2026-03-14'
+
+      await result.downloadConfirmedReport()
+
+      expect(ElMessage.error).toHaveBeenCalledWith('batch.history.reportDownloadError')
+      expect(result.downloadingReport.value).toBe(false)
     })
   })
 })

@@ -61,6 +61,27 @@
         </div>
       </template>
 
+      <div class="toolbar">
+        <div class="toolbar-buttons">
+          <el-button
+            :icon="Printer"
+            :loading="downloadingReport && activeReportType === 'rpt006'"
+            :disabled="downloadingReport"
+            @click="openReportDialog('rpt006')"
+          >
+            {{ t('batch.history.reportUnreceivedConfirmed') }}
+          </el-button>
+          <el-button
+            :icon="Printer"
+            :loading="downloadingReport && activeReportType === 'rpt016'"
+            :disabled="downloadingReport"
+            @click="openReportDialog('rpt016')"
+          >
+            {{ t('batch.history.reportUnshippedConfirmed') }}
+          </el-button>
+        </div>
+      </div>
+
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
         <el-table-column prop="id" :label="t('batch.history.execId')" width="100" />
         <el-table-column :label="t('batch.history.executedAt')" width="180">
@@ -156,13 +177,46 @@
         </template>
       </div>
     </el-drawer>
+
+    <!-- レポート出力ダイアログ（RPT-006 / RPT-016 共通） -->
+    <el-dialog
+      v-model="reportDialogVisible"
+      :title="reportDialogTitle"
+      width="420px"
+      @close="closeReportDialog"
+    >
+      <el-form label-width="120px">
+        <el-form-item :label="t('batch.history.reportBusinessDate')" required>
+          <el-date-picker
+            v-model="reportBusinessDate"
+            v-loading="processedDatesLoading"
+            type="date"
+            value-format="YYYY-MM-DD"
+            style="width: 200px"
+            :disabled-date="isDateDisabled"
+            :disabled="processedDatesLoading"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeReportDialog">{{ t('common.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          :loading="downloadingReport"
+          :disabled="!reportBusinessDate || downloadingReport"
+          @click="downloadConfirmedReport"
+        >
+          {{ t('batch.history.reportOutput') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, Printer } from '@element-plus/icons-vue'
 import { useBatchHistory } from '@/composables/batch/useBatchHistory'
 import { formatDateTime } from '@/utils/inboundFormatters'
 
@@ -185,7 +239,23 @@ const {
   handleReset,
   handlePageChange,
   handleSizeChange,
+  // レポート
+  reportDialogVisible,
+  activeReportType,
+  reportBusinessDate,
+  processedDatesLoading,
+  downloadingReport,
+  openReportDialog,
+  closeReportDialog,
+  isDateDisabled,
+  downloadConfirmedReport,
 } = useBatchHistory()
+
+const reportDialogTitle = computed(() => {
+  if (activeReportType.value === 'rpt006') return t('batch.history.reportUnreceivedConfirmed')
+  if (activeReportType.value === 'rpt016') return t('batch.history.reportUnshippedConfirmed')
+  return t('batch.history.reportDialogTitle')
+})
 
 function statusLabel(status: string | undefined): string {
   switch (status) {
@@ -253,6 +323,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.toolbar {
+  margin-bottom: 12px;
+}
+
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
 }
 
 .pagination-wrapper {
