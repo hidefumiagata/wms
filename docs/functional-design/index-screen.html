@@ -2180,7 +2180,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>入荷予定一覧</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/inbound/slips</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
-<tr><td><strong>概要</strong></td><td>登録済みの入荷予定伝票を一覧表示する。ステータス・入荷予定日・仕入先での絞り込み、入荷予定登録への遷移、および入荷予定レポート（RPT-03）のPDF出力を行う画面。</td></tr>
+<tr><td><strong>概要</strong></td><td>登録済みの入荷予定伝票を一覧表示する。ステータス・入荷予定日・仕入先での絞り込み、入荷予定登録への遷移、入荷予定レポート（RPT-03）および未入荷リスト・リアルタイム（RPT-05）のPDF出力を行う画面。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -2196,7 +2196,7 @@ Content-Type: application/json
 │  照会    │  伝票番号 | 入荷予定日From-To | 仕入先 | ステータス│
 │          │                              [🔍 検索] [クリア]   │
 │          │────────────────────────────────────────────────  │
-│          │ [入荷予定レポート]                          XX件   │
+│          │ [入荷予定レポート] [未入荷リスト(RT)]         XX件   │
 │          │────────────────────────────────────────────────  │
 │          │ 伝票番号 │ 種別 │ 入荷予定日 │ 仕入先 │ 明細数 │  │
 │          │          │      │            │        │ステータス│ │
@@ -2204,7 +2204,7 @@ Content-Type: application/json
 │          │  ← 1 2 3 →   20件/ページ▼                        │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
 <p>コンテンツエリアの構成:</p>
-<ol><li><strong>ページタイトル＋新規登録ボタン</strong>: 右上に「＋ 新規登録」ボタン（VIEWER非表示）</li><li><strong>検索フォーム</strong>: 伝票番号・入荷予定日From/To・仕入先・ステータスで絞り込み</li><li><strong>ツールバー</strong>: 件数表示・入荷予定レポート出力ボタン</li><li><strong>一覧テーブル</strong>: 伝票番号・種別・入荷予定日・仕入先・明細数・ステータスを表示。行クリックで詳細へ遷移</li><li><strong>ページネーション</strong>: 20件/ページ（変更可）</li></ol>
+<ol><li><strong>ページタイトル＋新規登録ボタン</strong>: 右上に「＋ 新規登録」ボタン（VIEWER非表示）</li><li><strong>検索フォーム</strong>: 伝票番号・入荷予定日From/To・仕入先・ステータスで絞り込み</li><li><strong>ツールバー</strong>: 件数表示・入荷予定レポート出力ボタン・未入荷リスト（RT）出力ボタン</li><li><strong>一覧テーブル</strong>: 伝票番号・種別・入荷予定日・仕入先・明細数・ステータスを表示。行クリックで詳細へ遷移</li><li><strong>ページネーション</strong>: 20件/ページ（変更可）</li></ol>
 <hr>
 <h3>3. 画面項目一覧</h3>
 <table>
@@ -2219,6 +2219,7 @@ Content-Type: application/json
 <tr><td>INB001-BTN02</td><td>クリアボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>検索条件を初期値にリセット</td></tr>
 <tr><td>INB001-BTN03</td><td>新規登録ボタン</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>INB-002へ遷移。VIEWER非表示</td></tr>
 <tr><td>INB001-BTN-RPT-03</td><td>入荷予定レポート</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>現在の検索条件でRPT-03を出力</td></tr>
+<tr><td>INB001-BTN-RPT-05</td><td>未入荷リスト（RT）</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>RPT-05を出力。<code>GET /api/v1/reports/unreceived-realtime?format=pdf</code></td></tr>
 <tr><td>INB001-T01</td><td>伝票番号</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>クリックでINB-003へ遷移</td></tr>
 <tr><td>INB001-T02</td><td>種別</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>通常入荷 / バッチ入荷</td></tr>
 <tr><td>INB001-T03</td><td>入荷予定日</td><td>表示</td><td>—</td><td>—</td><td>—</td><td></td></tr>
@@ -2238,6 +2239,7 @@ Content-Type: application/json
 <tr><td><code>EVT-INB001-003</code></td><td>テーブル行クリック</td><td>対象伝票のINB-003（入荷予定詳細）へ遷移</td><td>INB-003</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
 <tr><td><code>EVT-INB001-004</code></td><td>「入荷予定レポート出力」ボタンクリック</td><td>現在の検索条件でRPT-03（入荷予定レポート）をPDF出力する。<code>GET /api/v1/reports/inbound-plan?format=pdf&amp;...</code></td><td>PDFダウンロード</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
 <tr><td><code>EVT-INB001-005</code></td><td>「＋ 新規登録」ボタンクリック</td><td>INB-002（入荷予定登録）へ遷移</td><td>INB-002</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-INB001-008</code></td><td>「未入荷リスト（RT）」ボタンクリック</td><td>RPT-05（未入荷リスト・リアルタイム）をPDF出力する。<code>GET /api/v1/reports/unreceived-realtime?format=pdf</code></td><td>PDFダウンロード</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
 <tr><td><code>EVT-INB001-006</code></td><td>「クリア」ボタンクリック</td><td>検索条件を初期値にリセット</td><td>同画面（検索フォームリセット）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
 <tr><td><code>EVT-INB001-007</code></td><td>ページネーション操作</td><td>指定ページのデータを再取得して表示</td><td>同画面（ページ更新）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF, VIEWER</td></tr>
 <p></tbody><br></table></p>
@@ -3497,7 +3499,6 @@ Content-Type: application/json
 <tr><td>btn-bulk-allot</td><td>一括引当</td><td>ボタン</td><td>—</td><td>—</td><td>1件以上選択必須</td><td>MANAGER/STAFF のみ表示</td></tr>
 <tr><td>btn-delivery-list</td><td>配送リスト出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>RPT-014</td></tr>
 <tr><td>btn-unshipped-rt</td><td>未出荷リスト（RT）出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>RPT-015</td></tr>
-<tr><td>btn-unshipped-fix</td><td>未出荷リスト（確定）出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>RPT-016</td></tr>
 <tr><td>tbl-list</td><td>受注一覧テーブル</td><td>テーブル</td><td>—</td><td>—</td><td>—</td><td></td></tr>
 <tr><td>col-slip-no</td><td>伝票番号</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>クリックで OUT-003 へ遷移</td></tr>
 <tr><td>col-type</td><td>種別</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>通常出荷 / 倉庫振替出荷</td></tr>
@@ -4220,7 +4221,7 @@ Content-Type: application/json
 <tr><td><strong>画面名</strong></td><td>バッチ実行履歴一覧</td></tr>
 <tr><td><strong>URL パス</strong></td><td><code>/batch/history</code></td></tr>
 <tr><td><strong>対象ロール</strong></td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
-<tr><td><strong>概要</strong></td><td>過去の日替処理実行履歴を一覧表示する画面。実行日時・対象営業日・実行者・結果（成功/失敗）・エラー内容を確認できる。日次集計レポートをPDF出力する機能も提供する。</td></tr>
+<tr><td><strong>概要</strong></td><td>過去の日替処理実行履歴を一覧表示する画面。実行日時・対象営業日・実行者・結果（成功/失敗）・エラー内容を確認できる。日次集計レポート・未入荷リスト（確定）・未出荷リスト（確定）をPDF出力する機能も提供する。</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
@@ -4240,7 +4241,7 @@ Content-Type: application/json
 │          │ └──────────────────────────────────────────────┘ │
 │          │                                                   │
 │          │ ┌──────────────────────────────────────────────┐ │
-│          │ │ [📄 日次集計レポート出力]     全 45件         │ │
+│          │ │ [📄 日次集計] [📄 未入荷(確定)] [📄 未出荷(確定)]  全 45件 │ │
 │          │ ├────┬──────────┬──────────┬──────┬────┬──────┤ │
 │          │ │ #  │実行日時  │対象営業日│実行者│結果│操作  │ │
 │          │ ├────┼──────────┼──────────┼──────┼────┼──────┤ │
@@ -4278,6 +4279,8 @@ Content-Type: application/json
 <tr><td>BAT002-SEARCH-BTN</td><td>検索</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
 <tr><td>BAT002-CLEAR-BTN</td><td>クリア</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>フィルタ条件をすべて初期値に戻す</td></tr>
 <tr><td>BAT002-REPORT-BTN</td><td>日次集計レポート出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>クリックでダイアログ表示（RPT-017）。SYSTEM_ADMIN・WAREHOUSE_MANAGER のみ</td></tr>
+<tr><td>BAT002-RPT006-BTN</td><td>未入荷リスト（確定）出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>クリックでダイアログ表示（RPT-006）。SYSTEM_ADMIN・WAREHOUSE_MANAGER のみ</td></tr>
+<tr><td>BAT002-RPT016-BTN</td><td>未出荷リスト（確定）出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>クリックでダイアログ表示（RPT-016）。SYSTEM_ADMIN・WAREHOUSE_MANAGER のみ</td></tr>
 <tr><td>BAT002-TABLE</td><td>実行履歴テーブル</td><td>テーブル</td><td>—</td><td>—</td><td>—</td><td>実行ID・実行日時・対象営業日・実行者・結果・操作列を表示</td></tr>
 <tr><td>BAT002-COL-EXEC-ID</td><td>実行ID</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>内部管理用ID</td></tr>
 <tr><td>BAT002-COL-EXEC-DT</td><td>実行日時</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>YYYY/MM/DD HH:MM:SS 形式</td></tr>
@@ -4303,6 +4306,10 @@ Content-Type: application/json
 <tr><td><code>EVT-BAT002-005</code></td><td>「日次集計レポート出力」ボタンクリック</td><td>対象営業日を選択するダイアログ（RPT-017）を表示する</td><td>RPT-017ダイアログ</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-BAT002-006</code></td><td>RPT-017ダイアログ「PDF出力」クリック</td><td><code>GET /api/v1/reports/daily-summary?targetBusinessDate={date}</code> を呼び出し、PDFをダウンロードする</td><td>PDF ダウンロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-BAT002-007</code></td><td>ページング操作</td><td>指定ページのデータを取得して一覧を更新する</td><td>同画面（ページ更新）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-BAT002-008</code></td><td>「未入荷リスト（確定）出力」ボタンクリック</td><td>対象営業日を選択するダイアログ（RPT-006）を表示する</td><td>RPT-006ダイアログ</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-BAT002-009</code></td><td>RPT-006ダイアログ「PDF出力」クリック</td><td><code>GET /api/v1/reports/unreceived-confirmed?targetBusinessDate={date}&amp;format=pdf</code> を呼び出し、PDFをダウンロードする</td><td>PDF ダウンロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-BAT002-010</code></td><td>「未出荷リスト（確定）出力」ボタンクリック</td><td>対象営業日を選択するダイアログ（RPT-016）を表示する</td><td>RPT-016ダイアログ</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-BAT002-011</code></td><td>RPT-016ダイアログ「PDF出力」クリック</td><td><code>GET /api/v1/reports/unshipped-confirmed?targetBusinessDate={date}&amp;format=pdf</code> を呼び出し、PDFをダウンロードする</td><td>PDF ダウンロード</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>5. メッセージ一覧</h3>
@@ -4312,7 +4319,11 @@ Content-Type: application/json
 <tr><td><code>MSG-I-BAT002-001</code></td><td>情報</td><td>検索結果が0件だった場合</td><td><code>条件に一致する実行履歴が見つかりませんでした。</code></td></tr>
 <tr><td><code>MSG-E-BAT002-001</code></td><td>エラー</td><td>日次集計レポート出力で、日替処理が実行されていない営業日を指定した場合</td><td><code>{対象営業日} の日替処理実行履歴が存在しません。対象営業日を確認してください。</code></td></tr>
 <tr><td><code>MSG-S-BAT002-001</code></td><td>成功</td><td>日次集計レポートのPDF出力が完了した場合</td><td><code>日次集計レポートのダウンロードを開始しました。</code></td></tr>
-<tr><td><code>MSG-E-BAT002-002</code></td><td>エラー</td><td>日次集計レポートのPDF生成に失敗した場合</td><td><code>レポートの生成に失敗しました。しばらく経ってから再試行してください。</code></td></tr>
+<tr><td><code>MSG-E-BAT002-002</code></td><td>エラー</td><td>レポートのPDF生成に失敗した場合</td><td><code>レポートの生成に失敗しました。しばらく経ってから再試行してください。</code></td></tr>
+<tr><td><code>MSG-E-BAT002-003</code></td><td>エラー</td><td>未入荷リスト（確定）出力で、日替処理が実行されていない営業日を指定した場合</td><td><code>{対象営業日} の日替処理実行履歴が存在しません。対象営業日を確認してください。</code></td></tr>
+<tr><td><code>MSG-S-BAT002-002</code></td><td>成功</td><td>未入荷リスト（確定）のPDF出力が完了した場合</td><td><code>未入荷リスト（確定）のダウンロードを開始しました。</code></td></tr>
+<tr><td><code>MSG-E-BAT002-004</code></td><td>エラー</td><td>未出荷リスト（確定）出力で、日替処理が実行されていない営業日を指定した場合</td><td><code>{対象営業日} の日替処理実行履歴が存在しません。対象営業日を確認してください。</code></td></tr>
+<tr><td><code>MSG-S-BAT002-003</code></td><td>成功</td><td>未出荷リスト（確定）のPDF出力が完了した場合</td><td><code>未出荷リスト（確定）のダウンロードを開始しました。</code></td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h2>RPT-017 日次集計レポート出力ダイアログ</h2>
@@ -4338,6 +4349,30 @@ Content-Type: application/json
 <tr><td>在庫数量（営業日末時点）</td><td>対象営業日末時点の総在庫数量</td></tr>
 <tr><td>未入荷件数</td><td>対象営業日時点で未完了の入荷予定件数</td></tr>
 <tr><td>未出荷件数</td><td>対象営業日時点で未完了の受注件数</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>RPT-006 未入荷リスト（確定）出力ダイアログ</h2>
+<h3>概要</h3>
+<p>BAT-002 の「未入荷リスト（確定）出力」ボタンから呼び出されるダイアログ。対象営業日を選択してPDF出力する。レポートの出力内容は <a href="RPT-06-unreceived-confirmed.md" target="_blank">RPT-06-unreceived-confirmed.md</a> を参照。</p>
+<h3>ダイアログ項目一覧</h3>
+<table>
+<thead><tr><th>項目ID</th><th>項目名</th><th>種別</th><th>必須</th><th>初期値</th><th>バリデーション</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>RPT006-BIZ-DATE</td><td>対象営業日</td><td>日付</td><td>○</td><td>直近の処理済み営業日</td><td>処理済み営業日のみ選択可</td><td>日替処理成功の営業日のみ選択可能</td></tr>
+<tr><td>RPT006-OUTPUT-BTN</td><td>PDF出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>RPT006-CANCEL-BTN</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ダイアログを閉じる</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h2>RPT-016 未出荷リスト（確定）出力ダイアログ</h2>
+<h3>概要</h3>
+<p>BAT-002 の「未出荷リスト（確定）出力」ボタンから呼び出されるダイアログ。対象営業日を選択してPDF出力する。レポートの出力内容は <a href="RPT-16-unshipped-confirmed.md" target="_blank">RPT-16-unshipped-confirmed.md</a> を参照。</p>
+<h3>ダイアログ項目一覧</h3>
+<table>
+<thead><tr><th>項目ID</th><th>項目名</th><th>種別</th><th>必須</th><th>初期値</th><th>バリデーション</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>RPT016-BIZ-DATE</td><td>対象営業日</td><td>日付</td><td>○</td><td>直近の処理済み営業日</td><td>処理済み営業日のみ選択可</td><td>日替処理成功の営業日のみ選択可能</td></tr>
+<tr><td>RPT016-OUTPUT-BTN</td><td>PDF出力</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+<tr><td>RPT016-CANCEL-BTN</td><td>キャンセル</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>ダイアログを閉じる</td></tr>
 <p></tbody><br></table></p>
 </div>
 

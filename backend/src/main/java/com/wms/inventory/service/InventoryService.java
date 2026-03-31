@@ -220,9 +220,13 @@ public class InventoryService {
         // 複数在庫レコード（ロット違い等）に対してID順に分散減算する
         int remaining = cmd.quantity();
         for (Inventory inventory : inventories) {
-            if (remaining <= 0) break;
+            if (remaining <= 0) {
+                break;
+            }
             int deduct = Math.min(remaining, inventory.getQuantity());
-            if (deduct <= 0) continue;
+            if (deduct <= 0) {
+                continue;
+            }
             int newQty = inventory.getQuantity() - deduct;
             inventory.setQuantity(newQty);
             try {

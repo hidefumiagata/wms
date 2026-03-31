@@ -265,9 +265,7 @@ describe('useReturnForm', () => {
     })
 
     it('候補が0件のときに info メッセージ', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(
-        mockAxiosResponse({ content: [] }),
-      )
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({ content: [] }))
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
       result.selectedProduct.value = {
@@ -279,7 +277,9 @@ describe('useReturnForm', () => {
       }
       result.form.unitType = 'CASE'
       result.onUnitTypeChange()
-      await vi.waitFor(() => expect(ElMessage.info).toHaveBeenCalledWith('returns.locationCandidateEmpty'))
+      await vi.waitFor(() =>
+        expect(ElMessage.info).toHaveBeenCalledWith('returns.locationCandidateEmpty'),
+      )
     })
 
     it('商品未選択では取得しない', () => {
@@ -395,7 +395,17 @@ describe('useReturnForm', () => {
 
     it('在庫返品に変更かつ商品・荷姿選択済みなら候補取得', async () => {
       vi.mocked(apiClient.get).mockResolvedValueOnce(
-        mockAxiosResponse({ content: [{ locationId: 200, locationCode: 'B-01', quantity: 5, allocatedQty: 0, availableQty: 5 }] }),
+        mockAxiosResponse({
+          content: [
+            {
+              locationId: 200,
+              locationCode: 'B-01',
+              quantity: 5,
+              allocatedQty: 0,
+              availableQty: 5,
+            },
+          ],
+        }),
       )
       const { result } = setup()
       result.selectedProduct.value = {
@@ -416,9 +426,7 @@ describe('useReturnForm', () => {
   // --- onUnitTypeChange ---
   describe('onUnitTypeChange', () => {
     it('ロケーション候補をリセットし在庫返品時に再取得', async () => {
-      vi.mocked(apiClient.get).mockResolvedValueOnce(
-        mockAxiosResponse({ content: [] }),
-      )
+      vi.mocked(apiClient.get).mockResolvedValueOnce(mockAxiosResponse({ content: [] }))
       const { result } = setup()
       result.form.returnType = 'INVENTORY'
       result.form.locationId = 100
@@ -646,7 +654,10 @@ describe('useReturnForm', () => {
     // --- エラーハンドリング ---
     it('422 RETURN_INSUFFICIENT_QUANTITY', async () => {
       vi.mocked(apiClient.post).mockRejectedValueOnce(
-        createAxiosError(422, { errorCode: 'RETURN_INSUFFICIENT_QUANTITY', message: 'Insufficient' }),
+        createAxiosError(422, {
+          errorCode: 'RETURN_INSUFFICIENT_QUANTITY',
+          message: 'Insufficient',
+        }),
       )
       const { result } = setupForSubmit()
       result.form.returnType = 'INVENTORY'
@@ -655,7 +666,9 @@ describe('useReturnForm', () => {
         { locationId: 100, locationCode: 'A-01', quantity: 10, allocatedQty: 0, availableQty: 10 },
       ]
       await result.submitReturn()
-      expect(ElMessage.error).toHaveBeenCalledWith(expect.stringContaining('returns.insufficientQuantity'))
+      expect(ElMessage.error).toHaveBeenCalledWith(
+        expect.stringContaining('returns.insufficientQuantity'),
+      )
     })
 
     it('422 RETURN_ALLOCATED_INVENTORY', async () => {
@@ -669,7 +682,9 @@ describe('useReturnForm', () => {
         { locationId: 100, locationCode: 'A-01', quantity: 10, allocatedQty: 3, availableQty: 7 },
       ]
       await result.submitReturn()
-      expect(ElMessage.error).toHaveBeenCalledWith(expect.stringContaining('returns.allocatedInventory'))
+      expect(ElMessage.error).toHaveBeenCalledWith(
+        expect.stringContaining('returns.allocatedInventory'),
+      )
     })
 
     it('422 RETURN_STOCKTAKE_LOCKED', async () => {
@@ -709,9 +724,7 @@ describe('useReturnForm', () => {
     })
 
     it('404 でメッセージが無い場合はフォールバック', async () => {
-      vi.mocked(apiClient.post).mockRejectedValueOnce(
-        createAxiosError(404, {}),
-      )
+      vi.mocked(apiClient.post).mockRejectedValueOnce(createAxiosError(404, {}))
       const { result } = setupForSubmit()
       await result.submitReturn()
       expect(ElMessage.error).toHaveBeenCalledWith('error.notFound')

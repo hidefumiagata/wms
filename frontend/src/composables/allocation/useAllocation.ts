@@ -281,9 +281,7 @@ export function useAllocation() {
       ElMessage.success(t('allocation.unpackCompleteSuccess'))
       // ばらし指示のステータスをローカル更新
       if (executionResult.value?.unpackInstructions) {
-        const target = executionResult.value.unpackInstructions.find(
-          (i) => i.id === instruction.id,
-        )
+        const target = executionResult.value.unpackInstructions.find((i) => i.id === instruction.id)
         if (target) {
           target.status = 'COMPLETED' as UnpackInstructionItem['status']
         }

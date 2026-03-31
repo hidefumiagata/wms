@@ -12,16 +12,8 @@
           <el-card class="search-card" shadow="never">
             <el-form :model="searchForm" inline @submit.prevent="handleSearch">
               <el-form-item :label="t('allocation.status')">
-                <el-select
-                  v-model="searchForm.status"
-                  multiple
-                  clearable
-                  style="width: 240px"
-                >
-                  <el-option
-                    :label="t('allocation.statusOrdered')"
-                    value="ORDERED"
-                  />
+                <el-select v-model="searchForm.status" multiple clearable style="width: 240px">
+                  <el-option :label="t('allocation.statusOrdered')" value="ORDERED" />
                   <el-option
                     :label="t('allocation.statusPartialAllocated')"
                     value="PARTIAL_ALLOCATED"
@@ -43,7 +35,9 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   clearable
-                  :disabled-date="(date: Date) => shippingDateToMin ? date < new Date(shippingDateToMin) : false"
+                  :disabled-date="
+                    (date: Date) => (shippingDateToMin ? date < new Date(shippingDateToMin) : false)
+                  "
                   style="width: 160px"
                 />
               </el-form-item>
@@ -89,16 +83,8 @@
               @selection-change="handleSelectionChange"
             >
               <el-table-column type="selection" width="40" />
-              <el-table-column
-                prop="slipNumber"
-                :label="t('allocation.slipNumber')"
-                width="180"
-              />
-              <el-table-column
-                :label="t('allocation.plannedDate')"
-                width="130"
-                align="center"
-              >
+              <el-table-column prop="slipNumber" :label="t('allocation.slipNumber')" width="180" />
+              <el-table-column :label="t('allocation.plannedDate')" width="130" align="center">
                 <template #default="{ row }">
                   {{ formatDate(row.plannedDate) }}
                 </template>
@@ -114,11 +100,7 @@
                 width="100"
                 align="center"
               />
-              <el-table-column
-                :label="t('allocation.status')"
-                width="120"
-                align="center"
-              >
+              <el-table-column :label="t('allocation.status')" width="120" align="center">
                 <template #default="{ row }">
                   <el-tag :type="orderStatusTagType(row.status)">
                     {{ orderStatusLabel(row.status) }}
@@ -151,7 +133,9 @@
             </template>
 
             <el-alert
-              :title="t('allocation.allocatedCount', { count: executionResult.allocatedCount ?? 0 })"
+              :title="
+                t('allocation.allocatedCount', { count: executionResult.allocatedCount ?? 0 })
+              "
               type="success"
               :closable="false"
               show-icon
@@ -195,14 +179,14 @@
                   width="80"
                   align="right"
                 />
-                <el-table-column
-                  :label="t('allocation.unpackStatus')"
-                  width="100"
-                  align="center"
-                >
+                <el-table-column :label="t('allocation.unpackStatus')" width="100" align="center">
                   <template #default="{ row }">
                     <el-tag :type="row.status === 'COMPLETED' ? 'success' : 'warning'">
-                      {{ row.status === 'COMPLETED' ? t('allocation.unpackStatusCompleted') : t('allocation.unpackStatusInstructed') }}
+                      {{
+                        row.status === 'COMPLETED'
+                          ? t('allocation.unpackStatusCompleted')
+                          : t('allocation.unpackStatusInstructed')
+                      }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -236,11 +220,7 @@
                 show-icon
                 style="margin-bottom: 8px"
               />
-              <el-table
-                :data="executionResult.unallocatedLines"
-                stripe
-                border
-              >
+              <el-table :data="executionResult.unallocatedLines" stripe border>
                 <el-table-column
                   prop="productCode"
                   :label="t('allocation.unallocatedProductCode')"
@@ -269,21 +249,9 @@
               <span>{{ t('allocation.allocatedListTitle') }}</span>
             </template>
 
-            <el-table
-              v-loading="allocatedLoading"
-              :data="allocatedOrders"
-              row-key="id"
-            >
-              <el-table-column
-                prop="slipNumber"
-                :label="t('allocation.slipNumber')"
-                width="180"
-              />
-              <el-table-column
-                :label="t('allocation.plannedDate')"
-                width="130"
-                align="center"
-              >
+            <el-table v-loading="allocatedLoading" :data="allocatedOrders" row-key="id">
+              <el-table-column prop="slipNumber" :label="t('allocation.slipNumber')" width="180" />
+              <el-table-column :label="t('allocation.plannedDate')" width="130" align="center">
                 <template #default="{ row }">
                   {{ formatDate(row.plannedDate) }}
                 </template>
@@ -305,11 +273,7 @@
                 width="130"
                 align="center"
               />
-              <el-table-column
-                :label="t('allocation.status')"
-                width="120"
-                align="center"
-              >
+              <el-table-column :label="t('allocation.status')" width="120" align="center">
                 <template #default="{ row }">
                   <el-tag :type="allocatedStatusTagType(row.status)">
                     {{ allocatedStatusLabel(row.status) }}
@@ -323,11 +287,7 @@
                 fixed="right"
               >
                 <template #default="{ row }">
-                  <el-button
-                    size="small"
-                    type="danger"
-                    @click="handleRelease(row)"
-                  >
+                  <el-button size="small" type="danger" @click="handleRelease(row)">
                     {{ t('allocation.releaseButton') }}
                   </el-button>
                 </template>

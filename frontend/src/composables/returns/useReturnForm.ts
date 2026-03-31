@@ -192,9 +192,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         return
       }
       // 完全一致 or 1件の場合は直接選択
-      const exact = products.find(
-        (p: ProductOption) => p.productCode === form.productCode.trim(),
-      )
+      const exact = products.find((p: ProductOption) => p.productCode === form.productCode.trim())
       const target = exact ?? (products.length === 1 ? products[0] : null)
       if (target) {
         selectProduct(target)
@@ -270,9 +268,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   }
 
   // --- 在庫数の警告表示 ---
-  const hasAllocated = computed(
-    () => (selectedLocationInventory.value?.allocatedQty ?? 0) > 0,
-  )
+  const hasAllocated = computed(() => (selectedLocationInventory.value?.allocatedQty ?? 0) > 0)
 
   // --- 登録 ---
   async function submitReturn() {

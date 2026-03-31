@@ -853,13 +853,15 @@ export default {
     lotNumber: 'Lot Number',
     expiryDate: 'Expiry Date',
     register: 'Register',
-    confirmMessage: 'Register return for {productName}: {quantity} {unitType}? (Type: {returnType})',
+    confirmMessage:
+      'Register return for {productName}: {quantity} {unitType}? (Type: {returnType})',
     registerSuccess: 'Return slip {slipNumber} registered.',
     registerError: 'Failed to register return slip. Please try again later.',
     productNotFound: 'Product code not found.',
     productSearchEmpty: 'No products match the search criteria.',
     locationCandidateEmpty: 'No locations found with inventory for the selected product/unit type.',
-    insufficientQuantity: 'Return quantity exceeds available stock. (Available: {available} {unitType})',
+    insufficientQuantity:
+      'Return quantity exceeds available stock. (Available: {available} {unitType})',
     allocatedInventory: 'Cannot return allocated inventory. (Allocated: {allocated} {unitType})',
     stocktakeLocked: 'Location is locked for stocktake. Return not allowed.',
     validation: {
@@ -913,7 +915,8 @@ export default {
     executeError: 'Allocation failed: {message}',
     releaseNotAllowed: 'Cannot release allocation for orders with picking instructions',
     releaseError: 'Release failed: {message}',
-    releaseConfirm: 'Release allocation for order "{slipNumber}"? Allocated inventory will be restored.',
+    releaseConfirm:
+      'Release allocation for order "{slipNumber}"? Allocated inventory will be restored.',
     executeSuccess: 'Allocation completed ({count} orders)',
     unpackCompleteSuccess: 'Unpack instruction completed',
     releaseSuccess: 'Allocation released',

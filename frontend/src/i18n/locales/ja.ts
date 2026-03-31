@@ -856,13 +856,15 @@ export default {
     // ボタン
     register: '登録',
     // メッセージ
-    confirmMessage: '{productName} を {quantity}{unitType} 返品登録しますか？（返品種別: {returnType}）',
+    confirmMessage:
+      '{productName} を {quantity}{unitType} 返品登録しますか？（返品種別: {returnType}）',
     registerSuccess: '返品伝票 {slipNumber} を登録しました。',
     registerError: '返品伝票の登録に失敗しました。時間をおいて再試行してください。',
     productNotFound: '指定された商品コードが見つかりません。',
     productSearchEmpty: '検索条件に一致する商品がありません。',
     locationCandidateEmpty: '選択した商品・荷姿の在庫があるロケーションが見つかりません。',
-    insufficientQuantity: '返品数量が有効在庫数を超えています。（有効在庫数: {available}{unitType}）',
+    insufficientQuantity:
+      '返品数量が有効在庫数を超えています。（有効在庫数: {available}{unitType}）',
     allocatedInventory: '引当済みの在庫があるため返品できません。（引当数: {allocated}{unitType}）',
     stocktakeLocked: '指定のロケーションは棚卸中のため返品できません。',
     // バリデーション
@@ -923,7 +925,8 @@ export default {
     executeError: '引当実行に失敗しました: {message}',
     releaseNotAllowed: 'ピッキング指示済み以降の受注は引当解放できません',
     releaseError: '引当解放に失敗しました: {message}',
-    releaseConfirm: '受注番号「{slipNumber}」の引当を解放します。引当済み在庫が元に戻されます。よろしいですか？',
+    releaseConfirm:
+      '受注番号「{slipNumber}」の引当を解放します。引当済み在庫が元に戻されます。よろしいですか？',
     executeSuccess: '引当を実行しました（成功: {count}件）',
     unpackCompleteSuccess: 'ばらし指示を完了しました',
     releaseSuccess: '引当を解放しました',

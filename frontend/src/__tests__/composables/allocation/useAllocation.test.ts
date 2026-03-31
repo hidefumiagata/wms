@@ -9,8 +9,22 @@ import { useWarehouseStore } from '@/stores/warehouse'
 describe('useAllocation', () => {
   const createOrdersResponse = () => ({
     content: [
-      { id: 1, slipNumber: 'OUT-001', plannedDate: '2026-03-20', partnerName: '商事A', lineCount: 3, status: 'ORDERED' },
-      { id: 2, slipNumber: 'OUT-002', plannedDate: '2026-03-21', partnerName: '物流B', lineCount: 5, status: 'PARTIAL_ALLOCATED' },
+      {
+        id: 1,
+        slipNumber: 'OUT-001',
+        plannedDate: '2026-03-20',
+        partnerName: '商事A',
+        lineCount: 3,
+        status: 'ORDERED',
+      },
+      {
+        id: 2,
+        slipNumber: 'OUT-002',
+        plannedDate: '2026-03-21',
+        partnerName: '物流B',
+        lineCount: 5,
+        status: 'PARTIAL_ALLOCATED',
+      },
     ],
     totalElements: 2,
     totalPages: 1,
@@ -20,7 +34,15 @@ describe('useAllocation', () => {
 
   const createAllocatedResponse = () => ({
     content: [
-      { id: 4, slipNumber: 'OUT-004', plannedDate: '2026-03-18', partnerName: '商事C', lineCount: 2, allocatedLineCount: 2, status: 'ALLOCATED' },
+      {
+        id: 4,
+        slipNumber: 'OUT-004',
+        plannedDate: '2026-03-18',
+        partnerName: '商事C',
+        lineCount: 2,
+        allocatedLineCount: 2,
+        status: 'ALLOCATED',
+      },
     ],
     totalElements: 1,
     totalPages: 1,
@@ -34,10 +56,25 @@ describe('useAllocation', () => {
       { outboundSlipId: 1, slipNumber: 'OUT-001', status: 'ALLOCATED', allocatedLines: [] },
     ],
     unpackInstructions: [
-      { id: 101, productCode: 'PRD-002', productName: '商品B', fromUnitType: 'CASE', toUnitType: 'PIECE', quantity: 24, status: 'INSTRUCTED' },
+      {
+        id: 101,
+        productCode: 'PRD-002',
+        productName: '商品B',
+        fromUnitType: 'CASE',
+        toUnitType: 'PIECE',
+        quantity: 24,
+        status: 'INSTRUCTED',
+      },
     ],
     unallocatedLines: [
-      { outboundSlipId: 3, slipNumber: 'OUT-003', lineNo: 2, productCode: 'PRD-005', productName: '商品E', shortageQty: 10 },
+      {
+        outboundSlipId: 3,
+        slipNumber: 'OUT-003',
+        lineNo: 2,
+        productCode: 'PRD-005',
+        productName: '商品E',
+        shortageQty: 10,
+      },
     ],
   })
 
@@ -484,10 +521,7 @@ describe('useAllocation', () => {
       await flushPromises()
 
       expect(result.activeTab.value).toBe('allocated')
-      expect(apiClient.get).toHaveBeenCalledWith(
-        '/allocation/allocated-orders',
-        expect.anything(),
-      )
+      expect(apiClient.get).toHaveBeenCalledWith('/allocation/allocated-orders', expect.anything())
     })
 
     it('execute タブに切り替えても fetchAllocatedOrders は呼ばれない', async () => {
@@ -605,7 +639,9 @@ describe('useAllocation', () => {
     })
 
     it('APIエラーにメッセージがある場合はそれを表示する', async () => {
-      vi.mocked(apiClient.post).mockRejectedValue(createAxiosError(400, { message: 'ステータスが不正です' }))
+      vi.mocked(apiClient.post).mockRejectedValue(
+        createAxiosError(400, { message: 'ステータスが不正です' }),
+      )
 
       const { result } = withSetup(() => {
         const ws = useWarehouseStore()
@@ -664,10 +700,7 @@ describe('useAllocation', () => {
       vi.mocked(apiClient.get).mockClear()
       await result.handleExecute()
 
-      expect(apiClient.get).toHaveBeenCalledWith(
-        '/allocation/orders',
-        expect.anything(),
-      )
+      expect(apiClient.get).toHaveBeenCalledWith('/allocation/orders', expect.anything())
     })
   })
 
@@ -677,7 +710,9 @@ describe('useAllocation', () => {
 
   describe('handleUnpackComplete', () => {
     it('PUT で完了APIを呼びステータスをローカル更新する', async () => {
-      vi.mocked(apiClient.put).mockResolvedValue(mockAxiosResponse({ id: 101, status: 'COMPLETED' }))
+      vi.mocked(apiClient.put).mockResolvedValue(
+        mockAxiosResponse({ id: 101, status: 'COMPLETED' }),
+      )
       vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse(createExecutionResult()))
 
       const { result } = withSetup(() => {
@@ -691,7 +726,9 @@ describe('useAllocation', () => {
       await result.handleExecute()
 
       vi.mocked(apiClient.put).mockClear()
-      vi.mocked(apiClient.put).mockResolvedValue(mockAxiosResponse({ id: 101, status: 'COMPLETED' }))
+      vi.mocked(apiClient.put).mockResolvedValue(
+        mockAxiosResponse({ id: 101, status: 'COMPLETED' }),
+      )
 
       const instruction = result.executionResult.value!.unpackInstructions![0]
       await result.handleUnpackComplete(instruction)
@@ -732,7 +769,9 @@ describe('useAllocation', () => {
     })
 
     it('executionResult が null の場合でも完了APIは呼ばれる', async () => {
-      vi.mocked(apiClient.put).mockResolvedValue(mockAxiosResponse({ id: 101, status: 'COMPLETED' }))
+      vi.mocked(apiClient.put).mockResolvedValue(
+        mockAxiosResponse({ id: 101, status: 'COMPLETED' }),
+      )
 
       const { result } = withSetup(() => useAllocation())
 
@@ -743,7 +782,9 @@ describe('useAllocation', () => {
     })
 
     it('ローカル更新で対象が見つからない場合でもエラーにならない', async () => {
-      vi.mocked(apiClient.put).mockResolvedValue(mockAxiosResponse({ id: 999, status: 'COMPLETED' }))
+      vi.mocked(apiClient.put).mockResolvedValue(
+        mockAxiosResponse({ id: 999, status: 'COMPLETED' }),
+      )
       vi.mocked(apiClient.post).mockResolvedValue(mockAxiosResponse(createExecutionResult()))
 
       const { result } = withSetup(() => {
@@ -877,10 +918,7 @@ describe('useAllocation', () => {
       await flushPromises()
 
       expect(result.allocatedPage.value).toBe(2)
-      expect(apiClient.get).toHaveBeenCalledWith(
-        '/allocation/allocated-orders',
-        expect.anything(),
-      )
+      expect(apiClient.get).toHaveBeenCalledWith('/allocation/allocated-orders', expect.anything())
     })
 
     it('サイズ変更でページが1にリセットされる', async () => {
@@ -996,10 +1034,7 @@ describe('useAllocation', () => {
 
       await result.handleRelease(order)
 
-      expect(apiClient.get).toHaveBeenCalledWith(
-        '/allocation/allocated-orders',
-        expect.anything(),
-      )
+      expect(apiClient.get).toHaveBeenCalledWith('/allocation/allocated-orders', expect.anything())
     })
   })
 })
