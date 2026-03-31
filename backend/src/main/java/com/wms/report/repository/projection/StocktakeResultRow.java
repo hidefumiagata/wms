@@ -15,7 +15,7 @@ public interface StocktakeResultRow {
 
     String getLotNumber();
 
-    Integer getQuantityBefore();
+    Integer getSystemQuantity();
 
-    Integer getQuantityCounted();
+    Integer getActualQuantity();
 }

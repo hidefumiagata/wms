@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.wms.report.service.CsvGenerationService.fmtDate;
 import static com.wms.report.service.CsvGenerationService.fmtInteger;
@@ -75,10 +76,9 @@ public class DeliveryListReportService {
 
             List<DeliveryListLineRow> lineRows = outboundReportRepository.findDeliveryListLineData(slipIds);
 
-            Map<Long, List<DeliveryListLineRow>> linesBySlipId = new LinkedHashMap<>();
-            for (DeliveryListLineRow lineRow : lineRows) {
-                linesBySlipId.computeIfAbsent(lineRow.getOutboundSlipId(), k -> new ArrayList<>()).add(lineRow);
-            }
+            Map<Long, List<DeliveryListLineRow>> linesBySlipId = lineRows.stream()
+                    .collect(Collectors.groupingBy(
+                            DeliveryListLineRow::getOutboundSlipId, LinkedHashMap::new, Collectors.toList()));
 
             items = headerRows.stream()
                     .map(headerRow -> toReportItem(headerRow, linesBySlipId))

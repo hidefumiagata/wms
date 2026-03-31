@@ -61,7 +61,7 @@ public interface StocktakeReportRepository extends JpaRepository<StocktakeLine, 
     @Query(value = """
             SELECT sl.location_code, sl.product_code, sl.product_name,
                    sl.unit_type, sl.lot_number,
-                   sl.quantity_before, sl.quantity_counted
+                   sl.quantity_before AS system_quantity, sl.quantity_counted AS actual_quantity
             FROM stocktake_lines sl
             WHERE sl.stocktake_header_id = :stocktakeId
             ORDER BY sl.location_code ASC, sl.product_code ASC

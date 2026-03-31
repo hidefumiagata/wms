@@ -155,8 +155,8 @@ public class StocktakeResultReportService {
         item.setUnitType(row.getUnitType());
         item.setLotNumber(row.getLotNumber());
 
-        Integer systemQty = row.getQuantityBefore();
-        Integer actualQty = row.getQuantityCounted();
+        Integer systemQty = row.getSystemQuantity();
+        Integer actualQty = row.getActualQuantity();
 
         item.setSystemQuantity(systemQty != null ? systemQty : 0);
         item.setActualQuantity(actualQty);

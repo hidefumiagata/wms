@@ -96,8 +96,8 @@ class StocktakeResultReportServiceTest {
         when(row.getProductName()).thenReturn(productName);
         when(row.getUnitType()).thenReturn(unitType);
         when(row.getLotNumber()).thenReturn(lotNumber);
-        when(row.getQuantityBefore()).thenReturn(systemQty);
-        when(row.getQuantityCounted()).thenReturn(actualQty);
+        when(row.getSystemQuantity()).thenReturn(systemQty);
+        when(row.getActualQuantity()).thenReturn(actualQty);
         return row;
     }
 
