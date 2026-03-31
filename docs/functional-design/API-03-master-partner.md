@@ -1,5 +1,8 @@
 # 機能設計書 — API設計 取引先マスタ（MST-PAR）
 
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
+
 ## 目次
 
 - [API-MST-PAR-001 取引先一覧取得](#api-mst-par-001-取引先一覧取得)

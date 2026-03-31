@@ -1,5 +1,8 @@
 # 機能設計書 — API設計 商品マスタ（MST-PRD）
 
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
+
 ## 目次
 
 - [API-MST-PRD-001 商品一覧取得](#api-mst-prd-001-商品一覧取得)

@@ -83,7 +83,8 @@
 <hr class="doc-separator">
 <div class="markdown-body" id="API-01-auth">
 <h1>機能設計書 — API設計 認証・システム共通（AUTH / SYS）</h1>
-<blockquote><strong>関連ドキュメント</strong>: <a href="./08-api-overview.md" target="_blank">08-api-overview.md</a>（API共通仕様・エラーコード一覧）</blockquote>
+<blockquote><strong>関連ドキュメント</strong>: <a href="./08-api-overview.md" target="_blank">08-api-overview.md</a>（API共通仕様・エラーコード一覧）
+<p><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>API-AUTH-001 ログイン</h2>
 <h3>1. API概要</h3>
@@ -640,6 +641,8 @@ Set-Cookie: refresh_token=f7g8h9i0j1k2...(新しいUUID); HttpOnly; SameSite=Lax
 <div class="markdown-body" id="API-02-master-facility">
 <h1>機能設計書 — API設計 施設マスタ（MST-FAC）</h1>
 <p>対象API: API-MST-FAC-001〜035（倉庫・棟・エリア・ロケーション）</p>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>共通仕様</h2>
 <h3>認証・認可</h3>
@@ -2340,6 +2343,8 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
 <hr class="doc-separator">
 <div class="markdown-body" id="API-03-master-partner">
 <h1>機能設計書 — API設計 取引先マスタ（MST-PAR）</h1>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <h2>目次</h2>
 <ul><li style="margin-left:0px"><a href="#api-mst-par-001-取引先一覧取得" target="_blank">API-MST-PAR-001 取引先一覧取得</a></li><li style="margin-left:0px"><a href="#api-mst-par-002-取引先登録" target="_blank">API-MST-PAR-002 取引先登録</a></li><li style="margin-left:0px"><a href="#api-mst-par-003-取引先取得" target="_blank">API-MST-PAR-003 取引先取得</a></li><li style="margin-left:0px"><a href="#api-mst-par-004-取引先更新" target="_blank">API-MST-PAR-004 取引先更新</a></li><li style="margin-left:0px"><a href="#api-mst-par-005-取引先無効化有効化" target="_blank">API-MST-PAR-005 取引先無効化/有効化</a></li><li style="margin-left:0px"><a href="#api-mst-par-006-取引先コード存在確認" target="_blank">API-MST-PAR-006 取引先コード存在確認</a></li></ul>
 <hr>
@@ -3014,6 +3019,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-04-master-product">
 <h1>機能設計書 — API設計 商品マスタ（MST-PRD）</h1>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <h2>目次</h2>
 <ul><li style="margin-left:0px"><a href="#api-mst-prd-001-商品一覧取得" target="_blank">API-MST-PRD-001 商品一覧取得</a></li><li style="margin-left:0px"><a href="#api-mst-prd-002-商品登録" target="_blank">API-MST-PRD-002 商品登録</a></li><li style="margin-left:0px"><a href="#api-mst-prd-003-商品取得" target="_blank">API-MST-PRD-003 商品取得</a></li><li style="margin-left:0px"><a href="#api-mst-prd-004-商品更新" target="_blank">API-MST-PRD-004 商品更新</a></li><li style="margin-left:0px"><a href="#api-mst-prd-005-商品無効化有効化" target="_blank">API-MST-PRD-005 商品無効化/有効化</a></li><li style="margin-left:0px"><a href="#api-mst-prd-006-商品コード存在確認" target="_blank">API-MST-PRD-006 商品コード存在確認</a></li></ul>
 <hr>
@@ -3695,7 +3702,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <h1>機能設計書 — API設計 ユーザーマスタ（MST-USR）</h1>
 <p>対象API: API-MST-USR-001 〜 API-MST-USR-007</p>
 <blockquote><strong>アクセス制限</strong>: 本ドキュメントに記載するAPIはすべて <strong>SYSTEM_ADMIN ロールのみ</strong> アクセス可能。
-<p>WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER からのリクエストは <code>403 FORBIDDEN</code> を返す。</blockquote></p>
+<p>WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER からのリクエストは <code>403 FORBIDDEN</code> を返す。<br><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>API-MST-USR-001 ユーザー一覧取得</h2>
 <h3>1. API概要</h3>
@@ -4396,7 +4403,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-06-inbound">
 <h1>機能設計書 — API設計 入荷管理（INB-001〜010）</h1>
-<blockquote>共通仕様（ベースURL・認証・エラーフォーマット・ページング）は <a href="08-api-overview.md" target="_blank"><code>08-api-overview.md</code></a> を参照。</blockquote>
+<blockquote>共通仕様（ベースURL・認証・エラーフォーマット・ページング）は <a href="08-api-overview.md" target="_blank"><code>08-api-overview.md</code></a> を参照。
+<p><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>ステータス遷移図</h2>
 <div class="mermaid">stateDiagram-v2
@@ -5326,6 +5334,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-07-inventory">
 <h1>機能設計書 — API設計 在庫管理（API-INV-001〜015）</h1>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>目次</h2>
 <ul><li style="margin-left:0px"><a href="#api-inv-001-在庫一覧照会" target="_blank">API-INV-001: 在庫一覧照会</a></li><li style="margin-left:0px"><a href="#api-inv-002-在庫移動登録" target="_blank">API-INV-002: 在庫移動登録</a></li><li style="margin-left:0px"><a href="#api-inv-003-ばらし登録" target="_blank">API-INV-003: ばらし登録</a></li><li style="margin-left:0px"><a href="#api-inv-004-在庫訂正登録" target="_blank">API-INV-004: 在庫訂正登録</a></li><li style="margin-left:0px"><a href="#api-inv-011-棚卸一覧取得" target="_blank">API-INV-011: 棚卸一覧取得</a></li><li style="margin-left:0px"><a href="#api-inv-012-棚卸開始" target="_blank">API-INV-012: 棚卸開始</a></li><li style="margin-left:0px"><a href="#api-inv-013-棚卸詳細取得" target="_blank">API-INV-013: 棚卸詳細取得</a></li><li style="margin-left:0px"><a href="#api-inv-014-棚卸実数入力一時保存" target="_blank">API-INV-014: 棚卸実数入力・一時保存</a></li><li style="margin-left:0px"><a href="#api-inv-015-棚卸確定" target="_blank">API-INV-015: 棚卸確定</a></li></ul>
@@ -6512,7 +6522,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-08-outbound">
 <h1>機能設計書 — API設計 出荷管理（API-OUT-001〜022）</h1>
-<blockquote><strong>関連ファイル</strong>: <a href="08-api-overview.md" target="_blank">08-api-overview.md</a>（共通仕様・エラーコード一覧）</blockquote>
+<blockquote><strong>関連ファイル</strong>: <a href="08-api-overview.md" target="_blank">08-api-overview.md</a>（共通仕様・エラーコード一覧）
+<p><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>目次</h2>
 <ol><li><a href="#テーブル定義" target="_blank">テーブル定義</a></li><li><a href="#ステータス遷移" target="_blank">ステータス遷移</a></li><li><a href="#api-out-001-受注一覧取得" target="_blank">API-OUT-001: 受注一覧取得</a></li><li><a href="#api-out-002-受注登録" target="_blank">API-OUT-002: 受注登録</a></li><li><a href="#api-out-003-受注詳細取得" target="_blank">API-OUT-003: 受注詳細取得</a></li><li><a href="#api-out-004-受注削除" target="_blank">API-OUT-004: 受注削除</a></li><li><a href="#補助api-受注キャンセル" target="_blank">補助API: 受注キャンセル</a></li><li><a href="#api-out-011-ピッキング指示一覧取得" target="_blank">API-OUT-011: ピッキング指示一覧取得</a></li><li><a href="#api-out-012-ピッキング指示作成" target="_blank">API-OUT-012: ピッキング指示作成</a></li><li><a href="#api-out-013-ピッキング指示詳細取得" target="_blank">API-OUT-013: ピッキング指示詳細取得</a></li><li><a href="#api-out-014-ピッキング完了登録" target="_blank">API-OUT-014: ピッキング完了登録</a></li><li><a href="#api-out-021-出荷検品登録" target="_blank">API-OUT-021: 出荷検品登録</a></li><li><a href="#api-out-022-出荷完了登録" target="_blank">API-OUT-022: 出荷完了登録</a></li><li><a href="#エラーコード一覧出荷管理" target="_blank">エラーコード一覧（出荷管理）</a></li></ol>
@@ -7625,6 +7636,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-09-batch">
 <h1>機能設計書 — API設計 バッチ管理（BAT）</h1>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <h2>バッチ管理</h2>
 <hr>
 <h3>API-BAT-001 日替処理実行</h3>
@@ -7954,6 +7967,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <hr class="doc-separator">
 <div class="markdown-body" id="API-10-report">
 <h1>機能設計書 — API設計 レポート出力（RPT）</h1>
+<blockquote><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。
+<p><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <h2>レポート出力</h2>
 <hr>
 <h3>レポートAPI 共通仕様</h3>
@@ -8946,7 +8961,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
     VALIDATE -->|OK| FIND_SLIP{出荷伝票 存在確認}
     FIND_SLIP -->|なし| ERR_404[404 OUTBOUND_SLIP_NOT_FOUND]
-    FIND_SLIP -->|あり| QUERY[outbound_slip_lines から\nピッキング数・検品数を取得\n差異を計算]
+    FIND_SLIP -->|あり| QUERY[picking_instruction_lines.qty_picked から\nピッキング数を集計し、検品数と\n差異を計算]
     QUERY --> FORMAT{format?}
     FORMAT -->|json| RES_JSON[200 OK JSON配列]
     FORMAT -->|csv| RES_CSV[200 OK CSVダウンロード\nfilename: shipping_inspection_YYYYMMDD.csv]
@@ -9456,7 +9471,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <p>対象API: API-SYS-002 〜 API-SYS-003</p>
 <blockquote><strong>注記</strong>: API-SYS-001（営業日取得）は API-01-auth.md に定義されています。</blockquote>
 <blockquote><strong>アクセス制限</strong>: 本ドキュメントに記載するAPIはすべて <strong>SYSTEM_ADMIN ロールのみ</strong> アクセス可能。
-<p>WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER からのリクエストは <code>403 FORBIDDEN</code> を返す。</blockquote></p>
+<p>WAREHOUSE_MANAGER / WAREHOUSE_STAFF / VIEWER からのリクエストは <code>403 FORBIDDEN</code> を返す。<br><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>API-SYS-002 パラメータ一覧取得</h2>
 <h3>1. API概要</h3>
@@ -9678,7 +9693,8 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <hr class="doc-separator">
 <div class="markdown-body" id="API-12-allocation">
 <h1>機能設計書 — API設計 在庫引当（ALL）</h1>
-<blockquote><strong>関連ファイル</strong>: <a href="08-api-overview.md" target="_blank">08-api-overview.md</a>（共通仕様・エラーコード一覧）</blockquote>
+<blockquote><strong>関連ファイル</strong>: <a href="08-api-overview.md" target="_blank">08-api-overview.md</a>（共通仕様・エラーコード一覧）
+<p><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>目次</h2>
 <ol><li><a href="#api-all-001-引当対象受注一覧取得" target="_blank">API-ALL-001: 引当対象受注一覧取得</a></li><li><a href="#api-all-002-引当実行" target="_blank">API-ALL-002: 引当実行</a></li><li><a href="#api-all-003-ばらし指示一覧取得" target="_blank">API-ALL-003: ばらし指示一覧取得</a></li><li><a href="#api-all-004-ばらし完了" target="_blank">API-ALL-004: ばらし完了</a></li><li><a href="#api-all-005-引当済み受注一覧取得" target="_blank">API-ALL-005: 引当済み受注一覧取得</a></li><li><a href="#api-all-006-引当解放" target="_blank">API-ALL-006: 引当解放</a></li><li><a href="#エラーコード一覧在庫引当" target="_blank">エラーコード一覧（在庫引当）</a></li></ol>
@@ -10286,7 +10302,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <div class="markdown-body" id="API-13-returns">
 <h1>機能設計書 — API設計 返品管理（RTN-001〜002）</h1>
 <blockquote>共通仕様（ベースURL・認証・エラーフォーマット・ページング）は <a href="_standard-api.md" target="_blank"><code>_standard-api.md</code></a> を参照。
-<p>返品の業務フロー・ビジネスルールは <a href="../functional-requirements/08-returns.md" target="_blank"><code>../functional-requirements/08-returns.md</code></a> を参照。</blockquote></p>
+<p>返品の業務フロー・ビジネスルールは <a href="../functional-requirements/08-returns.md" target="_blank"><code>../functional-requirements/08-returns.md</code></a> を参照。<br><strong>エラーコード定義</strong>: 本書で使用するエラーコードの完全な定義は <a href="../architecture-design/error-codes.md" target="_blank">error-codes.md</a> を参照。<br><strong>ステータスEnum定義</strong>: ステータス値の定義は <a href="../architecture-design/status-enums.md" target="_blank">status-enums.md</a> を参照。</blockquote></p>
 <hr>
 <h2>ステータスコード定義（SSOT）</h2>
 <table>

@@ -113,6 +113,22 @@
         <el-icon><List /></el-icon>
         <span>{{ t('nav.pickingInstructions') }}</span>
       </el-menu-item>
+      <el-menu-item index="/allocation">
+        <el-icon><Connection /></el-icon>
+        <span>{{ t('nav.allocation') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
+    <!-- 返品管理 -->
+    <el-sub-menu index="returns">
+      <template #title>
+        <el-icon><RefreshLeft /></el-icon>
+        <span>{{ t('nav.returns') }}</span>
+      </template>
+      <el-menu-item index="/returns/new">
+        <el-icon><DocumentAdd /></el-icon>
+        <span>{{ t('nav.returnsNew') }}</span>
+      </el-menu-item>
     </el-sub-menu>
 
     <!-- システム管理 -->
@@ -155,6 +171,9 @@ import {
   EditPen,
   Notebook,
   HomeFilled,
+  RefreshLeft,
+  DocumentAdd,
+  Connection,
 } from '@element-plus/icons-vue'
 
 defineProps<{

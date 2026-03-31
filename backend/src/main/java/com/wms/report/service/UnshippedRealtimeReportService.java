@@ -5,6 +5,7 @@ import com.wms.generated.model.UnshippedRealtimeReportItem;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.UnshippedRealtimeRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.util.BusinessDateProvider;
 import lombok.RequiredArgsConstructor;
@@ -39,15 +40,6 @@ public class UnshippedRealtimeReportService {
     private final BusinessDateProvider businessDateProvider;
     private final ReportExportService reportExportService;
 
-    // --- ネイティブクエリのカラムインデックス定数 ---
-    private static final int COL_SLIP_NUMBER = 0;
-    private static final int COL_PARTNER_NAME = 1;
-    private static final int COL_PLANNED_DATE = 2;
-    private static final int COL_PRODUCT_CODE = 3;
-    private static final int COL_PRODUCT_NAME = 4;
-    private static final int COL_ORDERED_QTY = 5;
-    private static final int COL_STATUS = 6;
-
     private static final String[] CSV_HEADERS = {
             "伝票番号", "出荷先名", "出荷予定日", "商品コード", "商品名",
             "数量", "ステータス", "遅延日数"
@@ -67,7 +59,7 @@ public class UnshippedRealtimeReportService {
 
         LocalDate effectiveDate = asOfDate != null ? asOfDate : businessDateProvider.today();
 
-        List<Object[]> rows = outboundReportRepository.findUnshippedRealtimeData(warehouseId, effectiveDate);
+        List<UnshippedRealtimeRow> rows = outboundReportRepository.findUnshippedRealtimeData(warehouseId, effectiveDate);
 
         List<UnshippedRealtimeReportItem> items = rows.stream()
                 .map(row -> toReportItem(row, effectiveDate))
@@ -89,19 +81,17 @@ public class UnshippedRealtimeReportService {
         return reportExportService.export(items, format, meta);
     }
 
-    private UnshippedRealtimeReportItem toReportItem(Object[] row, LocalDate asOfDate) {
-        LocalDate plannedDate = row[COL_PLANNED_DATE] != null
-                ? ((java.sql.Date) row[COL_PLANNED_DATE]).toLocalDate() : null;
-        String status = (String) row[COL_STATUS];
+    private UnshippedRealtimeReportItem toReportItem(UnshippedRealtimeRow row, LocalDate asOfDate) {
+        LocalDate plannedDate = row.getPlannedDate();
+        String status = row.getStatus();
 
         UnshippedRealtimeReportItem item = new UnshippedRealtimeReportItem();
-        item.setSlipNumber((String) row[COL_SLIP_NUMBER]);
-        item.setCustomerName((String) row[COL_PARTNER_NAME]);
+        item.setSlipNumber(row.getSlipNumber());
+        item.setCustomerName(row.getPartnerName());
         item.setPlannedDate(plannedDate);
-        item.setProductCode((String) row[COL_PRODUCT_CODE]);
-        item.setProductName((String) row[COL_PRODUCT_NAME]);
-        item.setOrderedQty(row[COL_ORDERED_QTY] != null
-                ? ((Number) row[COL_ORDERED_QTY]).intValue() : 0);
+        item.setProductCode(row.getProductCode());
+        item.setProductName(row.getProductName());
+        item.setOrderedQty(row.getOrderedQty() != null ? row.getOrderedQty() : 0);
         item.setStatus(status);
         item.setStatusLabel(OUTBOUND_STATUS_LABELS.getOrDefault(status, status));
         item.setDelayDays(plannedDate != null

@@ -1,6 +1,8 @@
 # 機能設計書 — API設計 出荷管理（API-OUT-001〜022）
 
 > **関連ファイル**: [08-api-overview.md](08-api-overview.md)（共通仕様・エラーコード一覧）
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
 
 ---
 
@@ -1041,9 +1043,10 @@ flowchart TD
 
 | HTTPステータス | エラーコード | 説明 |
 |-------------|------------|------|
-| `400` | `VALIDATION_ERROR` | `qtyPicked` が `qty_to_pick` を超えている等 |
 | `404` | `PICKING_NOT_FOUND` | 指定IDのピッキング指示が存在しない |
 | `409` | `OUTBOUND_INVALID_STATUS` | 既に `COMPLETED` 状態のピッキング指示 |
+| `422` | `PICKING_LINE_NOT_FOUND` | 指定された `lineId` が当該ピッキング指示に存在しない |
+| `422` | `PICKING_QTY_EXCEEDED` | `qtyPicked` が `qty_to_pick` を超えている |
 
 ---
 
@@ -1056,7 +1059,8 @@ flowchart TD
     FIND -->|OK| CHECK_STATUS{status == COMPLETED?}
     CHECK_STATUS -->|Yes| ERR_STATUS[409 OUTBOUND_INVALID_STATUS]
     CHECK_STATUS -->|No| VALIDATE_LINES[リクエストの lines バリデーション\n当該指示に属するlineIdか確認\nqtyPicked <= qty_to_pick]
-    VALIDATE_LINES -->|NG| ERR_VAL[400 VALIDATION_ERROR]
+    VALIDATE_LINES -->|lineId不正| ERR_LINE[422 PICKING_LINE_NOT_FOUND]
+    VALIDATE_LINES -->|数量超過| ERR_QTY[422 PICKING_QTY_EXCEEDED]
     VALIDATE_LINES -->|OK| UPDATE_PIL[picking_instruction_lines 更新\nqty_picked = リクエスト値\nline_status = COMPLETED]
     UPDATE_PIL --> CHECK_FIRST{初めての完了登録?}
     CHECK_FIRST -->|Yes| SET_IN_PROGRESS[picking_instructions.status\n= IN_PROGRESS]
@@ -1074,8 +1078,8 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | リクエストの `lineId` は当該ピッキング指示に属する明細IDでなければならない | `VALIDATION_ERROR` |
-| 2 | `qtyPicked` は `qty_to_pick` を超えることはできない | `VALIDATION_ERROR` |
+| 1 | リクエストの `lineId` は当該ピッキング指示に属する明細IDでなければならない | `PICKING_LINE_NOT_FOUND` |
+| 2 | `qtyPicked` は `qty_to_pick` を超えることはできない | `PICKING_QTY_EXCEEDED` |
 | 3 | 最初の明細チェックが記録された時点で `picking_instructions.status` を `IN_PROGRESS` に更新する | — |
 | 4 | 全明細が `COMPLETED` になった時点で `picking_instructions.status` を `COMPLETED` に更新し、`completed_at`、`completed_by` を記録する | — |
 | 5 | 全明細完了時に、当該ピッキング指示に紐づく全ての `outbound_slips.status` を `PICKING_COMPLETED` に更新する | — |
@@ -1368,6 +1372,9 @@ flowchart TD
 | `PLANNED_DATE_TOO_EARLY` | 422 | 出荷予定日が現在営業日より前 | OUT-002 |
 | `DUPLICATE_PRODUCT_IN_LINES` | 409 | 同一伝票内に同じ商品が複数指定されている | OUT-002 |
 | `PICKING_NOT_FOUND` | 404 | ピッキング指示が見つからない | OUT-013, OUT-014 |
+| `PICKING_LINE_NOT_FOUND` | 422 | 指定された `lineId` が当該ピッキング指示に存在しない | OUT-014 |
+| `PICKING_QTY_EXCEEDED` | 422 | ピッキング完了数量がピッキング予定数量を超えている | OUT-014 |
+| `PICKING_NO_ALLOCATION_CANDIDATES` | 422 | ピッキング対象の引当明細が存在しない | OUT-012 |
 | `UNPACK_NOT_COMPLETED` | 409 | 未完了のばらし指示が存在するためピッキング指示作成不可 | OUT-012 |
 | `ALLOCATION_INSUFFICIENT` | 422 | 在庫引当に必要な在庫が不足 | API-ALL-002（引当実行） |
 | `INVENTORY_INSUFFICIENT` | 422 | 出荷完了時の在庫減算で在庫不足 | OUT-022 |

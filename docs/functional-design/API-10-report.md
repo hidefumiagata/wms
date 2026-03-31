@@ -1,5 +1,8 @@
 # 機能設計書 — API設計 レポート出力（RPT）
 
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
+
 ## レポート出力
 
 ---
@@ -914,7 +917,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     START([開始]) --> VALIDATE{stocktakeId または\nbuildingId のどちらか指定?}
-    VALIDATE -->|両方なし| ERR_VAL[400 VALIDATION_ERROR]
+    VALIDATE -->|両方なし| ERR_VAL[422 REPORT_PARAMETER_REQUIRED]
     VALIDATE -->|stocktakeId 指定| FIND_STK{棚卸 存在確認}
     VALIDATE -->|buildingId 指定| FIND_BLD{棟 存在確認}
 
@@ -934,7 +937,7 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | `stocktakeId` と `buildingId` の両方が未指定の場合は 400 を返す | `VALIDATION_ERROR` |
+| 1 | `stocktakeId` と `buildingId` の両方が未指定の場合は 422 を返す | `REPORT_PARAMETER_REQUIRED` |
 | 2 | `stocktakeId` 指定時に棚卸が存在しない場合は 404 を返す | `STOCKTAKE_NOT_FOUND` |
 | 3 | `buildingId` 指定時に棟が存在しない場合は 404 を返す | `BUILDING_NOT_FOUND` |
 | 4 | 結果はロケーションコード昇順でソートして返す（現場でのピッキング動線に合わせる） | — |
@@ -1184,7 +1187,7 @@ flowchart TD
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
     VALIDATE -->|OK| FIND_SLIP{出荷伝票 存在確認}
     FIND_SLIP -->|なし| ERR_404[404 OUTBOUND_SLIP_NOT_FOUND]
-    FIND_SLIP -->|あり| QUERY[outbound_slip_lines から\nピッキング数・検品数を取得\n差異を計算]
+    FIND_SLIP -->|あり| QUERY[picking_instruction_lines.qty_picked から\nピッキング数を集計し、検品数と\n差異を計算]
     QUERY --> FORMAT{format?}
     FORMAT -->|json| RES_JSON[200 OK JSON配列]
     FORMAT -->|csv| RES_CSV[200 OK CSVダウンロード\nfilename: shipping_inspection_YYYYMMDD.csv]

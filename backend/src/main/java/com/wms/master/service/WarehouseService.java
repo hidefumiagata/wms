@@ -128,4 +128,11 @@ public class WarehouseService {
     public boolean existsByCode(String warehouseCode) {
         return warehouseRepository.existsByWarehouseCode(warehouseCode);
     }
+
+    public Warehouse findByCode(String warehouseCode) {
+        return warehouseRepository.findByWarehouseCode(warehouseCode)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "WAREHOUSE_NOT_FOUND",
+                        "倉庫が見つかりません (code=" + warehouseCode + ")"));
+    }
 }

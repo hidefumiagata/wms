@@ -1,5 +1,6 @@
 package com.wms.report.repository;
 
+import com.wms.report.repository.projection.ShippingInspectionRow;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -197,38 +198,38 @@ class OutboundReportRepositoryTest {
         @Test
         @DisplayName("複数ピッキング指示明細のqty_pickedがSUM集計される（18+10=28）")
         void multiplePickingLines_summedCorrectly() {
-            List<Object[]> results = outboundReportRepository
+            List<ShippingInspectionRow> results = outboundReportRepository
                     .findShippingInspectionReportData(outboundSlipId);
 
             assertThat(results).hasSize(2);
 
             // 商品コード昇順: P-001が先
-            Object[] row1 = results.get(0);
-            assertThat(row1[0]).isEqualTo("OUT-TEST-001");                 // slip_number
-            assertThat(row1[3]).isEqualTo("P-001");                        // product_code
-            assertThat(((Number) row1[6]).intValue()).isEqualTo(28);       // picked_qty = 18 + 10
-            assertThat(((Number) row1[7]).intValue()).isEqualTo(28);       // inspected_qty
+            ShippingInspectionRow row1 = results.get(0);
+            assertThat(row1.getSlipNumber()).isEqualTo("OUT-TEST-001");
+            assertThat(row1.getProductCode()).isEqualTo("P-001");
+            assertThat(row1.getPickedQty()).isEqualTo(28);           // picked_qty = 18 + 10
+            assertThat(row1.getInspectedQty()).isEqualTo(28);        // inspected_qty
         }
 
         @Test
         @DisplayName("ピッキング指示が存在しない出荷明細はpicked_qty=0で返される（COALESCE）")
         void noPickingLines_returnsZeroPickedQty() {
-            List<Object[]> results = outboundReportRepository
+            List<ShippingInspectionRow> results = outboundReportRepository
                     .findShippingInspectionReportData(outboundSlipId);
 
-            Object[] rowP002 = results.stream()
-                    .filter(r -> "P-002".equals(r[3]))
+            ShippingInspectionRow rowP002 = results.stream()
+                    .filter(r -> "P-002".equals(r.getProductCode()))
                     .findFirst()
                     .orElseThrow();
 
-            assertThat(((Number) rowP002[6]).intValue()).isEqualTo(0);     // picked_qty = 0
-            assertThat(rowP002[7]).isNull();                               // inspected_qty = null
+            assertThat(rowP002.getPickedQty()).isEqualTo(0);         // picked_qty = 0
+            assertThat(rowP002.getInspectedQty()).isNull();           // inspected_qty = null
         }
 
         @Test
         @DisplayName("存在しない伝票IDの場合は空リストが返される")
         void nonExistentSlipId_returnsEmpty() {
-            List<Object[]> results = outboundReportRepository
+            List<ShippingInspectionRow> results = outboundReportRepository
                     .findShippingInspectionReportData(99999L);
 
             assertThat(results).isEmpty();
@@ -279,13 +280,13 @@ class OutboundReportRepositoryTest {
                             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                     """, oslId);
 
-            List<Object[]> results = outboundReportRepository
+            List<ShippingInspectionRow> results = outboundReportRepository
                     .findShippingInspectionReportData(slipId2);
 
             assertThat(results).hasSize(1);
-            Object[] row = results.get(0);
-            assertThat(((Number) row[6]).intValue()).isEqualTo(15);        // picked_qty = 15 (受注数50ではない)
-            assertThat(((Number) row[7]).intValue()).isEqualTo(15);        // inspected_qty = 15
+            ShippingInspectionRow row = results.get(0);
+            assertThat(row.getPickedQty()).isEqualTo(15);            // picked_qty = 15 (受注数50ではない)
+            assertThat(row.getInspectedQty()).isEqualTo(15);         // inspected_qty = 15
         }
 
         @Test
@@ -354,13 +355,13 @@ class OutboundReportRepositoryTest {
                             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                     """, oslId3b);
 
-            List<Object[]> results = outboundReportRepository
+            List<ShippingInspectionRow> results = outboundReportRepository
                     .findShippingInspectionReportData(slipId3);
 
             // 同一商品でも2行が別々に返される（集約されない）
             assertThat(results).hasSize(2);
-            assertThat(((Number) results.get(0)[6]).intValue()).isEqualTo(20);  // Line 1: picked_qty = 20
-            assertThat(((Number) results.get(1)[6]).intValue()).isEqualTo(10);  // Line 2: picked_qty = 10
+            assertThat(results.get(0).getPickedQty()).isEqualTo(20);  // Line 1: picked_qty = 20
+            assertThat(results.get(1).getPickedQty()).isEqualTo(10);  // Line 2: picked_qty = 10
         }
     }
 }

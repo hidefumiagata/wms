@@ -1,6 +1,11 @@
 package com.wms.report.repository;
 
 import com.wms.outbound.entity.PickingInstructionLine;
+import com.wms.report.repository.projection.DeliveryListHeaderRow;
+import com.wms.report.repository.projection.DeliveryListLineRow;
+import com.wms.report.repository.projection.PickingInstructionRow;
+import com.wms.report.repository.projection.ShippingInspectionRow;
+import com.wms.report.repository.projection.UnshippedRealtimeRow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,7 +41,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
             WHERE pi.id = :pickingInstructionId
             ORDER BY pil.location_code ASC, pil.product_code ASC
             """, nativeQuery = true)
-    List<Object[]> findPickingInstructionReportData(@Param("pickingInstructionId") Long pickingInstructionId);
+    List<PickingInstructionRow> findPickingInstructionReportData(@Param("pickingInstructionId") Long pickingInstructionId);
 
     /**
      * RPT-13: 出荷検品レポートデータ取得。
@@ -62,7 +67,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
                      osl.inspected_qty
             ORDER BY osl.product_code ASC
             """, nativeQuery = true)
-    List<Object[]> findShippingInspectionReportData(@Param("slipId") Long slipId);
+    List<ShippingInspectionRow> findShippingInspectionReportData(@Param("slipId") Long slipId);
 
     /**
      * RPT-14: 配送リストデータ取得。
@@ -86,7 +91,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
               AND (:carrier IS NULL OR os.carrier LIKE :carrier ESCAPE '\')
             ORDER BY os.planned_date ASC, os.slip_number ASC
             """, nativeQuery = true)
-    List<Object[]> findDeliveryListHeaderData(
+    List<DeliveryListHeaderRow> findDeliveryListHeaderData(
             @Param("warehouseId") Long warehouseId,
             @Param("plannedDateFrom") LocalDate plannedDateFrom,
             @Param("plannedDateTo") LocalDate plannedDateTo,
@@ -106,7 +111,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
             WHERE osl.outbound_slip_id IN :slipIds
             ORDER BY osl.outbound_slip_id ASC, osl.line_no ASC
             """, nativeQuery = true)
-    List<Object[]> findDeliveryListLineData(@Param("slipIds") List<Long> slipIds);
+    List<DeliveryListLineRow> findDeliveryListLineData(@Param("slipIds") List<Long> slipIds);
 
     /**
      * RPT-15: 未出荷リスト（リアルタイム）データ取得。
@@ -127,7 +132,7 @@ public interface OutboundReportRepository extends JpaRepository<PickingInstructi
               AND os.status NOT IN ('SHIPPED', 'CANCELLED')
             ORDER BY os.partner_name ASC, os.planned_date ASC, osl.product_code ASC
             """, nativeQuery = true)
-    List<Object[]> findUnshippedRealtimeData(
+    List<UnshippedRealtimeRow> findUnshippedRealtimeData(
             @Param("warehouseId") Long warehouseId,
             @Param("asOfDate") LocalDate asOfDate);
 }

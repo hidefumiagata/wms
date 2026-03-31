@@ -283,6 +283,9 @@ cross-cutting:
     docs:
       - architecture-blueprint/08-common-infrastructure.md
       - architecture-design/08-common-infrastructure.md
+      - architecture-design/status-enums.md
+      - architecture-design/error-codes.md
+      - architecture-design/environment-variables.md
 
   - id: monitoring
     name: 監視・運用

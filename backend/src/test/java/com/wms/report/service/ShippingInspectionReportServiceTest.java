@@ -7,6 +7,7 @@ import com.wms.master.repository.WarehouseRepository;
 import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.ShippingInspectionRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -85,24 +85,20 @@ class ShippingInspectionReportServiceTest {
         }
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createRow(String slipNumber, String partnerName, LocalDate plannedDate,
-                                String productCode, String productName, String unitType,
-                                Integer pickedQty, Integer inspectedQty) {
-        return new Object[]{
-                slipNumber,                                             // 0: slip_number
-                partnerName,                                            // 1: partner_name
-                plannedDate != null ? Date.valueOf(plannedDate) : null, // 2: planned_date
-                productCode,                                            // 3: product_code
-                productName,                                            // 4: product_name
-                unitType,                                               // 5: unit_type
-                pickedQty,                                              // 6: picked_qty (SUM)
-                inspectedQty                                            // 7: inspected_qty
-        };
+    private static ShippingInspectionRow mockRow(String slipNumber, String partnerName,
+                                                  LocalDate plannedDate, String productCode,
+                                                  String productName, String unitType,
+                                                  Integer pickedQty, Integer inspectedQty) {
+        ShippingInspectionRow row = mock(ShippingInspectionRow.class);
+        when(row.getSlipNumber()).thenReturn(slipNumber);
+        when(row.getPartnerName()).thenReturn(partnerName);
+        when(row.getPlannedDate()).thenReturn(plannedDate);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getPickedQty()).thenReturn(pickedQty);
+        when(row.getInspectedQty()).thenReturn(inspectedQty);
+        return row;
     }
 
     @Nested
@@ -114,12 +110,12 @@ class ShippingInspectionReportServiceTest {
         void generate_success_returnsItems() {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+                    "P-001", "商品A", "CAS", 10, 10);
+            var row2 = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+                    "P-002", "商品B", "PCS", 20, 18);
             when(outboundReportRepository.findShippingInspectionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
-                                    "P-001", "商品A", "CAS", 10, 10),
-                            createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
-                                    "P-002", "商品B", "PCS", 20, 18)));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -149,10 +145,10 @@ class ShippingInspectionReportServiceTest {
         void generate_withNullInspectedQty_diffIsNull() {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+                    "P-001", "商品A", "CAS", 10, null);
             when(outboundReportRepository.findShippingInspectionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
-                                    "P-001", "商品A", "CAS", 10, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -171,10 +167,10 @@ class ShippingInspectionReportServiceTest {
         void generate_withDifference_calculatesCorrectly() {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+                    "P-001", "商品A", "CAS", 10, 8);
             when(outboundReportRepository.findShippingInspectionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
-                                    "P-001", "商品A", "CAS", 10, 8)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -205,11 +201,11 @@ class ShippingInspectionReportServiceTest {
         @Test
         @DisplayName("null PLANNED_DATE → plannedShipDate=null")
         void generate_nullPlannedDate_setsNull() {
-            Object[] row = createRow("OUT-2026-00050", "テスト出荷先A", null,
+            ShippingInspectionRow row = mockRow("OUT-2026-00050", "テスト出荷先A", null,
                     "P-001", "商品A", "CAS", 10, 10);
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(outboundReportRepository.findShippingInspectionReportData(1L)).thenReturn(listOf(row));
+            when(outboundReportRepository.findShippingInspectionReportData(1L)).thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -220,11 +216,11 @@ class ShippingInspectionReportServiceTest {
         @Test
         @DisplayName("null PICKED_QTY → pickedQuantity=0")
         void generate_nullPickedQty_defaultsToZero() {
-            Object[] row = createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+            ShippingInspectionRow row = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
                     "P-001", "商品A", "CAS", null, 10);
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(outboundReportRepository.findShippingInspectionReportData(1L)).thenReturn(listOf(row));
+            when(outboundReportRepository.findShippingInspectionReportData(1L)).thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -265,22 +261,22 @@ class ShippingInspectionReportServiceTest {
         void generate_csvRowMapper_formatsCorrectly() {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(outboundSlip));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
+                    "P-001", "商品A", "CAS", 10, 8);
             when(outboundReportRepository.findShippingInspectionReportData(1L))
-                    .thenReturn(listOf(
-                            createRow("OUT-2026-00050", "テスト出荷先A", LocalDate.of(2026, 3, 15),
-                                    "P-001", "商品A", "CAS", 10, 8)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row).hasSize(9);
-                        assertThat(row[0]).isEqualTo("OUT-2026-00050");
-                        assertThat(row[1]).isEqualTo("テスト出荷先A");
-                        assertThat(row[2]).isEqualTo("2026-03-15");
-                        assertThat(row[3]).isEqualTo("P-001");
-                        assertThat(row[4]).isEqualTo("商品A");
-                        assertThat(row[5]).isEqualTo("CAS");
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow).hasSize(9);
+                        assertThat(csvRow[0]).isEqualTo("OUT-2026-00050");
+                        assertThat(csvRow[1]).isEqualTo("テスト出荷先A");
+                        assertThat(csvRow[2]).isEqualTo("2026-03-15");
+                        assertThat(csvRow[3]).isEqualTo("P-001");
+                        assertThat(csvRow[4]).isEqualTo("商品A");
+                        assertThat(csvRow[5]).isEqualTo("CAS");
                         return ResponseEntity.ok(data);
                     });
 

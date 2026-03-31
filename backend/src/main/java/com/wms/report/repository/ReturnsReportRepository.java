@@ -1,6 +1,7 @@
 package com.wms.report.repository;
 
 import com.wms.report.entity.BatchExecutionLog;
+import com.wms.report.repository.projection.ReturnsReportRow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,7 +11,7 @@ import java.util.List;
 
 /**
  * RPT-18: 返品レポート用リポジトリ。
- * return_slips テーブルを products, partners と結合して返品明細を取得する。
+ * return_slips テーブルから返品明細を取得する（商品・取引先情報は非正規化カラム）。
  */
 public interface ReturnsReportRepository extends JpaRepository<BatchExecutionLog, Long> {
 
@@ -40,7 +41,7 @@ public interface ReturnsReportRepository extends JpaRepository<BatchExecutionLog
               AND (:returnReason IS NULL OR rs.return_reason = :returnReason)
             ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC
             """, nativeQuery = true)
-    List<Object[]> findReturnsReportData(
+    List<ReturnsReportRow> findReturnsReportData(
             @Param("warehouseId") Long warehouseId,
             @Param("returnType") String returnType,
             @Param("returnDateFrom") LocalDate returnDateFrom,

@@ -319,4 +319,32 @@ class WarehouseServiceTest {
         }
         return w;
     }
+
+    @Nested
+    @DisplayName("findByCode")
+    class FindByCode {
+
+        @Test
+        @DisplayName("正常系: コードで倉庫取得")
+        void findByCode_exists_returnsWarehouse() {
+            Warehouse warehouse = createWarehouse(1L, "WH-001", "東京DC");
+            when(warehouseRepository.findByWarehouseCode("WH-001"))
+                    .thenReturn(Optional.of(warehouse));
+
+            Warehouse result = warehouseService.findByCode("WH-001");
+
+            assertThat(result.getWarehouseCode()).isEqualTo("WH-001");
+        }
+
+        @Test
+        @DisplayName("存在しないコード: ResourceNotFoundException")
+        void findByCode_notFound_throwsException() {
+            when(warehouseRepository.findByWarehouseCode("INVALID"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> warehouseService.findByCode("INVALID"))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("INVALID");
+        }
+    }
 }

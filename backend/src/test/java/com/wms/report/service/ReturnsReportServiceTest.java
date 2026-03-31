@@ -7,6 +7,7 @@ import com.wms.generated.model.ReturnsReportItem;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.ReturnsReportRepository;
+import com.wms.report.repository.projection.ReturnsReportRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,9 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -81,28 +81,23 @@ class ReturnsReportServiceTest {
         }
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createRow(String returnNumber, String returnType, LocalDate returnDate,
-                                String productCode, String productName, int quantity,
-                                String unitType, String returnReason, String returnReasonNote,
-                                String relatedSlipNumber, String partnerName) {
-        return new Object[]{
-                returnNumber,
-                returnType,
-                returnDate != null ? Date.valueOf(returnDate) : null,
-                productCode,
-                productName,
-                quantity,
-                unitType,
-                returnReason,
-                returnReasonNote,
-                relatedSlipNumber,
-                partnerName
-        };
+    private ReturnsReportRow createRow(String returnNumber, String returnType, LocalDate returnDate,
+                                       String productCode, String productName, Integer quantity,
+                                       String unitType, String returnReason, String returnReasonNote,
+                                       String relatedSlipNumber, String partnerName) {
+        ReturnsReportRow row = mock(ReturnsReportRow.class);
+        when(row.getReturnNumber()).thenReturn(returnNumber);
+        when(row.getReturnType()).thenReturn(returnType);
+        when(row.getReturnDate()).thenReturn(returnDate);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getQuantity()).thenReturn(quantity);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getReturnReason()).thenReturn(returnReason);
+        when(row.getReturnReasonNote()).thenReturn(returnReasonNote);
+        when(row.getRelatedSlipNumber()).thenReturn(relatedSlipNumber);
+        when(row.getPartnerName()).thenReturn(partnerName);
+        return row;
     }
 
     @Nested
@@ -112,16 +107,16 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("正常にレポートデータが生成される")
         void generate_success_returnsItems() {
+            var row1 = createRow("RTN-2026-0010", "INBOUND", LocalDate.of(2026, 3, 5),
+                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT",
+                    "外箱破損あり", "INB-2026-00120", "テスト仕入先A");
+            var row2 = createRow("RTN-2026-0015", "OUTBOUND", LocalDate.of(2026, 3, 10),
+                    "P-002", "商品B", 3, "BALL", "DAMAGED",
+                    null, "OUT-2026-0050", "テスト仕入先B");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
             when(returnsReportRepository.findReturnsReportData(
                     eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()))
-                    .thenReturn(listOf(
-                            createRow("RTN-2026-0010", "INBOUND", LocalDate.of(2026, 3, 5),
-                                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT",
-                                    "外箱破損あり", "INB-2026-00120", "テスト仕入先A"),
-                            createRow("RTN-2026-0015", "OUTBOUND", LocalDate.of(2026, 3, 10),
-                                    "P-002", "商品B", 3, "BALL", "DAMAGED",
-                                    null, "OUT-2026-0050", "テスト仕入先B")));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -317,13 +312,11 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("nullの返品種別/理由のデータが正しく処理される")
         void generate_nullReturnTypeAndReason_handledGracefully() {
+            var row = createRow("RTN-001", null, LocalDate.of(2026, 3, 5),
+                    "P-001", "商品A", 10, "PIECE", null, null, null, null);
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            Object[] row = new Object[]{
-                    "RTN-001", null, Date.valueOf("2026-03-05"),
-                    "P-001", "商品A", 10, "PIECE", null, null, null, null
-            };
             when(returnsReportRepository.findReturnsReportData(any(), any(), any(), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -341,13 +334,11 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("nullの返品日が正しく処理される")
         void generate_nullReturnDate_setsNull() {
+            var row = createRow("RTN-001", "INBOUND", null,
+                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT", null, null, null);
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            Object[] row = new Object[]{
-                    "RTN-001", "INBOUND", null,
-                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT", null, null, null
-            };
             when(returnsReportRepository.findReturnsReportData(any(), any(), any(), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -360,13 +351,11 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("null数量は0に変換される")
         void generate_nullQuantity_defaultsToZero() {
+            var row = createRow("RTN-001", "INBOUND", LocalDate.of(2026, 3, 5),
+                    "P-001", "商品A", null, "CASE", "QUALITY_DEFECT", null, null, null);
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            Object[] row = new Object[]{
-                    "RTN-001", "INBOUND", Date.valueOf("2026-03-05"),
-                    "P-001", "商品A", null, "CASE", "QUALITY_DEFECT", null, null, null
-            };
             when(returnsReportRepository.findReturnsReportData(any(), any(), any(), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -404,12 +393,12 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("csvRowMapperが正しくフォーマットする")
         void generate_csvRowMapper_formatsCorrectly() {
+            var projRow = createRow("RTN-2026-0010", "INBOUND", LocalDate.of(2026, 3, 5),
+                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT",
+                    "外箱破損", "INB-001", "仕入先A");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
             when(returnsReportRepository.findReturnsReportData(any(), any(), any(), any(), any(), any(), any()))
-                    .thenReturn(listOf(
-                            createRow("RTN-2026-0010", "INBOUND", LocalDate.of(2026, 3, 5),
-                                    "P-001", "商品A", 10, "CASE", "QUALITY_DEFECT",
-                                    "外箱破損", "INB-001", "仕入先A")));
+                    .thenReturn(List.of(projRow));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
@@ -437,13 +426,11 @@ class ReturnsReportServiceTest {
         @Test
         @DisplayName("csvRowMapperでnull値がダッシュに変換される")
         void generate_csvRowMapper_nullValuesFormattedAsDash() {
+            var row = createRow("RTN-001", null, null,
+                    "P-001", "商品A", 10, null, null, null, null, null);
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            Object[] row = new Object[]{
-                    "RTN-001", null, null,
-                    "P-001", "商品A", 10, null, null, null, null, null
-            };
             when(returnsReportRepository.findReturnsReportData(any(), any(), any(), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);

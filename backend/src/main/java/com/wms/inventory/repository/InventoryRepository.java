@@ -19,6 +19,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
             Long locationId, Long productId, String unitType, String lotNumber, LocalDate expiryDate);
 
+    @Query("SELECT i FROM Inventory i WHERE i.locationId = :locationId AND i.productId = :productId AND i.unitType = :unitType ORDER BY i.id ASC")
+    List<Inventory> findByLocationIdAndProductIdAndUnitType(
+            @Param("locationId") Long locationId,
+            @Param("productId") Long productId,
+            @Param("unitType") String unitType);
+
     boolean existsByLocationIdAndProductIdNot(Long locationId, Long productId);
 
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.productId = :productId AND i.quantity > 0")

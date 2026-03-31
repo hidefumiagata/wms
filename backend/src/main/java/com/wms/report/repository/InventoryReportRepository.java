@@ -1,6 +1,7 @@
 package com.wms.report.repository;
 
 import com.wms.inventory.entity.Inventory;
+import com.wms.report.repository.projection.InventoryReportRow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,9 +19,8 @@ public interface InventoryReportRepository extends JpaRepository<Inventory, Long
      * 在庫テーブルをロケーション・エリア・棟・商品と結合し、商品コード→ロケーションコード順でソートして返す。
      */
     @Query(value = """
-            SELECT i.id, i.warehouse_id, i.location_id, i.product_id, i.unit_type,
-                   i.lot_number, i.expiry_date, i.quantity, i.allocated_qty,
-                   i.version, i.updated_at,
+            SELECT i.unit_type, i.lot_number, i.expiry_date,
+                   i.quantity, i.allocated_qty,
                    l.location_code, b.building_name, a.area_name,
                    p.product_code, p.product_name
             FROM inventories i
@@ -36,7 +36,7 @@ public interface InventoryReportRepository extends JpaRepository<Inventory, Long
               AND (:storageCondition IS NULL OR a.storage_condition = :storageCondition)
             ORDER BY p.product_code ASC, a.area_code ASC, l.location_code ASC
             """, nativeQuery = true)
-    List<Object[]> findInventoryReportData(
+    List<InventoryReportRow> findInventoryReportData(
             @Param("warehouseId") Long warehouseId,
             @Param("locationCodePrefix") String locationCodePrefix,
             @Param("productId") Long productId,

@@ -2,6 +2,9 @@
 
 対象API: API-MST-FAC-001〜035（倉庫・棟・エリア・ロケーション）
 
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
+
 ---
 
 ## 共通仕様

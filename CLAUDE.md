@@ -42,7 +42,10 @@
 | **APIエンドポイント・リクエスト/レスポンス仕様** | functional-design/API-*.md | 画面設計書(SCR)にはAPI IDとエンドポイントパスのみ記載。パラメータ詳細はAPI設計書を参照 |
 | **画面項目・バリデーション・メッセージ・UX** | functional-design/SCR-*.md | API設計書に画面メッセージを複製しない |
 | **パスワードポリシー** | architecture-blueprint/10-security-architecture.md | 画面設計書は「セキュリティアーキテクチャを参照」。ポリシー値の複製禁止 |
-| **ステータス遷移・ステータスコード定義** | functional-design/API-*.md（各モジュールのAPI設計書冒頭） | 画面設計書はマッピング表で参照。functional-requirementsはステータス名のみ記載 |
+| **ステータスEnum・区分値定義** | architecture-design/status-enums.md | 他は参照リンクのみ。Enum値の複製禁止 |
+| **ステータス遷移ルール** | functional-design/API-*.md（各モジュールのAPI設計書冒頭） | 画面設計書はマッピング表で参照。functional-requirementsはステータス名のみ記載 |
+| **エラーコード定義** | architecture-design/error-codes.md | 他は参照リンクのみ。エラーコード値の複製禁止 |
+| **環境変数名・設定値** | architecture-design/environment-variables.md | 他は参照リンクのみ。変数名・値の複製禁止 |
 | **システムパラメータの一覧・デフォルト値** | data-model/02-master-tables.md（system_parametersの初期データ） | 他は「data-modelを参照」。値の複製禁止 |
 | **バッチ処理の内部ロジック・SQL** | functional-design/BAT-*.md | 他は参照リンクのみ |
 | **I/Fのデータマッピング・採番ロジック** | functional-design/IF-*.md | 他は参照リンクのみ |
