@@ -1,6 +1,7 @@
 package com.wms.report.repository;
 
 import com.wms.report.entity.DailySummaryRecord;
+import com.wms.report.repository.projection.DailySummaryReportRow;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,5 +39,5 @@ public interface DailySummaryRecordRepository extends JpaRepository<DailySummary
             WHERE dsr.business_date = :businessDate
             ORDER BY dsr.warehouse_id ASC
             """, nativeQuery = true)
-    List<Object[]> findDailySummaryData(@Param("businessDate") LocalDate businessDate);
+    List<DailySummaryReportRow> findDailySummaryData(@Param("businessDate") LocalDate businessDate);
 }

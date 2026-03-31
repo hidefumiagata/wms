@@ -4,6 +4,7 @@ import com.wms.generated.model.DailySummaryReportItem;
 import com.wms.generated.model.ReportFormat;
 import com.wms.report.repository.BatchExecutionLogRepository;
 import com.wms.report.repository.DailySummaryRecordRepository;
+import com.wms.report.repository.projection.DailySummaryReportRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,32 +59,27 @@ class DailySummaryReportServiceTest {
         SecurityContextHolder.clearContext();
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createRow(LocalDate businessDate, Long warehouseId, String warehouseName,
-                                int inboundCount, int inboundLineCount, long inboundQtyTotal,
-                                int outboundCount, int outboundLineCount, long outboundQtyTotal,
-                                int returnCount, int returnQtyTotal, long inventoryQtyTotal,
-                                int unreceivedCount, int unshippedCount) {
-        return new Object[]{
-                businessDate != null ? Date.valueOf(businessDate) : null,
-                warehouseId,
-                warehouseName,
-                inboundCount,
-                inboundLineCount,
-                inboundQtyTotal,
-                outboundCount,
-                outboundLineCount,
-                outboundQtyTotal,
-                returnCount,
-                returnQtyTotal,
-                inventoryQtyTotal,
-                unreceivedCount,
-                unshippedCount
-        };
+    private DailySummaryReportRow createRow(LocalDate businessDate, Long warehouseId, String warehouseName,
+                                             Integer inboundCount, Integer inboundLineCount, Integer inboundQtyTotal,
+                                             Integer outboundCount, Integer outboundLineCount, Integer outboundQtyTotal,
+                                             Integer returnCount, Integer returnQtyTotal, Integer inventoryQtyTotal,
+                                             Integer unreceivedCount, Integer unshippedCount) {
+        DailySummaryReportRow row = mock(DailySummaryReportRow.class);
+        when(row.getBusinessDate()).thenReturn(businessDate);
+        when(row.getWarehouseId()).thenReturn(warehouseId);
+        when(row.getWarehouseName()).thenReturn(warehouseName);
+        when(row.getInboundCount()).thenReturn(inboundCount);
+        when(row.getInboundLineCount()).thenReturn(inboundLineCount);
+        when(row.getInboundQuantityTotal()).thenReturn(inboundQtyTotal);
+        when(row.getOutboundCount()).thenReturn(outboundCount);
+        when(row.getOutboundLineCount()).thenReturn(outboundLineCount);
+        when(row.getOutboundQuantityTotal()).thenReturn(outboundQtyTotal);
+        when(row.getReturnCount()).thenReturn(returnCount);
+        when(row.getReturnQuantityTotal()).thenReturn(returnQtyTotal);
+        when(row.getInventoryQuantityTotal()).thenReturn(inventoryQtyTotal);
+        when(row.getUnreceivedCount()).thenReturn(unreceivedCount);
+        when(row.getUnshippedCount()).thenReturn(unshippedCount);
+        return row;
     }
 
     @Nested
@@ -94,12 +89,12 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("正常にレポートデータが生成される（複数倉庫）")
         void generate_success_returnsItemsForMultipleWarehouses() {
+            var row1 = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1);
+            var row2 = createRow(TARGET_DATE, 2L, "大阪DC", 5, 18, 520, 3, 12, 340, 1, 60, 3200, 0, 2);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
-                    .thenReturn(listOf(
-                            createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1),
-                            createRow(TARGET_DATE, 2L, "大阪DC", 5, 18, 520, 3, 12, 340, 1, 60, 3200, 0, 2)));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -169,14 +164,12 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("null値のフィールドは0に変換される")
         void generate_nullValues_defaultToZero() {
+            var row = createRow(TARGET_DATE, 1L, "東京DC",
+                    null, null, null, null, null, null, null, null, null, null, null);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
-            Object[] row = new Object[]{
-                    Date.valueOf(TARGET_DATE), 1L, "東京DC",
-                    null, null, null, null, null, null, null, null, null, null, null
-            };
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -200,14 +193,12 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("businessDateがnullの行はnullのまま返される")
         void generate_nullBusinessDate_setsNull() {
+            var row = createRow(null, 1L, "東京DC",
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
-            Object[] row = new Object[]{
-                    null, 1L, "東京DC",
-                    0, 0, 0L, 0, 0, 0L, 0, 0, 0L, 0, 0
-            };
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -220,14 +211,12 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("warehouseIdがnullの行はnullのまま返される")
         void generate_nullWarehouseId_setsNull() {
+            var row = createRow(TARGET_DATE, null, "東京DC",
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
-            Object[] row = new Object[]{
-                    Date.valueOf(TARGET_DATE), null, "東京DC",
-                    0, 0, 0L, 0, 0, 0L, 0, 0, 0L, 0, 0
-            };
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -267,11 +256,11 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("csvRowMapperが正しくフォーマットする")
         void generate_csvRowMapper_formatsCorrectly() {
+            var projRow = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
-                    .thenReturn(listOf(
-                            createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1)));
+                    .thenReturn(List.of(projRow));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
