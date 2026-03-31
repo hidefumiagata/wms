@@ -158,29 +158,7 @@ public class ReturnSlipService {
         } catch (DataIntegrityViolationException e) {
             log.warn("Return slip number collision, retrying: {}", slipNumber);
             String retrySlipNumber = generateSlipNumber(typePrefix, dateStr);
-            slip = ReturnSlip.builder()
-                    .returnNumber(retrySlipNumber)
-                    .returnType(slip.getReturnType())
-                    .status(slip.getStatus())
-                    .warehouseId(slip.getWarehouseId())
-                    .warehouseCode(slip.getWarehouseCode())
-                    .warehouseName(slip.getWarehouseName())
-                    .partnerId(slip.getPartnerId())
-                    .partnerCode(slip.getPartnerCode())
-                    .partnerName(slip.getPartnerName())
-                    .productId(slip.getProductId())
-                    .productCode(slip.getProductCode())
-                    .productName(slip.getProductName())
-                    .quantity(slip.getQuantity())
-                    .unitType(slip.getUnitType())
-                    .locationId(slip.getLocationId())
-                    .returnReason(slip.getReturnReason())
-                    .returnReasonNote(slip.getReturnReasonNote())
-                    .relatedSlipNumber(slip.getRelatedSlipNumber())
-                    .lotNumber(slip.getLotNumber())
-                    .expiryDate(slip.getExpiryDate())
-                    .returnDate(slip.getReturnDate())
-                    .build();
+            slip = slip.toBuilder().returnNumber(retrySlipNumber).build();
             saved = returnSlipRepository.save(slip);
         }
 

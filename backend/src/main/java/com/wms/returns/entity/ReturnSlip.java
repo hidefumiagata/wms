@@ -27,7 +27,7 @@ import java.time.OffsetDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class ReturnSlip {
 
     @Id

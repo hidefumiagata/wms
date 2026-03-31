@@ -23,7 +23,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -101,8 +103,8 @@ public class ReturnSlipController implements ReturnsApi {
                 .createdByName(createdByName);
     }
 
-    private ReturnSlipSummary toSummary(ReturnSlip s) {
-        String createdByName = returnSlipService.resolveUserName(s.getCreatedBy());
+    private ReturnSlipSummary toSummary(ReturnSlip s, Map<Long, String> userNameMap) {
+        String createdByName = userNameMap.getOrDefault(s.getCreatedBy(), "");
 
         return new ReturnSlipSummary()
                 .id(s.getId())
@@ -126,8 +128,13 @@ public class ReturnSlipController implements ReturnsApi {
     }
 
     private ReturnSlipPageResponse toPageResponse(Page<ReturnSlip> page) {
+        Map<Long, String> userNameMap = page.getContent().stream()
+                .map(ReturnSlip::getCreatedBy)
+                .collect(Collectors.toSet())
+                .stream()
+                .collect(Collectors.toMap(id -> id, returnSlipService::resolveUserName));
         List<ReturnSlipSummary> items = page.getContent().stream()
-                .map(this::toSummary)
+                .map(s -> toSummary(s, userNameMap))
                 .toList();
         return new ReturnSlipPageResponse()
                 .content(items)
