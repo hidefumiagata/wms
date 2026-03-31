@@ -60,9 +60,9 @@ class DailySummaryReportServiceTest {
     }
 
     private DailySummaryReportRow createRow(LocalDate businessDate, Long warehouseId, String warehouseName,
-                                             Integer inboundCount, Integer inboundLineCount, Integer inboundQtyTotal,
-                                             Integer outboundCount, Integer outboundLineCount, Integer outboundQtyTotal,
-                                             Integer returnCount, Integer returnQtyTotal, Integer inventoryQtyTotal,
+                                             Integer inboundCount, Integer inboundLineCount, Long inboundQtyTotal,
+                                             Integer outboundCount, Integer outboundLineCount, Long outboundQtyTotal,
+                                             Integer returnCount, Integer returnQtyTotal, Long inventoryQtyTotal,
                                              Integer unreceivedCount, Integer unshippedCount) {
         DailySummaryReportRow row = mock(DailySummaryReportRow.class);
         when(row.getBusinessDate()).thenReturn(businessDate);
@@ -89,8 +89,8 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("正常にレポートデータが生成される（複数倉庫）")
         void generate_success_returnsItemsForMultipleWarehouses() {
-            var row1 = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1);
-            var row2 = createRow(TARGET_DATE, 2L, "大阪DC", 5, 18, 520, 3, 12, 340, 1, 60, 3200, 0, 2);
+            var row1 = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230L, 8, 30, 870L, 2, 150, 5600L, 3, 1);
+            var row2 = createRow(TARGET_DATE, 2L, "大阪DC", 5, 18, 520L, 3, 12, 340L, 1, 60, 3200L, 0, 2);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
@@ -194,7 +194,7 @@ class DailySummaryReportServiceTest {
         @DisplayName("businessDateがnullの行はnullのまま返される")
         void generate_nullBusinessDate_setsNull() {
             var row = createRow(null, 1L, "東京DC",
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    0, 0, 0L, 0, 0, 0L, 0, 0, 0L, 0, 0);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
@@ -212,7 +212,7 @@ class DailySummaryReportServiceTest {
         @DisplayName("warehouseIdがnullの行はnullのまま返される")
         void generate_nullWarehouseId_setsNull() {
             var row = createRow(TARGET_DATE, null, "東京DC",
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    0, 0, 0L, 0, 0, 0L, 0, 0, 0L, 0, 0);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))
@@ -256,7 +256,7 @@ class DailySummaryReportServiceTest {
         @Test
         @DisplayName("csvRowMapperが正しくフォーマットする")
         void generate_csvRowMapper_formatsCorrectly() {
-            var projRow = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230, 8, 30, 870, 2, 150, 5600, 3, 1);
+            var projRow = createRow(TARGET_DATE, 1L, "東京DC", 12, 45, 1230L, 8, 30, 870L, 2, 150, 5600L, 3, 1);
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(true);
             when(dailySummaryRecordRepository.findDailySummaryData(TARGET_DATE))

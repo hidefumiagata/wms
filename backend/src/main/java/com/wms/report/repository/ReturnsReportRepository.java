@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * RPT-18: 返品レポート用リポジトリ。
- * return_slips テーブルを products, partners と結合して返品明細を取得する。
+ * return_slips テーブルから返品明細を取得する（商品・取引先情報は非正規化カラム）。
  */
 public interface ReturnsReportRepository extends JpaRepository<BatchExecutionLog, Long> {
 

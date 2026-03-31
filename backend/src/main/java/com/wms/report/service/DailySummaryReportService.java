@@ -101,8 +101,8 @@ public class DailySummaryReportService {
         return item;
     }
 
-    private static Integer toInt(Integer value) {
-        return value != null ? value : 0;
+    private static Integer toInt(Number value) {
+        return value != null ? value.intValue() : 0;
     }
 
     private String[] csvRowMapper(DailySummaryReportItem item) {

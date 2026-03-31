@@ -17,19 +17,19 @@ public interface DailySummaryReportRow {
 
     Integer getInboundLineCount();
 
-    Integer getInboundQuantityTotal();
+    Long getInboundQuantityTotal();
 
     Integer getOutboundCount();
 
     Integer getOutboundLineCount();
 
-    Integer getOutboundQuantityTotal();
+    Long getOutboundQuantityTotal();
 
     Integer getReturnCount();
 
     Integer getReturnQuantityTotal();
 
-    Integer getInventoryQuantityTotal();
+    Long getInventoryQuantityTotal();
 
     Integer getUnreceivedCount();
 
