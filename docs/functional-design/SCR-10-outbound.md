@@ -76,7 +76,6 @@
 | btn-bulk-allot | 一括引当 | ボタン | — | — | 1件以上選択必須 | MANAGER/STAFF のみ表示 |
 | btn-delivery-list | 配送リスト出力 | ボタン | — | — | — | RPT-014 |
 | btn-unshipped-rt | 未出荷リスト（RT）出力 | ボタン | — | — | — | RPT-015 |
-| btn-unshipped-fix | 未出荷リスト（確定）出力 | ボタン | — | — | — | RPT-016 |
 | tbl-list | 受注一覧テーブル | テーブル | — | — | — | |
 | col-slip-no | 伝票番号 | 表示 | — | — | — | クリックで OUT-003 へ遷移 |
 | col-type | 種別 | 表示 | — | — | — | 通常出荷 / 倉庫振替出荷 |
