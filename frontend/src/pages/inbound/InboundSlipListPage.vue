@@ -91,14 +91,16 @@
         <div class="toolbar-buttons">
           <el-button
             :icon="Printer"
-            :loading="downloadingReport"
+            :loading="downloadingInboundPlan"
+            :disabled="downloadingInboundPlan"
             @click="downloadInboundPlanReport"
           >
             {{ t('inbound.slip.reportInboundPlan') }}
           </el-button>
           <el-button
             :icon="Printer"
-            :loading="downloadingReport"
+            :loading="downloadingUnreceivedRt"
+            :disabled="downloadingUnreceivedRt"
             @click="downloadUnreceivedRealtimeReport"
           >
             {{ t('inbound.slip.reportUnreceivedRt') }}
@@ -191,7 +193,8 @@ const {
   handleReset,
   handlePageChange,
   handleSizeChange,
-  downloadingReport,
+  downloadingInboundPlan,
+  downloadingUnreceivedRt,
   downloadInboundPlanReport,
   downloadUnreceivedRealtimeReport,
 } = useInboundSlipList()

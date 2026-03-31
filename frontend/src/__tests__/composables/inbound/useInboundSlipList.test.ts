@@ -309,6 +309,29 @@ describe('useInboundSlipList', () => {
   })
 
   describe('downloadInboundPlanReport', () => {
+    it('ダウンロード中の二重クリックを防止する', async () => {
+      let resolveDeferred: () => void
+      vi.mocked(downloadReport).mockImplementationOnce(
+        () => new Promise<void>((r) => { resolveDeferred = r }),
+      )
+
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      const firstCall = result.downloadInboundPlanReport()
+      expect(result.downloadingInboundPlan.value).toBe(true)
+
+      // 二重クリック: downloadReport は再度呼ばれない
+      await result.downloadInboundPlanReport()
+      expect(vi.mocked(downloadReport)).toHaveBeenCalledTimes(1)
+
+      resolveDeferred!()
+      await firstCall
+    })
+
     it('現在の検索条件でRPT-03をPDFダウンロードする', async () => {
       const { result } = withSetup(() => {
         const ws = useWarehouseStore()
@@ -356,18 +379,18 @@ describe('useInboundSlipList', () => {
       expect(callArgs.params).toEqual({ warehouseId: 10 })
     })
 
-    it('downloadingReport がtrue→falseに遷移する', async () => {
+    it('downloadingInboundPlan がtrue→falseに遷移する', async () => {
       const { result } = withSetup(() => {
         const ws = useWarehouseStore()
         ws.selectedWarehouseId = 1
         return useInboundSlipList()
       })
 
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingInboundPlan.value).toBe(false)
       const promise = result.downloadInboundPlanReport()
-      expect(result.downloadingReport.value).toBe(true)
+      expect(result.downloadingInboundPlan.value).toBe(true)
       await promise
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingInboundPlan.value).toBe(false)
     })
 
     it('エラー時にElMessage.errorを表示する', async () => {
@@ -382,7 +405,7 @@ describe('useInboundSlipList', () => {
       await result.downloadInboundPlanReport()
 
       expect(ElMessage.error).toHaveBeenCalledWith('inbound.slip.reportDownloadError')
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingInboundPlan.value).toBe(false)
     })
 
     it('ダウンロード開始時にElMessage.infoを表示する', async () => {
@@ -399,6 +422,28 @@ describe('useInboundSlipList', () => {
   })
 
   describe('downloadUnreceivedRealtimeReport', () => {
+    it('ダウンロード中の二重クリックを防止する', async () => {
+      let resolveDeferred: () => void
+      vi.mocked(downloadReport).mockImplementationOnce(
+        () => new Promise<void>((r) => { resolveDeferred = r }),
+      )
+
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      const firstCall = result.downloadUnreceivedRealtimeReport()
+      expect(result.downloadingUnreceivedRt.value).toBe(true)
+
+      await result.downloadUnreceivedRealtimeReport()
+      expect(vi.mocked(downloadReport)).toHaveBeenCalledTimes(1)
+
+      resolveDeferred!()
+      await firstCall
+    })
+
     it('RPT-05をPDFダウンロードする（warehouseIdのみ）', async () => {
       const { result } = withSetup(() => {
         const ws = useWarehouseStore()
@@ -417,18 +462,18 @@ describe('useInboundSlipList', () => {
       )
     })
 
-    it('downloadingReport がtrue→falseに遷移する', async () => {
+    it('downloadingUnreceivedRt がtrue→falseに遷移する', async () => {
       const { result } = withSetup(() => {
         const ws = useWarehouseStore()
         ws.selectedWarehouseId = 1
         return useInboundSlipList()
       })
 
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingUnreceivedRt.value).toBe(false)
       const promise = result.downloadUnreceivedRealtimeReport()
-      expect(result.downloadingReport.value).toBe(true)
+      expect(result.downloadingUnreceivedRt.value).toBe(true)
       await promise
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingUnreceivedRt.value).toBe(false)
     })
 
     it('エラー時にElMessage.errorを表示する', async () => {
@@ -443,7 +488,7 @@ describe('useInboundSlipList', () => {
       await result.downloadUnreceivedRealtimeReport()
 
       expect(ElMessage.error).toHaveBeenCalledWith('inbound.slip.reportDownloadError')
-      expect(result.downloadingReport.value).toBe(false)
+      expect(result.downloadingUnreceivedRt.value).toBe(false)
     })
 
     it('ダウンロード開始時にElMessage.infoを表示する', async () => {

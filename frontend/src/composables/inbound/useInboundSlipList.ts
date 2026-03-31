@@ -174,10 +174,12 @@ export function useInboundSlipList() {
   }
 
   // --- レポートダウンロード ---
-  const downloadingReport = ref(false)
+  const downloadingInboundPlan = ref(false)
+  const downloadingUnreceivedRt = ref(false)
 
   async function downloadInboundPlanReport() {
-    downloadingReport.value = true
+    if (downloadingInboundPlan.value) return
+    downloadingInboundPlan.value = true
     ElMessage.info(t('inbound.slip.reportDownloading'))
     try {
       const params: Record<string, unknown> = {
@@ -196,12 +198,13 @@ export function useInboundSlipList() {
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))
     } finally {
-      downloadingReport.value = false
+      downloadingInboundPlan.value = false
     }
   }
 
   async function downloadUnreceivedRealtimeReport() {
-    downloadingReport.value = true
+    if (downloadingUnreceivedRt.value) return
+    downloadingUnreceivedRt.value = true
     ElMessage.info(t('inbound.slip.reportDownloading'))
     try {
       await downloadReport({
@@ -216,7 +219,7 @@ export function useInboundSlipList() {
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))
     } finally {
-      downloadingReport.value = false
+      downloadingUnreceivedRt.value = false
     }
   }
 
@@ -235,7 +238,8 @@ export function useInboundSlipList() {
     handleReset,
     handlePageChange,
     handleSizeChange,
-    downloadingReport,
+    downloadingInboundPlan,
+    downloadingUnreceivedRt,
     downloadInboundPlanReport,
     downloadUnreceivedRealtimeReport,
   }
