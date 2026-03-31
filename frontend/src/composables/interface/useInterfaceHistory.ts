@@ -111,6 +111,46 @@ export function useInterfaceHistory() {
     fetchList()
   }
 
+  // --- フォーマットヘルパー ---
+  function formatDateTime(dateStr: string): string {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    return d.toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
+
+  function ifTypeLabel(ifType: string): string {
+    if (ifType === 'INBOUND_PLAN') return t('interfaceHistory.ifTypeInbound')
+    if (ifType === 'ORDER') return t('interfaceHistory.ifTypeOrder')
+    return ifType
+  }
+
+  function modeLabel(mode: string): string {
+    if (mode === 'SUCCESS_ONLY') return t('interfaceHistory.modeSuccessOnly')
+    if (mode === 'DISCARD') return t('interfaceHistory.modeDiscard')
+    return mode
+  }
+
+  function statusLabel(status: string): string {
+    if (status === 'COMPLETED') return t('interfaceHistory.statusCompleted')
+    if (status === 'DISCARDED') return t('interfaceHistory.statusDiscarded')
+    if (status === 'FAILED') return t('interfaceHistory.statusFailed')
+    return status
+  }
+
+  function statusTagType(status: string): '' | 'success' | 'danger' | 'info' {
+    if (status === 'COMPLETED') return 'success'
+    if (status === 'FAILED') return 'danger'
+    if (status === 'DISCARDED') return 'info'
+    return ''
+  }
+
   return {
     items,
     loading,
@@ -123,5 +163,10 @@ export function useInterfaceHistory() {
     handleReset,
     handlePageChange,
     handleSizeChange,
+    formatDateTime,
+    ifTypeLabel,
+    modeLabel,
+    statusLabel,
+    statusTagType,
   }
 }

@@ -214,4 +214,51 @@ describe('useInterfaceHistory', () => {
     expect(result.page.value).toBe(1)
     expect(apiClient.get).toHaveBeenCalled()
   })
+
+  // --- フォーマットヘルパー ---
+  describe('formatDateTime', () => {
+    it('日時文字列をja-JPフォーマットで返す', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      const formatted = result.formatDateTime('2026-03-18T14:30:05+09:00')
+      expect(formatted).toBeTruthy()
+      expect(formatted).toContain('2026')
+    })
+
+    it('空文字列の場合空文字を返す', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      expect(result.formatDateTime('')).toBe('')
+    })
+  })
+
+  describe('label helpers', () => {
+    it('ifTypeLabel が各値を変換する', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      expect(result.ifTypeLabel('INBOUND_PLAN')).toBe('interfaceHistory.ifTypeInbound')
+      expect(result.ifTypeLabel('ORDER')).toBe('interfaceHistory.ifTypeOrder')
+      expect(result.ifTypeLabel('UNKNOWN')).toBe('UNKNOWN')
+    })
+
+    it('modeLabel が各値を変換する', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      expect(result.modeLabel('SUCCESS_ONLY')).toBe('interfaceHistory.modeSuccessOnly')
+      expect(result.modeLabel('DISCARD')).toBe('interfaceHistory.modeDiscard')
+      expect(result.modeLabel('OTHER')).toBe('OTHER')
+    })
+
+    it('statusLabel が各値を変換する', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      expect(result.statusLabel('COMPLETED')).toBe('interfaceHistory.statusCompleted')
+      expect(result.statusLabel('DISCARDED')).toBe('interfaceHistory.statusDiscarded')
+      expect(result.statusLabel('FAILED')).toBe('interfaceHistory.statusFailed')
+      expect(result.statusLabel('UNKNOWN')).toBe('UNKNOWN')
+    })
+
+    it('statusTagType が各値を変換する', () => {
+      const { result } = withSetup(() => useInterfaceHistory())
+      expect(result.statusTagType('COMPLETED')).toBe('success')
+      expect(result.statusTagType('FAILED')).toBe('danger')
+      expect(result.statusTagType('DISCARDED')).toBe('info')
+      expect(result.statusTagType('OTHER')).toBe('')
+    })
+  })
 })

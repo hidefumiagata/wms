@@ -222,87 +222,8 @@ describe('useInterfaceFiles', () => {
     expect(ElMessage.error).toHaveBeenCalledWith('interfaceFiles.validateError')
   })
 
-  // --- handleImportFromList ---
-  it('handleImportFromList がモード選択後に取り込みAPIを呼ぶ', async () => {
-    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm')
-
-    const { result } = withSetup(() => {
-      setupWarehouse()
-      return useInterfaceFiles()
-    })
-    await result.handleImportFromList('INB-PLAN-001.csv')
-
-    expect(apiClient.post).toHaveBeenCalledWith(
-      '/interface/IFX-001/import',
-      { fileName: 'INB-PLAN-001.csv', warehouseId: 1, mode: 'SUCCESS_ONLY' },
-    )
-  })
-
-  it('handleImportFromList でキャンセル時は何もしない', async () => {
-    vi.mocked(ElMessageBox.confirm).mockRejectedValueOnce('cancel')
-
-    const { result } = withSetup(() => {
-      setupWarehouse()
-      return useInterfaceFiles()
-    })
-    await result.handleImportFromList('INB-PLAN-001.csv')
-
-    expect(apiClient.post).not.toHaveBeenCalled()
-  })
-
-  it('handleImportFromList でwarehouseIdがnullの場合は何もしない', async () => {
-    const { result } = withSetup(() => useInterfaceFiles())
-    await result.handleImportFromList('INB-PLAN-001.csv')
-    expect(apiClient.post).not.toHaveBeenCalled()
-  })
-
-  // --- executeImport (via handleImportFromList) ---
-  it('SUCCESS_ONLYモードで取り込み成功時にimportSuccessCompletedメッセージを表示する', async () => {
-    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm')
-    vi.mocked(apiClient.post).mockResolvedValueOnce(
-      mockAxiosResponse({ successCount: 9, errorCount: 1, mode: 'SUCCESS_ONLY', status: 'COMPLETED' }),
-    )
-
-    const { result } = withSetup(() => {
-      setupWarehouse()
-      return useInterfaceFiles()
-    })
-    await result.handleImportFromList('INB-PLAN-001.csv')
-
-    expect(ElMessage.success).toHaveBeenCalledWith(
-      'interfaceFiles.importSuccessCompleted',
-    )
-  })
-
-  it('取り込みAPIエラー時にimportErrorメッセージを表示する', async () => {
-    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm')
-    const apiError = Object.assign(new Error('500'), {
-      isAxiosError: true,
-      response: { status: 500, data: {} },
-    })
-    vi.mocked(apiClient.post).mockRejectedValueOnce(apiError)
-
-    const { result } = withSetup(() => {
-      setupWarehouse()
-      return useInterfaceFiles()
-    })
-    await result.handleImportFromList('INB-PLAN-001.csv')
-
-    expect(ElMessage.error).toHaveBeenCalledWith('interfaceFiles.importError')
-  })
-
-  it('取り込みネットワークエラー時にerror.networkメッセージを表示する', async () => {
-    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm')
-    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('Network Error'))
-
-    const { result } = withSetup(() => {
-      setupWarehouse()
-      return useInterfaceFiles()
-    })
-    await result.handleImportFromList('INB-PLAN-001.csv')
-
-    expect(ElMessage.error).toHaveBeenCalledWith('error.network')
-  })
+  // --- handleImportFromList (opens import mode dialog) ---
+  // handleImportFromList のテストは importModeDialog セクションに統合
 
   // --- handleImportSuccessOnly ---
   it('handleImportSuccessOnly が確認ダイアログ後にSUCCESS_ONLYで取り込みを実行する', async () => {
@@ -441,5 +362,103 @@ describe('useInterfaceFiles', () => {
     expect(result.formatFileSize(12288)).toBe('12.0 KB')
     expect(result.formatFileSize(1048576)).toBe('1.0 MB')
     expect(result.formatFileSize(52428800)).toBe('50.0 MB')
+  })
+
+  // --- formatDateTime ---
+  it('formatDateTime が日時文字列をフォーマットする', () => {
+    const { result } = withSetup(() => useInterfaceFiles())
+    const formatted = result.formatDateTime('2026-03-18T09:30:15+09:00')
+    expect(formatted).toBeTruthy()
+    expect(formatted).toContain('2026')
+  })
+
+  it('formatDateTime が空文字の場合空文字を返す', () => {
+    const { result } = withSetup(() => useInterfaceFiles())
+    expect(result.formatDateTime('')).toBe('')
+  })
+
+  // --- importModeDialog ---
+  it('openImportModeDialog がダイアログを開く（warehouseIdあり）', () => {
+    const { result } = withSetup(() => {
+      setupWarehouse()
+      return useInterfaceFiles()
+    })
+    result.handleImportFromList('INB-PLAN-001.csv')
+    expect(result.importModeDialogVisible.value).toBe(true)
+    expect(result.importModeFileName.value).toBe('INB-PLAN-001.csv')
+    expect(result.importModeSelected.value).toBe('SUCCESS_ONLY')
+  })
+
+  it('openImportModeDialog でwarehouseIdがnullの場合はダイアログを開かない', () => {
+    const { result } = withSetup(() => useInterfaceFiles())
+    result.handleImportFromList('INB-PLAN-001.csv')
+    expect(result.importModeDialogVisible.value).toBe(false)
+  })
+
+  it('confirmImportMode が選択されたモードで取り込みを実行する', async () => {
+    const { result } = withSetup(() => {
+      setupWarehouse()
+      return useInterfaceFiles()
+    })
+    result.importModeFileName.value = 'INB-PLAN-001.csv'
+    result.importModeSelected.value = 'DISCARD'
+    result.importModeDialogVisible.value = true
+
+    vi.mocked(apiClient.post).mockResolvedValueOnce(
+      mockAxiosResponse({ successCount: 0, errorCount: 10, mode: 'DISCARD', status: 'DISCARDED' }),
+    )
+    await result.confirmImportMode()
+
+    expect(result.importModeDialogVisible.value).toBe(false)
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/interface/IFX-001/import',
+      { fileName: 'INB-PLAN-001.csv', warehouseId: 1, mode: 'DISCARD' },
+    )
+  })
+
+  it('confirmImportMode でAPIエラー時にimportErrorメッセージを表示する', async () => {
+    const apiError = Object.assign(new Error('500'), {
+      isAxiosError: true,
+      response: { status: 500, data: {} },
+    })
+    vi.mocked(apiClient.post).mockRejectedValueOnce(apiError)
+
+    const { result } = withSetup(() => {
+      setupWarehouse()
+      return useInterfaceFiles()
+    })
+    result.importModeFileName.value = 'INB-PLAN-001.csv'
+    result.importModeSelected.value = 'SUCCESS_ONLY'
+    await result.confirmImportMode()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('interfaceFiles.importError')
+  })
+
+  it('confirmImportMode でネットワークエラー時にerror.networkメッセージを表示する', async () => {
+    vi.mocked(apiClient.post).mockRejectedValueOnce(new Error('Network Error'))
+
+    const { result } = withSetup(() => {
+      setupWarehouse()
+      return useInterfaceFiles()
+    })
+    result.importModeFileName.value = 'INB-PLAN-001.csv'
+    result.importModeSelected.value = 'SUCCESS_ONLY'
+    await result.confirmImportMode()
+
+    expect(ElMessage.error).toHaveBeenCalledWith('error.network')
+  })
+
+  it('confirmImportMode でwarehouseIdがnullの場合は何もしない', async () => {
+    const { result } = withSetup(() => useInterfaceFiles())
+    result.importModeFileName.value = 'INB-PLAN-001.csv'
+    await result.confirmImportMode()
+    expect(apiClient.post).not.toHaveBeenCalled()
+  })
+
+  it('cancelImportMode がダイアログを閉じる', () => {
+    const { result } = withSetup(() => useInterfaceFiles())
+    result.importModeDialogVisible.value = true
+    result.cancelImportMode()
+    expect(result.importModeDialogVisible.value).toBe(false)
   })
 })

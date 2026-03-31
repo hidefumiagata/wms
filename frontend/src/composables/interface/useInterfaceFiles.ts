@@ -100,17 +100,31 @@ export function useInterfaceFiles() {
   }
 
   // --- IF-001 直接取り込み（モード選択ダイアログ付き） ---
-  async function handleImportFromList(fileName: string) {
+  const importModeDialogVisible = ref(false)
+  const importModeFileName = ref('')
+  const importModeSelected = ref<string>('SUCCESS_ONLY')
+
+  function openImportModeDialog(fileName: string) {
     const warehouseId = warehouseStore.selectedWarehouseId
     if (!warehouseId) return
+    importModeFileName.value = fileName
+    importModeSelected.value = 'SUCCESS_ONLY'
+    importModeDialogVisible.value = true
+  }
 
-    try {
-      const mode = await showImportModeDialog(fileName)
-      if (!mode) return
-      await executeImport(fileName, warehouseId, mode)
-    } catch {
-      // cancelled
-    }
+  async function confirmImportMode() {
+    const warehouseId = warehouseStore.selectedWarehouseId
+    if (!warehouseId) return
+    importModeDialogVisible.value = false
+    await executeImport(importModeFileName.value, warehouseId, importModeSelected.value)
+  }
+
+  function cancelImportMode() {
+    importModeDialogVisible.value = false
+  }
+
+  async function handleImportFromList(fileName: string) {
+    openImportModeDialog(fileName)
   }
 
   // --- IF-002 バリデーション結果ダイアログからの取り込み ---
@@ -194,30 +208,25 @@ export function useInterfaceFiles() {
     }
   }
 
-  // --- モード選択ダイアログ ---
-  async function showImportModeDialog(fileName: string): Promise<string | null> {
-    try {
-      await ElMessageBox.confirm(
-        t('interfaceFiles.importConfirmMessage', { fileName }),
-        t('interfaceFiles.importConfirmTitle'),
-        {
-          confirmButtonText: t('interfaceFiles.modeSuccessOnly'),
-          cancelButtonText: t('common.cancel'),
-          type: 'warning',
-        },
-      )
-      return 'SUCCESS_ONLY'
-    } catch {
-      return null
-    }
-  }
-
   function closeValidationDialog() {
     validationDialogVisible.value = false
     validationResult.value = null
   }
 
-  // --- ファイルサイズフォーマット ---
+  // --- フォーマットヘルパー ---
+  function formatDateTime(dateStr: string): string {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    return d.toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  }
+
   function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -238,9 +247,15 @@ export function useInterfaceFiles() {
     handleTabChange,
     handleValidate,
     handleImportFromList,
+    importModeDialogVisible,
+    importModeFileName,
+    importModeSelected,
+    confirmImportMode,
+    cancelImportMode,
     handleImportSuccessOnly,
     handleImportDiscard,
     closeValidationDialog,
+    formatDateTime,
     formatFileSize,
   }
 }

@@ -72,6 +72,26 @@
       </el-table>
     </el-card>
 
+    <!-- 取り込みモード選択ダイアログ (EVT-IF001-005) -->
+    <el-dialog
+      v-model="importModeDialogVisible"
+      :title="t('interfaceFiles.importConfirmTitle')"
+      width="450px"
+      :close-on-click-modal="false"
+    >
+      <p>{{ t('interfaceFiles.importConfirmMessage', { fileName: importModeFileName }) }}</p>
+      <el-radio-group v-model="importModeSelected" style="margin-top: 12px">
+        <el-radio value="SUCCESS_ONLY">{{ t('interfaceFiles.modeSuccessOnly') }}</el-radio>
+        <el-radio value="DISCARD">{{ t('interfaceFiles.modeDiscard') }}</el-radio>
+      </el-radio-group>
+      <template #footer>
+        <el-button @click="cancelImportMode">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="!!importingFile" @click="confirmImportMode">
+          {{ t('interfaceFiles.execute') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- バリデーション結果ダイアログ (IF-002) -->
     <ValidationResultDialog
       v-model:visible="validationDialogVisible"
@@ -107,24 +127,17 @@ const {
   handleTabChange,
   handleValidate,
   handleImportFromList,
+  importModeDialogVisible,
+  importModeFileName,
+  importModeSelected,
+  confirmImportMode,
+  cancelImportMode,
   handleImportSuccessOnly,
   handleImportDiscard,
   closeValidationDialog,
+  formatDateTime,
   formatFileSize,
 } = useInterfaceFiles()
-
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
 
 onMounted(() => {
   fetchFiles()

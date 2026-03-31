@@ -19,8 +19,7 @@ import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
 import com.wms.interfacing.service.InboundPlanCsvProcessor;
 import com.wms.interfacing.service.InterfaceService;
-import com.wms.system.entity.User;
-import com.wms.system.repository.UserRepository;
+import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,7 +35,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -54,7 +52,7 @@ public class InterfaceController implements InterfaceApi {
     );
 
     private final InterfaceService interfaceService;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
     @Override
@@ -174,14 +172,11 @@ public class InterfaceController implements InterfaceApi {
         Set<Long> userIds = page.getContent().stream()
                 .map(IfExecution::getExecutedBy)
                 .collect(Collectors.toSet());
-        Map<Long, User> userMap = userIds.isEmpty()
-                ? Map.of()
-                : userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, String> userNameMap = userService.getUserFullNameMap(userIds);
 
         return new IfExecutionPageResponse()
                 .content(page.getContent().stream()
-                        .map(e -> toExecutionItem(e, userMap))
+                        .map(e -> toExecutionItem(e, userNameMap))
                         .toList())
                 .page(page.getNumber())
                 .size(page.getSize())
@@ -189,9 +184,8 @@ public class InterfaceController implements InterfaceApi {
                 .totalPages(page.getTotalPages());
     }
 
-    private IfExecutionItem toExecutionItem(IfExecution e, Map<Long, User> userMap) {
-        User user = userMap.get(e.getExecutedBy());
-        String userName = user != null ? user.getFullName() : String.valueOf(e.getExecutedBy());
+    private IfExecutionItem toExecutionItem(IfExecution e, Map<Long, String> userNameMap) {
+        String userName = userNameMap.getOrDefault(e.getExecutedBy(), String.valueOf(e.getExecutedBy()));
 
         return new IfExecutionItem()
                 .id(e.getId())

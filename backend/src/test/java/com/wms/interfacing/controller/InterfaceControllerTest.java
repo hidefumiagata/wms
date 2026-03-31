@@ -11,8 +11,7 @@ import com.wms.interfacing.service.InterfaceService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
-import com.wms.system.entity.User;
-import com.wms.system.repository.UserRepository;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -58,7 +58,7 @@ class InterfaceControllerTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @MockitoBean
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Nested
     @DisplayName("GET /api/v1/interface/{ifId}/files")
@@ -248,13 +248,6 @@ class InterfaceControllerTest {
                     .build();
         }
 
-        private User createUser() {
-            User user = new User();
-            setField(user, "id", 1L);
-            setField(user, "fullName", "山田 太郎");
-            return user;
-        }
-
         @Test
         @DisplayName("200 — 実行履歴一覧を返す")
         void listExecutions_returns200() throws Exception {
@@ -262,7 +255,7 @@ class InterfaceControllerTest {
             Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
             when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
-            when(userRepository.findAllById(any())).thenReturn(List.of(createUser()));
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of(1L, "山田 太郎"));
 
             mockMvc.perform(get("/api/v1/interface/executions"))
                     .andExpect(status().isOk())
@@ -297,7 +290,7 @@ class InterfaceControllerTest {
             Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
             when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
-            when(userRepository.findAllById(any())).thenReturn(List.of());
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
 
             mockMvc.perform(get("/api/v1/interface/executions"))
                     .andExpect(status().isOk())
@@ -341,7 +334,7 @@ class InterfaceControllerTest {
         }
 
         @Test
-        @DisplayName("200 — 空ページの場合userRepository呼び出しなし")
+        @DisplayName("200 — 空ページの場合userService呼び出しあり（空Set）")
         void listExecutions_emptyPage_noUserFetch() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
             when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
@@ -352,19 +345,6 @@ class InterfaceControllerTest {
                     .andExpect(jsonPath("$.content").isEmpty());
         }
 
-        private static void setField(Object obj, String fieldName, Object value) {
-            Class<?> clazz = obj.getClass();
-            while (clazz != null) {
-                try {
-                    java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
-                    field.setAccessible(true);
-                    field.set(obj, value);
-                    return;
-                } catch (NoSuchFieldException e) { clazz = clazz.getSuperclass(); }
-                catch (Exception e) { throw new RuntimeException(e); }
-            }
-            throw new RuntimeException("Field not found: " + fieldName);
-        }
     }
 
     @Nested
