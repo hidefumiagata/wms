@@ -140,12 +140,23 @@
 | `OUTBOUND_PARTNER_REQUIRED` | 422 | 出荷先IDが必要 |
 | `OUTBOUND_PRODUCT_SHIPMENT_STOPPED` | 422 | 商品が出荷停止 |
 | `PICKING_NOT_FOUND` | 404 | ピッキング指示が見つからない |
+| `PICKING_LINE_NOT_FOUND` | 422 | 指定されたlineIdが当該ピッキング指示に存在しない |
+| `PICKING_QTY_EXCEEDED` | 422 | ピッキング完了数量がピッキング予定数量を超えている |
+| `PICKING_NO_ALLOCATION_CANDIDATES` | 422 | ピッキング対象の引当明細が存在しない |
 | `UNPACK_NOT_COMPLETED` | 422 | ばらし指示未完了 |
 | `ALLOCATION_INSUFFICIENT` | 422 | 引当不足 |
 
 ---
 
-### 3.9 バッチ処理 (batch)
+### 3.9 帳票 (report)
+
+| エラーコード | HTTPステータス | 説明 |
+|---|---|---|
+| `REPORT_PARAMETER_REQUIRED` | 422 | 必須パラメータの組み合わせが不足 |
+
+---
+
+### 3.10 バッチ処理 (batch)
 
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
@@ -154,7 +165,7 @@
 
 ---
 
-### 3.10 システムパラメータ (system-parameters)
+### 3.11 システムパラメータ (system-parameters)
 
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
@@ -162,7 +173,7 @@
 
 ---
 
-### 3.11 在庫引当 (allocation)
+### 3.12 在庫引当 (allocation)
 
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
@@ -173,7 +184,7 @@
 
 ---
 
-### 3.12 返品管理 (returns)
+### 3.13 返品管理 (returns)
 
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
