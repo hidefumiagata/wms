@@ -217,35 +217,42 @@ public class InventoryService {
                     "返品数量が在庫数を超えています (available=" + totalAvailable + ", requested=" + cmd.quantity() + ")");
         }
 
-        Inventory inventory = inventories.get(0);
-        int newQty = inventory.getQuantity() - cmd.quantity();
-        inventory.setQuantity(newQty);
-        try {
-            inventoryRepository.save(inventory);
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+        // 複数在庫レコード（ロット違い等）に対してID順に分散減算する
+        int remaining = cmd.quantity();
+        for (Inventory inventory : inventories) {
+            if (remaining <= 0) break;
+            int deduct = Math.min(remaining, inventory.getQuantity());
+            if (deduct <= 0) continue;
+            int newQty = inventory.getQuantity() - deduct;
+            inventory.setQuantity(newQty);
+            try {
+                inventoryRepository.save(inventory);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
+                        "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+            }
+
+            InventoryMovement movement = InventoryMovement.builder()
+                    .warehouseId(cmd.warehouseId())
+                    .locationId(cmd.locationId())
+                    .locationCode(cmd.locationCode())
+                    .productId(cmd.productId())
+                    .productCode(cmd.productCode())
+                    .productName(cmd.productName())
+                    .unitType(cmd.unitType())
+                    .movementType("RETURN_OUT")
+                    .quantity(-deduct)
+                    .quantityAfter(newQty)
+                    .referenceId(cmd.referenceId())
+                    .referenceType("RETURN_SLIP")
+                    .executedAt(cmd.executedAt())
+                    .executedBy(cmd.userId())
+                    .build();
+            inventoryMovementRepository.save(movement);
+
+            log.info("Inventory return deducted: locationId={}, productId={}, inventoryId={}, qty=-{}, after={}",
+                    cmd.locationId(), cmd.productId(), inventory.getId(), deduct, newQty);
+            remaining -= deduct;
         }
-
-        InventoryMovement movement = InventoryMovement.builder()
-                .warehouseId(cmd.warehouseId())
-                .locationId(cmd.locationId())
-                .locationCode(cmd.locationCode())
-                .productId(cmd.productId())
-                .productCode(cmd.productCode())
-                .productName(cmd.productName())
-                .unitType(cmd.unitType())
-                .movementType("RETURN_OUT")
-                .quantity(-cmd.quantity())
-                .quantityAfter(newQty)
-                .referenceId(cmd.referenceId())
-                .referenceType("RETURN_SLIP")
-                .executedAt(cmd.executedAt())
-                .executedBy(cmd.userId())
-                .build();
-        inventoryMovementRepository.save(movement);
-
-        log.info("Inventory return deducted: locationId={}, productId={}, qty=-{}, after={}",
-                cmd.locationId(), cmd.productId(), cmd.quantity(), newQty);
     }
 }

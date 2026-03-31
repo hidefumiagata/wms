@@ -309,6 +309,32 @@ class ReturnSlipServiceTest {
         }
 
         @Test
+        @DisplayName("ロケーションが別倉庫: RETURN_LOCATION_WAREHOUSE_MISMATCH")
+        void create_locationWarehouseMismatch_throwsBusinessRule() {
+            setUpSecurityContext();
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 18));
+            when(productService.findById(10L)).thenReturn(product);
+            when(warehouseService.findByCode("WH-001")).thenReturn(warehouse);
+            Location otherWarehouseLocation = new Location();
+            setField(otherWarehouseLocation, "id", 99L);
+            otherWarehouseLocation.setLocationCode("B-01-01");
+            otherWarehouseLocation.setWarehouseId(999L); // 別倉庫
+            when(locationService.findById(99L)).thenReturn(otherWarehouseLocation);
+
+            CreateReturnRequest request = new CreateReturnRequest()
+                    .returnType(ReturnType.INVENTORY)
+                    .productId(10L)
+                    .quantity(5)
+                    .unitType(CreateReturnRequest.UnitTypeEnum.CASE)
+                    .locationId(99L)
+                    .returnReason(ReturnReason.QUALITY_DEFECT);
+
+            assertThatThrownBy(() -> returnSlipService.create(request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("この倉庫に属していません");
+        }
+
+        @Test
         @DisplayName("棚卸ロック中: RETURN_STOCKTAKE_LOCKED")
         void create_stocktakeLocked_throwsBusinessRule() {
             setUpSecurityContext();

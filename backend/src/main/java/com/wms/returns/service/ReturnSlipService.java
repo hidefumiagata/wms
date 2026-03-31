@@ -109,6 +109,11 @@ public class ReturnSlipService {
         if (request.getReturnType() == ReturnType.INVENTORY) {
             location = locationService.findById(request.getLocationId());
 
+            if (!location.getWarehouseId().equals(warehouse.getId())) {
+                throw new BusinessRuleViolationException("RETURN_LOCATION_WAREHOUSE_MISMATCH",
+                        "指定のロケーションはこの倉庫に属していません (locationId=" + location.getId() + ")");
+            }
+
             if (Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
                 throw new BusinessRuleViolationException("RETURN_STOCKTAKE_LOCKED",
                         "棚卸ロック中のロケーションからは返品できません (locationId=" + location.getId() + ")");

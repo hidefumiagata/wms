@@ -523,6 +523,57 @@ class InventoryServiceTest {
         }
 
         @Test
+        @DisplayName("複数在庫レコード - 分散減算: 先頭で足りない場合に次のレコードから減算")
+        void deductReturn_multipleRecords_distributesDeduction() {
+            Inventory inv1 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(3).allocatedQty(0).build();
+            setField(inv1, "id", 1L);
+            Inventory inv2 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(0).build();
+            setField(inv2, "id", 2L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv1, inv2));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.deductReturnStock(buildCommand(5));
+
+            // inv1: 3 - 3 = 0, inv2: 10 - 2 = 8
+            assertThat(inv1.getQuantity()).isZero();
+            assertThat(inv2.getQuantity()).isEqualTo(8);
+            ArgumentCaptor<InventoryMovement> captor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository, times(2)).save(captor.capture());
+            List<InventoryMovement> movements = captor.getAllValues();
+            assertThat(movements.get(0).getQuantity()).isEqualTo(-3);
+            assertThat(movements.get(0).getQuantityAfter()).isZero();
+            assertThat(movements.get(1).getQuantity()).isEqualTo(-2);
+            assertThat(movements.get(1).getQuantityAfter()).isEqualTo(8);
+        }
+
+        @Test
+        @DisplayName("複数在庫レコード - 先頭のみで十分: 2番目は未操作")
+        void deductReturn_multipleRecords_firstSufficient() {
+            Inventory inv1 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(20).allocatedQty(0).build();
+            setField(inv1, "id", 1L);
+            Inventory inv2 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(0).build();
+            setField(inv2, "id", 2L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv1, inv2));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.deductReturnStock(buildCommand(5));
+
+            assertThat(inv1.getQuantity()).isEqualTo(15);
+            assertThat(inv2.getQuantity()).isEqualTo(10);
+            verify(inventoryMovementRepository, times(1)).save(any(InventoryMovement.class));
+        }
+
+        @Test
         @DisplayName("複数在庫レコード - 一部引当あり: RETURN_ALLOCATED_INVENTORY")
         void deductReturn_multipleRecordsWithAllocated_throwsBusinessRule() {
             Inventory inv1 = Inventory.builder()
