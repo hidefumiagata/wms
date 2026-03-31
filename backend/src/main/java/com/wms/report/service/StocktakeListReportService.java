@@ -9,6 +9,7 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.BuildingRepository;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
+import com.wms.report.repository.projection.StocktakeListRow;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -43,17 +43,6 @@ public class StocktakeListReportService {
     private final WarehouseRepository warehouseRepository;
     private final ReportExportService reportExportService;
 
-    // --- ネイティブクエリのカラムインデックス定数 ---
-    private static final int COL_LOCATION_CODE = 0;
-    private static final int COL_AREA_NAME = 1;
-    private static final int COL_PRODUCT_CODE = 2;
-    private static final int COL_PRODUCT_NAME = 3;
-    private static final int COL_UNIT_TYPE = 4;
-    private static final int COL_LOT_NUMBER = 5;
-    private static final int COL_EXPIRY_DATE = 6;
-    private static final int COL_SYSTEM_QUANTITY = 7;
-    private static final int COL_ACTUAL_QUANTITY = 8;
-
     private static final String[] CSV_HEADERS = {
             "ロケーションコード", "エリア名", "商品コード", "商品名",
             "荷姿", "システム在庫数", "実数", "ロット番号", "期限日"
@@ -71,7 +60,7 @@ public class StocktakeListReportService {
                     "stocktakeId または buildingId のどちらか一方を指定してください");
         }
 
-        List<Object[]> rows;
+        List<StocktakeListRow> rows;
         String warehouseName;
         String conditionsSummary;
 
@@ -120,20 +109,17 @@ public class StocktakeListReportService {
         return reportExportService.export(items, format, meta);
     }
 
-    private StocktakeListReportItem toReportItem(Object[] row) {
+    private StocktakeListReportItem toReportItem(StocktakeListRow row) {
         StocktakeListReportItem item = new StocktakeListReportItem();
-        item.setLocationCode((String) row[COL_LOCATION_CODE]);
-        item.setAreaName((String) row[COL_AREA_NAME]);
-        item.setProductCode((String) row[COL_PRODUCT_CODE]);
-        item.setProductName((String) row[COL_PRODUCT_NAME]);
-        item.setUnitType((String) row[COL_UNIT_TYPE]);
-        item.setLotNumber((String) row[COL_LOT_NUMBER]);
-        item.setExpiryDate(row[COL_EXPIRY_DATE] != null
-                ? LocalDate.parse(row[COL_EXPIRY_DATE].toString()) : null);
-        item.setSystemQuantity(row[COL_SYSTEM_QUANTITY] != null
-                ? ((Number) row[COL_SYSTEM_QUANTITY]).intValue() : null);
-        item.setActualQuantity(row[COL_ACTUAL_QUANTITY] != null
-                ? ((Number) row[COL_ACTUAL_QUANTITY]).intValue() : null);
+        item.setLocationCode(row.getLocationCode());
+        item.setAreaName(row.getAreaName());
+        item.setProductCode(row.getProductCode());
+        item.setProductName(row.getProductName());
+        item.setUnitType(row.getUnitType());
+        item.setLotNumber(row.getLotNumber());
+        item.setExpiryDate(row.getExpiryDate());
+        item.setSystemQuantity(row.getSystemQuantity());
+        item.setActualQuantity(row.getActualQuantity());
         return item;
     }
 

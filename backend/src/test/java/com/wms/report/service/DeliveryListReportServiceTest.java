@@ -6,6 +6,8 @@ import com.wms.generated.model.ReportFormat;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.DeliveryListHeaderRow;
+import com.wms.report.repository.projection.DeliveryListLineRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,32 +74,35 @@ class DeliveryListReportServiceTest {
     }
 
     /**
-     * ヘッダー行データを作成する。
-     * [0] id, [1] slipNumber, [2] partnerName, [3] plannedDate,
-     * [4] status, [5] carrier, [6] trackingNumber
+     * DeliveryListHeaderRow のモックを作成する。
      */
-    private Object[] createHeaderRow(Long id, String slipNumber, String partnerName,
-                                     LocalDate plannedDate, String status,
-                                     String carrier, String trackingNumber) {
-        return new Object[]{
-                id,
-                slipNumber,
-                partnerName,
-                plannedDate != null ? java.sql.Date.valueOf(plannedDate) : null,
-                status,
-                carrier,
-                trackingNumber,
-                "東京都千代田区1-1-1"
-        };
+    private DeliveryListHeaderRow mockHeaderRow(Long id, String slipNumber, String partnerName,
+                                                LocalDate plannedDate, String status,
+                                                String carrier, String trackingNumber) {
+        DeliveryListHeaderRow row = mock(DeliveryListHeaderRow.class);
+        when(row.getId()).thenReturn(id);
+        when(row.getSlipNumber()).thenReturn(slipNumber);
+        when(row.getPartnerName()).thenReturn(partnerName);
+        when(row.getPlannedDate()).thenReturn(plannedDate);
+        when(row.getStatus()).thenReturn(status);
+        when(row.getCarrier()).thenReturn(carrier);
+        when(row.getTrackingNumber()).thenReturn(trackingNumber);
+        when(row.getAddress()).thenReturn("東京都千代田区1-1-1");
+        return row;
     }
 
     /**
-     * 明細行データを作成する。
-     * [0] outboundSlipId, [1] productCode, [2] productName, [3] unitType, [4] orderedQty
+     * DeliveryListLineRow のモックを作成する。
      */
-    private Object[] createLineRow(Long slipId, String productCode, String productName,
-                                   String unitType, Integer orderedQty) {
-        return new Object[]{slipId, productCode, productName, unitType, orderedQty};
+    private DeliveryListLineRow mockLineRow(Long slipId, String productCode, String productName,
+                                            String unitType, Integer orderedQty) {
+        DeliveryListLineRow row = mock(DeliveryListLineRow.class);
+        when(row.getOutboundSlipId()).thenReturn(slipId);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getOrderedQty()).thenReturn(orderedQty);
+        return row;
     }
 
     @Nested
@@ -108,16 +114,16 @@ class DeliveryListReportServiceTest {
         void generate_success_returnsItems() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", "ヤマト運輸", "1234-5678-9012");
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
-            Object[] line1 = createLineRow(10L, "P-001", "商品A", "PCS", 50);
-            Object[] line2 = createLineRow(10L, "P-002", "商品B", "CAS", 20);
+            DeliveryListLineRow line1 = mockLineRow(10L, "P-001", "商品A", "PCS", 50);
+            DeliveryListLineRow line2 = mockLineRow(10L, "P-002", "商品B", "CAS", 20);
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
-                    .thenReturn(List.<Object[]>of(line1, line2));
+                    .thenReturn(List.of(line1, line2));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
@@ -147,11 +153,11 @@ class DeliveryListReportServiceTest {
         void generate_withNullCarrier_setsNull() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
                     .thenReturn(List.of());
@@ -172,11 +178,11 @@ class DeliveryListReportServiceTest {
         void generate_nullPlannedDate_setsNull() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     null, "ALLOCATED", "ヤマト運輸", "1234-5678-9012");
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
                     .thenReturn(List.of());
@@ -195,15 +201,15 @@ class DeliveryListReportServiceTest {
         void generate_nullOrderedQty_defaultsToZero() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
-            Object[] line = createLineRow(10L, "P-001", "商品A", "PCS", null);
+            DeliveryListLineRow line = mockLineRow(10L, "P-001", "商品A", "PCS", null);
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
-                    .thenReturn(List.<Object[]>of(line));
+                    .thenReturn(List.of(line));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
@@ -375,15 +381,15 @@ class DeliveryListReportServiceTest {
         void generate_csvRowMapper_formatsCorrectly() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", "ヤマト運輸", "1234-5678-9012");
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
-            Object[] line = createLineRow(10L, "P-001", "商品A", "PCS", 50);
+            DeliveryListLineRow line = mockLineRow(10L, "P-001", "商品A", "PCS", 50);
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
-                    .thenReturn(List.<Object[]>of(line));
+                    .thenReturn(List.of(line));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
@@ -413,11 +419,11 @@ class DeliveryListReportServiceTest {
         void generate_csvRowMapper_emptyLines_returnsEmptyColumns() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
                     .thenReturn(List.of());
@@ -445,11 +451,11 @@ class DeliveryListReportServiceTest {
         void generate_csvRowMapper_nullLines_returnsEmptyColumns() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-20260315-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
             when(outboundReportRepository.findDeliveryListLineData(List.of(10L)))
                     .thenReturn(List.of());
@@ -550,16 +556,16 @@ class DeliveryListReportServiceTest {
         void generate_csvFormat_flattensItems() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] header = createHeaderRow(10L, "OUT-001", "出荷先A",
+            DeliveryListHeaderRow header = mockHeaderRow(10L, "OUT-001", "出荷先A",
                     LocalDate.of(2026, 3, 15), "ALLOCATED", null, null);
             when(outboundReportRepository.findDeliveryListHeaderData(
                     eq(1L), any(), any(), any(), any()))
-                    .thenReturn(List.<Object[]>of(header));
+                    .thenReturn(List.of(header));
 
-            Object[] line1 = createLineRow(10L, "P-001", "商品A", "CAS", 3);
-            Object[] line2 = createLineRow(10L, "P-002", "商品B", "PCS", 5);
+            DeliveryListLineRow line1 = mockLineRow(10L, "P-001", "商品A", "CAS", 3);
+            DeliveryListLineRow line2 = mockLineRow(10L, "P-002", "商品B", "PCS", 5);
             when(outboundReportRepository.findDeliveryListLineData(anyList()))
-                    .thenReturn(List.<Object[]>of(line1, line2));
+                    .thenReturn(List.of(line1, line2));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {

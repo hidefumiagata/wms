@@ -7,6 +7,7 @@ import com.wms.inventory.repository.StocktakeHeaderRepository;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
+import com.wms.report.repository.projection.StocktakeResultRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,15 +47,6 @@ public class StocktakeResultReportService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final ZoneId JST = ZoneId.of("Asia/Tokyo");
 
-    // --- ネイティブクエリのカラムインデックス定数 ---
-    private static final int COL_LOCATION_CODE = 0;
-    private static final int COL_PRODUCT_CODE = 1;
-    private static final int COL_PRODUCT_NAME = 2;
-    private static final int COL_UNIT_TYPE = 3;
-    private static final int COL_LOT_NUMBER = 4;
-    private static final int COL_SYSTEM_QUANTITY = 5;
-    private static final int COL_ACTUAL_QUANTITY = 6;
-
     private static final String[] CSV_HEADERS = {
             "ロケーションコード", "商品コード", "商品名", "荷姿",
             "システム在庫数", "実数", "差異数", "差異率(%)", "ロット番号"
@@ -77,7 +69,7 @@ public class StocktakeResultReportService {
 
         String conditionsSummary = buildConditionsSummary(header);
 
-        List<Object[]> rows = stocktakeReportRepository.findStocktakeResultByStocktakeId(stocktakeId);
+        List<StocktakeResultRow> rows = stocktakeReportRepository.findStocktakeResultByStocktakeId(stocktakeId);
 
         List<StocktakeResultReportItem> items = rows.stream()
                 .map(this::toReportItem)
@@ -155,18 +147,16 @@ public class StocktakeResultReportService {
         return vars;
     }
 
-    private StocktakeResultReportItem toReportItem(Object[] row) {
+    private StocktakeResultReportItem toReportItem(StocktakeResultRow row) {
         StocktakeResultReportItem item = new StocktakeResultReportItem();
-        item.setLocationCode((String) row[COL_LOCATION_CODE]);
-        item.setProductCode((String) row[COL_PRODUCT_CODE]);
-        item.setProductName((String) row[COL_PRODUCT_NAME]);
-        item.setUnitType((String) row[COL_UNIT_TYPE]);
-        item.setLotNumber((String) row[COL_LOT_NUMBER]);
+        item.setLocationCode(row.getLocationCode());
+        item.setProductCode(row.getProductCode());
+        item.setProductName(row.getProductName());
+        item.setUnitType(row.getUnitType());
+        item.setLotNumber(row.getLotNumber());
 
-        Integer systemQty = row[COL_SYSTEM_QUANTITY] != null
-                ? ((Number) row[COL_SYSTEM_QUANTITY]).intValue() : null;
-        Integer actualQty = row[COL_ACTUAL_QUANTITY] != null
-                ? ((Number) row[COL_ACTUAL_QUANTITY]).intValue() : null;
+        Integer systemQty = row.getSystemQuantity();
+        Integer actualQty = row.getActualQuantity();
 
         item.setSystemQuantity(systemQty != null ? systemQty : 0);
         item.setActualQuantity(actualQty);

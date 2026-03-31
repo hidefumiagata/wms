@@ -7,6 +7,7 @@ import com.wms.inventory.repository.StocktakeHeaderRepository;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
+import com.wms.report.repository.projection.StocktakeResultRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +24,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,24 +85,20 @@ class StocktakeResultReportServiceTest {
         }
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createResultRow(String locationCode, String productCode,
-                                      String productName, String unitType,
-                                      String lotNumber,
-                                      Integer systemQty, Integer actualQty) {
-        return new Object[]{
-                locationCode,   // 0
-                productCode,    // 1
-                productName,    // 2
-                unitType,       // 3
-                lotNumber,      // 4
-                systemQty,      // 5
-                actualQty       // 6
-        };
+    /** StocktakeResultRowプロジェクションのモックを生成するヘルパー */
+    private StocktakeResultRow mockResultRow(String locationCode, String productCode,
+                                              String productName, String unitType,
+                                              String lotNumber,
+                                              Integer systemQty, Integer actualQty) {
+        StocktakeResultRow row = mock(StocktakeResultRow.class);
+        when(row.getLocationCode()).thenReturn(locationCode);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getLotNumber()).thenReturn(lotNumber);
+        when(row.getSystemQuantity()).thenReturn(systemQty);
+        when(row.getActualQuantity()).thenReturn(actualQty);
+        return row;
     }
 
     @Nested
@@ -113,11 +110,11 @@ class StocktakeResultReportServiceTest {
         void generate_calculatesCorrectDiff() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockResultRow("A-01", "P-001", "商品A", "CAS", "LOT-001", 10, 10);
+            var row2 = mockResultRow("A-01", "P-002", "商品B", "PCS", null, 50, 47);
+            var row3 = mockResultRow("A-02", "P-003", "商品C", "BAL", "LOT-003", 20, 22);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createResultRow("A-01", "P-001", "商品A", "CAS", "LOT-001", 10, 10),
-                            createResultRow("A-01", "P-002", "商品B", "PCS", null, 50, 47),
-                            createResultRow("A-02", "P-003", "商品C", "BAL", "LOT-003", 20, 22)));
+                    .thenReturn(List.of(row1, row2, row3));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -145,8 +142,9 @@ class StocktakeResultReportServiceTest {
         void generate_zeroSystemQuantity_nullDiffRate() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 0, 5);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, 0, 5)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -164,8 +162,9 @@ class StocktakeResultReportServiceTest {
         void generate_nullActualQuantity_noDiffCalculation() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -183,8 +182,9 @@ class StocktakeResultReportServiceTest {
         void generate_nullSystemQuantity_treatedAsZero() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, null, 5);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, null, 5)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -202,7 +202,7 @@ class StocktakeResultReportServiceTest {
         void generate_confirmed_conditionsSummary() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(listOf());
+            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(List.of());
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -224,7 +224,7 @@ class StocktakeResultReportServiceTest {
             stocktakeHeader.setConfirmedAt(null);
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(listOf());
+            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(List.of());
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -244,7 +244,7 @@ class StocktakeResultReportServiceTest {
             stocktakeHeader.setConfirmedAt(null);
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(listOf());
+            when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L)).thenReturn(List.of());
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -261,11 +261,11 @@ class StocktakeResultReportServiceTest {
         void generate_extraVarsContainDiffSummary() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10);
+            var row2 = mockResultRow("A-01", "P-002", "商品B", "PCS", null, 50, 47);
+            var row3 = mockResultRow("A-02", "P-003", "商品C", "BAL", null, 20, 22);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10),
-                            createResultRow("A-01", "P-002", "商品B", "PCS", null, 50, 47),
-                            createResultRow("A-02", "P-003", "商品C", "BAL", null, 20, 22)));
+                    .thenReturn(List.of(row1, row2, row3));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -294,17 +294,18 @@ class StocktakeResultReportServiceTest {
         void generate_csvFormat_usesRowMapper() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", "LOT-001", 50, 47);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", "LOT-001", 50, 47)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row).hasSize(9);
-                        assertThat(row[0]).isEqualTo("A-01");
-                        assertThat(row[6]).isEqualTo("-3"); // diffQuantity=-3
-                        assertThat(row[7]).isEqualTo("-6.0%"); // diffRate
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow).hasSize(9);
+                        assertThat(csvRow[0]).isEqualTo("A-01");
+                        assertThat(csvRow[6]).isEqualTo("-3"); // diffQuantity=-3
+                        assertThat(csvRow[7]).isEqualTo("-6.0%"); // diffRate
                         return ResponseEntity.ok(data);
                     });
 
@@ -317,14 +318,15 @@ class StocktakeResultReportServiceTest {
         void generate_csvPositiveDiff_hasPlusSign() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 20, 22);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, 20, 22)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row[6]).isEqualTo("+2");
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow[6]).isEqualTo("+2");
                         return ResponseEntity.ok(data);
                     });
 
@@ -336,15 +338,16 @@ class StocktakeResultReportServiceTest {
         void generate_csvNullDiff_emDash() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row[6]).isEqualTo("\u2014"); // em dash
-                        assertThat(row[7]).isEqualTo("\u2014"); // diffRate null → em dash
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow[6]).isEqualTo("\u2014"); // em dash
+                        assertThat(csvRow[7]).isEqualTo("\u2014"); // diffRate null → em dash
                         return ResponseEntity.ok(data);
                     });
 
@@ -356,14 +359,15 @@ class StocktakeResultReportServiceTest {
         void generate_csvZeroDiff_noSign() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row[6]).isEqualTo("0"); // diff=0, no sign
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow[6]).isEqualTo("0"); // diff=0, no sign
                         return ResponseEntity.ok(data);
                     });
 
@@ -409,9 +413,9 @@ class StocktakeResultReportServiceTest {
         void generate_noDiff_zeroSummary() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, 10)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -430,9 +434,9 @@ class StocktakeResultReportServiceTest {
         void generate_uncountedLine_notCountedInDiff() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null);
             when(stocktakeReportRepository.findStocktakeResultByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createResultRow("A-01", "P-001", "商品A", "CAS", null, 10, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 

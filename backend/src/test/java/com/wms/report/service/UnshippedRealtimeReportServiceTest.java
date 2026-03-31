@@ -5,6 +5,7 @@ import com.wms.generated.model.UnshippedRealtimeReportItem;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.OutboundReportRepository;
+import com.wms.report.repository.projection.UnshippedRealtimeRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.util.BusinessDateProvider;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,22 +76,20 @@ class UnshippedRealtimeReportServiceTest {
     }
 
     /**
-     * 未出荷データ行を作成する。
-     * [0] slipNumber, [1] partnerName, [2] plannedDate,
-     * [3] productCode, [4] productName, [5] orderedQty, [6] status
+     * UnshippedRealtimeRow のモックを作成する。
      */
-    private Object[] createDataRow(String slipNumber, String partnerName, LocalDate plannedDate,
-                                   String productCode, String productName, Integer orderedQty,
-                                   String status) {
-        return new Object[]{
-                slipNumber,
-                partnerName,
-                plannedDate != null ? java.sql.Date.valueOf(plannedDate) : null,
-                productCode,
-                productName,
-                orderedQty,
-                status
-        };
+    private UnshippedRealtimeRow mockDataRow(String slipNumber, String partnerName, LocalDate plannedDate,
+                                             String productCode, String productName, Integer orderedQty,
+                                             String status) {
+        UnshippedRealtimeRow row = mock(UnshippedRealtimeRow.class);
+        when(row.getSlipNumber()).thenReturn(slipNumber);
+        when(row.getPartnerName()).thenReturn(partnerName);
+        when(row.getPlannedDate()).thenReturn(plannedDate);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getOrderedQty()).thenReturn(orderedQty);
+        when(row.getStatus()).thenReturn(status);
+        return row;
     }
 
     @Nested
@@ -101,10 +101,10 @@ class UnshippedRealtimeReportServiceTest {
         void generate_success_returnsItems() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] row = createDataRow("OUT-20260312-0001", "テスト出荷先A",
+            UnshippedRealtimeRow row = mockDataRow("OUT-20260312-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 12), "P-001", "商品A", 100, "PENDING");
             when(outboundReportRepository.findUnshippedRealtimeData(eq(1L), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
@@ -159,10 +159,10 @@ class UnshippedRealtimeReportServiceTest {
         void generate_delayDaysCalculation_correct() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] row = createDataRow("OUT-20260312-0001", "テスト出荷先A",
+            UnshippedRealtimeRow row = mockDataRow("OUT-20260312-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 12), "P-001", "商品A", 50, "ALLOCATED");
             when(outboundReportRepository.findUnshippedRealtimeData(any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -190,10 +190,10 @@ class UnshippedRealtimeReportServiceTest {
         @Test
         @DisplayName("null PLANNED_DATE → delayDays=0")
         void generate_nullPlannedDate_delayDaysZero() {
-            Object[] row = createDataRow("OUT-050", "出荷先A", null, "P-001", "商品A", 5, "PENDING");
+            UnshippedRealtimeRow row = mockDataRow("OUT-050", "出荷先A", null, "P-001", "商品A", 5, "PENDING");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
             when(outboundReportRepository.findUnshippedRealtimeData(eq(1L), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -205,10 +205,10 @@ class UnshippedRealtimeReportServiceTest {
         @Test
         @DisplayName("null ORDERED_QTY → orderedQty=0")
         void generate_nullOrderedQty_defaultsToZero() {
-            Object[] row = createDataRow("OUT-050", "出荷先A", LocalDate.of(2026, 3, 12), "P-001", "商品A", null, "PENDING");
+            UnshippedRealtimeRow row = mockDataRow("OUT-050", "出荷先A", LocalDate.of(2026, 3, 12), "P-001", "商品A", null, "PENDING");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
             when(outboundReportRepository.findUnshippedRealtimeData(eq(1L), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -221,10 +221,10 @@ class UnshippedRealtimeReportServiceTest {
         void generate_statusLabel_mappedCorrectly() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] row = createDataRow("OUT-001", "出荷先", LocalDate.of(2026, 3, 15),
+            UnshippedRealtimeRow row = mockDataRow("OUT-001", "出荷先", LocalDate.of(2026, 3, 15),
                     "P-001", "商品A", 10, "ALLOCATED");
             when(outboundReportRepository.findUnshippedRealtimeData(any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -261,10 +261,10 @@ class UnshippedRealtimeReportServiceTest {
         void generate_csvRowMapper_formatsCorrectly() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
-            Object[] row = createDataRow("OUT-20260312-0001", "テスト出荷先A",
+            UnshippedRealtimeRow row = mockDataRow("OUT-20260312-0001", "テスト出荷先A",
                     LocalDate.of(2026, 3, 12), "P-001", "商品A", 100, "PENDING");
             when(outboundReportRepository.findUnshippedRealtimeData(any(), any()))
-                    .thenReturn(List.<Object[]>of(row));
+                    .thenReturn(List.of(row));
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {
@@ -293,7 +293,7 @@ class UnshippedRealtimeReportServiceTest {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 
             when(outboundReportRepository.findUnshippedRealtimeData(any(), any()))
-                    .thenReturn(List.<Object[]>of());
+                    .thenReturn(List.of());
 
             when(reportExportService.export(anyList(), any(ReportFormat.class), any(ReportMeta.class)))
                     .thenAnswer(inv -> {

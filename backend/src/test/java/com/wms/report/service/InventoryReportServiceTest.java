@@ -7,6 +7,7 @@ import com.wms.generated.model.UnitType;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.InventoryReportRepository;
+import com.wms.report.repository.projection.InventoryReportRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.math.BigInteger;
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -74,35 +73,23 @@ class InventoryReportServiceTest {
         }
     }
 
-    /** Object[]のリストを型安全に生成するヘルパー */
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return java.util.Arrays.asList(rows);
-    }
-
-    /** ネイティブクエリ結果のObject[]を生成するヘルパー */
-    private Object[] createRow(int quantity, int allocatedQty, String locationCode,
-                                String buildingName, String areaName,
-                                String productCode, String productName,
-                                String unitType, String lotNumber, LocalDate expiryDate) {
-        return new Object[]{
-                BigInteger.valueOf(1L),  // 0: id
-                BigInteger.valueOf(1L),  // 1: warehouse_id
-                BigInteger.valueOf(1L),  // 2: location_id
-                BigInteger.valueOf(1L),  // 3: product_id
-                unitType,                // 4: unit_type
-                lotNumber,               // 5: lot_number
-                expiryDate != null ? Date.valueOf(expiryDate) : null,  // 6: expiry_date
-                quantity,                // 7: quantity
-                allocatedQty,            // 8: allocated_qty
-                BigInteger.valueOf(0L),  // 9: version
-                Timestamp.valueOf("2026-03-27 10:00:00"),  // 10: updated_at
-                locationCode,            // 11: location_code
-                buildingName,            // 12: building_name
-                areaName,                // 13: area_name
-                productCode,             // 14: product_code
-                productName              // 15: product_name
-        };
+    /** InventoryReportRowプロジェクションのモックを生成するヘルパー */
+    private InventoryReportRow mockRow(int quantity, int allocatedQty, String locationCode,
+                                       String buildingName, String areaName,
+                                       String productCode, String productName,
+                                       String unitType, String lotNumber, LocalDate expiryDate) {
+        InventoryReportRow row = mock(InventoryReportRow.class);
+        when(row.getQuantity()).thenReturn(quantity);
+        when(row.getAllocatedQty()).thenReturn(allocatedQty);
+        when(row.getLocationCode()).thenReturn(locationCode);
+        when(row.getBuildingName()).thenReturn(buildingName);
+        when(row.getAreaName()).thenReturn(areaName);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getLotNumber()).thenReturn(lotNumber);
+        when(row.getExpiryDate()).thenReturn(expiryDate);
+        return row;
     }
 
     @Nested
@@ -113,10 +100,10 @@ class InventoryReportServiceTest {
         @DisplayName("正常にレポートデータが生成される")
         void generate_withValidParams_returnsReportData() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockRow(100, 20, "A-01-01", "1号棟", "保管A", "P-001", "商品A", "CAS", "LOT-001", LocalDate.of(2027, 3, 14));
+            var row2 = mockRow(50, 0, "A-01-02", "1号棟", "保管A", "P-001", "商品A", "PCS", null, null);
             when(inventoryReportRepository.findInventoryReportData(any(), any(), any(), any(), any()))
-                    .thenReturn(listOf(
-                            createRow(100, 20, "A-01-01", "1号棟", "保管A", "P-001", "商品A", "CAS", "LOT-001", LocalDate.of(2027, 3, 14)),
-                            createRow(50, 0, "A-01-02", "1号棟", "保管A", "P-001", "商品A", "PCS", null, null)));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -137,7 +124,7 @@ class InventoryReportServiceTest {
         @DisplayName("ロット/期限がnullの場合もエラーにならない")
         void generate_nullLotAndExpiry_noError() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            List<Object[]> rows = listOf(createRow(30, 10, "B-01-01", "2号棟", "保管B", "P-002", "商品B", "BAL", null, null));
+            List<InventoryReportRow> rows = List.of(mockRow(30, 10, "B-01-01", "2号棟", "保管B", "P-002", "商品B", "BAL", null, null));
             when(inventoryReportRepository.findInventoryReportData(any(), any(), any(), any(), any()))
                     .thenReturn(rows);
             when(reportExportService.export(anyList(), any(), any()))
@@ -190,7 +177,7 @@ class InventoryReportServiceTest {
         @DisplayName("CSV形式でcsvRowMapperが動作する")
         void generate_csvFormat_usesRowMapper() {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
-            List<Object[]> rows = listOf(createRow(100, 20, "A-01-01", "1号棟", "保管A", "P-001", "商品A", "CAS", null, null));
+            List<InventoryReportRow> rows = List.of(mockRow(100, 20, "A-01-01", "1号棟", "保管A", "P-001", "商品A", "CAS", null, null));
             when(inventoryReportRepository.findInventoryReportData(any(), any(), any(), any(), any()))
                     .thenReturn(rows);
             when(reportExportService.export(anyList(), any(), any()))

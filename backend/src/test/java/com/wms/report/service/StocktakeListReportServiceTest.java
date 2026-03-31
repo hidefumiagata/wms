@@ -9,6 +9,7 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.BuildingRepository;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
+import com.wms.report.repository.projection.StocktakeListRow;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,9 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.sql.Date;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,26 +94,22 @@ class StocktakeListReportServiceTest {
         }
     }
 
-    @SafeVarargs
-    private static List<Object[]> listOf(Object[]... rows) {
-        return Arrays.asList(rows);
-    }
-
-    private Object[] createRow(String locationCode, String areaName,
-                                String productCode, String productName,
-                                String unitType, String lotNumber, LocalDate expiryDate,
-                                Integer systemQty, Integer actualQty) {
-        return new Object[]{
-                locationCode,           // 0: location_code
-                areaName,               // 1: area_name
-                productCode,            // 2: product_code
-                productName,            // 3: product_name
-                unitType,               // 4: unit_type
-                lotNumber,              // 5: lot_number
-                expiryDate != null ? Date.valueOf(expiryDate) : null,  // 6: expiry_date
-                systemQty,              // 7: system_quantity
-                actualQty               // 8: actual_quantity
-        };
+    /** StocktakeListRowプロジェクションのモックを生成するヘルパー */
+    private StocktakeListRow mockRow(String locationCode, String areaName,
+                                      String productCode, String productName,
+                                      String unitType, String lotNumber, LocalDate expiryDate,
+                                      Integer systemQty, Integer actualQty) {
+        StocktakeListRow row = mock(StocktakeListRow.class);
+        when(row.getLocationCode()).thenReturn(locationCode);
+        when(row.getAreaName()).thenReturn(areaName);
+        when(row.getProductCode()).thenReturn(productCode);
+        when(row.getProductName()).thenReturn(productName);
+        when(row.getUnitType()).thenReturn(unitType);
+        when(row.getLotNumber()).thenReturn(lotNumber);
+        when(row.getExpiryDate()).thenReturn(expiryDate);
+        when(row.getSystemQuantity()).thenReturn(systemQty);
+        when(row.getActualQuantity()).thenReturn(actualQty);
+        return row;
     }
 
     @Nested
@@ -125,11 +121,11 @@ class StocktakeListReportServiceTest {
         void generate_withStocktakeId_returnsReportData() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row1 = mockRow("A-01-A-01", "保管A", "P-001", "商品A", "CAS", "LOT-001",
+                    LocalDate.of(2026, 12, 31), 10, null);
+            var row2 = mockRow("A-01-A-01", "保管A", "P-002", "商品B", "PCS", null, null, 50, 47);
             when(stocktakeReportRepository.findStocktakeListByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createRow("A-01-A-01", "保管A", "P-001", "商品A", "CAS", "LOT-001",
-                                    LocalDate.of(2026, 12, 31), 10, null),
-                            createRow("A-01-A-01", "保管A", "P-002", "商品B", "PCS", null, null, 50, 47)));
+                    .thenReturn(List.of(row1, row2));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -199,9 +195,9 @@ class StocktakeListReportServiceTest {
         void generate_withBuildingId_returnsPreviewData() {
             when(buildingRepository.findById(5L)).thenReturn(Optional.of(building));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("A-01-A-01", "保管A", "P-001", "商品A", "CAS", null, null, 100, null);
             when(stocktakeReportRepository.findStocktakeListByBuildingId(5L, null))
-                    .thenReturn(listOf(
-                            createRow("A-01-A-01", "保管A", "P-001", "商品A", "CAS", null, null, 100, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
@@ -254,17 +250,18 @@ class StocktakeListReportServiceTest {
         void generate_csvFormat_usesRowMapper() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("A-01", "保管A", "P-001", "商品A", "CAS", "LOT-001",
+                    LocalDate.of(2027, 3, 14), 10, null);
             when(stocktakeReportRepository.findStocktakeListByStocktakeId(10L))
-                    .thenReturn(listOf(createRow("A-01", "保管A", "P-001", "商品A", "CAS", "LOT-001",
-                            LocalDate.of(2027, 3, 14), 10, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> {
                         ReportMeta meta = inv.getArgument(2);
                         List<?> data = inv.getArgument(0);
-                        String[] row = meta.csvRowMapper().apply(data.getFirst());
-                        assertThat(row).hasSize(9);
-                        assertThat(row[0]).isEqualTo("A-01");
-                        assertThat(row[6]).isEqualTo("\u2014"); // actualQuantity=null → em dash
+                        String[] csvRow = meta.csvRowMapper().apply(data.getFirst());
+                        assertThat(csvRow).hasSize(9);
+                        assertThat(csvRow[0]).isEqualTo("A-01");
+                        assertThat(csvRow[6]).isEqualTo("\u2014"); // actualQuantity=null → em dash
                         return ResponseEntity.ok(data);
                     });
 
@@ -388,9 +385,9 @@ class StocktakeListReportServiceTest {
         void generate_nullSystemQuantity_noError() {
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
+            var row = mockRow("A-01", "保管A", "P-001", "商品A", "CAS", null, null, null, null);
             when(stocktakeReportRepository.findStocktakeListByStocktakeId(10L))
-                    .thenReturn(listOf(
-                            createRow("A-01", "保管A", "P-001", "商品A", "CAS", null, null, null, null)));
+                    .thenReturn(List.of(row));
             when(reportExportService.export(anyList(), any(), any()))
                     .thenAnswer(inv -> ResponseEntity.ok(inv.getArgument(0)));
 
