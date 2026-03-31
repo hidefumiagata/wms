@@ -347,6 +347,13 @@ const router = createRouter({
           component: () => import('@/pages/outbound/PickingDetailPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
         },
+        // 返品登録 — RTN-001: WAREHOUSE_MANAGER, WAREHOUSE_STAFF
+        {
+          path: 'returns/new',
+          name: 'return-new',
+          component: () => import('@/pages/returns/ReturnNewPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
+        },
         // システムパラメータ管理 — SCR-12 (SYS-001): SYSTEM_ADMIN のみ
         {
           path: 'system/parameters',
