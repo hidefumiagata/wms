@@ -970,8 +970,6 @@ export default {
       stepFailed: '失敗',
       stepSkipped: 'スキップ（完了済み）',
       errorMessage: 'エラー内容',
-      unreceivedCount: '未入荷リスト件数',
-      unshippedCount: '未出荷リスト件数',
       // メッセージ
       fetchError: 'バッチ実行履歴の取得に失敗しました',
       detailFetchError: 'バッチ実行詳細の取得に失敗しました',

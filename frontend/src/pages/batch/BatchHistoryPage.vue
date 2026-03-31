@@ -135,7 +135,7 @@
           <h4 style="margin: 16px 0 8px">{{ t('batch.history.stepResults') }}</h4>
           <el-table :data="stepRows" border size="small" style="width: 100%">
             <el-table-column prop="label" label="Step" min-width="180" />
-            <el-table-column label="" width="140" align="center">
+            <el-table-column :label="t('batch.history.result')" width="140" align="center">
               <template #default="{ row }">
                 <el-tag :type="stepTagType(row.status)" size="small">
                   {{ stepLabel(row.status) }}
@@ -164,6 +164,7 @@ import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { useBatchHistory } from '@/composables/batch/useBatchHistory'
+import { formatDateTime } from '@/utils/inboundFormatters'
 
 const { t } = useI18n()
 
@@ -185,18 +186,6 @@ const {
   handlePageChange,
   handleSizeChange,
 } = useBatchHistory()
-
-function formatDateTime(dt: string | undefined | null): string {
-  if (!dt) return ''
-  return new Date(dt).toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
 
 function statusLabel(status: string | undefined): string {
   switch (status) {

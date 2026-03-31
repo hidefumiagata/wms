@@ -958,8 +958,6 @@ export default {
       stepFailed: 'Failed',
       stepSkipped: 'Skipped (Completed)',
       errorMessage: 'Error Details',
-      unreceivedCount: 'Unreceived Count',
-      unshippedCount: 'Unshipped Count',
       fetchError: 'Failed to fetch batch execution history',
       detailFetchError: 'Failed to fetch batch execution detail',
     },
