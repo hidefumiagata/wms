@@ -46,6 +46,104 @@ describe('useAllocation', () => {
   })
 
   // ============================================================
+  // ヘルパー関数
+  // ============================================================
+
+  describe('formatDate', () => {
+    it('yyyy-MM-dd を yyyy/MM/dd に変換する', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.formatDate('2026-03-20')).toBe('2026/03/20')
+    })
+
+    it('undefined の場合は空文字を返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.formatDate(undefined)).toBe('')
+    })
+
+    it('空文字の場合は空文字を返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.formatDate('')).toBe('')
+    })
+  })
+
+  describe('orderStatusTagType / orderStatusLabel', () => {
+    it('ORDERED は info タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusTagType('ORDERED')).toBe('info')
+    })
+
+    it('PARTIAL_ALLOCATED は warning タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusTagType('PARTIAL_ALLOCATED')).toBe('warning')
+    })
+
+    it('不明なステータスは info タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusTagType('UNKNOWN')).toBe('info')
+    })
+
+    it('ORDERED のラベルを返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusLabel('ORDERED')).toBeTruthy()
+    })
+
+    it('PARTIAL_ALLOCATED のラベルを返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusLabel('PARTIAL_ALLOCATED')).toBeTruthy()
+    })
+
+    it('不明なステータスはそのまま返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.orderStatusLabel('UNKNOWN')).toBe('UNKNOWN')
+    })
+  })
+
+  describe('allocatedStatusTagType / allocatedStatusLabel', () => {
+    it('ALLOCATED は success タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusTagType('ALLOCATED')).toBe('success')
+    })
+
+    it('PARTIAL_ALLOCATED は warning タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusTagType('PARTIAL_ALLOCATED')).toBe('warning')
+    })
+
+    it('不明なステータスは info タグ', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusTagType('UNKNOWN')).toBe('info')
+    })
+
+    it('ALLOCATED のラベルを返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusLabel('ALLOCATED')).toBeTruthy()
+    })
+
+    it('PARTIAL_ALLOCATED のラベルを返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusLabel('PARTIAL_ALLOCATED')).toBeTruthy()
+    })
+
+    it('不明なステータスはそのまま返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.allocatedStatusLabel('UNKNOWN')).toBe('UNKNOWN')
+    })
+  })
+
+  describe('shippingDateToMin', () => {
+    it('shippingDateFrom が設定されている場合はその値を返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      result.searchForm.shippingDateFrom = '2026-03-01'
+      expect(result.shippingDateToMin.value).toBe('2026-03-01')
+    })
+
+    it('shippingDateFrom が null の場合は null を返す', () => {
+      const { result } = withSetup(() => useAllocation())
+      expect(result.shippingDateToMin.value).toBeNull()
+    })
+  })
+
+  // ============================================================
   // Tab1: 引当対象受注一覧
   // ============================================================
 
@@ -669,10 +767,14 @@ describe('useAllocation', () => {
   // ============================================================
 
   describe('fetchAllocatedOrders', () => {
-    it('GET /allocation/allocated-orders を呼ぶ', async () => {
+    it('warehouseId を含めて GET /allocation/allocated-orders を呼ぶ', async () => {
       vi.mocked(apiClient.get).mockResolvedValue(mockAxiosResponse(createAllocatedResponse()))
 
-      const { result } = withSetup(() => useAllocation())
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 42
+        return useAllocation()
+      })
 
       await result.fetchAllocatedOrders()
 
@@ -680,6 +782,7 @@ describe('useAllocation', () => {
         '/allocation/allocated-orders',
         expect.objectContaining({
           params: expect.objectContaining({
+            warehouseId: 42,
             page: 0,
             size: 20,
             sort: 'plannedDate,asc',

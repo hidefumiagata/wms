@@ -1,4 +1,4 @@
-import { ref, reactive, watch, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
@@ -11,14 +11,69 @@ import type { AllocationExecutionResult } from '@/api/generated/models/allocatio
 import type { AllocatedOrderSummary } from '@/api/generated/models/allocated-order-summary'
 import type { AllocatedOrderPageResponse } from '@/api/generated/models/allocated-order-page-response'
 import type { UnpackInstructionItem } from '@/api/generated/models/unpack-instruction-item'
-import type { UnallocatedLineDetail } from '@/api/generated/models/unallocated-line-detail'
+
+type TabName = 'execute' | 'allocated'
 
 export function useAllocation() {
   const { t } = useI18n()
   const warehouseStore = useWarehouseStore()
 
   // --- タブ ---
-  const activeTab = ref<'execute' | 'allocated'>('execute')
+  const activeTab = ref<TabName>('execute')
+
+  // --- 日付フォーマット ---
+  function formatDate(dateStr: string | undefined): string {
+    if (!dateStr) return ''
+    return dateStr.replace(/-/g, '/')
+  }
+
+  // --- ステータスラベル/タグ色 ---
+  function orderStatusTagType(status: string) {
+    switch (status) {
+      case 'ORDERED':
+        return 'info'
+      case 'PARTIAL_ALLOCATED':
+        return 'warning'
+      default:
+        return 'info'
+    }
+  }
+
+  function orderStatusLabel(status: string) {
+    switch (status) {
+      case 'ORDERED':
+        return t('allocation.statusOrdered')
+      case 'PARTIAL_ALLOCATED':
+        return t('allocation.statusPartialAllocated')
+      default:
+        return status
+    }
+  }
+
+  function allocatedStatusTagType(status: string) {
+    switch (status) {
+      case 'ALLOCATED':
+        return 'success'
+      case 'PARTIAL_ALLOCATED':
+        return 'warning'
+      default:
+        return 'info'
+    }
+  }
+
+  function allocatedStatusLabel(status: string) {
+    switch (status) {
+      case 'ALLOCATED':
+        return t('allocation.statusAllocated')
+      case 'PARTIAL_ALLOCATED':
+        return t('allocation.statusPartialAllocated')
+      default:
+        return status
+    }
+  }
+
+  // --- 出荷予定日Toの最小日付 ---
+  const shippingDateToMin = computed(() => searchForm.shippingDateFrom)
 
   // === Tab1: 引当実行 ===
   const orders = ref<AllocationOrderSummary[]>([])
@@ -107,6 +162,7 @@ export function useAllocation() {
     try {
       const res = await apiClient.get<AllocatedOrderPageResponse>('/allocation/allocated-orders', {
         params: {
+          warehouseId: warehouseStore.selectedWarehouseId,
           page: allocatedPage.value - 1,
           size: allocatedPageSize.value,
           sort: 'plannedDate,asc',
@@ -148,8 +204,8 @@ export function useAllocation() {
   )
 
   // --- タブ切替時 ---
-  function handleTabChange(tab: string) {
-    activeTab.value = tab as 'execute' | 'allocated'
+  function handleTabChange(tab: string | number) {
+    activeTab.value = tab as TabName
     if (tab === 'allocated') {
       allocatedPage.value = 1
       fetchAllocatedOrders()
@@ -183,7 +239,7 @@ export function useAllocation() {
   }
 
   function handleSelectionChange(rows: AllocationOrderSummary[]) {
-    selectedIds.value = rows.map((r) => r.id!).filter((id) => id != null)
+    selectedIds.value = rows.map((r) => r.id).filter((id): id is number => id != null)
   }
 
   // --- 引当実行 ---
@@ -298,6 +354,13 @@ export function useAllocation() {
     // タブ
     activeTab,
     handleTabChange,
+    // ヘルパー
+    formatDate,
+    orderStatusTagType,
+    orderStatusLabel,
+    allocatedStatusTagType,
+    allocatedStatusLabel,
+    shippingDateToMin,
     // Tab1: 引当実行
     orders,
     ordersLoading,

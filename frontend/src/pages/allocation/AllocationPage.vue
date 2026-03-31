@@ -19,17 +19,13 @@
                   style="width: 240px"
                 >
                   <el-option
-                    label="受注"
+                    :label="t('allocation.statusOrdered')"
                     value="ORDERED"
-                  >
-                    {{ t('allocation.statusOrdered') }}
-                  </el-option>
+                  />
                   <el-option
-                    label="一部引当"
+                    :label="t('allocation.statusPartialAllocated')"
                     value="PARTIAL_ALLOCATED"
-                  >
-                    {{ t('allocation.statusPartialAllocated') }}
-                  </el-option>
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item :label="t('allocation.shippingDateFrom')">
@@ -47,6 +43,7 @@
                   type="date"
                   value-format="YYYY-MM-DD"
                   clearable
+                  :disabled-date="(date: Date) => shippingDateToMin ? date < new Date(shippingDateToMin) : false"
                   style="width: 160px"
                 />
               </el-form-item>
@@ -54,6 +51,7 @@
                 <el-input
                   v-model="searchForm.partnerName"
                   clearable
+                  :maxlength="100"
                   style="width: 200px"
                 />
               </el-form-item>
@@ -87,6 +85,7 @@
             <el-table
               v-loading="ordersLoading"
               :data="orders"
+              row-key="id"
               @selection-change="handleSelectionChange"
             >
               <el-table-column type="selection" width="40" />
@@ -101,7 +100,7 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  {{ row.plannedDate }}
+                  {{ formatDate(row.plannedDate) }}
                 </template>
               </el-table-column>
               <el-table-column
@@ -161,7 +160,7 @@
 
             <!-- ばらし指示一覧 -->
             <template v-if="(executionResult.unpackInstructions ?? []).length > 0">
-              <h4>{{ t('allocation.unpackTitle') }}</h4>
+              <h4 class="result-card__subtitle">{{ t('allocation.unpackTitle') }}</h4>
               <el-table
                 :data="executionResult.unpackInstructions"
                 stripe
@@ -229,7 +228,7 @@
 
             <!-- 未引当明細一覧 -->
             <template v-if="(executionResult.unallocatedLines ?? []).length > 0">
-              <h4>{{ t('allocation.unallocatedTitle') }}</h4>
+              <h4 class="result-card__subtitle">{{ t('allocation.unallocatedTitle') }}</h4>
               <el-alert
                 :title="t('allocation.unallocatedWarning')"
                 type="warning"
@@ -273,6 +272,7 @@
             <el-table
               v-loading="allocatedLoading"
               :data="allocatedOrders"
+              row-key="id"
             >
               <el-table-column
                 prop="slipNumber"
@@ -285,7 +285,7 @@
                 align="center"
               >
                 <template #default="{ row }">
-                  {{ row.plannedDate }}
+                  {{ formatDate(row.plannedDate) }}
                 </template>
               </el-table-column>
               <el-table-column
@@ -367,6 +367,12 @@ const { t } = useI18n()
 const {
   activeTab,
   handleTabChange,
+  formatDate,
+  orderStatusTagType,
+  orderStatusLabel,
+  allocatedStatusTagType,
+  allocatedStatusLabel,
+  shippingDateToMin,
   orders,
   ordersLoading,
   ordersTotal,
@@ -394,50 +400,6 @@ const {
   handleAllocatedSizeChange,
 } = useAllocation()
 
-function orderStatusTagType(status: string) {
-  switch (status) {
-    case 'ORDERED':
-      return 'info'
-    case 'PARTIAL_ALLOCATED':
-      return 'warning'
-    default:
-      return 'info'
-  }
-}
-
-function orderStatusLabel(status: string) {
-  switch (status) {
-    case 'ORDERED':
-      return t('allocation.statusOrdered')
-    case 'PARTIAL_ALLOCATED':
-      return t('allocation.statusPartialAllocated')
-    default:
-      return status
-  }
-}
-
-function allocatedStatusTagType(status: string) {
-  switch (status) {
-    case 'ALLOCATED':
-      return 'success'
-    case 'PARTIAL_ALLOCATED':
-      return 'warning'
-    default:
-      return 'info'
-  }
-}
-
-function allocatedStatusLabel(status: string) {
-  switch (status) {
-    case 'ALLOCATED':
-      return t('allocation.statusAllocated')
-    case 'PARTIAL_ALLOCATED':
-      return t('allocation.statusPartialAllocated')
-    default:
-      return status
-  }
-}
-
 onMounted(() => {
   fetchOrders()
 })
@@ -454,6 +416,12 @@ onMounted(() => {
 
 .result-card {
   margin-top: 16px;
+
+  &__subtitle {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #303133;
+  }
 }
 
 .table-header {
@@ -466,11 +434,5 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
-}
-
-h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
-  color: #303133;
 }
 </style>
