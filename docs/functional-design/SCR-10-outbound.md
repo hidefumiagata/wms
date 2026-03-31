@@ -16,15 +16,8 @@
 
 ### ステータスコードマッピング
 
-| 画面表示名 | APIステータスコード | 説明 |
-|-----------|-------------------|------|
-| 受注 | `ORDERED` | 受注登録済み、未引当 |
-| 一部引当 | `PARTIAL_ALLOCATED` | 一部明細のみ引当済み |
-| 引当完了 | `ALLOCATED` | 全明細の引当完了（ピッキング指示可能） |
-| ピッキング完了 | `PICKING_COMPLETED` | ピッキング完了 |
-| 出荷検品中 | `INSPECTING` | 出荷検品開始済み |
-| 出荷完了 | `SHIPPED` | 全明細の出荷確定済み |
-| キャンセル | `CANCELLED` | キャンセル済み |
+> **SSOT**: 出荷ステータスの Enum 定義は [architecture-design/status-enums.md](../architecture-design/status-enums.md) を参照。
+> ステータス遷移ルールは [API-08-outbound.md](./API-08-outbound.md) のステータス遷移図を参照。
 
 ---
 

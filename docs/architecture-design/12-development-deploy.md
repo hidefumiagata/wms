@@ -91,19 +91,8 @@ volumes:
 
 #### ローカル環境変数テンプレート
 
-バックエンド（`backend/.env.example`）:
-```properties
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/wms
-SPRING_DATASOURCE_USERNAME=wms
-SPRING_DATASOURCE_PASSWORD=wms
-JWT_SECRET=local-dev-secret-key-minimum-32-characters-long
-LOG_LEVEL=DEBUG
-```
-
-フロントエンド（`frontend/.env.example`）:
-```properties
-VITE_API_BASE_URL=http://localhost:8080
-```
+> 環境変数名とデフォルト値の一覧は [environment-variables.md](./environment-variables.md) を参照。
+> ローカル開発用テンプレートはセクション1（アプリケーション環境変数）およびセクション3（ローカル開発環境変数）を参照。
 
 ### 1.5 初回セットアップ手順
 
@@ -271,20 +260,7 @@ flowchart TB
 
 ### 3.3 GitHub Actions Secrets
 
-| Secret名 | 用途 | 設定タイミング |
-|----------|------|-------------|
-| `AZURE_CREDENTIALS` | Azure サービスプリンシパル（JSON） | 初回構築時。※OIDC Federated Credential（Workload Identity Federation）への移行は見送り。ShowCaseプロジェクトのため環境の作成・破棄が頻繁であり、Entra ID側のFederated Credential維持コストに見合わない |
-| `ACR_LOGIN_SERVER` | ACRのログインサーバーURL | 初回構築時 |
-| `ACR_USERNAME` | ACR管理者ユーザー名 | 初回構築時 |
-| `ACR_PASSWORD` | ACR管理者パスワード | 初回構築時 |
-| `ARM_CLIENT_ID` | Terraform用SP クライアントID | 初回構築時 |
-| `ARM_CLIENT_SECRET` | Terraform用SP シークレット | 初回構築時 |
-| `ARM_SUBSCRIPTION_ID` | Terraform対象サブスクリプションID | 初回構築時 |
-| `ARM_TENANT_ID` | Azure AD テナントID | 初回構築時 |
-| `DEV_DB_PASSWORD` | dev環境のDB接続パスワード | dev環境構築時 |
-| `PRD_DB_PASSWORD` | prd環境のDB接続パスワード | prd環境構築時 |
-| `JWT_SECRET_DEV` | dev環境のJWTシークレット | dev環境構築時 |
-| `JWT_SECRET_PRD` | prd環境のJWTシークレット | prd環境構築時 |
+> **SSOT**: GitHub Actions Secrets の完全な一覧は [environment-variables.md](./environment-variables.md) セクション4を参照。
 
 > **`AZURE_CREDENTIALS` と `ARM_*` の使い分け:**
 > - **CI/CD（cd-dev.yml / cd-prd.yml）**: `AZURE_CREDENTIALS`（Azure CLI認証用のJSON一括形式）
@@ -292,15 +268,7 @@ flowchart TB
 
 ### 3.3a GitHub Actions Variables
 
-GitHub Actions の Repository Variables（`vars.*`）で管理する非機密値の一覧。
-
-| Variable名 | 用途 | 設定タイミング |
-|------------|------|-------------|
-| `CONTAINER_APPS_DOMAIN` | dev Container Appsドメイン | Terraform apply後に手動設定 |
-| `PRD_API_BASE_URL` | prd APIベースURL | Terraform apply後に手動設定 |
-| `PRD_FRONTEND_URL` | prd フロントエンドURL | Terraform apply後に手動設定 |
-
-> これらの値はTerraform outputから取得し、GitHub リポジトリの Settings → Secrets and variables → Actions → Variables タブで設定する。Terraform Destroy/Apply でインフラを再作成した場合は値の再設定が必要。
+> **SSOT**: GitHub Actions Variables の一覧は [environment-variables.md](./environment-variables.md) セクション5を参照。
 
 ### 3.4 CI ワークフロー詳細（ci.yml）
 

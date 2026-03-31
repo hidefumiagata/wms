@@ -3452,17 +3452,8 @@ Content-Type: application/json
 <tr><td><strong>概要</strong></td><td>登録済みの受注伝票を一覧表示する。ステータス・出荷予定日・出荷先での絞り込み、複数件選択での一括在庫引当を行う画面。</td></tr>
 <p></tbody><br></table></p>
 <h3>ステータスコードマッピング</h3>
-<table>
-<thead><tr><th>画面表示名</th><th>APIステータスコード</th><th>説明</th></tr></thead>
-<tbody>
-<tr><td>受注</td><td><code>ORDERED</code></td><td>受注登録済み、未引当</td></tr>
-<tr><td>一部引当</td><td><code>PARTIAL_ALLOCATED</code></td><td>一部明細のみ引当済み</td></tr>
-<tr><td>引当完了</td><td><code>ALLOCATED</code></td><td>全明細の引当完了（ピッキング指示可能）</td></tr>
-<tr><td>ピッキング完了</td><td><code>PICKING_COMPLETED</code></td><td>ピッキング完了</td></tr>
-<tr><td>出荷検品中</td><td><code>INSPECTING</code></td><td>出荷検品開始済み</td></tr>
-<tr><td>出荷完了</td><td><code>SHIPPED</code></td><td>全明細の出荷確定済み</td></tr>
-<tr><td>キャンセル</td><td><code>CANCELLED</code></td><td>キャンセル済み</td></tr>
-<p></tbody><br></table></p>
+<blockquote><strong>SSOT</strong>: 出荷ステータスの Enum 定義は <a href="../architecture-design/status-enums.md" target="_blank">architecture-design/status-enums.md</a> を参照。
+<p>ステータス遷移ルールは <a href="./API-08-outbound.md" target="_blank">API-08-outbound.md</a> のステータス遷移図を参照。</blockquote></p>
 <hr>
 <h3>2. 画面レイアウト</h3>
 <p><strong>モックアップ</strong>: <a href="mockups/OUT-001-outbound-list.html" target="_blank">OUT-001-outbound-list.html</a></p>

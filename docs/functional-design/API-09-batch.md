@@ -1,5 +1,8 @@
 # 機能設計書 — API設計 バッチ管理（BAT）
 
+> **エラーコード定義**: 本書で使用するエラーコードの完全な定義は [error-codes.md](../architecture-design/error-codes.md) を参照。
+> **ステータスEnum定義**: ステータス値の定義は [status-enums.md](../architecture-design/status-enums.md) を参照。
+
 ## バッチ管理
 
 ---
