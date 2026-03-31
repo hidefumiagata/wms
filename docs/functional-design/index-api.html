@@ -8961,7 +8961,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     VALIDATE -->|NG| ERR_VAL[400 VALIDATION_ERROR]
     VALIDATE -->|OK| FIND_SLIP{出荷伝票 存在確認}
     FIND_SLIP -->|なし| ERR_404[404 OUTBOUND_SLIP_NOT_FOUND]
-    FIND_SLIP -->|あり| QUERY[outbound_slip_lines から\nピッキング数・検品数を取得\n差異を計算]
+    FIND_SLIP -->|あり| QUERY[picking_instruction_lines.qty_picked から\nピッキング数を集計し、検品数と\n差異を計算]
     QUERY --> FORMAT{format?}
     FORMAT -->|json| RES_JSON[200 OK JSON配列]
     FORMAT -->|csv| RES_CSV[200 OK CSVダウンロード\nfilename: shipping_inspection_YYYYMMDD.csv]
