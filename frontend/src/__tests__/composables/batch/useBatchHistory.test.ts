@@ -345,7 +345,7 @@ describe('useBatchHistory', () => {
         format: 'pdf',
         filenameBase: 'unreceived_confirmed_20260314',
       })
-      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportDownloading')
+      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportUnreceivedDownloaded')
       expect(result.reportDialogVisible.value).toBe(false)
     })
 
@@ -363,7 +363,7 @@ describe('useBatchHistory', () => {
         format: 'pdf',
         filenameBase: 'unshipped_confirmed_20260313',
       })
-      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportDownloading')
+      expect(ElMessage.success).toHaveBeenCalledWith('batch.history.reportUnshippedDownloaded')
     })
 
     it('downloadConfirmedReport が営業日未選択時に警告を表示する', async () => {
@@ -422,7 +422,44 @@ describe('useBatchHistory', () => {
       expect(result.processedDates.value).toEqual(['2026-03-14'])
     })
 
-    it('downloadConfirmedReport エラー時にエラーメッセージを表示する', async () => {
+    it('downloadConfirmedReport で404エラー時にrpt006用のnoExecutionメッセージを表示する', async () => {
+      const apiError = Object.assign(new Error('Not Found'), {
+        isAxiosError: true,
+        response: { status: 404, data: {} },
+      })
+      vi.mocked(downloadReport).mockRejectedValueOnce(apiError)
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt006'
+      result.reportBusinessDate.value = '2026-03-14'
+
+      await result.downloadConfirmedReport()
+
+      expect(ElMessage.error).toHaveBeenCalledWith(
+        'batch.history.reportUnreceivedNoExecution',
+      )
+      expect(result.downloadingReport.value).toBe(false)
+    })
+
+    it('downloadConfirmedReport で422エラー時にrpt016用のnoExecutionメッセージを表示する', async () => {
+      const apiError = Object.assign(new Error('Unprocessable'), {
+        isAxiosError: true,
+        response: { status: 422, data: {} },
+      })
+      vi.mocked(downloadReport).mockRejectedValueOnce(apiError)
+
+      const { result } = withSetup(() => useBatchHistory())
+      result.activeReportType.value = 'rpt016'
+      result.reportBusinessDate.value = '2026-03-13'
+
+      await result.downloadConfirmedReport()
+
+      expect(ElMessage.error).toHaveBeenCalledWith(
+        'batch.history.reportUnshippedNoExecution',
+      )
+    })
+
+    it('downloadConfirmedReport でその他エラー時に汎用エラーメッセージを表示する', async () => {
       vi.mocked(downloadReport).mockRejectedValueOnce(new Error('fail'))
 
       const { result } = withSetup(() => useBatchHistory())

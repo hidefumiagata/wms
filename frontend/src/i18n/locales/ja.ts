@@ -977,8 +977,10 @@ export default {
       reportBusinessDate: '対象営業日',
       reportBusinessDateRequired: '対象営業日は必須です',
       reportOutput: 'PDF出力',
-      reportDownloading: 'ダウンロードを開始しました',
-      reportNoExecution: '{date} の日替処理実行履歴が存在しません。対象営業日を確認してください。',
+      reportUnreceivedDownloaded: '未入荷リスト（確定）のダウンロードを開始しました。',
+      reportUnshippedDownloaded: '未出荷リスト（確定）のダウンロードを開始しました。',
+      reportUnreceivedNoExecution: '{date} の日替処理実行履歴が存在しません。対象営業日を確認してください。',
+      reportUnshippedNoExecution: '{date} の日替処理実行履歴が存在しません。対象営業日を確認してください。',
       reportDownloadError: 'レポートの生成に失敗しました。しばらく経ってから再試行してください。',
       // メッセージ
       fetchError: 'バッチ実行履歴の取得に失敗しました',

@@ -189,8 +189,8 @@ export function useBatchHistory() {
     }
 
     downloadingReport.value = true
+    const isRpt006 = activeReportType.value === 'rpt006'
     try {
-      const isRpt006 = activeReportType.value === 'rpt006'
       const path = isRpt006
         ? '/reports/unreceived-confirmed'
         : '/reports/unshipped-confirmed'
@@ -204,10 +204,21 @@ export function useBatchHistory() {
         format: 'pdf',
         filenameBase,
       })
-      ElMessage.success(t('batch.history.reportDownloading'))
+      const successKey = isRpt006
+        ? 'batch.history.reportUnreceivedDownloaded'
+        : 'batch.history.reportUnshippedDownloaded'
+      ElMessage.success(t(successKey))
       closeReportDialog()
-    } catch {
-      ElMessage.error(t('batch.history.reportDownloadError'))
+    } catch (err: unknown) {
+      const error = toApiError(err)
+      if (error.response && (error.response.status === 404 || error.response.status === 422)) {
+        const noExecKey = isRpt006
+          ? 'batch.history.reportUnreceivedNoExecution'
+          : 'batch.history.reportUnshippedNoExecution'
+        ElMessage.error(t(noExecKey, { date: reportBusinessDate.value }))
+      } else {
+        ElMessage.error(t('batch.history.reportDownloadError'))
+      }
     } finally {
       downloadingReport.value = false
     }

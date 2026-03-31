@@ -189,7 +189,6 @@
         <el-form-item :label="t('batch.history.reportBusinessDate')" required>
           <el-date-picker
             v-model="reportBusinessDate"
-            v-loading="processedDatesLoading"
             type="date"
             value-format="YYYY-MM-DD"
             style="width: 200px"
