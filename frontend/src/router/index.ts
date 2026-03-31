@@ -361,6 +361,13 @@ const router = createRouter({
           component: () => import('@/pages/returns/ReturnNewPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
         },
+        // バッチ実行履歴一覧 — BAT-002: SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'batch/history',
+          name: 'batch-history',
+          component: () => import('@/pages/batch/BatchHistoryPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
         // システムパラメータ管理 — SCR-12 (SYS-001): SYSTEM_ADMIN のみ
         {
           path: 'system/parameters',

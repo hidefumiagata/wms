@@ -131,6 +131,18 @@
       </el-menu-item>
     </el-sub-menu>
 
+    <!-- バッチ管理 -->
+    <el-sub-menu index="batch">
+      <template #title>
+        <el-icon><Timer /></el-icon>
+        <span>{{ t('nav.batch') }}</span>
+      </template>
+      <el-menu-item index="/batch/history">
+        <el-icon><Tickets /></el-icon>
+        <span>{{ t('nav.batchHistory') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
     <!-- システム管理 -->
     <el-sub-menu index="system">
       <template #title>
@@ -174,6 +186,8 @@ import {
   RefreshLeft,
   DocumentAdd,
   Connection,
+  Timer,
+  Tickets,
 } from '@element-plus/icons-vue'
 
 defineProps<{
