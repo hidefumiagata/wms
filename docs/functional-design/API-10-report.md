@@ -917,7 +917,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     START([開始]) --> VALIDATE{stocktakeId または\nbuildingId のどちらか指定?}
-    VALIDATE -->|両方なし| ERR_VAL[400 VALIDATION_ERROR]
+    VALIDATE -->|両方なし| ERR_VAL[422 REPORT_PARAMETER_REQUIRED]
     VALIDATE -->|stocktakeId 指定| FIND_STK{棚卸 存在確認}
     VALIDATE -->|buildingId 指定| FIND_BLD{棟 存在確認}
 
@@ -937,7 +937,7 @@ flowchart TD
 
 | # | ルール | エラーコード |
 |---|--------|------------|
-| 1 | `stocktakeId` と `buildingId` の両方が未指定の場合は 400 を返す | `VALIDATION_ERROR` |
+| 1 | `stocktakeId` と `buildingId` の両方が未指定の場合は 422 を返す | `REPORT_PARAMETER_REQUIRED` |
 | 2 | `stocktakeId` 指定時に棚卸が存在しない場合は 404 を返す | `STOCKTAKE_NOT_FOUND` |
 | 3 | `buildingId` 指定時に棟が存在しない場合は 404 を返す | `BUILDING_NOT_FOUND` |
 | 4 | 結果はロケーションコード昇順でソートして返す（現場でのピッキング動線に合わせる） | — |
