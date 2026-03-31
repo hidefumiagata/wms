@@ -361,6 +361,20 @@ const router = createRouter({
           component: () => import('@/pages/returns/ReturnNewPage.vue'),
           meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER', 'WAREHOUSE_STAFF'] },
         },
+        // I/F管理 ファイル一覧 — IF-001: SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'interface',
+          name: 'interface-files',
+          component: () => import('@/pages/interface/InterfaceFilesPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
+        // I/F管理 取り込み履歴 — IF-003: SYSTEM_ADMIN, WAREHOUSE_MANAGER
+        {
+          path: 'interface/history',
+          name: 'interface-history',
+          component: () => import('@/pages/interface/InterfaceHistoryPage.vue'),
+          meta: { roles: ['SYSTEM_ADMIN', 'WAREHOUSE_MANAGER'] },
+        },
         // バッチ実行履歴一覧 — BAT-002: SYSTEM_ADMIN, WAREHOUSE_MANAGER
         {
           path: 'batch/history',

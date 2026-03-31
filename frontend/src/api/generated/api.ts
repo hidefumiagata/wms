@@ -18,6 +18,7 @@ export * from './api/allocation-api';
 export * from './api/auth-api';
 export * from './api/batch-api';
 export * from './api/inbound-api';
+export * from './api/interface-api';
 export * from './api/inventory-api';
 export * from './api/master-area-api';
 export * from './api/master-building-api';

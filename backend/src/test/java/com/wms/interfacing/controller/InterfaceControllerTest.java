@@ -5,23 +5,29 @@ import com.wms.generated.model.InterfaceImportRequest;
 import com.wms.generated.model.InterfaceValidateRequest;
 import com.wms.generated.model.ImportMode;
 import com.wms.interfacing.blob.BlobStorageClient;
+import com.wms.interfacing.entity.IfExecution;
 import com.wms.interfacing.service.InboundPlanCsvProcessor;
 import com.wms.interfacing.service.InterfaceService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.security.JwtAuthenticationFilter;
 import com.wms.shared.security.JwtTokenProvider;
+import com.wms.system.service.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,6 +56,9 @@ class InterfaceControllerTest {
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private UserService userService;
 
     @Nested
     @DisplayName("GET /api/v1/interface/{ifId}/files")
@@ -216,6 +225,126 @@ class InterfaceControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isUnprocessableEntity());
         }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/interface/executions")
+    class ListExecutions {
+
+        private IfExecution createExecution() {
+            return IfExecution.builder()
+                    .id(1L)
+                    .ifType("INBOUND_PLAN")
+                    .fileName("INB-PLAN-001.csv")
+                    .totalCount(100)
+                    .successCount(97)
+                    .errorCount(3)
+                    .mode("SUCCESS_ONLY")
+                    .status("COMPLETED")
+                    .blobMoveFailed(false)
+                    .warehouseId(1L)
+                    .executedAt(OffsetDateTime.parse("2026-03-18T14:30:05+09:00"))
+                    .executedBy(1L)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("200 — 実行履歴一覧を返す")
+        void listExecutions_returns200() throws Exception {
+            IfExecution exec = createExecution();
+            Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of(1L, "山田 太郎"));
+
+            mockMvc.perform(get("/api/v1/interface/executions"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.content[0].fileName").value("INB-PLAN-001.csv"))
+                    .andExpect(jsonPath("$.content[0].status").value("COMPLETED"))
+                    .andExpect(jsonPath("$.content[0].executedByName").value("山田 太郎"));
+        }
+
+        @Test
+        @DisplayName("200 — フィルタパラメータ付きで呼び出し")
+        void listExecutions_withFilters_returns200() throws Exception {
+            Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/interface/executions")
+                            .param("ifType", "IFX-001")
+                            .param("dateFrom", "2026-03-01")
+                            .param("dateTo", "2026-03-31")
+                            .param("status", "COMPLETED")
+                            .param("fileName", "INB"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(0))
+                    .andExpect(jsonPath("$.content").isEmpty());
+        }
+
+        @Test
+        @DisplayName("200 — ユーザーが見つからない場合はIDを表示")
+        void listExecutions_userNotFound_showsId() throws Exception {
+            IfExecution exec = createExecution();
+            Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
+
+            mockMvc.perform(get("/api/v1/interface/executions"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content[0].executedByName").value("1"));
+        }
+
+        @Test
+        @DisplayName("200 — ソートパラメータが適用される")
+        void listExecutions_withSort_returns200() throws Exception {
+            Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/interface/executions")
+                            .param("sort", "fileName,asc"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("200 — ソートにdirection省略の場合ASCが適用される")
+        void listExecutions_sortWithoutDirection_usesAsc() throws Exception {
+            Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/interface/executions")
+                            .param("sort", "fileName"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("200 — 不正ソートプロパティの場合デフォルトにフォールバック")
+        void listExecutions_invalidSort_fallsBackToDefault() throws Exception {
+            Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/interface/executions")
+                            .param("sort", "invalidField,desc"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("200 — 空ページの場合userService呼び出しあり（空Set）")
+        void listExecutions_emptyPage_noUserFetch() throws Exception {
+            Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/interface/executions"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").isEmpty());
+        }
+
     }
 
     @Nested

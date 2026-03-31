@@ -131,6 +131,22 @@
       </el-menu-item>
     </el-sub-menu>
 
+    <!-- I/F管理 -->
+    <el-sub-menu index="interface">
+      <template #title>
+        <el-icon><DataLine /></el-icon>
+        <span>{{ t('nav.interfaceManagement') }}</span>
+      </template>
+      <el-menu-item index="/interface">
+        <el-icon><FolderOpened /></el-icon>
+        <span>{{ t('nav.interfaceFiles') }}</span>
+      </el-menu-item>
+      <el-menu-item index="/interface/history">
+        <el-icon><Tickets /></el-icon>
+        <span>{{ t('nav.interfaceHistory') }}</span>
+      </el-menu-item>
+    </el-sub-menu>
+
     <!-- バッチ管理 -->
     <el-sub-menu index="batch">
       <template #title>
@@ -188,6 +204,8 @@ import {
   Connection,
   Timer,
   Tickets,
+  DataLine,
+  FolderOpened,
 } from '@element-plus/icons-vue'
 
 defineProps<{

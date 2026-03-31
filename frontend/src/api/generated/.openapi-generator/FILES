@@ -6,6 +6,7 @@ api/allocation-api.ts
 api/auth-api.ts
 api/batch-api.ts
 api/inbound-api.ts
+api/interface-api.ts
 api/inventory-api.ts
 api/master-area-api.ts
 api/master-building-api.ts
@@ -83,6 +84,10 @@ models/error-response.ts
 models/execute-allocation-request.ts
 models/exists-response.ts
 models/field-error.ts
+models/if-execution-item.ts
+models/if-execution-page-response.ts
+models/if-execution-status.ts
+models/import-mode.ts
 models/inbound-inspection-report-item.ts
 models/inbound-line-status.ts
 models/inbound-plan-report-item.ts
@@ -102,6 +107,16 @@ models/inspect-outbound-line-request.ts
 models/inspect-outbound-line-response.ts
 models/inspect-outbound-request.ts
 models/inspect-outbound-response.ts
+models/interface-file-error.ts
+models/interface-file-info.ts
+models/interface-file-list-response.ts
+models/interface-import-request.ts
+models/interface-import-result.ts
+models/interface-type.ts
+models/interface-validate-request.ts
+models/interface-validation-error.ts
+models/interface-validation-result.ts
+models/interface-validation-row.ts
 models/inventory-correction-report-item.ts
 models/inventory-location-item.ts
 models/inventory-location-page-response.ts

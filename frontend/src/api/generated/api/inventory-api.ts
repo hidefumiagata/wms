@@ -420,13 +420,15 @@ export const InventoryApiAxiosParamCreator = function (configuration?: Configura
          * @param {StocktakeStatus} [status] ステータス絞り込み
          * @param {string} [dateFrom] 棚卸開始日From
          * @param {string} [dateTo] 棚卸開始日To
+         * @param {string} [stocktakeNumber] 棚卸番号（前方一致）
+         * @param {number} [buildingId] 対象棟ID
          * @param {number} [page] ページ番号（0始まり）
          * @param {number} [size] ページサイズ
          * @param {string} [sort] ソート指定
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listStocktakes: async (warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, page?: number, size?: number, sort?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listStocktakes: async (warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, stocktakeNumber?: string, buildingId?: number, page?: number, size?: number, sort?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'warehouseId' is not null or undefined
             assertParamExists('listStocktakes', 'warehouseId', warehouseId)
             const localVarPath = `/api/v1/inventory/stocktakes`;
@@ -461,6 +463,14 @@ export const InventoryApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['dateTo'] = (dateTo as any instanceof Date) ?
                     (dateTo as any).toISOString().substring(0,10) :
                     dateTo;
+            }
+
+            if (stocktakeNumber !== undefined) {
+                localVarQueryParameter['stocktakeNumber'] = stocktakeNumber;
+            }
+
+            if (buildingId !== undefined) {
+                localVarQueryParameter['buildingId'] = buildingId;
             }
 
             if (page !== undefined) {
@@ -727,14 +737,16 @@ export const InventoryApiFp = function(configuration?: Configuration) {
          * @param {StocktakeStatus} [status] ステータス絞り込み
          * @param {string} [dateFrom] 棚卸開始日From
          * @param {string} [dateTo] 棚卸開始日To
+         * @param {string} [stocktakeNumber] 棚卸番号（前方一致）
+         * @param {number} [buildingId] 対象棟ID
          * @param {number} [page] ページ番号（0始まり）
          * @param {number} [size] ページサイズ
          * @param {string} [sort] ソート指定
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listStocktakes(warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<StocktakeSummaryPageResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listStocktakes(warehouseId, status, dateFrom, dateTo, page, size, sort, options);
+        async listStocktakes(warehouseId: number, status?: StocktakeStatus, dateFrom?: string, dateTo?: string, stocktakeNumber?: string, buildingId?: number, page?: number, size?: number, sort?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<StocktakeSummaryPageResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listStocktakes(warehouseId, status, dateFrom, dateTo, stocktakeNumber, buildingId, page, size, sort, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['InventoryApi.listStocktakes']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -867,7 +879,7 @@ export const InventoryApiFactory = function (configuration?: Configuration, base
          * @throws {RequiredError}
          */
         listStocktakes(requestParameters: InventoryApiListStocktakesRequest, options?: RawAxiosRequestConfig): AxiosPromise<StocktakeSummaryPageResponse> {
-            return localVarFp.listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
+            return localVarFp.listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.stocktakeNumber, requestParameters.buildingId, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(axios, basePath));
         },
         /**
          * 指定した在庫を移動元ロケーションから移動先ロケーションへ移動する。
@@ -1140,6 +1152,20 @@ export interface InventoryApiListStocktakesRequest {
     readonly dateTo?: string
 
     /**
+     * 棚卸番号（前方一致）
+     * @type {string}
+     * @memberof InventoryApiListStocktakes
+     */
+    readonly stocktakeNumber?: string
+
+    /**
+     * 対象棟ID
+     * @type {number}
+     * @memberof InventoryApiListStocktakes
+     */
+    readonly buildingId?: number
+
+    /**
      * ページ番号（0始まり）
      * @type {number}
      * @memberof InventoryApiListStocktakes
@@ -1310,7 +1336,7 @@ export class InventoryApi extends BaseAPI {
      * @memberof InventoryApi
      */
     public listStocktakes(requestParameters: InventoryApiListStocktakesRequest, options?: RawAxiosRequestConfig) {
-        return InventoryApiFp(this.configuration).listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
+        return InventoryApiFp(this.configuration).listStocktakes(requestParameters.warehouseId, requestParameters.status, requestParameters.dateFrom, requestParameters.dateTo, requestParameters.stocktakeNumber, requestParameters.buildingId, requestParameters.page, requestParameters.size, requestParameters.sort, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
