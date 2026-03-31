@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -426,6 +427,169 @@ class InventoryServiceTest {
             when(inventoryRepository.existsByProductIdWithPositiveQty(1L)).thenReturn(false);
 
             assertThat(inventoryService.hasInventoryByProductId(1L)).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("deductReturnStock")
+    class DeductReturnStock {
+
+        private InventoryService.DeductReturnCommand buildCommand(int quantity) {
+            return new InventoryService.DeductReturnCommand(
+                    1L, 10L, "A-01-01",
+                    100L, "PRD-0001", "テスト商品A",
+                    "CASE", quantity, 999L,
+                    50L, OffsetDateTime.now());
+        }
+
+        @Test
+        @DisplayName("正常系: 在庫減算と移動記録作成")
+        void deductReturn_success_deductsAndCreatesMovement() {
+            Inventory inv = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(20).allocatedQty(0).build();
+            setField(inv, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.deductReturnStock(buildCommand(5));
+
+            assertThat(inv.getQuantity()).isEqualTo(15);
+            ArgumentCaptor<InventoryMovement> captor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository).save(captor.capture());
+            InventoryMovement movement = captor.getValue();
+            assertThat(movement.getMovementType()).isEqualTo("RETURN_OUT");
+            assertThat(movement.getQuantity()).isEqualTo(-5);
+            assertThat(movement.getQuantityAfter()).isEqualTo(15);
+            assertThat(movement.getReferenceType()).isEqualTo("RETURN_SLIP");
+        }
+
+        @Test
+        @DisplayName("在庫なし: INVENTORY_NOT_FOUND")
+        void deductReturn_noInventory_throwsNotFound() {
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of());
+
+            assertThatThrownBy(() -> inventoryService.deductReturnStock(buildCommand(5)))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("在庫が見つかりません");
+        }
+
+        @Test
+        @DisplayName("引当済み在庫: RETURN_ALLOCATED_INVENTORY")
+        void deductReturn_allocated_throwsBusinessRule() {
+            Inventory inv = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(20).allocatedQty(5).build();
+            setField(inv, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv));
+
+            assertThatThrownBy(() -> inventoryService.deductReturnStock(buildCommand(5)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("引当済み");
+        }
+
+        @Test
+        @DisplayName("数量不足: RETURN_INSUFFICIENT_QUANTITY")
+        void deductReturn_insufficientQuantity_throwsBusinessRule() {
+            Inventory inv = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(3).allocatedQty(0).build();
+            setField(inv, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv));
+
+            assertThatThrownBy(() -> inventoryService.deductReturnStock(buildCommand(5)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("在庫数を超えています");
+        }
+
+        @Test
+        @DisplayName("楽観的ロック競合: OPTIMISTIC_LOCK_CONFLICT")
+        void deductReturn_optimisticLockConflict_throwsConflict() {
+            Inventory inv = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(20).allocatedQty(0).build();
+            setField(inv, "id", 1L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv));
+            when(inventoryRepository.save(any(Inventory.class)))
+                    .thenThrow(new ObjectOptimisticLockingFailureException(Inventory.class.getName(), 1L));
+
+            assertThatThrownBy(() -> inventoryService.deductReturnStock(buildCommand(5)))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        @Test
+        @DisplayName("複数在庫レコード - 分散減算: 先頭で足りない場合に次のレコードから減算")
+        void deductReturn_multipleRecords_distributesDeduction() {
+            Inventory inv1 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(3).allocatedQty(0).build();
+            setField(inv1, "id", 1L);
+            Inventory inv2 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(0).build();
+            setField(inv2, "id", 2L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv1, inv2));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.deductReturnStock(buildCommand(5));
+
+            // inv1: 3 - 3 = 0, inv2: 10 - 2 = 8
+            assertThat(inv1.getQuantity()).isZero();
+            assertThat(inv2.getQuantity()).isEqualTo(8);
+            ArgumentCaptor<InventoryMovement> captor = ArgumentCaptor.forClass(InventoryMovement.class);
+            verify(inventoryMovementRepository, times(2)).save(captor.capture());
+            List<InventoryMovement> movements = captor.getAllValues();
+            assertThat(movements.get(0).getQuantity()).isEqualTo(-3);
+            assertThat(movements.get(0).getQuantityAfter()).isZero();
+            assertThat(movements.get(1).getQuantity()).isEqualTo(-2);
+            assertThat(movements.get(1).getQuantityAfter()).isEqualTo(8);
+        }
+
+        @Test
+        @DisplayName("複数在庫レコード - 先頭のみで十分: 2番目は未操作")
+        void deductReturn_multipleRecords_firstSufficient() {
+            Inventory inv1 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(20).allocatedQty(0).build();
+            setField(inv1, "id", 1L);
+            Inventory inv2 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(0).build();
+            setField(inv2, "id", 2L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv1, inv2));
+            when(inventoryRepository.save(any(Inventory.class))).thenAnswer(i -> i.getArgument(0));
+
+            inventoryService.deductReturnStock(buildCommand(5));
+
+            assertThat(inv1.getQuantity()).isEqualTo(15);
+            assertThat(inv2.getQuantity()).isEqualTo(10);
+            verify(inventoryMovementRepository, times(1)).save(any(InventoryMovement.class));
+        }
+
+        @Test
+        @DisplayName("複数在庫レコード - 一部引当あり: RETURN_ALLOCATED_INVENTORY")
+        void deductReturn_multipleRecordsWithAllocated_throwsBusinessRule() {
+            Inventory inv1 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(0).build();
+            setField(inv1, "id", 1L);
+            Inventory inv2 = Inventory.builder()
+                    .warehouseId(1L).locationId(10L).productId(100L)
+                    .unitType("CASE").quantity(10).allocatedQty(3).build();
+            setField(inv2, "id", 2L);
+            when(inventoryRepository.findByLocationIdAndProductIdAndUnitType(10L, 100L, "CASE"))
+                    .thenReturn(List.of(inv1, inv2));
+
+            assertThatThrownBy(() -> inventoryService.deductReturnStock(buildCommand(5)))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("引当済み");
         }
     }
 }
