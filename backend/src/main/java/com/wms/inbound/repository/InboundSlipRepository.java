@@ -36,10 +36,11 @@ public interface InboundSlipRepository extends JpaRepository<InboundSlip, Long> 
     @Query("SELECT s FROM InboundSlip s WHERE s.id = :id")
     Optional<InboundSlip> findByIdWithLines(@Param("id") Long id);
 
-    @Query("""
-            SELECT COALESCE(MAX(CAST(SUBSTRING(s.slipNumber, LENGTH(CONCAT('INB-', :dateStr, '-')) + 1) AS integer)), 0)
-            FROM InboundSlip s
-            WHERE s.slipNumber LIKE CONCAT('INB-', :dateStr, '-%')
-            """)
-    int findMaxSequenceByDate(@Param("dateStr") String dateStr);
+    @Query(value = """
+            SELECT COALESCE(MAX(CAST(SUBSTRING(slip_number FROM LENGTH(:prefix) + 1) AS INTEGER)), 0)
+            FROM inbound_slips
+            WHERE slip_number LIKE :prefix || '%'
+            FOR UPDATE
+            """, nativeQuery = true)
+    int findMaxSequenceByDate(@Param("prefix") String prefix);
 }

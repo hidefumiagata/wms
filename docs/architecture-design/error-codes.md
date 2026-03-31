@@ -195,6 +195,20 @@
 
 ---
 
+### 3.14 I/F（インターフェース）(interfacing)
+
+| エラーコード | HTTPステータス | 説明 |
+|---|---|---|
+| `FILE_SIZE_EXCEEDED` | 422 | ファイルサイズ上限超過（50MB） |
+| `CSV_PARSE_ERROR` | 422 | CSVパースエラー |
+| `CSV_HEADER_ERROR` | 422 | CSVヘッダ不正 |
+| `SLIP_NUMBER_EXCEEDED` | 422 | 伝票番号が上限（9999）に到達 |
+| `INVALID_IF_TYPE` | 422 | 不正なI/F種別 |
+
+> **注記**: CSVの行レベルバリデーションエラーコード（`WMS-E-IFX-001`〜`WMS-E-IFX-501`）はAPIレスポンスの `rowErrors[].errors[].errorCode` として返却されるものであり、HTTPエラーレスポンスのエラーコードとは体系が異なる。詳細は [09-interface-architecture.md](09-interface-architecture.md) を参照。
+
+---
+
 ## 4. エラーレスポンス形式
 
 エラーレスポンスのJSON形式・例外クラス階層・GlobalExceptionHandlerマッピングの詳細については、[architecture-blueprint/08-common-infrastructure.md](../architecture-blueprint/08-common-infrastructure.md) を参照してください。

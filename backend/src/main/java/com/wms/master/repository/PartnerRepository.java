@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface PartnerRepository extends JpaRepository<Partner, Long> {
@@ -38,4 +39,6 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
 
     @Query("SELECT p FROM Partner p WHERE (:isActive IS NULL OR p.isActive = :isActive) ORDER BY p.partnerCode ASC")
     List<Partner> findAllSimple(@Param("isActive") Boolean isActive);
+
+    List<Partner> findByPartnerCodeIn(Collection<String> partnerCodes);
 }
