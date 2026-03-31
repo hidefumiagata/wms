@@ -573,6 +573,10 @@ export default {
       fetchError: 'Failed to fetch inbound slips',
       notFound: 'Inbound slip not found',
       cancelForbidden: 'Cannot cancel: already stored',
+      reportInboundPlan: 'Inbound Plan Report',
+      reportUnreceivedRt: 'Unreceived List (RT)',
+      reportDownloading: 'Generating report...',
+      reportDownloadError: 'Failed to download report',
     },
   },
   outbound: {

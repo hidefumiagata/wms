@@ -569,6 +569,11 @@ export default {
       fetchError: '入荷予定の取得に失敗しました',
       notFound: '指定の入荷伝票が見つかりません',
       cancelForbidden: '入庫完了済みのためキャンセルできません',
+      // レポート
+      reportInboundPlan: '入荷予定レポート',
+      reportUnreceivedRt: '未入荷リスト（RT）',
+      reportDownloading: 'レポートを出力中...',
+      reportDownloadError: 'レポートのダウンロードに失敗しました',
     },
   },
   outbound: {

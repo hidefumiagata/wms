@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { downloadReport } from '@/utils/reportDownload'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { InboundSlipSummary } from '@/api/generated/models/inbound-slip-summary'
@@ -172,6 +173,56 @@ export function useInboundSlipList() {
     fetchList()
   }
 
+  // --- レポートダウンロード ---
+  const downloadingInboundPlan = ref(false)
+  const downloadingUnreceivedRt = ref(false)
+
+  async function downloadInboundPlanReport() {
+    if (downloadingInboundPlan.value) return
+    downloadingInboundPlan.value = true
+    ElMessage.info(t('inbound.slip.reportDownloading'))
+    try {
+      const params: Record<string, unknown> = {
+        warehouseId: warehouseStore.selectedWarehouseId,
+      }
+      if (searchForm.plannedDateFrom) params.plannedDateFrom = searchForm.plannedDateFrom
+      if (searchForm.plannedDateTo) params.plannedDateTo = searchForm.plannedDateTo
+      if (searchForm.partnerId) params.partnerId = searchForm.partnerId
+      if (searchForm.status) params.status = searchForm.status
+      await downloadReport({
+        path: '/reports/inbound-plan',
+        params,
+        format: 'pdf',
+        filenameBase: 'inbound_plan_' + new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+      })
+    } catch {
+      ElMessage.error(t('inbound.slip.reportDownloadError'))
+    } finally {
+      downloadingInboundPlan.value = false
+    }
+  }
+
+  async function downloadUnreceivedRealtimeReport() {
+    if (downloadingUnreceivedRt.value) return
+    downloadingUnreceivedRt.value = true
+    ElMessage.info(t('inbound.slip.reportDownloading'))
+    try {
+      await downloadReport({
+        path: '/reports/unreceived-realtime',
+        params: {
+          warehouseId: warehouseStore.selectedWarehouseId,
+        },
+        format: 'pdf',
+        filenameBase:
+          'unreceived_realtime_' + new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+      })
+    } catch {
+      ElMessage.error(t('inbound.slip.reportDownloadError'))
+    } finally {
+      downloadingUnreceivedRt.value = false
+    }
+  }
+
   return {
     items,
     loading,
@@ -187,5 +238,9 @@ export function useInboundSlipList() {
     handleReset,
     handlePageChange,
     handleSizeChange,
+    downloadingInboundPlan,
+    downloadingUnreceivedRt,
+    downloadInboundPlanReport,
+    downloadUnreceivedRealtimeReport,
   }
 }
