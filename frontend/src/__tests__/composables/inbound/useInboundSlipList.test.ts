@@ -4,7 +4,13 @@ import { withSetup, mockAxiosResponse, flushPromises } from '../../helpers'
 import { useInboundSlipList } from '@/composables/inbound/useInboundSlipList'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
+import { downloadReport } from '@/utils/reportDownload'
+import { ElMessage } from 'element-plus'
 import axios from 'axios'
+
+vi.mock('@/utils/reportDownload', () => ({
+  downloadReport: vi.fn().mockResolvedValue(undefined),
+}))
 
 describe('useInboundSlipList', () => {
   const createMockResponse = () => ({
@@ -33,6 +39,35 @@ describe('useInboundSlipList', () => {
       expect.objectContaining({
         params: expect.objectContaining({ warehouseId: 42 }),
         signal: expect.any(AbortSignal),
+      }),
+    )
+  })
+
+  it('fetchList が検索条件をパラメータに含める', async () => {
+    const { result } = withSetup(() => {
+      const warehouseStore = useWarehouseStore()
+      warehouseStore.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    result.searchForm.slipNumber = 'INB-001'
+    result.searchForm.plannedDateFrom = '2026-03-01'
+    result.searchForm.plannedDateTo = '2026-03-31'
+    result.searchForm.partnerId = 5
+    result.searchForm.status = 'PLANNED' as never
+
+    await result.fetchList()
+
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/inbound/slips',
+      expect.objectContaining({
+        params: expect.objectContaining({
+          slipNumber: 'INB-001',
+          plannedDateFrom: '2026-03-01',
+          plannedDateTo: '2026-03-31',
+          partnerId: 5,
+          status: 'PLANNED',
+        }),
       }),
     )
   })
@@ -184,6 +219,82 @@ describe('useInboundSlipList', () => {
     expect(result.searchForm.plannedDateTo).toBeTruthy()
   })
 
+  it('handlePageChange がページを変更してfetchListを呼ぶ', async () => {
+    const { result } = withSetup(() => {
+      const warehouseStore = useWarehouseStore()
+      warehouseStore.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    result.handlePageChange(3)
+    await flushPromises()
+
+    expect(result.page.value).toBe(3)
+    expect(apiClient.get).toHaveBeenCalled()
+  })
+
+  it('handleSizeChange がサイズを変更しページを1にリセットしてfetchListを呼ぶ', async () => {
+    const { result } = withSetup(() => {
+      const warehouseStore = useWarehouseStore()
+      warehouseStore.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    result.page.value = 5
+    result.handleSizeChange(50)
+    await flushPromises()
+
+    expect(result.pageSize.value).toBe(50)
+    expect(result.page.value).toBe(1)
+    expect(apiClient.get).toHaveBeenCalled()
+  })
+
+  it('fetchList のネットワークエラー時にerror.networkメッセージを表示する', async () => {
+    const networkError = new Error('Network Error')
+    vi.mocked(apiClient.get).mockRejectedValueOnce(networkError)
+
+    const { result } = withSetup(() => {
+      const warehouseStore = useWarehouseStore()
+      warehouseStore.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    await result.fetchList()
+
+    expect(result.items.value).toEqual([])
+    expect(result.total.value).toBe(0)
+    expect(ElMessage.error).toHaveBeenCalledWith('error.network')
+  })
+
+  it('fetchList のAPIエラー時にfetchErrorメッセージを表示する', async () => {
+    const apiError = Object.assign(new Error('Request failed'), {
+      isAxiosError: true,
+      response: { status: 500, data: {} },
+    })
+    vi.mocked(apiClient.get).mockRejectedValueOnce(apiError)
+
+    const { result } = withSetup(() => {
+      const warehouseStore = useWarehouseStore()
+      warehouseStore.selectedWarehouseId = 1
+      return useInboundSlipList()
+    })
+
+    await result.fetchList()
+
+    expect(result.items.value).toEqual([])
+    expect(result.total.value).toBe(0)
+    expect(ElMessage.error).toHaveBeenCalledWith('inbound.slip.fetchError')
+  })
+
+  it('fetchPartnerOptions のエラーは無視される', async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('fail'))
+
+    const { result } = withSetup(() => useInboundSlipList())
+    await result.fetchPartnerOptions()
+
+    expect(result.partnerOptions.value).toEqual([])
+  })
+
   it('fetchPartnerOptions が仕入先オプションを取得する', async () => {
     const supplierRes = mockAxiosResponse({ content: [{ id: 1, partnerName: '仕入先A' }] })
     const bothRes = mockAxiosResponse({ content: [{ id: 2, partnerName: '兼用B' }] })
@@ -195,5 +306,156 @@ describe('useInboundSlipList', () => {
     expect(result.partnerOptions.value).toHaveLength(2)
     expect(result.partnerOptions.value[0].partnerName).toBe('仕入先A')
     expect(result.partnerOptions.value[1].partnerName).toBe('兼用B')
+  })
+
+  describe('downloadInboundPlanReport', () => {
+    it('現在の検索条件でRPT-03をPDFダウンロードする', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 10
+        return useInboundSlipList()
+      })
+
+      result.searchForm.plannedDateFrom = '2026-03-01'
+      result.searchForm.plannedDateTo = '2026-03-31'
+      result.searchForm.partnerId = 5
+      result.searchForm.status = 'PLANNED' as never
+
+      await result.downloadInboundPlanReport()
+
+      expect(downloadReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: '/reports/inbound-plan',
+          params: expect.objectContaining({
+            warehouseId: 10,
+            plannedDateFrom: '2026-03-01',
+            plannedDateTo: '2026-03-31',
+            partnerId: 5,
+            status: 'PLANNED',
+          }),
+          format: 'pdf',
+        }),
+      )
+    })
+
+    it('検索条件が空の場合はwarehouseIdのみ送る', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 10
+        return useInboundSlipList()
+      })
+
+      result.searchForm.plannedDateFrom = null
+      result.searchForm.plannedDateTo = null
+      result.searchForm.partnerId = null
+      result.searchForm.status = null
+
+      await result.downloadInboundPlanReport()
+
+      const callArgs = vi.mocked(downloadReport).mock.calls[0][0]
+      expect(callArgs.params).toEqual({ warehouseId: 10 })
+    })
+
+    it('downloadingReport がtrue→falseに遷移する', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      expect(result.downloadingReport.value).toBe(false)
+      const promise = result.downloadInboundPlanReport()
+      expect(result.downloadingReport.value).toBe(true)
+      await promise
+      expect(result.downloadingReport.value).toBe(false)
+    })
+
+    it('エラー時にElMessage.errorを表示する', async () => {
+      vi.mocked(downloadReport).mockRejectedValueOnce(new Error('fail'))
+
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      await result.downloadInboundPlanReport()
+
+      expect(ElMessage.error).toHaveBeenCalledWith('inbound.slip.reportDownloadError')
+      expect(result.downloadingReport.value).toBe(false)
+    })
+
+    it('ダウンロード開始時にElMessage.infoを表示する', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      await result.downloadInboundPlanReport()
+
+      expect(ElMessage.info).toHaveBeenCalledWith('inbound.slip.reportDownloading')
+    })
+  })
+
+  describe('downloadUnreceivedRealtimeReport', () => {
+    it('RPT-05をPDFダウンロードする（warehouseIdのみ）', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 20
+        return useInboundSlipList()
+      })
+
+      await result.downloadUnreceivedRealtimeReport()
+
+      expect(downloadReport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: '/reports/unreceived-realtime',
+          params: { warehouseId: 20 },
+          format: 'pdf',
+        }),
+      )
+    })
+
+    it('downloadingReport がtrue→falseに遷移する', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      expect(result.downloadingReport.value).toBe(false)
+      const promise = result.downloadUnreceivedRealtimeReport()
+      expect(result.downloadingReport.value).toBe(true)
+      await promise
+      expect(result.downloadingReport.value).toBe(false)
+    })
+
+    it('エラー時にElMessage.errorを表示する', async () => {
+      vi.mocked(downloadReport).mockRejectedValueOnce(new Error('fail'))
+
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      await result.downloadUnreceivedRealtimeReport()
+
+      expect(ElMessage.error).toHaveBeenCalledWith('inbound.slip.reportDownloadError')
+      expect(result.downloadingReport.value).toBe(false)
+    })
+
+    it('ダウンロード開始時にElMessage.infoを表示する', async () => {
+      const { result } = withSetup(() => {
+        const ws = useWarehouseStore()
+        ws.selectedWarehouseId = 1
+        return useInboundSlipList()
+      })
+
+      await result.downloadUnreceivedRealtimeReport()
+
+      expect(ElMessage.info).toHaveBeenCalledWith('inbound.slip.reportDownloading')
+    })
   })
 })

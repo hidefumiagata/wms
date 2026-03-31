@@ -87,7 +87,24 @@
         </div>
       </template>
 
-      <!-- TODO: RPT-03 入荷予定レポートボタン（レポート機能実装後に追加） -->
+      <div class="toolbar">
+        <div class="toolbar-buttons">
+          <el-button
+            :icon="Printer"
+            :loading="downloadingReport"
+            @click="downloadInboundPlanReport"
+          >
+            {{ t('inbound.slip.reportInboundPlan') }}
+          </el-button>
+          <el-button
+            :icon="Printer"
+            :loading="downloadingReport"
+            @click="downloadUnreceivedRealtimeReport"
+          >
+            {{ t('inbound.slip.reportUnreceivedRt') }}
+          </el-button>
+        </div>
+      </div>
 
       <el-table v-loading="loading" :data="items" stripe border style="width: 100%">
         <el-table-column prop="slipNumber" :label="t('inbound.slip.slipNumber')" width="180">
@@ -152,7 +169,7 @@
 import { onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Printer } from '@element-plus/icons-vue'
 import { useInboundSlipList } from '@/composables/inbound/useInboundSlipList'
 import { inboundStatusLabel, inboundStatusTagType, formatDateTime } from '@/utils/inboundFormatters'
 
@@ -174,6 +191,9 @@ const {
   handleReset,
   handlePageChange,
   handleSizeChange,
+  downloadingReport,
+  downloadInboundPlanReport,
+  downloadUnreceivedRealtimeReport,
 } = useInboundSlipList()
 
 function statusLabel(status: string): string {
@@ -199,6 +219,13 @@ onMounted(() => {
 }
 
 .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toolbar {
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
