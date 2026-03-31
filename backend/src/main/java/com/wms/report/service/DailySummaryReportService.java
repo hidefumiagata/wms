@@ -4,6 +4,7 @@ import com.wms.generated.model.DailySummaryReportItem;
 import com.wms.generated.model.ReportFormat;
 import com.wms.report.repository.BatchExecutionLogRepository;
 import com.wms.report.repository.DailySummaryRecordRepository;
+import com.wms.report.repository.projection.DailySummaryReportRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,21 +36,6 @@ public class DailySummaryReportService {
     private final DailySummaryRecordRepository dailySummaryRecordRepository;
     private final ReportExportService reportExportService;
 
-    private static final int COL_BUSINESS_DATE = 0;
-    private static final int COL_WAREHOUSE_ID = 1;
-    private static final int COL_WAREHOUSE_NAME = 2;
-    private static final int COL_INBOUND_COUNT = 3;
-    private static final int COL_INBOUND_LINE_COUNT = 4;
-    private static final int COL_INBOUND_QTY_TOTAL = 5;
-    private static final int COL_OUTBOUND_COUNT = 6;
-    private static final int COL_OUTBOUND_LINE_COUNT = 7;
-    private static final int COL_OUTBOUND_QTY_TOTAL = 8;
-    private static final int COL_RETURN_COUNT = 9;
-    private static final int COL_RETURN_QTY_TOTAL = 10;
-    private static final int COL_INVENTORY_QTY_TOTAL = 11;
-    private static final int COL_UNRECEIVED_COUNT = 12;
-    private static final int COL_UNSHIPPED_COUNT = 13;
-
     static final String BATCH_STATUS_SUCCESS = "SUCCESS";
 
     private static final String[] CSV_HEADERS = {
@@ -74,7 +60,7 @@ public class DailySummaryReportService {
                     "指定日の日替処理が完了していません: targetBusinessDate=" + targetBusinessDate);
         }
 
-        List<Object[]> rows = dailySummaryRecordRepository.findDailySummaryData(targetBusinessDate);
+        List<DailySummaryReportRow> rows = dailySummaryRecordRepository.findDailySummaryData(targetBusinessDate);
 
         List<DailySummaryReportItem> items = rows.stream()
                 .map(this::toReportItem)
@@ -96,29 +82,27 @@ public class DailySummaryReportService {
         return reportExportService.export(items, format, meta);
     }
 
-    private DailySummaryReportItem toReportItem(Object[] row) {
+    private DailySummaryReportItem toReportItem(DailySummaryReportRow row) {
         DailySummaryReportItem item = new DailySummaryReportItem();
-        item.setBusinessDate(row[COL_BUSINESS_DATE] != null
-                ? ((java.sql.Date) row[COL_BUSINESS_DATE]).toLocalDate() : null);
-        item.setWarehouseId(row[COL_WAREHOUSE_ID] != null
-                ? ((Number) row[COL_WAREHOUSE_ID]).longValue() : null);
-        item.setWarehouseName((String) row[COL_WAREHOUSE_NAME]);
-        item.setInboundCount(toInt(row[COL_INBOUND_COUNT]));
-        item.setInboundLineCount(toInt(row[COL_INBOUND_LINE_COUNT]));
-        item.setInboundQuantityTotal(toInt(row[COL_INBOUND_QTY_TOTAL]));
-        item.setOutboundCount(toInt(row[COL_OUTBOUND_COUNT]));
-        item.setOutboundLineCount(toInt(row[COL_OUTBOUND_LINE_COUNT]));
-        item.setOutboundQuantityTotal(toInt(row[COL_OUTBOUND_QTY_TOTAL]));
-        item.setReturnCount(toInt(row[COL_RETURN_COUNT]));
-        item.setReturnQuantityTotal(toInt(row[COL_RETURN_QTY_TOTAL]));
-        item.setInventoryQuantityTotal(toInt(row[COL_INVENTORY_QTY_TOTAL]));
-        item.setUnreceivedCount(toInt(row[COL_UNRECEIVED_COUNT]));
-        item.setUnshippedCount(toInt(row[COL_UNSHIPPED_COUNT]));
+        item.setBusinessDate(row.getBusinessDate());
+        item.setWarehouseId(row.getWarehouseId());
+        item.setWarehouseName(row.getWarehouseName());
+        item.setInboundCount(toInt(row.getInboundCount()));
+        item.setInboundLineCount(toInt(row.getInboundLineCount()));
+        item.setInboundQuantityTotal(toInt(row.getInboundQuantityTotal()));
+        item.setOutboundCount(toInt(row.getOutboundCount()));
+        item.setOutboundLineCount(toInt(row.getOutboundLineCount()));
+        item.setOutboundQuantityTotal(toInt(row.getOutboundQuantityTotal()));
+        item.setReturnCount(toInt(row.getReturnCount()));
+        item.setReturnQuantityTotal(toInt(row.getReturnQuantityTotal()));
+        item.setInventoryQuantityTotal(toInt(row.getInventoryQuantityTotal()));
+        item.setUnreceivedCount(toInt(row.getUnreceivedCount()));
+        item.setUnshippedCount(toInt(row.getUnshippedCount()));
         return item;
     }
 
-    private static Integer toInt(Object value) {
-        return value != null ? ((Number) value).intValue() : 0;
+    private static Integer toInt(Number value) {
+        return value != null ? value.intValue() : 0;
     }
 
     private String[] csvRowMapper(DailySummaryReportItem item) {

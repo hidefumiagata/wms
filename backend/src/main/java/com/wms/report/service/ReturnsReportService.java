@@ -7,6 +7,7 @@ import com.wms.generated.model.ReturnsReportItem;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.ReturnsReportRepository;
+import com.wms.report.repository.projection.ReturnsReportRow;
 import com.wms.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,18 +39,6 @@ public class ReturnsReportService {
     private final ReturnsReportRepository returnsReportRepository;
     private final WarehouseRepository warehouseRepository;
     private final ReportExportService reportExportService;
-
-    private static final int COL_RETURN_NUMBER = 0;
-    private static final int COL_RETURN_TYPE = 1;
-    private static final int COL_RETURN_DATE = 2;
-    private static final int COL_PRODUCT_CODE = 3;
-    private static final int COL_PRODUCT_NAME = 4;
-    private static final int COL_QUANTITY = 5;
-    private static final int COL_UNIT_TYPE = 6;
-    private static final int COL_RETURN_REASON = 7;
-    private static final int COL_RETURN_REASON_NOTE = 8;
-    private static final int COL_RELATED_SLIP_NUMBER = 9;
-    private static final int COL_PARTNER_NAME = 10;
 
     static final Map<String, String> RETURN_TYPE_LABELS = Map.of(
             "INBOUND", "入荷返品",
@@ -93,7 +82,7 @@ public class ReturnsReportService {
         String returnTypeStr = returnType != null ? returnType.getValue() : null;
         String returnReasonStr = returnReason != null ? returnReason.getValue() : null;
 
-        List<Object[]> rows = returnsReportRepository.findReturnsReportData(
+        List<ReturnsReportRow> rows = returnsReportRepository.findReturnsReportData(
                 warehouseId, returnTypeStr, returnDateFrom, returnDateTo,
                 productId, partnerId, returnReasonStr);
 
@@ -119,33 +108,31 @@ public class ReturnsReportService {
         return reportExportService.export(items, format, meta);
     }
 
-    private ReturnsReportItem toReportItem(Object[] row) {
+    private ReturnsReportItem toReportItem(ReturnsReportRow row) {
         ReturnsReportItem item = new ReturnsReportItem();
-        item.setReturnNumber((String) row[COL_RETURN_NUMBER]);
+        item.setReturnNumber(row.getReturnNumber());
 
-        String returnTypeStr = (String) row[COL_RETURN_TYPE];
+        String returnTypeStr = row.getReturnType();
         if (returnTypeStr != null) {
             item.setReturnType(ReturnType.fromValue(returnTypeStr));
             item.setReturnTypeLabel(RETURN_TYPE_LABELS.getOrDefault(returnTypeStr, returnTypeStr));
         }
 
-        item.setReturnDate(row[COL_RETURN_DATE] != null
-                ? ((java.sql.Date) row[COL_RETURN_DATE]).toLocalDate() : null);
-        item.setProductCode((String) row[COL_PRODUCT_CODE]);
-        item.setProductName((String) row[COL_PRODUCT_NAME]);
-        item.setQuantity(row[COL_QUANTITY] != null
-                ? ((Number) row[COL_QUANTITY]).intValue() : 0);
-        item.setUnitType(toUnitTypeLabel((String) row[COL_UNIT_TYPE]));
+        item.setReturnDate(row.getReturnDate());
+        item.setProductCode(row.getProductCode());
+        item.setProductName(row.getProductName());
+        item.setQuantity(row.getQuantity() != null ? row.getQuantity() : 0);
+        item.setUnitType(toUnitTypeLabel(row.getUnitType()));
 
-        String returnReasonStr = (String) row[COL_RETURN_REASON];
+        String returnReasonStr = row.getReturnReason();
         if (returnReasonStr != null) {
             item.setReturnReason(ReturnReason.fromValue(returnReasonStr));
             item.setReturnReasonLabel(RETURN_REASON_LABELS.getOrDefault(returnReasonStr, returnReasonStr));
         }
 
-        item.setReturnReasonNote((String) row[COL_RETURN_REASON_NOTE]);
-        item.setRelatedSlipNumber((String) row[COL_RELATED_SLIP_NUMBER]);
-        item.setPartnerName((String) row[COL_PARTNER_NAME]);
+        item.setReturnReasonNote(row.getReturnReasonNote());
+        item.setRelatedSlipNumber(row.getRelatedSlipNumber());
+        item.setPartnerName(row.getPartnerName());
         return item;
     }
 
