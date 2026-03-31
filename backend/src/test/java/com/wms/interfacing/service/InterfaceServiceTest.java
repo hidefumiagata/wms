@@ -12,6 +12,8 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.master.repository.ProductRepository;
 import com.wms.master.repository.WarehouseRepository;
+import com.wms.outbound.entity.OutboundSlip;
+import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.shared.util.BusinessDateProvider;
@@ -57,7 +59,11 @@ class InterfaceServiceTest {
     @Mock
     private InboundPlanCsvProcessor inboundPlanCsvProcessor;
     @Mock
+    private OrderCsvProcessor orderCsvProcessor;
+    @Mock
     private InboundSlipRepository inboundSlipRepository;
+    @Mock
+    private OutboundSlipRepository outboundSlipRepository;
     @Mock
     private IfExecutionRepository ifExecutionRepository;
     @Mock
@@ -776,5 +782,302 @@ class InterfaceServiceTest {
             assertThat(capturedSlipNumber[0]).isEqualTo("INB-20260320-0006");
         }
 
+    }
+
+    // ========================================
+    // IFX-002 (Order) specific tests
+    // ========================================
+
+    @Nested
+    @DisplayName("validate — IFX-002")
+    class ValidateOrder {
+
+        @Test
+        @DisplayName("正常系 — IFX-002バリデーション成功結果を返す")
+        void validate_ifx002_success() {
+            String fileName = "ORD-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("order", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("order", fileName))
+                    .thenReturn(new ByteArrayInputStream("test".getBytes()));
+
+            String[] header = {"partner_code", "planned_date", "product_code",
+                    "unit_type", "ordered_qty", "note"};
+            List<String[]> dataRows = List.<String[]>of(
+                    new String[]{"CUS-0001", "2026-03-22", "PRD-001", "CASE", "50", ""});
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, dataRows));
+
+            Warehouse warehouse = new Warehouse();
+            warehouse.setWarehouseCode("WH-001");
+            warehouse.setWarehouseName("Warehouse 1");
+            setField(warehouse, "id", warehouseId);
+            when(warehouseRepository.findById(warehouseId)).thenReturn(Optional.of(warehouse));
+            when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of());
+            when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            InboundPlanCsvProcessor.ValidationResult validationResult =
+                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            when(orderCsvProcessor.validate(any(), any(), any()))
+                    .thenReturn(validationResult);
+
+            InterfaceService.InterfaceValidationResponse result =
+                    interfaceService.validate("IFX-002", fileName, warehouseId);
+
+            assertThat(result.hasFileError()).isFalse();
+            assertThat(result.totalRows()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
+            verify(orderCsvProcessor).validateHeader(header);
+            verify(orderCsvProcessor).validate(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("異常系 — IFX-002ヘッダ検証エラーでfileError応答")
+        void validate_ifx002_headerError_returnsFileError() {
+            when(blobStorageClient.getFileSize("order", "bad.csv")).thenReturn(100L);
+            when(blobStorageClient.downloadFile("order", "bad.csv"))
+                    .thenReturn(new ByteArrayInputStream("a,b\n1,2\n".getBytes()));
+
+            String[] header = {"a", "b"};
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, List.<String[]>of(new String[]{"1", "2"})));
+            org.mockito.Mockito.doThrow(
+                    new CsvParser.CsvParseException("WMS-E-IFX-003", "カラム数不正"))
+                    .when(orderCsvProcessor).validateHeader(header);
+
+            InterfaceService.InterfaceValidationResponse result =
+                    interfaceService.validate("IFX-002", "bad.csv", 1L);
+
+            assertThat(result.hasFileError()).isTrue();
+            assertThat(result.fileErrorCode()).isEqualTo("WMS-E-IFX-003");
+        }
+    }
+
+    @Nested
+    @DisplayName("importFile — IFX-002")
+    class ImportFileOrder {
+
+        @BeforeEach
+        void setUp() {
+            setupSecurityContext();
+        }
+
+        @Test
+        @DisplayName("正常系 — IFX-002 SUCCESS_ONLYモードで取り込み成功")
+        void importFile_ifx002_successOnly_completed() {
+            setupTransactionTemplate();
+            String fileName = "ORD-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("order", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("order", fileName))
+                    .thenReturn(new ByteArrayInputStream("csv".getBytes(StandardCharsets.UTF_8)));
+
+            String[] header = {"partner_code", "planned_date", "product_code",
+                    "unit_type", "ordered_qty", "note"};
+            List<String[]> dataRows = List.<String[]>of(
+                    new String[]{"CUS-0001", "2026-03-22", "PRD-001", "CASE", "50", ""});
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, dataRows));
+
+            Warehouse warehouse = new Warehouse();
+            warehouse.setWarehouseCode("WH-001");
+            warehouse.setWarehouseName("Warehouse 1");
+            setField(warehouse, "id", warehouseId);
+            when(warehouseRepository.findById(warehouseId)).thenReturn(Optional.of(warehouse));
+
+            Partner partner = new Partner();
+            partner.setPartnerCode("CUS-0001");
+            partner.setPartnerName("Customer 1");
+            partner.setPartnerType(PartnerType.CUSTOMER);
+            setField(partner, "id", 1L);
+            setField(partner, "isActive", true);
+            when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of(partner));
+
+            Product product = new Product();
+            product.setProductCode("PRD-001");
+            product.setProductName("Product 1");
+            product.setLotManageFlag(false);
+            product.setExpiryManageFlag(false);
+            setField(product, "id", 10L);
+            setField(product, "isActive", true);
+            when(productRepository.findByProductCodeIn(any())).thenReturn(List.of(product));
+
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            InboundPlanCsvProcessor.ValidationResult validationResult =
+                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            when(orderCsvProcessor.validate(any(), any(), any()))
+                    .thenReturn(validationResult);
+
+            OutboundSlip mockSlip = OutboundSlip.builder()
+                    .slipNumber("OUT-20260320-0001")
+                    .slipType("NORMAL")
+                    .status("ORDERED")
+                    .build();
+            when(orderCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(List.of(mockSlip));
+            when(outboundSlipRepository.saveAll(anyList())).thenReturn(List.of(mockSlip));
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+            when(blobStorageClient.moveToProcessed("order", fileName))
+                    .thenReturn("order/processed/2026/03/20/20260320_120000_ORD-001.csv");
+
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-002", fileName, warehouseId, "SUCCESS_ONLY");
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+            assertThat(result.successCount()).isEqualTo(1);
+            assertThat(result.mode()).isEqualTo("SUCCESS_ONLY");
+            verify(outboundSlipRepository).saveAll(anyList());
+            verify(inboundSlipRepository, never()).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("正常系 — IFX-002 DISCARDモードでDB登録なし")
+        void importFile_ifx002_discard_noDbInsert() {
+            setupTransactionTemplate();
+            String fileName = "ORD-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("order", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("order", fileName))
+                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
+
+            CsvParser.CsvParseResult parseResult =
+                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
+            when(csvParser.parse(any())).thenReturn(parseResult);
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+            when(blobStorageClient.moveToProcessed("order", fileName))
+                    .thenReturn("processed/path");
+
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-002", fileName, warehouseId, "DISCARD");
+
+            assertThat(result.status()).isEqualTo("DISCARDED");
+            assertThat(result.mode()).isEqualTo("DISCARD");
+            verify(outboundSlipRepository, never()).saveAll(any());
+        }
+
+        @Test
+        @DisplayName("正常系 — IFX-002伝票番号が正常に採番される（OUT-YYYYMMDD-NNNN形式）")
+        void importFile_ifx002_slipNumberGenerated_correctly() {
+            setupTransactionTemplate();
+            String fileName = "ORD-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("order", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("order", fileName))
+                    .thenReturn(new ByteArrayInputStream("csv".getBytes(StandardCharsets.UTF_8)));
+
+            String[] header = {"partner_code", "planned_date", "product_code",
+                    "unit_type", "ordered_qty", "note"};
+            List<String[]> dataRows = List.<String[]>of(
+                    new String[]{"CUS-0001", "2026-03-22", "PRD-001", "CASE", "50", ""});
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, dataRows));
+
+            Warehouse warehouse = new Warehouse();
+            warehouse.setWarehouseCode("WH-001");
+            warehouse.setWarehouseName("WH 1");
+            setField(warehouse, "id", warehouseId);
+            when(warehouseRepository.findById(warehouseId)).thenReturn(Optional.of(warehouse));
+            when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of());
+            when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+            when(outboundSlipRepository.findMaxSequenceByDate("20260320")).thenReturn(3);
+
+            InboundPlanCsvProcessor.ValidationResult validationResult =
+                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            when(orderCsvProcessor.validate(any(), any(), any()))
+                    .thenReturn(validationResult);
+
+            final String[] capturedSlipNumber = new String[1];
+            when(orderCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
+                    .thenAnswer(inv -> {
+                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        capturedSlipNumber[0] = gen.generate(LocalDate.of(2026, 3, 20));
+                        return List.of();
+                    });
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+            when(blobStorageClient.moveToProcessed("order", fileName))
+                    .thenReturn("processed/path");
+
+            interfaceService.importFile("IFX-002", fileName, warehouseId, "SUCCESS_ONLY");
+
+            assertThat(capturedSlipNumber[0]).isEqualTo("OUT-20260320-0004");
+        }
+
+        @Test
+        @DisplayName("異常系 — IFX-002伝票番号が9999超過でBusinessRuleViolationException")
+        void importFile_ifx002_slipNumberExceeded_throwsException() {
+            setupTransactionTemplate();
+            String fileName = "ORD-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("order", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("order", fileName))
+                    .thenReturn(new ByteArrayInputStream("csv".getBytes(StandardCharsets.UTF_8)));
+
+            String[] header = {"partner_code", "planned_date", "product_code",
+                    "unit_type", "ordered_qty", "note"};
+            List<String[]> dataRows = List.<String[]>of(
+                    new String[]{"CUS-0001", "2026-03-22", "PRD-001", "CASE", "50", ""});
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, dataRows));
+
+            Warehouse warehouse = new Warehouse();
+            warehouse.setWarehouseCode("WH-001");
+            warehouse.setWarehouseName("WH 1");
+            setField(warehouse, "id", warehouseId);
+            when(warehouseRepository.findById(warehouseId)).thenReturn(Optional.of(warehouse));
+            when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of());
+            when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+            when(outboundSlipRepository.findMaxSequenceByDate(any())).thenReturn(9999);
+
+            InboundPlanCsvProcessor.ValidationResult validationResult =
+                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            when(orderCsvProcessor.validate(any(), any(), any()))
+                    .thenReturn(validationResult);
+
+            when(orderCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
+                    .thenAnswer(inv -> {
+                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        gen.generate(LocalDate.of(2026, 3, 20));
+                        return List.of();
+                    });
+
+            assertThatThrownBy(() -> interfaceService.importFile(
+                    "IFX-002", fileName, warehouseId, "SUCCESS_ONLY"))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("9999");
+        }
+
+        @Test
+        @DisplayName("異常系 — IFX-002 SUCCESS_ONLYでヘッダ検証エラーはBusinessRuleViolationException")
+        void importFile_ifx002_headerError_throwsException() {
+            when(blobStorageClient.getFileSize("order", "bad.csv")).thenReturn(100L);
+            when(blobStorageClient.downloadFile("order", "bad.csv"))
+                    .thenReturn(new ByteArrayInputStream("a,b\n1,2\n".getBytes()));
+
+            String[] header = {"a", "b"};
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, List.<String[]>of(new String[]{"1", "2"})));
+            org.mockito.Mockito.doThrow(
+                    new CsvParser.CsvParseException("WMS-E-IFX-003", "header error"))
+                    .when(orderCsvProcessor).validateHeader(header);
+
+            assertThatThrownBy(() -> interfaceService.importFile(
+                    "IFX-002", "bad.csv", 1L, "SUCCESS_ONLY"))
+                    .isInstanceOf(BusinessRuleViolationException.class);
+        }
     }
 }

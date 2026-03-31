@@ -11,6 +11,8 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.PartnerRepository;
 import com.wms.master.repository.ProductRepository;
 import com.wms.master.repository.WarehouseRepository;
+import com.wms.outbound.entity.OutboundSlip;
+import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.shared.security.WmsUserDetails;
@@ -59,7 +61,9 @@ public class InterfaceService {
     private final BlobStorageClient blobStorageClient;
     private final CsvParser csvParser;
     private final InboundPlanCsvProcessor inboundPlanCsvProcessor;
+    private final OrderCsvProcessor orderCsvProcessor;
     private final InboundSlipRepository inboundSlipRepository;
+    private final OutboundSlipRepository outboundSlipRepository;
     private final IfExecutionRepository ifExecutionRepository;
     private final PartnerRepository partnerRepository;
     private final ProductRepository productRepository;
@@ -100,7 +104,7 @@ public class InterfaceService {
 
         // ヘッダ検証
         try {
-            inboundPlanCsvProcessor.validateHeader(parseResult.getHeader());
+            validateHeaderByIfId(ifId, parseResult.getHeader());
         } catch (CsvParser.CsvParseException e) {
             return InterfaceValidationResponse.fileError(fileName, e.getErrorCode(), e.getMessage());
         }
@@ -112,7 +116,7 @@ public class InterfaceService {
         // L2〜L5バリデーション
         LocalDate businessDate = businessDateProvider.today();
         InboundPlanCsvProcessor.ValidationResult result =
-                inboundPlanCsvProcessor.validate(parseResult.getDataRows(), masterCache, businessDate);
+                validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         return InterfaceValidationResponse.success(fileName, result);
     }
@@ -143,7 +147,7 @@ public class InterfaceService {
         }
 
         try {
-            inboundPlanCsvProcessor.validateHeader(parseResult.getHeader());
+            validateHeaderByIfId(ifId, parseResult.getHeader());
         } catch (CsvParser.CsvParseException e) {
             throw new BusinessRuleViolationException("CSV_HEADER_ERROR", e.getMessage());
         }
@@ -153,18 +157,12 @@ public class InterfaceService {
         LocalDate businessDate = businessDateProvider.today();
 
         InboundPlanCsvProcessor.ValidationResult validationResult =
-                inboundPlanCsvProcessor.validate(parseResult.getDataRows(), masterCache, businessDate);
+                validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         // DB操作をトランザクション内で実行
         IfExecution execution = transactionTemplate.execute(status -> {
-            List<InboundSlip> slips = inboundPlanCsvProcessor.buildSlips(
-                    parseResult.getDataRows(), validationResult, masterCache, warehouseId,
-                    this::generateSlipNumber, businessDate, currentUserId);
-
-            if (!slips.isEmpty()) {
-                inboundSlipRepository.saveAll(slips);
-                log.info("IFX-001 import: {} slips created from {}", slips.size(), fileName);
-            }
+            saveSlipsByIfId(ifId, parseResult.getDataRows(), validationResult, masterCache,
+                    warehouseId, businessDate, currentUserId, fileName);
 
             return saveExecution(ifId, fileName, null,
                     validationResult.getTotalRows(), validationResult.getSuccessCount(),
@@ -241,15 +239,77 @@ public class InterfaceService {
         return ifExecutionRepository.save(execution);
     }
 
-    private String generateSlipNumber(LocalDate businessDate) {
-        String prefix = "INB-" + businessDate.format(DATE_FORMAT) + "-";
-        int maxSeq = inboundSlipRepository.findMaxSequenceByDate(prefix);
+    private void validateHeaderByIfId(String ifId, String[] header) {
+        if ("IFX-001".equals(ifId)) {
+            inboundPlanCsvProcessor.validateHeader(header);
+        } else if ("IFX-002".equals(ifId)) {
+            orderCsvProcessor.validateHeader(header);
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
+        }
+    }
+
+    private InboundPlanCsvProcessor.ValidationResult validateByIfId(
+            String ifId, List<String[]> dataRows,
+            InboundPlanCsvProcessor.MasterCache masterCache, LocalDate businessDate) {
+        if ("IFX-001".equals(ifId)) {
+            return inboundPlanCsvProcessor.validate(dataRows, masterCache, businessDate);
+        } else if ("IFX-002".equals(ifId)) {
+            return orderCsvProcessor.validate(dataRows, masterCache, businessDate);
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
+        }
+    }
+
+    private void saveSlipsByIfId(String ifId, List<String[]> dataRows,
+                                  InboundPlanCsvProcessor.ValidationResult validationResult,
+                                  InboundPlanCsvProcessor.MasterCache masterCache,
+                                  Long warehouseId, LocalDate businessDate,
+                                  Long currentUserId, String fileName) {
+        if ("IFX-001".equals(ifId)) {
+            List<InboundSlip> slips = inboundPlanCsvProcessor.buildSlips(
+                    dataRows, validationResult, masterCache, warehouseId,
+                    this::generateInboundSlipNumber, businessDate, currentUserId);
+            if (!slips.isEmpty()) {
+                inboundSlipRepository.saveAll(slips);
+                log.info("IFX-001 import: {} slips created from {}", slips.size(), fileName);
+            }
+        } else if ("IFX-002".equals(ifId)) {
+            List<OutboundSlip> slips = orderCsvProcessor.buildSlips(
+                    dataRows, validationResult, masterCache, warehouseId,
+                    this::generateOutboundSlipNumber, businessDate, currentUserId);
+            if (!slips.isEmpty()) {
+                outboundSlipRepository.saveAll(slips);
+                log.info("IFX-002 import: {} slips created from {}", slips.size(), fileName);
+            }
+        } else {
+            throw new BusinessRuleViolationException("INVALID_IF_TYPE",
+                    "不正なI/F種別です: " + ifId);
+        }
+    }
+
+    private String generateInboundSlipNumber(LocalDate businessDate) {
+        String dateStr = businessDate.format(DATE_FORMAT);
+        int maxSeq = inboundSlipRepository.findMaxSequenceByDate("INB-" + dateStr + "-");
         int nextSeq = maxSeq + 1;
         if (nextSeq > 9999) {
             throw new BusinessRuleViolationException("SLIP_NUMBER_EXCEEDED",
-                    "伝票番号が上限（9999）に達しました。日付: " + prefix);
+                    "伝票番号が上限（9999）に達しました。日付: INB-" + dateStr + "-");
         }
-        return String.format("%s%04d", prefix, nextSeq);
+        return String.format("INB-%s-%04d", dateStr, nextSeq);
+    }
+
+    private String generateOutboundSlipNumber(LocalDate businessDate) {
+        String dateStr = businessDate.format(DATE_FORMAT);
+        int maxSeq = outboundSlipRepository.findMaxSequenceByDate(dateStr);
+        int nextSeq = maxSeq + 1;
+        if (nextSeq > 9999) {
+            throw new BusinessRuleViolationException("SLIP_NUMBER_EXCEEDED",
+                    "伝票番号が上限（9999）に達しました。日付: OUT-" + dateStr + "-");
+        }
+        return String.format("OUT-%s-%04d", dateStr, nextSeq);
     }
 
     InboundPlanCsvProcessor.MasterCache buildMasterCache(List<String[]> dataRows,
