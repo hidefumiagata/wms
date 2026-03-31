@@ -340,6 +340,12 @@
         <button class="btn btn-secondary btn-sm" onclick="openReportDialog()">
           📄 日次集計レポート出力
         </button>
+        <button class="btn btn-secondary btn-sm" onclick="openUnreceivedDialog()">
+          📄 未入荷リスト（確定）
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="openUnshippedDialog()">
+          📄 未出荷リスト（確定）
+        </button>
       </div>
       <div class="record-count">全 <strong>45</strong> 件（1〜20件表示）</div>
     </div>
@@ -625,6 +631,72 @@
     </div>
   </div>
 
+  <!-- =================== 未入荷リスト（確定）出力ダイアログ =================== -->
+  <div class="dialog-overlay" id="unreceivedDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">📄 未入荷リスト（確定）出力 — RPT-006</div>
+        <button class="dialog-close" onclick="closeUnreceivedDialog()">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-desc">
+          出力する対象営業日を選択してください。<br>
+          日替処理が正常完了した営業日のみ選択できます。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+          <label style="font-size:12px;font-weight:600;color:var(--color-gray-600);">対象営業日 <span style="color:var(--color-error);">*</span></label>
+          <select style="padding:9px 12px;border:1.5px solid var(--color-gray-300);border-radius:var(--border-radius);font-family:var(--font-family);font-size:14px;background:var(--color-white);outline:none;">
+            <option value="">— 選択してください —</option>
+            <option value="2026-03-13" selected>2026/03/13（2026/03/13 20:05 実行済み）</option>
+            <option value="2026-03-12">2026/03/12（2026/03/12 20:02 実行済み）</option>
+            <option value="2026-03-11">2026/03/11（2026/03/11 21:05 実行済み）</option>
+            <option value="2026-03-10">2026/03/10（2026/03/10 20:00 実行済み）</option>
+          </select>
+        </div>
+        <div style="background:var(--color-info-bg);border:1px solid #BAE6FF;border-radius:var(--border-radius);padding:12px 14px;font-size:12px;color:#003A6D;">
+          <strong>出力内容:</strong> 日替処理で確定された営業日末時点の未入荷伝票一覧（仕入先別グルーピング・遅延日数付き）
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-ghost" onclick="closeUnreceivedDialog()">キャンセル</button>
+        <button class="btn btn-primary" onclick="downloadUnreceived()">📥 PDF出力</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =================== 未出荷リスト（確定）出力ダイアログ =================== -->
+  <div class="dialog-overlay" id="unshippedDialog">
+    <div class="dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">📄 未出荷リスト（確定）出力 — RPT-016</div>
+        <button class="dialog-close" onclick="closeUnshippedDialog()">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div class="dialog-desc">
+          出力する対象営業日を選択してください。<br>
+          日替処理が正常完了した営業日のみ選択できます。
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">
+          <label style="font-size:12px;font-weight:600;color:var(--color-gray-600);">対象営業日 <span style="color:var(--color-error);">*</span></label>
+          <select style="padding:9px 12px;border:1.5px solid var(--color-gray-300);border-radius:var(--border-radius);font-family:var(--font-family);font-size:14px;background:var(--color-white);outline:none;">
+            <option value="">— 選択してください —</option>
+            <option value="2026-03-13" selected>2026/03/13（2026/03/13 20:05 実行済み）</option>
+            <option value="2026-03-12">2026/03/12（2026/03/12 20:02 実行済み）</option>
+            <option value="2026-03-11">2026/03/11（2026/03/11 21:05 実行済み）</option>
+            <option value="2026-03-10">2026/03/10（2026/03/10 20:00 実行済み）</option>
+          </select>
+        </div>
+        <div style="background:var(--color-info-bg);border:1px solid #BAE6FF;border-radius:var(--border-radius);padding:12px 14px;font-size:12px;color:#003A6D;">
+          <strong>出力内容:</strong> 日替処理で確定された営業日末時点の未出荷伝票一覧（伝票番号別グルーピング）
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-ghost" onclick="closeUnshippedDialog()">キャンセル</button>
+        <button class="btn btn-primary" onclick="downloadUnshipped()">📥 PDF出力</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Toggle detail drawer
     const detailState = {};
@@ -673,6 +745,38 @@
       const toast = document.createElement('div');
       toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:600;background:#DEFBE6;border:1px solid #A7F0BA;border-radius:8px;padding:14px 20px;font-size:13px;color:#0E6027;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
       toast.innerHTML = '✓ 日次集計レポートのダウンロードを開始しました。';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Unreceived Dialog (RPT-006)
+    function openUnreceivedDialog() {
+      document.getElementById('unreceivedDialog').classList.add('open');
+    }
+    function closeUnreceivedDialog() {
+      document.getElementById('unreceivedDialog').classList.remove('open');
+    }
+    function downloadUnreceived() {
+      closeUnreceivedDialog();
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:600;background:#DEFBE6;border:1px solid #A7F0BA;border-radius:8px;padding:14px 20px;font-size:13px;color:#0E6027;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
+      toast.innerHTML = '✓ 未入荷リスト（確定）のダウンロードを開始しました。';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Unshipped Dialog (RPT-016)
+    function openUnshippedDialog() {
+      document.getElementById('unshippedDialog').classList.add('open');
+    }
+    function closeUnshippedDialog() {
+      document.getElementById('unshippedDialog').classList.remove('open');
+    }
+    function downloadUnshipped() {
+      closeUnshippedDialog();
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:600;background:#DEFBE6;border:1px solid #A7F0BA;border-radius:8px;padding:14px 20px;font-size:13px;color:#0E6027;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
+      toast.innerHTML = '✓ 未出荷リスト（確定）のダウンロードを開始しました。';
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 3000);
     }
