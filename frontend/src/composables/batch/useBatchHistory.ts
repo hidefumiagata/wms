@@ -1,4 +1,4 @@
-import { ref, reactive, watch, onUnmounted } from 'vue'
+import { ref, reactive, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
@@ -191,9 +191,7 @@ export function useBatchHistory() {
     downloadingReport.value = true
     const isRpt006 = activeReportType.value === 'rpt006'
     try {
-      const path = isRpt006
-        ? '/reports/unreceived-confirmed'
-        : '/reports/unshipped-confirmed'
+      const path = isRpt006 ? '/reports/unreceived-confirmed' : '/reports/unshipped-confirmed'
       const filenameBase = isRpt006
         ? `unreceived_confirmed_${reportBusinessDate.value.replace(/-/g, '')}`
         : `unshipped_confirmed_${reportBusinessDate.value.replace(/-/g, '')}`
