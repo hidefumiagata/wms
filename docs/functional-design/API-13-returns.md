@@ -250,7 +250,7 @@ flowchart TD
 ### 5. 補足事項
 
 - 在庫返品の在庫減算と伝票登録は同一トランザクション内で処理する。
-- `inventories` の更新は楽観的ロック（`@Version`）で並行更新の整合性を保証する。楽観的ロック失敗時はリトライ（最大3回）後、500 エラーとする。
+- `inventories` の更新は楽観的ロック（`@Version`）で並行更新の整合性を保証する。楽観的ロック失敗時は即座に 409 Conflict（`OPTIMISTIC_LOCK_CONFLICT`）を返す。
 - 登録時に `warehouse_code`, `warehouse_name`, `product_code`, `product_name`, `partner_code`, `partner_name` をマスタからコピーして保持する（マスタ変更後も伝票情報を保全するため）。
 - `created_by`, `updated_by` はJWTから取得したユーザーIDをセットする。
 - 返品伝票は登録後の修正・削除不可。誤登録の場合は在庫訂正（API-INV-004）で対応する。
