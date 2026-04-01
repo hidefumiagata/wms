@@ -1,9 +1,9 @@
 spring:
   # DataSource (Azure Database for PostgreSQL)
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -18,10 +18,12 @@ spring:
   # Flyway: schema migration only (no test/seed data)
   flyway:
     clean-disabled: true
+    locations:
+      - classpath:db/migration
 
 # JWT
 jwt:
-  secret-key: ${JWT_SECRET}
+  secret-key: ${JWT_SECRET_KEY}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
 
@@ -40,9 +42,23 @@ springdoc:
   swagger-ui:
     enabled: false
 
+# Actuator (restrict to health only in production)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+# Server
+server:
+  error:
+    include-stacktrace: never
+
 # Logging
 logging:
   level:
-    com.wms: INFO
+    root: ${LOG_LEVEL:INFO}
+    com.wms: ${LOG_LEVEL:INFO}
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN
