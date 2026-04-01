@@ -11018,7 +11018,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value(&quot;${wms.cors.allowed-origins}&quot;)
+    @Value(&quot;${cors.allowed-origins}&quot;)
     private List&lt;String&gt; allowedOrigins;
 
     @Bean
@@ -15271,8 +15271,8 @@ az acr credential show --name acrwms
 <tr><td><code>SPRING_DATASOURCE_URL</code></td><td>DB接続文字列</td><td>Yes</td><td><code>spring.datasource.url</code></td><td><code>jdbc:postgresql://localhost:5432/wms</code></td><td>(環境依存)</td></tr>
 <tr><td><code>SPRING_DATASOURCE_USERNAME</code></td><td>DBユーザー名</td><td>Yes</td><td><code>spring.datasource.username</code></td><td><code>wms</code></td><td><code>wmsadmin</code></td></tr>
 <tr><td><code>SPRING_DATASOURCE_PASSWORD</code></td><td>DBパスワード</td><td>Yes</td><td><code>spring.datasource.password</code></td><td><code>wms</code></td><td>(Secrets)</td></tr>
-<tr><td><code>JWT_SECRET</code></td><td>JWTトークン署名鍵</td><td>Yes</td><td><code>wms.jwt.secret</code></td><td><code>local-dev-secret-key-minimum-32-characters-long</code></td><td>(Secrets)</td></tr>
-<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン</td><td>No</td><td><code>wms.cors.allowed-origins</code></td><td><code>http://localhost:5173</code></td><td>Front Door URL</td></tr>
+<tr><td><code>JWT_SECRET</code></td><td>JWTトークン署名鍵</td><td>Yes</td><td><code>jwt.secret-key</code></td><td><code>local-dev-secret-key-minimum-32-characters-long</code></td><td>(Secrets)</td></tr>
+<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン</td><td>No</td><td><code>cors.allowed-origins</code></td><td><code>http://localhost:5173</code></td><td>Front Door URL</td></tr>
 <tr><td><code>AZURE_STORAGE_ACCOUNT_NAME</code></td><td>Blob Storageアカウント名（Managed Identity）</td><td>No</td><td><code>wms.storage.account-name</code></td><td><code>devstorageaccount</code></td><td><code>stwmsprdeast</code></td></tr>
 <tr><td><code>ACS_CONNECTION_STRING</code></td><td>Azure Communication Services接続文字列</td><td>Yes</td><td><code>wms.acs.connection-string</code></td><td>(環境依存)</td><td>(環境依存)</td></tr>
 <tr><td><code>ACS_SENDER_ADDRESS</code></td><td>メール送信元アドレス</td><td>No</td><td><code>wms.acs.sender-address</code></td><td><code>DoNotReply@...</code></td><td><code>DoNotReply@...</code></td></tr>
@@ -15453,11 +15453,21 @@ az acr credential show --name acrwms
 <tr><td><code>OUTBOUND_PARTNER_REQUIRED</code></td><td>422</td><td>出荷先IDが必要</td></tr>
 <tr><td><code>OUTBOUND_PRODUCT_SHIPMENT_STOPPED</code></td><td>422</td><td>商品が出荷停止</td></tr>
 <tr><td><code>PICKING_NOT_FOUND</code></td><td>404</td><td>ピッキング指示が見つからない</td></tr>
+<tr><td><code>PICKING_LINE_NOT_FOUND</code></td><td>422</td><td>指定されたlineIdが当該ピッキング指示に存在しない</td></tr>
+<tr><td><code>PICKING_QTY_EXCEEDED</code></td><td>422</td><td>ピッキング完了数量がピッキング予定数量を超えている</td></tr>
+<tr><td><code>PICKING_NO_ALLOCATION_CANDIDATES</code></td><td>422</td><td>ピッキング対象の引当明細が存在しない</td></tr>
 <tr><td><code>UNPACK_NOT_COMPLETED</code></td><td>422</td><td>ばらし指示未完了</td></tr>
 <tr><td><code>ALLOCATION_INSUFFICIENT</code></td><td>422</td><td>引当不足</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<h3>3.9 バッチ処理 (batch)</h3>
+<h3>3.9 帳票 (report)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>REPORT_PARAMETER_REQUIRED</code></td><td>422</td><td>必須パラメータの組み合わせが不足</td></tr>
+<p></tbody><br></table></p>
+<hr>
+<h3>3.10 バッチ処理 (batch)</h3>
 <table>
 <thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
 <tbody>
@@ -15465,14 +15475,14 @@ az acr credential show --name acrwms
 <tr><td><code>BATCH_EXECUTION_NOT_FOUND</code></td><td>404</td><td>バッチ実行が見つからない</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<h3>3.10 システムパラメータ (system-parameters)</h3>
+<h3>3.11 システムパラメータ (system-parameters)</h3>
 <table>
 <thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
 <tbody>
 <tr><td><code>PARAM_NOT_FOUND</code></td><td>404</td><td>パラメータが見つからない</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<h3>3.11 在庫引当 (allocation)</h3>
+<h3>3.12 在庫引当 (allocation)</h3>
 <table>
 <thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
 <tbody>
@@ -15482,7 +15492,7 @@ az acr credential show --name acrwms
 <tr><td><code>RELEASE_NOT_ALLOWED</code></td><td>422</td><td>引当解除不可（ピッキング指示作成済み）</td></tr>
 <p></tbody><br></table></p>
 <hr>
-<h3>3.12 返品管理 (returns)</h3>
+<h3>3.13 返品管理 (returns)</h3>
 <table>
 <thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
 <tbody>
@@ -15491,6 +15501,18 @@ az acr credential show --name acrwms
 <tr><td><code>RETURN_INSUFFICIENT_QUANTITY</code></td><td>422</td><td>返品数量が在庫数量超過</td></tr>
 <tr><td><code>RETURN_STOCKTAKE_LOCKED</code></td><td>422</td><td>棚卸中ロケーションは返品不可</td></tr>
 <p></tbody><br></table></p>
+<hr>
+<h3>3.14 I/F（インターフェース）(interfacing)</h3>
+<table>
+<thead><tr><th>エラーコード</th><th>HTTPステータス</th><th>説明</th></tr></thead>
+<tbody>
+<tr><td><code>FILE_SIZE_EXCEEDED</code></td><td>422</td><td>ファイルサイズ上限超過（50MB）</td></tr>
+<tr><td><code>CSV_PARSE_ERROR</code></td><td>422</td><td>CSVパースエラー</td></tr>
+<tr><td><code>CSV_HEADER_ERROR</code></td><td>422</td><td>CSVヘッダ不正</td></tr>
+<tr><td><code>SLIP_NUMBER_EXCEEDED</code></td><td>422</td><td>伝票番号が上限（9999）に到達</td></tr>
+<tr><td><code>INVALID_IF_TYPE</code></td><td>422</td><td>不正なI/F種別</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>注記</strong>: CSVの行レベルバリデーションエラーコード（<code>WMS-E-IFX-001</code>〜<code>WMS-E-IFX-501</code>）はAPIレスポンスの <code>rowErrors[].errors[].errorCode</code> として返却されるものであり、HTTPエラーレスポンスのエラーコードとは体系が異なる。詳細は <a href="09-interface-architecture.md" target="_blank">09-interface-architecture.md</a> を参照。</blockquote>
 <hr>
 <h2>4. エラーレスポンス形式</h2>
 <p>エラーレスポンスのJSON形式・例外クラス階層・GlobalExceptionHandlerマッピングの詳細については、<a href="../architecture-blueprint/08-common-infrastructure.md" target="_blank">architecture-blueprint/08-common-infrastructure.md</a> を参照してください。</p>
