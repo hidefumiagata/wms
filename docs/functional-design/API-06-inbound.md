@@ -952,7 +952,7 @@ flowchart TD
 ### 5. 補足事項
 
 - ヘッダー取得時に `SELECT FOR UPDATE` を使用し、同一伝票への並行入庫確定を防ぐ。
-- `inventories` の更新は楽観的ロック（Spring Data JPA の `@Version`）を使用する。楽観的ロック失敗時はリトライ（最大3回）後、500 エラーとする。
+- `inventories` の更新は楽観的ロック（Spring Data JPA の `@Version`）を使用する。新規在庫レコードのINSERT競合（`DataIntegrityViolationException`）時はUPDATEとして1回リトライする。楽観的ロック失敗（`ObjectOptimisticLockingFailureException`）時は即座に 409 Conflict（`OPTIMISTIC_LOCK_CONFLICT`）を返す。
 - `inventory_movements` は追記専用テーブル（UPDATE/DELETE 禁止）。
 - `inspected_qty = 0` の明細は在庫に影響を与えないため、入庫確定操作をブロックする（フロントエンド側でも 0件明細の確定ボタンを非活性とすること）。
 

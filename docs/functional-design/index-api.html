@@ -5188,7 +5188,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">ヘッダー取得時に <code>SELECT FOR UPDATE</code> を使用し、同一伝票への並行入庫確定を防ぐ。</li><li style="margin-left:0px"><code>inventories</code> の更新は楽観的ロック（Spring Data JPA の <code>@Version</code>）を使用する。楽観的ロック失敗時はリトライ（最大3回）後、500 エラーとする。</li><li style="margin-left:0px"><code>inventory_movements</code> は追記専用テーブル（UPDATE/DELETE 禁止）。</li><li style="margin-left:0px"><code>inspected_qty = 0</code> の明細は在庫に影響を与えないため、入庫確定操作をブロックする（フロントエンド側でも 0件明細の確定ボタンを非活性とすること）。</li></ul>
+<ul><li style="margin-left:0px">ヘッダー取得時に <code>SELECT FOR UPDATE</code> を使用し、同一伝票への並行入庫確定を防ぐ。</li><li style="margin-left:0px"><code>inventories</code> の更新は楽観的ロック（Spring Data JPA の <code>@Version</code>）を使用する。新規在庫レコードのINSERT競合（<code>DataIntegrityViolationException</code>）時はUPDATEとして1回リトライする。楽観的ロック失敗（<code>ObjectOptimisticLockingFailureException</code>）時は即座に 409 Conflict（<code>OPTIMISTIC_LOCK_CONFLICT</code>）を返す。</li><li style="margin-left:0px"><code>inventory_movements</code> は追記専用テーブル（UPDATE/DELETE 禁止）。</li><li style="margin-left:0px"><code>inspected_qty = 0</code> の明細は在庫に影響を与えないため、入庫確定操作をブロックする（フロントエンド側でも 0件明細の確定ボタンを非活性とすること）。</li></ul>
 <hr>
 <hr>
 <h2>API-INB-010: 入荷実績照会</h2>
@@ -10521,7 +10521,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">在庫返品の在庫減算と伝票登録は同一トランザクション内で処理する。</li><li style="margin-left:0px"><code>inventories</code> の更新は楽観的ロック（<code>@Version</code>）で並行更新の整合性を保証する。楽観的ロック失敗時はリトライ（最大3回）後、500 エラーとする。</li><li style="margin-left:0px">登録時に <code>warehouse_code</code>, <code>warehouse_name</code>, <code>product_code</code>, <code>product_name</code>, <code>partner_code</code>, <code>partner_name</code> をマスタからコピーして保持する（マスタ変更後も伝票情報を保全するため）。</li><li style="margin-left:0px"><code>created_by</code>, <code>updated_by</code> はJWTから取得したユーザーIDをセットする。</li><li style="margin-left:0px">返品伝票は登録後の修正・削除不可。誤登録の場合は在庫訂正（API-INV-004）で対応する。</li><li style="margin-left:0px"><code>inventory_movements</code> は追記専用テーブル（UPDATE/DELETE 禁止）。</li></ul>
+<ul><li style="margin-left:0px">在庫返品の在庫減算と伝票登録は同一トランザクション内で処理する。</li><li style="margin-left:0px"><code>inventories</code> の更新は楽観的ロック（<code>@Version</code>）で並行更新の整合性を保証する。楽観的ロック失敗時は即座に 409 Conflict（<code>OPTIMISTIC_LOCK_CONFLICT</code>）を返す。</li><li style="margin-left:0px">登録時に <code>warehouse_code</code>, <code>warehouse_name</code>, <code>product_code</code>, <code>product_name</code>, <code>partner_code</code>, <code>partner_name</code> をマスタからコピーして保持する（マスタ変更後も伝票情報を保全するため）。</li><li style="margin-left:0px"><code>created_by</code>, <code>updated_by</code> はJWTから取得したユーザーIDをセットする。</li><li style="margin-left:0px">返品伝票は登録後の修正・削除不可。誤登録の場合は在庫訂正（API-INV-004）で対応する。</li><li style="margin-left:0px"><code>inventory_movements</code> は追記専用テーブル（UPDATE/DELETE 禁止）。</li></ul>
 <hr>
 <hr>
 <h2>API-RTN-002: 返品一覧取得</h2>
