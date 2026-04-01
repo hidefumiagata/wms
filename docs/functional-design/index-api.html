@@ -7360,9 +7360,10 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>HTTPステータス</th><th>エラーコード</th><th>説明</th></tr></thead>
 <tbody>
-<tr><td><code>400</code></td><td><code>VALIDATION_ERROR</code></td><td><code>qtyPicked</code> が <code>qty_to_pick</code> を超えている等</td></tr>
 <tr><td><code>404</code></td><td><code>PICKING_NOT_FOUND</code></td><td>指定IDのピッキング指示が存在しない</td></tr>
 <tr><td><code>409</code></td><td><code>OUTBOUND_INVALID_STATUS</code></td><td>既に <code>COMPLETED</code> 状態のピッキング指示</td></tr>
+<tr><td><code>422</code></td><td><code>PICKING_LINE_NOT_FOUND</code></td><td>指定された <code>lineId</code> が当該ピッキング指示に存在しない</td></tr>
+<tr><td><code>422</code></td><td><code>PICKING_QTY_EXCEEDED</code></td><td><code>qtyPicked</code> が <code>qty_to_pick</code> を超えている</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>4. 業務ロジック</h3>
@@ -7372,7 +7373,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     FIND -->|OK| CHECK_STATUS{status == COMPLETED?}
     CHECK_STATUS -->|Yes| ERR_STATUS[409 OUTBOUND_INVALID_STATUS]
     CHECK_STATUS -->|No| VALIDATE_LINES[リクエストの lines バリデーション\n当該指示に属するlineIdか確認\nqtyPicked <= qty_to_pick]
-    VALIDATE_LINES -->|NG| ERR_VAL[400 VALIDATION_ERROR]
+    VALIDATE_LINES -->|lineId不正| ERR_LINE[422 PICKING_LINE_NOT_FOUND]
+    VALIDATE_LINES -->|数量超過| ERR_QTY[422 PICKING_QTY_EXCEEDED]
     VALIDATE_LINES -->|OK| UPDATE_PIL[picking_instruction_lines 更新\nqty_picked = リクエスト値\nline_status = COMPLETED]
     UPDATE_PIL --> CHECK_FIRST{初めての完了登録?}
     CHECK_FIRST -->|Yes| SET_IN_PROGRESS[picking_instructions.status\n= IN_PROGRESS]
@@ -7388,8 +7390,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>リクエストの <code>lineId</code> は当該ピッキング指示に属する明細IDでなければならない</td><td><code>VALIDATION_ERROR</code></td></tr>
-<tr><td>2</td><td><code>qtyPicked</code> は <code>qty_to_pick</code> を超えることはできない</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>1</td><td>リクエストの <code>lineId</code> は当該ピッキング指示に属する明細IDでなければならない</td><td><code>PICKING_LINE_NOT_FOUND</code></td></tr>
+<tr><td>2</td><td><code>qtyPicked</code> は <code>qty_to_pick</code> を超えることはできない</td><td><code>PICKING_QTY_EXCEEDED</code></td></tr>
 <tr><td>3</td><td>最初の明細チェックが記録された時点で <code>picking_instructions.status</code> を <code>IN_PROGRESS</code> に更新する</td><td>—</td></tr>
 <tr><td>4</td><td>全明細が <code>COMPLETED</code> になった時点で <code>picking_instructions.status</code> を <code>COMPLETED</code> に更新し、<code>completed_at</code>、<code>completed_by</code> を記録する</td><td>—</td></tr>
 <tr><td>5</td><td>全明細完了時に、当該ピッキング指示に紐づく全ての <code>outbound_slips.status</code> を <code>PICKING_COMPLETED</code> に更新する</td><td>—</td></tr>
@@ -7625,6 +7627,9 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>PLANNED_DATE_TOO_EARLY</code></td><td>422</td><td>出荷予定日が現在営業日より前</td><td>OUT-002</td></tr>
 <tr><td><code>DUPLICATE_PRODUCT_IN_LINES</code></td><td>409</td><td>同一伝票内に同じ商品が複数指定されている</td><td>OUT-002</td></tr>
 <tr><td><code>PICKING_NOT_FOUND</code></td><td>404</td><td>ピッキング指示が見つからない</td><td>OUT-013, OUT-014</td></tr>
+<tr><td><code>PICKING_LINE_NOT_FOUND</code></td><td>422</td><td>指定された <code>lineId</code> が当該ピッキング指示に存在しない</td><td>OUT-014</td></tr>
+<tr><td><code>PICKING_QTY_EXCEEDED</code></td><td>422</td><td>ピッキング完了数量がピッキング予定数量を超えている</td><td>OUT-014</td></tr>
+<tr><td><code>PICKING_NO_ALLOCATION_CANDIDATES</code></td><td>422</td><td>ピッキング対象の引当明細が存在しない</td><td>OUT-012</td></tr>
 <tr><td><code>UNPACK_NOT_COMPLETED</code></td><td>409</td><td>未完了のばらし指示が存在するためピッキング指示作成不可</td><td>OUT-012</td></tr>
 <tr><td><code>ALLOCATION_INSUFFICIENT</code></td><td>422</td><td>在庫引当に必要な在庫が不足</td><td>API-ALL-002（引当実行）</td></tr>
 <tr><td><code>INVENTORY_INSUFFICIENT</code></td><td>422</td><td>出荷完了時の在庫減算で在庫不足</td><td>OUT-022</td></tr>
@@ -8736,7 +8741,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <h4>4. 業務ロジック</h4>
 <div class="mermaid">flowchart TD
     START([開始]) --> VALIDATE{stocktakeId または\nbuildingId のどちらか指定?}
-    VALIDATE -->|両方なし| ERR_VAL[400 VALIDATION_ERROR]
+    VALIDATE -->|両方なし| ERR_VAL[422 REPORT_PARAMETER_REQUIRED]
     VALIDATE -->|stocktakeId 指定| FIND_STK{棚卸 存在確認}
     VALIDATE -->|buildingId 指定| FIND_BLD{棟 存在確認}
 
@@ -8754,7 +8759,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td><code>stocktakeId</code> と <code>buildingId</code> の両方が未指定の場合は 400 を返す</td><td><code>VALIDATION_ERROR</code></td></tr>
+<tr><td>1</td><td><code>stocktakeId</code> と <code>buildingId</code> の両方が未指定の場合は 422 を返す</td><td><code>REPORT_PARAMETER_REQUIRED</code></td></tr>
 <tr><td>2</td><td><code>stocktakeId</code> 指定時に棚卸が存在しない場合は 404 を返す</td><td><code>STOCKTAKE_NOT_FOUND</code></td></tr>
 <tr><td>3</td><td><code>buildingId</code> 指定時に棟が存在しない場合は 404 を返す</td><td><code>BUILDING_NOT_FOUND</code></td></tr>
 <tr><td>4</td><td>結果はロケーションコード昇順でソートして返す（現場でのピッキング動線に合わせる）</td><td>—</td></tr>
