@@ -1,0 +1,48 @@
+spring:
+  # DataSource (Azure Database for PostgreSQL)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # JPA
+  jpa:
+    show-sql: false
+
+  # Flyway: schema migration only (no test/seed data)
+  flyway:
+    clean-disabled: true
+
+# JWT
+jwt:
+  secret-key: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000}
+
+# Cookie
+cookie:
+  secure: true
+
+# CORS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# Springdoc OpenAPI (disabled in production)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Logging
+logging:
+  level:
+    com.wms: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
