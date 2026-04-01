@@ -14,8 +14,8 @@ Container Apps に設定する環境変数。バックエンド Spring Boot ア�
 | `SPRING_DATASOURCE_URL` | DB接続文字列 | Yes | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/wms` | (環境依存) |
 | `SPRING_DATASOURCE_USERNAME` | DBユーザー名 | Yes | `spring.datasource.username` | `wms` | `wmsadmin` |
 | `SPRING_DATASOURCE_PASSWORD` | DBパスワード | Yes | `spring.datasource.password` | `wms` | (Secrets) |
-| `JWT_SECRET` | JWTトークン署名鍵 | Yes | `wms.jwt.secret` | `local-dev-secret-key-minimum-32-characters-long` | (Secrets) |
-| `CORS_ALLOWED_ORIGINS` | CORS許可オリジン | No | `wms.cors.allowed-origins` | `http://localhost:5173` | Front Door URL |
+| `JWT_SECRET` | JWTトークン署名鍵 | Yes | `jwt.secret-key` | `local-dev-secret-key-minimum-32-characters-long` | (Secrets) |
+| `CORS_ALLOWED_ORIGINS` | CORS許可オリジン | No | `cors.allowed-origins` | `http://localhost:5173` | Front Door URL |
 | `AZURE_STORAGE_ACCOUNT_NAME` | Blob Storageアカウント名（Managed Identity） | No | `wms.storage.account-name` | `devstorageaccount` | `stwmsprdeast` |
 | `ACS_CONNECTION_STRING` | Azure Communication Services接続文字列 | Yes | `wms.acs.connection-string` | (環境依存) | (環境依存) |
 | `ACS_SENDER_ADDRESS` | メール送信元アドレス | No | `wms.acs.sender-address` | `DoNotReply@...` | `DoNotReply@...` |

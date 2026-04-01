@@ -2004,7 +2004,7 @@ import java.util.List;
 @Configuration
 public class CorsConfig {
 
-    @Value("${wms.cors.allowed-origins}")
+    @Value("${cors.allowed-origins}")
     private List<String> allowedOrigins;
 
     @Bean
