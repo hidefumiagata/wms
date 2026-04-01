@@ -1,0 +1,23 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration,classpath:db/testdata/common
+
+jwt:
+  secret-key: test-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
+  access-token-expiration: 3600000
+  refresh-token-expiration: 86400000
+
+cookie:
+  secure: false
+
+cors:
+  allowed-origins: http://localhost:5173
+
+server:
+  forward-headers-strategy: none

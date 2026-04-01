@@ -19,6 +19,7 @@
       show-icon
       :closable="false"
       class="change-password-page__banner"
+      data-testid="error-banner"
     />
 
     <el-form
@@ -35,6 +36,7 @@
           size="large"
           show-password
           autocomplete="current-password"
+          data-testid="current-password"
         />
       </el-form-item>
 
@@ -45,6 +47,7 @@
           size="large"
           show-password
           autocomplete="new-password"
+          data-testid="new-password"
         />
         <!-- パスワード強度インジケーター -->
         <div v-if="form.newPassword" class="change-password-page__strength">
@@ -68,6 +71,7 @@
           size="large"
           show-password
           autocomplete="new-password"
+          data-testid="confirm-password"
         />
       </el-form-item>
 
@@ -77,6 +81,7 @@
         :loading="loading"
         native-type="submit"
         style="width: 100%; margin-top: 8px"
+        data-testid="change-password-submit"
       >
         {{ t('auth.changePasswordButton') }}
       </el-button>
