@@ -1002,23 +1002,35 @@ public final class TraceContext {
 
 主要な業務操作をAOPで横断的にロギングする。
 
+#### ポイントカットのスコープ
+
+ポイントカット式 `execution(* com.wms..service.*Service.*(..))` は `com.wms` 配下の全モジュールの `service` パッケージに属する `*Service` クラスをインターセプトする。`shared` パッケージ配下の Service も**意図的に含む**。
+
+| パッケージ例 | 対象 |
+|-------------|------|
+| `com.wms.master.service.*Service` | マスタ系（倉庫・商品・ロケーション等） |
+| `com.wms.system.service.*Service` | システム系（ユーザー・認証・システムパラメータ） |
+| `com.wms.inbound.service.*Service` | 入荷系 |
+| `com.wms.outbound.service.*Service` | 出荷系 |
+| `com.wms.inventory.service.*Service` | 在庫系 |
+| `com.wms.shared.service.*Service` | 共通基盤（将来追加時も自動的に含まれる） |
+
+> **注意**: `service` サブパッケージ（例: `com.wms.xxx.service.helper.XxxHelper`）は `*Service` 命名でない限りマッチしない。クラス名が `*Service` で終わる場合のみインターセプト対象となる。
+
 ```java
 package com.wms.shared.logging;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@Slf4j
 public class ServiceLoggingAspect {
-
-    private static final Logger log =
-        LoggerFactory.getLogger(ServiceLoggingAspect.class);
 
     /**
      * Service 層の public メソッドの実行時間をログ出力する。
@@ -1030,27 +1042,33 @@ public class ServiceLoggingAspect {
             .getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        // モジュール名を MDC に設定
+        // モジュール名を MDC に設定（ネスト対応: 前の値を退避・復元）
         String module = extractModule(
             joinPoint.getTarget().getClass().getPackageName());
+        String previousModule = MDC.get("module");
         MDC.put("module", module);
 
         log.info("START {}.{}", className, methodName);
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         try {
             Object result = joinPoint.proceed();
-            long elapsed = System.currentTimeMillis() - start;
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info("END {}.{} [{}ms]",
-                className, methodName, elapsed);
+                className, methodName, elapsedMs);
             return result;
-        } catch (Exception ex) {
-            long elapsed = System.currentTimeMillis() - start;
+        } catch (Throwable ex) {
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn("FAIL {}.{} [{}ms] - {}",
-                className, methodName, elapsed, ex.getMessage());
+                className, methodName, elapsedMs,
+                PiiMasker.mask(ex.getMessage()));
             throw ex;
         } finally {
-            MDC.remove("module");
+            if (previousModule != null) {
+                MDC.put("module", previousModule);
+            } else {
+                MDC.remove("module");
+            }
         }
     }
 
