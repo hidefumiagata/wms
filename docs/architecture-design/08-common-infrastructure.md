@@ -1020,20 +1020,17 @@ public final class TraceContext {
 ```java
 package com.wms.shared.logging;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@Slf4j
 public class ServiceLoggingAspect {
-
-    private static final Logger log =
-        LoggerFactory.getLogger(ServiceLoggingAspect.class);
 
     /**
      * Service 層の public メソッドの実行時間をログ出力する。
@@ -1045,27 +1042,33 @@ public class ServiceLoggingAspect {
             .getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        // モジュール名を MDC に設定
+        // モジュール名を MDC に設定（ネスト対応: 前の値を退避・復元）
         String module = extractModule(
             joinPoint.getTarget().getClass().getPackageName());
+        String previousModule = MDC.get("module");
         MDC.put("module", module);
 
         log.info("START {}.{}", className, methodName);
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         try {
             Object result = joinPoint.proceed();
-            long elapsed = System.currentTimeMillis() - start;
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info("END {}.{} [{}ms]",
-                className, methodName, elapsed);
+                className, methodName, elapsedMs);
             return result;
-        } catch (Exception ex) {
-            long elapsed = System.currentTimeMillis() - start;
+        } catch (Throwable ex) {
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn("FAIL {}.{} [{}ms] - {}",
-                className, methodName, elapsed, ex.getMessage());
+                className, methodName, elapsedMs,
+                PiiMasker.mask(ex.getMessage()));
             throw ex;
         } finally {
-            MDC.remove("module");
+            if (previousModule != null) {
+                MDC.put("module", previousModule);
+            } else {
+                MDC.remove("module");
+            }
         }
     }
 

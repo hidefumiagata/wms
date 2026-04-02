@@ -10174,20 +10174,17 @@ public final class TraceContext {
 <blockquote><strong>注意</strong>: <code>service</code> サブパッケージ（例: <code>com.wms.xxx.service.helper.XxxHelper</code>）は <code>*Service</code> 命名でない限りマッチしない。クラス名が <code>*Service</code> で終わる場合のみインターセプト対象となる。</blockquote>
 <pre><code class="lang-java">package com.wms.shared.logging;
 
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
+@Slf4j
 public class ServiceLoggingAspect {
-
-    private static final Logger log =
-        LoggerFactory.getLogger(ServiceLoggingAspect.class);
 
     /**
      * Service 層の public メソッドの実行時間をログ出力する。
@@ -10199,27 +10196,33 @@ public class ServiceLoggingAspect {
             .getSimpleName();
         String methodName = joinPoint.getSignature().getName();
 
-        // モジュール名を MDC に設定
+        // モジュール名を MDC に設定（ネスト対応: 前の値を退避・復元）
         String module = extractModule(
             joinPoint.getTarget().getClass().getPackageName());
+        String previousModule = MDC.get(&quot;module&quot;);
         MDC.put(&quot;module&quot;, module);
 
         log.info(&quot;START {}.{}&quot;, className, methodName);
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         try {
             Object result = joinPoint.proceed();
-            long elapsed = System.currentTimeMillis() - start;
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.info(&quot;END {}.{} [{}ms]&quot;,
-                className, methodName, elapsed);
+                className, methodName, elapsedMs);
             return result;
-        } catch (Exception ex) {
-            long elapsed = System.currentTimeMillis() - start;
+        } catch (Throwable ex) {
+            long elapsedMs = (System.nanoTime() - start) / 1_000_000;
             log.warn(&quot;FAIL {}.{} [{}ms] - {}&quot;,
-                className, methodName, elapsed, ex.getMessage());
+                className, methodName, elapsedMs,
+                PiiMasker.mask(ex.getMessage()));
             throw ex;
         } finally {
-            MDC.remove(&quot;module&quot;);
+            if (previousModule != null) {
+                MDC.put(&quot;module&quot;, previousModule);
+            } else {
+                MDC.remove(&quot;module&quot;);
+            }
         }
     }
 

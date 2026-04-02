@@ -15,6 +15,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
+import org.springframework.aop.support.AopUtils;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -88,10 +90,9 @@ class ServiceLoggingAspectIntegrationTest {
     }
 
     @Test
-    @DisplayName("AOPプロキシが適用されている（CGLIBプロキシ）")
+    @DisplayName("AOPプロキシが適用されている")
     void serviceBean_isAopProxy() {
-        String className = systemParameterService.getClass().getName();
-        assertThat(className).contains("$$SpringCGLIB$$");
+        assertThat(AopUtils.isAopProxy(systemParameterService)).isTrue();
     }
 
     /**
