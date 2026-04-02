@@ -1002,6 +1002,21 @@ public final class TraceContext {
 
 主要な業務操作をAOPで横断的にロギングする。
 
+#### ポイントカットのスコープ
+
+ポイントカット式 `execution(* com.wms..service.*Service.*(..))` は `com.wms` 配下の全モジュールの `service` パッケージに属する `*Service` クラスをインターセプトする。`shared` パッケージ配下の Service も**意図的に含む**。
+
+| パッケージ例 | 対象 |
+|-------------|------|
+| `com.wms.master.service.*Service` | マスタ系（倉庫・商品・ロケーション等） |
+| `com.wms.system.service.*Service` | システム系（ユーザー・認証・システムパラメータ） |
+| `com.wms.inbound.service.*Service` | 入荷系 |
+| `com.wms.outbound.service.*Service` | 出荷系 |
+| `com.wms.inventory.service.*Service` | 在庫系 |
+| `com.wms.shared.service.*Service` | 共通基盤（将来追加時も自動的に含まれる） |
+
+> **注意**: `service` サブパッケージ（例: `com.wms.xxx.service.helper.XxxHelper`）は `*Service` 命名でない限りマッチしない。クラス名が `*Service` で終わる場合のみインターセプト対象となる。
+
 ```java
 package com.wms.shared.logging;
 

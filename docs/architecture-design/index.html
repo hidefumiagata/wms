@@ -10159,6 +10159,19 @@ public final class TraceContext {
 &lt;/configuration&gt;</code></pre>
 <h3>4.3 バックエンド — 操作ログAOP</h3>
 <p>主要な業務操作をAOPで横断的にロギングする。</p>
+<h4>ポイントカットのスコープ</h4>
+<p>ポイントカット式 <code>execution(* com.wms..service.*Service.*(..))</code> は <code>com.wms</code> 配下の全モジュールの <code>service</code> パッケージに属する <code>*Service</code> クラスをインターセプトする。<code>shared</code> パッケージ配下の Service も<strong>意図的に含む</strong>。</p>
+<table>
+<thead><tr><th>パッケージ例</th><th>対象</th></tr></thead>
+<tbody>
+<tr><td><code>com.wms.master.service.*Service</code></td><td>マスタ系（倉庫・商品・ロケーション等）</td></tr>
+<tr><td><code>com.wms.system.service.*Service</code></td><td>システム系（ユーザー・認証・システムパラメータ）</td></tr>
+<tr><td><code>com.wms.inbound.service.*Service</code></td><td>入荷系</td></tr>
+<tr><td><code>com.wms.outbound.service.*Service</code></td><td>出荷系</td></tr>
+<tr><td><code>com.wms.inventory.service.*Service</code></td><td>在庫系</td></tr>
+<tr><td><code>com.wms.shared.service.*Service</code></td><td>共通基盤（将来追加時も自動的に含まれる）</td></tr>
+<p></tbody><br></table></p>
+<blockquote><strong>注意</strong>: <code>service</code> サブパッケージ（例: <code>com.wms.xxx.service.helper.XxxHelper</code>）は <code>*Service</code> 命名でない限りマッチしない。クラス名が <code>*Service</code> で終わる場合のみインターセプト対象となる。</blockquote>
 <pre><code class="lang-java">package com.wms.shared.logging;
 
 import org.aspectj.lang.ProceedingJoinPoint;
