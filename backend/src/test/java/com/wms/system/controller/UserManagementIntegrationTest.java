@@ -12,12 +12,17 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.stream.StreamSupport;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("マスタ結合テスト: ユーザー管理")
 class UserManagementIntegrationTest extends IntegrationTestBase {
 
     private static final String BASE_URL = "/api/v1/master/users";
+    private static final String ADMIN_CODE = "admin001";
+    private static final String ADMIN_PASSWORD = "Admin@1234";
+    private static final String DEFAULT_TEST_PASSWORD = "Password@123";
 
     private HttpHeaders adminHeaders;
 
@@ -26,13 +31,11 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
         // Reset test data state
         jdbcTemplate.update(
                 "DELETE FROM users WHERE user_code LIKE 'intg_test_%'");
-        jdbcTemplate.update(
-                "UPDATE users SET failed_login_count = 0, locked = false, locked_at = NULL WHERE user_code = 'locked_user'");
-        // Ensure locked_user is locked for unlock tests
+        // Ensure locked_user is locked for unlock tests (M-1: single statement)
         jdbcTemplate.update(
                 "UPDATE users SET failed_login_count = 5, locked = true, locked_at = now() WHERE user_code = 'locked_user'");
 
-        adminHeaders = loginAndGetHeaders("admin001", "Admin@1234");
+        adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
     // ========================================================
@@ -72,18 +75,24 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             assertThat(json.get("locked").asBoolean()).isFalse();
             assertThat(json.get("passwordChangeRequired").asBoolean()).isTrue();
 
-            // DB検証: BCryptハッシュ形式
+            // S-1: レスポンスにpasswordHash未含有
+            assertThat(json.has("passwordHash")).isFalse();
+            assertThat(json.has("password")).isFalse();
+
+            // DB検証: BCryptハッシュ形式 (F#11: $2a$ or $2b$ 対応)
             String hash = jdbcTemplate.queryForObject(
                     "SELECT password_hash FROM users WHERE user_code = 'intg_test_01'",
                     String.class);
-            assertThat(hash).startsWith("$2a$");
+            assertThat(hash).matches("^\\$2[ab]\\$.*");
             assertThat(hash).isNotEqualTo("Initial@123");
 
-            // DB検証: フラグ値
-            Boolean pwChangeRequired = jdbcTemplate.queryForObject(
-                    "SELECT password_change_required FROM users WHERE user_code = 'intg_test_01'",
-                    Boolean.class);
-            assertThat(pwChangeRequired).isTrue();
+            // DB検証: フラグ値 (SC-USR01 DB#2)
+            var dbRow = jdbcTemplate.queryForMap(
+                    "SELECT password_change_required, is_active, locked, failed_login_count FROM users WHERE user_code = 'intg_test_01'");
+            assertThat(dbRow.get("password_change_required")).isEqualTo(true);
+            assertThat(dbRow.get("is_active")).isEqualTo(true);
+            assertThat(dbRow.get("locked")).isEqualTo(false);
+            assertThat(dbRow.get("failed_login_count")).isEqualTo(0);
         }
 
         @Test
@@ -121,7 +130,10 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
+            // M-3: レスポンスボディ検証
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("code")).isTrue();
         }
 
         @Test
@@ -135,7 +147,10 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
+            // M-3: レスポンスボディ検証
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("code")).isTrue();
         }
 
         @Test
@@ -153,7 +168,10 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
+            // M-3: レスポンスボディ検証
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("code")).isTrue();
         }
     }
 
@@ -184,6 +202,9 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             assertThat(json.has("version")).isTrue();
             assertThat(json.has("createdAt")).isTrue();
             assertThat(json.has("updatedAt")).isTrue();
+            // S-1: パスワードハッシュ未含有
+            assertThat(json.has("passwordHash")).isFalse();
+            assertThat(json.has("password")).isFalse();
         }
 
         @Test
@@ -235,6 +256,8 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             assertThat(json.get("fullName").asText()).isEqualTo("更新後ユーザー");
             assertThat(json.get("email").asText()).isEqualTo("updated@example.com");
             assertThat(json.get("role").asText()).isEqualTo("WAREHOUSE_MANAGER");
+            // M-2: versionインクリメント検証
+            assertThat(json.get("version").asInt()).isEqualTo(version + 1);
         }
 
         @Test
@@ -332,6 +355,9 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
                     BASE_URL + "/999999", HttpMethod.PUT, request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            // S-6: エラーコード検証
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("USER_NOT_FOUND");
         }
     }
 
@@ -416,6 +442,29 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_SELF");
         }
+
+        @Test
+        @DisplayName("楽観的ロック競合 → 409 OPTIMISTIC_LOCK_CONFLICT")
+        void toggleActive_staleVersion_returns409() throws Exception {
+            Long userId = createTestUser("intg_test_toggle_lock", "トグルロックテスト",
+                    "toggle_lock@example.com", "WAREHOUSE_STAFF");
+
+            String body = """
+                    {
+                        "isActive": false,
+                        "version": 999
+                    }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + userId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
+        }
     }
 
     // ========================================================
@@ -446,8 +495,13 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             Integer failedCount = jdbcTemplate.queryForObject(
                     "SELECT failed_login_count FROM users WHERE user_code = 'locked_user'",
                     Integer.class);
+            // F#7: locked_at = null の検証
+            Object lockedAt = jdbcTemplate.queryForObject(
+                    "SELECT locked_at FROM users WHERE user_code = 'locked_user'",
+                    Object.class);
             assertThat(locked).isFalse();
             assertThat(failedCount).isZero();
+            assertThat(lockedAt).isNull();
         }
 
         @Test
@@ -456,11 +510,12 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             Long lockedUserId = jdbcTemplate.queryForObject(
                     "SELECT id FROM users WHERE user_code = 'locked_user'", Long.class);
 
-            // アンロック
+            // M-4: アンロックのステータス検証
             HttpEntity<String> request = new HttpEntity<>(null, adminHeaders);
-            restTemplate.exchange(
+            ResponseEntity<String> unlockResponse = restTemplate.exchange(
                     BASE_URL + "/" + lockedUserId + "/unlock",
                     HttpMethod.PATCH, request, String.class);
+            assertThat(unlockResponse.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 
             // ログイン成功確認
             ResponseEntity<String> loginResponse = loginRaw("locked_user", "Correct@1234");
@@ -476,6 +531,21 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
                     HttpMethod.PATCH, request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("非ロック状態のユーザーをアンロック → 204（冪等）")
+        void unlock_alreadyUnlocked_returns204() throws Exception {
+            // wh_staff01 is not locked
+            Long staffId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE user_code = 'wh_staff01'", Long.class);
+
+            HttpEntity<String> request = new HttpEntity<>(null, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + staffId + "/unlock",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         }
     }
 
@@ -516,14 +586,10 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
             JsonNode json = parseJson(response.getBody());
             JsonNode content = json.get("content");
             assertThat(content.size()).isGreaterThanOrEqualTo(1);
-            boolean found = false;
-            for (JsonNode user : content) {
-                if ("admin001".equals(user.get("userCode").asText())) {
-                    found = true;
-                    break;
-                }
-            }
-            assertThat(found).isTrue();
+            // m-2: AssertJイディオム使用
+            assertThat(StreamSupport.stream(content.spliterator(), false)
+                    .anyMatch(n -> "admin001".equals(n.get("userCode").asText())))
+                    .isTrue();
         }
 
         @Test
@@ -709,6 +775,81 @@ class UserManagementIntegrationTest extends IntegrationTestBase {
                     """;
 
             ResponseEntity<String> response = postJson(BASE_URL, body, managerHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_MANAGERがユーザー詳細取得 → 403")
+        void get_asManager_returns403() throws Exception {
+            HttpHeaders managerHeaders = loginAndGetHeaders("wh_manager01", "Manager@1234");
+            Long adminId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + adminId, HttpMethod.GET,
+                    new HttpEntity<>(managerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_MANAGERがユーザー更新 → 403")
+        void update_asManager_returns403() throws Exception {
+            HttpHeaders managerHeaders = loginAndGetHeaders("wh_manager01", "Manager@1234");
+            Long adminId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
+
+            String body = """
+                    {
+                        "fullName": "不正更新",
+                        "email": "hacked@example.com",
+                        "role": "SYSTEM_ADMIN",
+                        "isActive": true,
+                        "version": 0
+                    }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, managerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + adminId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_MANAGERがトグル → 403")
+        void toggleActive_asManager_returns403() throws Exception {
+            HttpHeaders managerHeaders = loginAndGetHeaders("wh_manager01", "Manager@1234");
+            Long adminId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
+
+            String body = """
+                    {
+                        "isActive": false,
+                        "version": 0
+                    }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, managerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + adminId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_MANAGERがアンロック → 403")
+        void unlock_asManager_returns403() throws Exception {
+            HttpHeaders managerHeaders = loginAndGetHeaders("wh_manager01", "Manager@1234");
+            Long lockedUserId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM users WHERE user_code = 'locked_user'", Long.class);
+
+            HttpEntity<String> request = new HttpEntity<>(null, managerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + lockedUserId + "/unlock",
+                    HttpMethod.PATCH, request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
