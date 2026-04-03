@@ -16,7 +16,7 @@
 | **出荷管理** | 04-outbound-management | API-08-outbound | SCR-10-outbound | RPT-12-picking-instruction, RPT-13-shipping-inspection, RPT-14-delivery-list, RPT-15-unshipped-realtime, RPT-16-unshipped-confirmed | — | IF-02-order | 03-transaction-tables | TST-OUT-outbound | — |
 | **在庫引当** | 04a-allocation | API-12-allocation | SCR-13-allocation | — | — | — | 03-transaction-tables | TST-ALL-allocation | — |
 | **返品管理** | 08-returns | API-13-returns | SCR-14-returns | RPT-18-returns | — | — | 03-transaction-tables | TST-RTN-returns | — |
-| **バッチ処理** | 06-batch-processing | API-09-batch | SCR-11-batch | — | BAT-01-daily-close | — | 04-batch-tables | TST-BAT-batch | — |
+| **バッチ処理** | 06-batch-processing | API-09-batch | SCR-11-batch | RPT-06-unreceived-confirmed, RPT-16-unshipped-confirmed | BAT-01-daily-close | — | 04-batch-tables | TST-BAT-batch | — |
 | **レポート共通** | 05-reports | API-10-report | — | RPT-17-daily-summary | — | — | — | TST-RPT-reports | — |
 | **外部連携I/F** | 07-interface | — | SCR-15-interface | — | — | — | — | TST-IF-interface | 09-interface-architecture |
 
@@ -211,6 +211,10 @@
 **🖥️ 画面設計:**
 - [SCR-11-batch](functional-design/SCR-11-batch.md)
 
+**📊 帳票設計:**
+- [RPT-06-unreceived-confirmed](functional-design/RPT-06-unreceived-confirmed.md)
+- [RPT-16-unshipped-confirmed](functional-design/RPT-16-unshipped-confirmed.md)
+
 **⚙️ バッチ設計:**
 - [BAT-01-daily-close](functional-design/BAT-01-daily-close.md)
 
@@ -285,6 +289,9 @@
 
 - [08-common-infrastructure](architecture-blueprint/08-common-infrastructure.md)
 - [08-common-infrastructure](architecture-design/08-common-infrastructure.md)
+- [status-enums](architecture-design/status-enums.md)
+- [error-codes](architecture-design/error-codes.md)
+- [environment-variables](architecture-design/environment-variables.md)
 
 ### 監視・運用 (Monitoring & Operations)
 

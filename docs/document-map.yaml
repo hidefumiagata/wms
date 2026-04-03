@@ -194,6 +194,9 @@ modules:
         - functional-design/API-09-batch.md
       screen:
         - functional-design/SCR-11-batch.md
+      report:
+        - functional-design/RPT-06-unreceived-confirmed.md
+        - functional-design/RPT-16-unshipped-confirmed.md
       batch:
         - functional-design/BAT-01-daily-close.md
       data-model:
