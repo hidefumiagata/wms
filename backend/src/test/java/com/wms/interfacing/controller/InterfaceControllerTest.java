@@ -31,6 +31,8 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -253,7 +255,7 @@ class InterfaceControllerTest {
         void listExecutions_returns200() throws Exception {
             IfExecution exec = createExecution();
             Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
             when(userService.getUserFullNameMap(any())).thenReturn(Map.of(1L, "山田 太郎"));
 
@@ -269,7 +271,7 @@ class InterfaceControllerTest {
         @DisplayName("200 — フィルタパラメータ付きで呼び出し")
         void listExecutions_withFilters_returns200() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/interface/executions")
@@ -281,6 +283,29 @@ class InterfaceControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(0))
                     .andExpect(jsonPath("$.content").isEmpty());
+
+            verify(interfaceService).listExecutions(
+                    eq("INBOUND_PLAN"), any(), any(), eq("COMPLETED"),
+                    isNull(), eq("INB"), any());
+        }
+
+        @Test
+        @DisplayName("200 — warehouseIdフィルタ付きで呼び出し")
+        void listExecutions_withWarehouseId_returns200() throws Exception {
+            IfExecution exec = createExecution();
+            Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(page);
+            when(userService.getUserFullNameMap(any())).thenReturn(Map.of(1L, "山田 太郎"));
+
+            mockMvc.perform(get("/api/v1/interface/executions")
+                            .param("warehouseId", "1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(1))
+                    .andExpect(jsonPath("$.content[0].warehouseId").value(1));
+
+            verify(interfaceService).listExecutions(
+                    isNull(), isNull(), isNull(), isNull(), eq(1L), isNull(), any());
         }
 
         @Test
@@ -288,7 +313,7 @@ class InterfaceControllerTest {
         void listExecutions_userNotFound_showsId() throws Exception {
             IfExecution exec = createExecution();
             Page<IfExecution> page = new PageImpl<>(List.of(exec), PageRequest.of(0, 20), 1);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
             when(userService.getUserFullNameMap(any())).thenReturn(Map.of());
 
@@ -301,7 +326,7 @@ class InterfaceControllerTest {
         @DisplayName("200 — ソートパラメータが適用される")
         void listExecutions_withSort_returns200() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/interface/executions")
@@ -313,7 +338,7 @@ class InterfaceControllerTest {
         @DisplayName("200 — ソートにdirection省略の場合ASCが適用される")
         void listExecutions_sortWithoutDirection_usesAsc() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/interface/executions")
@@ -325,7 +350,7 @@ class InterfaceControllerTest {
         @DisplayName("200 — 不正ソートプロパティの場合デフォルトにフォールバック")
         void listExecutions_invalidSort_fallsBackToDefault() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/interface/executions")
@@ -337,7 +362,7 @@ class InterfaceControllerTest {
         @DisplayName("200 — 空ページの場合userService呼び出しあり（空Set）")
         void listExecutions_emptyPage_noUserFetch() throws Exception {
             Page<IfExecution> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
-            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any()))
+            when(interfaceService.listExecutions(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(page);
 
             mockMvc.perform(get("/api/v1/interface/executions"))

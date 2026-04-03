@@ -17,6 +17,7 @@ public interface IfExecutionRepository extends JpaRepository<IfExecution, Long> 
               AND (CAST(:dateFrom AS java.time.OffsetDateTime) IS NULL OR e.executedAt >= :dateFrom)
               AND (CAST(:dateTo AS java.time.OffsetDateTime) IS NULL OR e.executedAt < :dateTo)
               AND (:status IS NULL OR e.status = :status)
+              AND (:warehouseId IS NULL OR e.warehouseId = :warehouseId)
               AND (:fileName IS NULL OR LOWER(e.fileName) LIKE LOWER(CONCAT('%', :fileName, '%')))
             """)
     Page<IfExecution> search(
@@ -24,6 +25,7 @@ public interface IfExecutionRepository extends JpaRepository<IfExecution, Long> 
             @Param("dateFrom") OffsetDateTime dateFrom,
             @Param("dateTo") OffsetDateTime dateTo,
             @Param("status") String status,
+            @Param("warehouseId") Long warehouseId,
             @Param("fileName") String fileName,
             Pageable pageable);
 }

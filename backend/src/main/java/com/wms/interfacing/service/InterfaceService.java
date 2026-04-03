@@ -79,8 +79,10 @@ public class InterfaceService {
      */
     public Page<IfExecution> listExecutions(String ifType, OffsetDateTime dateFrom,
                                              OffsetDateTime dateTo, String status,
-                                             String fileName, Pageable pageable) {
-        return ifExecutionRepository.search(ifType, dateFrom, dateTo, status, fileName, pageable);
+                                             Long warehouseId, String fileName,
+                                             Pageable pageable) {
+        return ifExecutionRepository.search(ifType, dateFrom, dateTo, status,
+                warehouseId, fileName, pageable);
     }
 
     /**

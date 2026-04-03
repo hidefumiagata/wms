@@ -58,7 +58,7 @@ public class InterfaceController implements InterfaceApi {
     @Override
     public ResponseEntity<IfExecutionPageResponse> listInterfaceExecutions(
             InterfaceType ifType, LocalDate dateFrom, LocalDate dateTo,
-            IfExecutionStatus status, String fileName,
+            IfExecutionStatus status, Long warehouseId, String fileName,
             Integer page, Integer size, String sort) {
 
         String dbIfType = ifType != null ? IF_TYPE_TO_DB.get(ifType.getValue()) : null;
@@ -71,7 +71,7 @@ public class InterfaceController implements InterfaceApi {
 
         Sort sortObj = parseSort(sort);
         Page<IfExecution> resultPage = interfaceService.listExecutions(
-                dbIfType, dateFromOdt, dateToOdt, dbStatus, fileName,
+                dbIfType, dateFromOdt, dateToOdt, dbStatus, warehouseId, fileName,
                 PageRequest.of(page, size, sortObj));
 
         return ResponseEntity.ok(toExecutionPageResponse(resultPage));
