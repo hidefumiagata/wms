@@ -2,10 +2,12 @@ package com.wms.inbound.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wms.shared.test.IntegrationTestBase;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -18,10 +20,11 @@ import java.time.format.DateTimeFormatter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("結合テスト: 入荷管理")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class InboundSlipIntegrationTest extends IntegrationTestBase {
 
     private static final String BASE_URL = "/api/v1/inbound/slips";
-    private static final String RESULTS_URL = "/api/v1/inbound/slips/results";
+    private static final String RESULTS_URL = "/api/v1/inbound/results";
     private static final String ADMIN_CODE = "admin001";
     private static final String ADMIN_PASSWORD = "Admin@1234";
     private static final String STAFF_CODE = "wh_staff01";
@@ -33,17 +36,10 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
     private Long productId;           // AMB-001 (常温, ロットなし, 期限なし)
     private Long productIdLot;        // REF-001 (冷蔵, ロットあり, 期限あり)
     private Long inboundLocationId;   // A-01-INB-01 (INBOUNDエリア)
+    private String plannedDate;       // テスト全体で統一する予定日
 
-    @BeforeEach
-    void setUp() {
-        // テスト用入荷伝票データのクリーンアップ
-        jdbcTemplate.update("DELETE FROM inventory_movements WHERE inbound_slip_id IN (SELECT id FROM inbound_slips WHERE slip_number LIKE 'INB-%')");
-        jdbcTemplate.update("DELETE FROM inventories WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code = 'WH001') AND quantity = 0");
-        jdbcTemplate.update("DELETE FROM inbound_slip_lines WHERE inbound_slip_id IN (SELECT id FROM inbound_slips WHERE slip_number LIKE 'INB-%')");
-        jdbcTemplate.update("DELETE FROM inbound_slips WHERE slip_number LIKE 'INB-%'");
-
-        adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
-
+    @BeforeAll
+    void initMasterIds() {
         warehouseId = jdbcTemplate.queryForObject(
                 "SELECT id FROM warehouses WHERE warehouse_code = 'WH001'", Long.class);
         partnerId = jdbcTemplate.queryForObject(
@@ -57,8 +53,18 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                 Long.class);
     }
 
-    private String tomorrow() {
-        return LocalDate.now().plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
+    @BeforeEach
+    void setUp() {
+        // テスト用入荷伝票データのクリーンアップ（在庫含む）
+        jdbcTemplate.update(
+                "DELETE FROM inventory_movements WHERE inbound_slip_id IN (SELECT id FROM inbound_slips)");
+        jdbcTemplate.update(
+                "DELETE FROM inventories WHERE warehouse_id = ?", warehouseId);
+        jdbcTemplate.update("DELETE FROM inbound_slip_lines");
+        jdbcTemplate.update("DELETE FROM inbound_slips");
+
+        adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
+        plannedDate = LocalDate.now().plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
     }
 
     // ========================================================
@@ -113,7 +119,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "CASE", "plannedQty": 10 }
                         ]
                     }
-                    """, warehouseId, partnerId, tomorrow(), productId, productId2);
+                    """, warehouseId, partnerId, plannedDate, productId, productId2);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -143,7 +149,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             }
                         ]
                     }
-                    """, warehouseId, partnerId, tomorrow(), productIdLot);
+                    """, warehouseId, partnerId, plannedDate, productIdLot);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -167,6 +173,8 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("code")).isTrue();
         }
 
         @Test
@@ -183,7 +191,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "CASE", "plannedQty": 10 }
                         ]
                     }
-                    """, warehouseId, partnerId, tomorrow(), productId, productId);
+                    """, warehouseId, partnerId, plannedDate, productId, productId);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -205,7 +213,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "PIECE", "plannedQty": 10 }
                         ]
                     }
-                    """, warehouseId, partnerId, tomorrow(), productIdLot);
+                    """, warehouseId, partnerId, plannedDate, productIdLot);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -227,7 +235,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "PIECE", "plannedQty": 10, "lotNumber": "LOT-001" }
                         ]
                     }
-                    """, warehouseId, partnerId, tomorrow(), productIdLot);
+                    """, warehouseId, partnerId, plannedDate, productIdLot);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -248,7 +256,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "PIECE", "plannedQty": 10 }
                         ]
                     }
-                    """, warehouseId, tomorrow(), productId);
+                    """, warehouseId, plannedDate, productId);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -272,7 +280,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                             { "productId": %d, "unitType": "PIECE", "plannedQty": 10 }
                         ]
                     }
-                    """, warehouseId, customerId, tomorrow(), productId);
+                    """, warehouseId, customerId, plannedDate, productId);
 
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
@@ -449,6 +457,8 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                     new HttpEntity<>(adminHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INBOUND_SLIP_NOT_FOUND");
         }
     }
 
@@ -556,6 +566,23 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postNoBody(BASE_URL + "/" + slipId + "/cancel", adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INBOUND_INVALID_STATUS");
+        }
+
+        @Test
+        @DisplayName("SC-INB-031a: INSPECTING状態からキャンセルできる")
+        void cancel_inspectingSlip_returns200() throws Exception {
+            Long slipId = createTestSlip();
+            confirmSlip(slipId);
+            Long lineId = getFirstLineId(slipId);
+            inspectLine(slipId, lineId, 100);
+
+            ResponseEntity<String> response = postNoBody(BASE_URL + "/" + slipId + "/cancel", adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("status").asText()).isEqualTo("CANCELLED");
         }
     }
 
@@ -610,7 +637,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-INB-045: 検品数量の上書き更新ができる")
+        @DisplayName("SC-INB-043: 検品数量の上書き更新ができる")
         void inspect_overwrite_returns200() throws Exception {
             Long slipId = createTestSlip();
             confirmSlip(slipId);
@@ -687,6 +714,85 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("code").asText()).isEqualTo("DUPLICATE_LINE_IN_REQUEST");
+        }
+
+        @Test
+        @DisplayName("SC-INB-044: PARTIAL_STORED状態で残明細を検品できる")
+        void inspect_partialStoredRemaining_returns200() throws Exception {
+            Long productId2 = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products WHERE product_code = 'AMB-002'", Long.class);
+            Long slipId = createTestSlipMultiLine(productId, productId2);
+            confirmSlip(slipId);
+
+            JsonNode detail = getSlipDetail(slipId);
+            Long lineId1 = detail.get("lines").get(0).get("id").asLong();
+            Long lineId2 = detail.get("lines").get(1).get("id").asLong();
+
+            // 1明細のみ検品→入庫してPARTIAL_STOREDへ
+            inspectLine(slipId, lineId1, 50);
+            String storeBody = String.format("""
+                    { "lines": [{ "lineId": %d, "locationId": %d }] }
+                    """, lineId1, inboundLocationId);
+            postJson(BASE_URL + "/" + slipId + "/store", storeBody, adminHeaders);
+
+            // PARTIAL_STORED状態で残明細を検品
+            String inspectBody = String.format("""
+                    { "lines": [{ "lineId": %d, "inspectedQty": 10 }] }
+                    """, lineId2);
+            ResponseEntity<String> response = postJson(BASE_URL + "/" + slipId + "/inspect", inspectBody, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("status").asText()).isEqualTo("PARTIAL_STORED");
+        }
+
+        @Test
+        @DisplayName("SC-INB-045: 入庫済み明細の検品 → 409")
+        void inspect_storedLine_returns409() throws Exception {
+            Long productId2 = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products WHERE product_code = 'AMB-002'", Long.class);
+            Long slipId = createTestSlipMultiLine(productId, productId2);
+            confirmSlip(slipId);
+
+            JsonNode detail = getSlipDetail(slipId);
+            Long lineId1 = detail.get("lines").get(0).get("id").asLong();
+            Long lineId2 = detail.get("lines").get(1).get("id").asLong();
+
+            // 1明細のみ検品→入庫
+            inspectLine(slipId, lineId1, 50);
+            inspectLine(slipId, lineId2, 10);
+            String storeBody = String.format("""
+                    { "lines": [{ "lineId": %d, "locationId": %d }] }
+                    """, lineId1, inboundLocationId);
+            postJson(BASE_URL + "/" + slipId + "/store", storeBody, adminHeaders);
+
+            // 入庫済みの明細を再検品 → エラー
+            String inspectBody = String.format("""
+                    { "lines": [{ "lineId": %d, "inspectedQty": 60 }] }
+                    """, lineId1);
+            ResponseEntity<String> response = postJson(BASE_URL + "/" + slipId + "/inspect", inspectBody, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INBOUND_LINE_ALREADY_STORED");
+        }
+
+        @Test
+        @DisplayName("検品数が負数 → 422")
+        void inspect_negativeQty_returns422() throws Exception {
+            Long slipId = createTestSlip();
+            confirmSlip(slipId);
+            Long lineId = getFirstLineId(slipId);
+
+            String body = String.format("""
+                    { "lines": [{ "lineId": %d, "inspectedQty": -1 }] }
+                    """, lineId);
+
+            ResponseEntity<String> response = postJson(BASE_URL + "/" + slipId + "/inspect", body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INBOUND_INSPECTED_QTY_NEGATIVE");
         }
     }
 
@@ -788,6 +894,8 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
 
             // CONFIRMEDステータスからは入庫不可
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INBOUND_INVALID_STATUS");
         }
 
         @Test
@@ -830,6 +938,34 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("code").asText()).isEqualTo("INSPECTED_QTY_ZERO");
+        }
+
+        @Test
+        @DisplayName("SC-INB-052: 別商品が存在するロケーションへの入庫 → 422")
+        void store_differentProductAtLocation_returns422() throws Exception {
+            // 最初の伝票で AMB-001 をロケーションに入庫
+            createAndCompleteFullFlow();
+
+            // 別商品 AMB-002 の伝票を作成→確定→検品
+            Long productId2 = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products WHERE product_code = 'AMB-002'", Long.class);
+            String body = createSlipBody(productId2, "PIECE", 20, null, null);
+            ResponseEntity<String> createResp = postJson(BASE_URL, body, adminHeaders);
+            assertThat(createResp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+            Long slipId2 = parseJson(createResp.getBody()).get("id").asLong();
+            confirmSlip(slipId2);
+            Long lineId2 = getFirstLineId(slipId2);
+            inspectLine(slipId2, lineId2, 20);
+
+            // 同じロケーションに別商品を入庫 → エラー
+            String storeBody = String.format("""
+                    { "lines": [{ "lineId": %d, "locationId": %d }] }
+                    """, lineId2, inboundLocationId);
+            ResponseEntity<String> response = postJson(BASE_URL + "/" + slipId2 + "/store", storeBody, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("DIFFERENT_PRODUCT_AT_LOCATION");
         }
     }
 
@@ -956,11 +1092,11 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
     }
 
     // ========================================================
-    // GET /api/v1/inbound/slips/results — 入荷実績
+    // GET /api/v1/inbound/results — 入荷実績
     // ========================================================
 
     @Nested
-    @DisplayName("GET /api/v1/inbound/slips/results — 入荷実績")
+    @DisplayName("GET /api/v1/inbound/results — 入荷実績")
     class ListInboundResults {
 
         @Test
@@ -983,6 +1119,22 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             assertThat(first.has("inspectedQty")).isTrue();
             assertThat(first.has("storedAt")).isTrue();
             assertThat(first.has("locationCode")).isTrue();
+        }
+
+        @Test
+        @DisplayName("SC-INB-071: 商品コードで入荷実績を絞り込みできる")
+        void results_filterByProductCode_returns200() throws Exception {
+            createAndCompleteFullFlow();
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    RESULTS_URL + "?warehouseId=" + warehouseId + "&productCode=AMB-001&page=0&size=20",
+                    HttpMethod.GET, new HttpEntity<>(adminHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            for (JsonNode item : json.get("content")) {
+                assertThat(item.get("productCode").asText()).startsWith("AMB-001");
+            }
         }
     }
 
@@ -1033,16 +1185,8 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
     // ========================================================
 
     private String createSlipBody(Long prodId, String unitType, int qty, String lotNumber, String expiryDate) {
-        StringBuilder lineBuilder = new StringBuilder();
-        lineBuilder.append(String.format("""
-                { "productId": %d, "unitType": "%s", "plannedQty": %d""", prodId, unitType, qty));
-        if (lotNumber != null) {
-            lineBuilder.append(String.format(", \"lotNumber\": \"%s\"", lotNumber));
-        }
-        if (expiryDate != null) {
-            lineBuilder.append(String.format(", \"expiryDate\": \"%s\"", expiryDate));
-        }
-        lineBuilder.append(" }");
+        String lotPart = lotNumber != null ? String.format(", \"lotNumber\": \"%s\"", lotNumber) : "";
+        String expiryPart = expiryDate != null ? String.format(", \"expiryDate\": \"%s\"", expiryDate) : "";
 
         return String.format("""
                 {
@@ -1050,9 +1194,11 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                     "partnerId": %d,
                     "plannedDate": "%s",
                     "slipType": "NORMAL",
-                    "lines": [ %s ]
+                    "lines": [
+                        { "productId": %d, "unitType": "%s", "plannedQty": %d%s%s }
+                    ]
                 }
-                """, warehouseId, partnerId, tomorrow(), lineBuilder);
+                """, warehouseId, partnerId, plannedDate, prodId, unitType, qty, lotPart, expiryPart);
     }
 
     private Long createTestSlip() throws Exception {
@@ -1074,7 +1220,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                         { "productId": %d, "unitType": "CASE", "plannedQty": 10 }
                     ]
                 }
-                """, warehouseId, partnerId, tomorrow(), prodId1, prodId2);
+                """, warehouseId, partnerId, plannedDate, prodId1, prodId2);
         ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         return parseJson(response.getBody()).get("id").asLong();
