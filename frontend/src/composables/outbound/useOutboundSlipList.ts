@@ -4,15 +4,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { toDateString } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { OutboundSlipSummary } from '@/api/generated/models/outbound-slip-summary'
 import type { OutboundSlipPageResponse } from '@/api/generated/models/outbound-slip-page-response'
 import type { OutboundSlipStatus } from '@/api/generated/models/outbound-slip-status'
-
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10)
-}
 
 export function useOutboundSlipList() {
   const { t } = useI18n()
@@ -38,8 +35,8 @@ export function useOutboundSlipList() {
 
   const searchForm = reactive({
     slipNumber: '',
-    plannedDateFrom: formatDate(defaultFrom) as string | null,
-    plannedDateTo: formatDate(defaultTo) as string | null,
+    plannedDateFrom: toDateString(defaultFrom) as string | null,
+    plannedDateTo: toDateString(defaultTo) as string | null,
     partnerId: null as number | null,
     status: null as OutboundSlipStatus | null,
   })
@@ -154,8 +151,8 @@ export function useOutboundSlipList() {
     const to = new Date(now)
     to.setDate(to.getDate() + 30)
     searchForm.slipNumber = ''
-    searchForm.plannedDateFrom = formatDate(from)
-    searchForm.plannedDateTo = formatDate(to)
+    searchForm.plannedDateFrom = toDateString(from)
+    searchForm.plannedDateTo = toDateString(to)
     searchForm.partnerId = null
     searchForm.status = null
     page.value = 1

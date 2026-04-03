@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { toDateString } from '@/utils/dateFormat'
 import type { IfExecutionItem } from '@/api/generated/models/if-execution-item'
 import type { IfExecutionPageResponse } from '@/api/generated/models/if-execution-page-response'
 
@@ -18,17 +19,14 @@ export function useInterfaceHistory() {
   const pageSize = ref(20)
 
   // 検索フォーム
-  function formatDate(d: Date): string {
-    return d.toISOString().slice(0, 10)
-  }
   const today = new Date()
   const defaultFrom = new Date(today)
   defaultFrom.setMonth(defaultFrom.getMonth() - 1)
 
   const searchForm = reactive({
     ifType: null as string | null,
-    dateFrom: formatDate(defaultFrom) as string | null,
-    dateTo: formatDate(today) as string | null,
+    dateFrom: toDateString(defaultFrom) as string | null,
+    dateTo: toDateString(today) as string | null,
     status: null as string | null,
     fileName: '',
   })
@@ -92,8 +90,8 @@ export function useInterfaceHistory() {
     const from = new Date(now)
     from.setMonth(from.getMonth() - 1)
     searchForm.ifType = null
-    searchForm.dateFrom = formatDate(from)
-    searchForm.dateTo = formatDate(now)
+    searchForm.dateFrom = toDateString(from)
+    searchForm.dateTo = toDateString(now)
     searchForm.status = null
     searchForm.fileName = ''
     page.value = 1
