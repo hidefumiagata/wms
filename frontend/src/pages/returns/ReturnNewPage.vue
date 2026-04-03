@@ -137,7 +137,7 @@
             :data="supplierSearchResults"
             style="width: 100%"
             highlight-current-row
-            @row-click="selectSupplier"
+            @row-click="(row) => selectSupplier(row)"
           >
             <el-table-column prop="partnerCode" :label="t('returns.supplierCode')" width="160" />
             <el-table-column prop="partnerName" :label="t('returns.supplierName')" />

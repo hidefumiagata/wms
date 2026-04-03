@@ -165,10 +165,14 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         ],
   }))
 
-  // --- AbortController ---
-  let abortController: AbortController | null = null
+  // --- AbortController（操作ごとに分離して相互キャンセルを防止） ---
+  let productAbortController: AbortController | null = null
+  let supplierAbortController: AbortController | null = null
+  let locationAbortController: AbortController | null = null
   onUnmounted(() => {
-    abortController?.abort()
+    productAbortController?.abort()
+    supplierAbortController?.abort()
+    locationAbortController?.abort()
   })
 
   // --- 返品種別変更時 ---
@@ -186,8 +190,8 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   // --- 商品検索 ---
   async function searchProduct() {
     if (!form.productCode.trim()) return
-    abortController?.abort()
-    abortController = new AbortController()
+    productAbortController?.abort()
+    productAbortController = new AbortController()
     productSearchLoading.value = true
     try {
       const res = await apiClient.get('/master/products', {
@@ -197,7 +201,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
           page: 0,
           size: 10,
         },
-        signal: abortController.signal,
+        signal: productAbortController.signal,
       })
       const products = res.data.content ?? []
       if (products.length === 0) {
@@ -246,8 +250,8 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
 
   // --- 仕入先検索 ---
   async function searchSupplier() {
-    abortController?.abort()
-    abortController = new AbortController()
+    supplierAbortController?.abort()
+    supplierAbortController = new AbortController()
     supplierSearchLoading.value = true
     try {
       const params: Record<string, unknown> = {
@@ -264,7 +268,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
       }
       const res = await apiClient.get('/master/partners', {
         params,
-        signal: abortController.signal,
+        signal: supplierAbortController.signal,
       })
       const partners = res.data.content ?? []
       const total = res.data.totalElements ?? 0
@@ -318,8 +322,8 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   // --- ロケーション候補取得（在庫返品時） ---
   async function fetchLocationCandidates() {
     if (!selectedProduct.value || !form.unitType || !warehouseStore.selectedWarehouseId) return
-    abortController?.abort()
-    abortController = new AbortController()
+    locationAbortController?.abort()
+    locationAbortController = new AbortController()
     locationLoading.value = true
     try {
       const res = await apiClient.get('/inventory', {
@@ -331,7 +335,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
           page: 0,
           size: 100,
         },
-        signal: abortController.signal,
+        signal: locationAbortController.signal,
       })
       const items = res.data.content ?? []
       locationOptions.value = items.map((i: Record<string, unknown>) => ({
