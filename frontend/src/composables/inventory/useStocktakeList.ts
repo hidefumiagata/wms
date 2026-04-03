@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
-import { toDateString } from '@/utils/dateFormat'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { StocktakeSummary } from '@/api/generated/models/stocktake-summary'
@@ -65,8 +65,8 @@ export function useStocktakeList() {
   const searchForm = reactive({
     stocktakeNumber: '' as string,
     buildingId: null as number | null,
-    dateFrom: toDateString(monthStart) as string | null,
-    dateTo: toDateString(now) as string | null,
+    dateFrom: formatLocalDate(monthStart) as string | null,
+    dateTo: formatLocalDate(now) as string | null,
     status: null as string | null,
   })
 
@@ -147,8 +147,8 @@ export function useStocktakeList() {
     const resetMonthStart = new Date(resetNow.getFullYear(), resetNow.getMonth(), 1)
     searchForm.stocktakeNumber = ''
     searchForm.buildingId = null
-    searchForm.dateFrom = toDateString(resetMonthStart)
-    searchForm.dateTo = toDateString(resetNow)
+    searchForm.dateFrom = formatLocalDate(resetMonthStart)
+    searchForm.dateTo = formatLocalDate(resetNow)
     searchForm.status = null
     page.value = 1
     fetchList()

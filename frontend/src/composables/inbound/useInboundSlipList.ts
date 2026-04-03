@@ -5,7 +5,7 @@ import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { downloadReport } from '@/utils/reportDownload'
-import { toDateString } from '@/utils/dateFormat'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { InboundSlipSummary } from '@/api/generated/models/inbound-slip-summary'
@@ -35,8 +35,8 @@ export function useInboundSlipList() {
 
   const searchForm = reactive({
     slipNumber: '',
-    plannedDateFrom: toDateString(defaultFrom) as string | null,
-    plannedDateTo: toDateString(defaultTo) as string | null,
+    plannedDateFrom: formatLocalDate(defaultFrom) as string | null,
+    plannedDateTo: formatLocalDate(defaultTo) as string | null,
     partnerId: null as number | null,
     status: null as InboundSlipStatus | null,
   })
@@ -152,8 +152,8 @@ export function useInboundSlipList() {
     const to = new Date(now)
     to.setDate(to.getDate() + 30)
     searchForm.slipNumber = ''
-    searchForm.plannedDateFrom = toDateString(from)
-    searchForm.plannedDateTo = toDateString(to)
+    searchForm.plannedDateFrom = formatLocalDate(from)
+    searchForm.plannedDateTo = formatLocalDate(to)
     searchForm.partnerId = null
     searchForm.status = null
     page.value = 1
@@ -191,7 +191,7 @@ export function useInboundSlipList() {
         path: '/reports/inbound-plan',
         params,
         format: 'pdf',
-        filenameBase: 'inbound_plan_' + toDateString(new Date()).replace(/-/g, ''),
+        filenameBase: 'inbound_plan_' + formatLocalDate(new Date()).replace(/-/g, ''),
       })
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))
@@ -211,7 +211,7 @@ export function useInboundSlipList() {
           warehouseId: warehouseStore.selectedWarehouseId,
         },
         format: 'pdf',
-        filenameBase: 'unreceived_realtime_' + toDateString(new Date()).replace(/-/g, ''),
+        filenameBase: 'unreceived_realtime_' + formatLocalDate(new Date()).replace(/-/g, ''),
       })
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))

@@ -5,7 +5,7 @@ import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { downloadReport } from '@/utils/reportDownload'
-import { toDateString } from '@/utils/dateFormat'
+import { formatLocalDate } from '@/utils/dateFormat'
 import type { BatchExecutionDetail } from '@/api/generated/models/batch-execution-detail'
 import type { BatchExecutionPageResponse } from '@/api/generated/models/batch-execution-page-response'
 import type { BatchExecutionStatus } from '@/api/generated/models/batch-execution-status'
@@ -26,8 +26,8 @@ export function useBatchHistory() {
   defaultFrom.setMonth(defaultFrom.getMonth() - 1)
 
   const searchForm = reactive({
-    executedDateFrom: toDateString(defaultFrom) as string | null,
-    executedDateTo: toDateString(today) as string | null,
+    executedDateFrom: formatLocalDate(defaultFrom) as string | null,
+    executedDateTo: formatLocalDate(today) as string | null,
     targetBusinessDate: null as string | null,
     status: null as BatchExecutionStatus | null,
   })
@@ -114,8 +114,8 @@ export function useBatchHistory() {
     const now = new Date()
     const from = new Date(now)
     from.setMonth(from.getMonth() - 1)
-    searchForm.executedDateFrom = toDateString(from)
-    searchForm.executedDateTo = toDateString(now)
+    searchForm.executedDateFrom = formatLocalDate(from)
+    searchForm.executedDateTo = formatLocalDate(now)
     searchForm.targetBusinessDate = null
     searchForm.status = null
     page.value = 1
@@ -175,7 +175,7 @@ export function useBatchHistory() {
   }
 
   function isDateDisabled(date: Date): boolean {
-    const dateStr = toDateString(date)
+    const dateStr = formatLocalDate(date)
     return !processedDates.value.includes(dateStr)
   }
 

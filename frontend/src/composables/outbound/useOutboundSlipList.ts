@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
-import { toDateString } from '@/utils/dateFormat'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { OutboundSlipSummary } from '@/api/generated/models/outbound-slip-summary'
@@ -35,8 +35,8 @@ export function useOutboundSlipList() {
 
   const searchForm = reactive({
     slipNumber: '',
-    plannedDateFrom: toDateString(defaultFrom) as string | null,
-    plannedDateTo: toDateString(defaultTo) as string | null,
+    plannedDateFrom: formatLocalDate(defaultFrom) as string | null,
+    plannedDateTo: formatLocalDate(defaultTo) as string | null,
     partnerId: null as number | null,
     status: null as OutboundSlipStatus | null,
   })
@@ -151,8 +151,8 @@ export function useOutboundSlipList() {
     const to = new Date(now)
     to.setDate(to.getDate() + 30)
     searchForm.slipNumber = ''
-    searchForm.plannedDateFrom = toDateString(from)
-    searchForm.plannedDateTo = toDateString(to)
+    searchForm.plannedDateFrom = formatLocalDate(from)
+    searchForm.plannedDateTo = formatLocalDate(to)
     searchForm.partnerId = null
     searchForm.status = null
     page.value = 1
