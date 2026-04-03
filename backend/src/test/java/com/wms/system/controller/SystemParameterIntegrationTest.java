@@ -341,6 +341,6 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
                 return node;
             }
         }
-        return null;
+        throw new AssertionError("paramKey not found in response: " + paramKey);
     }
 }

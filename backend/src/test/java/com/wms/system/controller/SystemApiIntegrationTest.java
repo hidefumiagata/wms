@@ -28,6 +28,9 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
+        // テストで変更したパラメータ値を初期値に戻す（テスト分離）
+        jdbcTemplate.update(
+                "UPDATE system_parameters SET param_value = default_value WHERE param_key = 'SESSION_TIMEOUT_MINUTES'");
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
@@ -148,18 +151,7 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("timeoutMinutes").asInt()).isEqualTo(30);
             assertThat(json.get("warningMinutes").asInt()).isEqualTo(25);
-
-            // クリーンアップ: 元に戻す
-            Integer newVersion = jdbcTemplate.queryForObject(
-                    "SELECT version FROM system_parameters WHERE param_key = 'SESSION_TIMEOUT_MINUTES'",
-                    Integer.class);
-            String resetBody = String.format("""
-                    { "paramValue": "60", "version": %d }
-                    """, newVersion);
-            HttpEntity<String> resetRequest = new HttpEntity<>(resetBody, adminHeaders);
-            restTemplate.exchange(
-                    "/api/v1/system/parameters/SESSION_TIMEOUT_MINUTES", HttpMethod.PUT,
-                    resetRequest, String.class);
+            // クリーンアップは @BeforeEach のSQL resetで行われる
         }
 
         @Test
