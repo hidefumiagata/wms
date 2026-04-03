@@ -340,6 +340,36 @@ class ProductIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-PRD03: 在庫なしの商品の賞味期限管理フラグを変更できる")
+        void update_changeExpiryFlag_noInventory_returns200() throws Exception {
+            Long productId = createTestProduct("IT-UPD05", "賞味期限フラグ変更", "REFRIGERATED",
+                    false, false);
+            Integer version = getVersion(productId);
+
+            String body = String.format("""
+                    {
+                        "productName": "賞味期限フラグ変更",
+                        "caseQuantity": 1,
+                        "ballQuantity": 1,
+                        "storageCondition": "REFRIGERATED",
+                        "isHazardous": false,
+                        "lotManageFlag": false,
+                        "expiryManageFlag": true,
+                        "shipmentStopFlag": false,
+                        "version": %d
+                    }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + productId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("expiryManageFlag").asBoolean()).isTrue();
+        }
+
+        @Test
         @DisplayName("SC-C09: 楽観ロック競合 → 409")
         void update_versionMismatch_returns409() throws Exception {
             Long productId = createTestProduct("IT-UPD04", "ロック競合", "AMBIENT",
@@ -405,12 +435,14 @@ class ProductIntegrationTest extends IntegrationTestBase {
                     false, false);
             Integer version = getVersion(productId);
 
-            // 無効化
+            // 無効化（M-3: 中間ステップの結果を検証）
             String deactivateBody = String.format("""
                     { "isActive": false, "version": %d }
                     """, version);
-            restTemplate.exchange(BASE_URL + "/" + productId + "/toggle-active",
+            ResponseEntity<String> deactivateResp = restTemplate.exchange(
+                    BASE_URL + "/" + productId + "/toggle-active",
                     HttpMethod.PATCH, new HttpEntity<>(deactivateBody, adminHeaders), String.class);
+            assertThat(deactivateResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
             // 再有効化
             Integer newVersion = getVersion(productId);
@@ -424,6 +456,29 @@ class ProductIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("isActive").asBoolean()).isTrue();
+
+            // M-1: DB検証
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM products WHERE id = ?", Boolean.class, productId);
+            assertThat(isActive).isTrue();
+        }
+
+        @Test
+        @DisplayName("M-2: 楽観ロック競合 → 409")
+        void toggle_versionMismatch_returns409() throws Exception {
+            Long productId = createTestProduct("IT-TGL03", "ロック競合", "AMBIENT",
+                    false, false);
+
+            String body = """
+                    { "isActive": false, "version": 999 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + productId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         }
     }
 
@@ -485,6 +540,13 @@ class ProductIntegrationTest extends IntegrationTestBase {
             JsonNode json = parseJson(response.getBody());
             assertThat(json.isArray()).isTrue();
             assertThat(json.size()).isGreaterThanOrEqualTo(1);
+
+            // M-4: フィールド検証
+            JsonNode first = json.get(0);
+            assertThat(first.has("id")).isTrue();
+            assertThat(first.has("productCode")).isTrue();
+            assertThat(first.has("productName")).isTrue();
+            assertThat(first.has("isActive")).isTrue();
         }
 
         @Test

@@ -300,12 +300,14 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             Long partnerId = createTestPartner("IT-TGL02", "有効化テスト", "SUPPLIER");
             Integer version = getVersion(partnerId);
 
-            // 無効化
+            // 無効化（M-3: 中間ステップの結果を検証）
             String deactivateBody = String.format("""
                     { "isActive": false, "version": %d }
                     """, version);
-            restTemplate.exchange(BASE_URL + "/" + partnerId + "/toggle-active",
+            ResponseEntity<String> deactivateResp = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
                     HttpMethod.PATCH, new HttpEntity<>(deactivateBody, adminHeaders), String.class);
+            assertThat(deactivateResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
             // 再有効化
             Integer newVersion = getVersion(partnerId);
@@ -319,6 +321,11 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("isActive").asBoolean()).isTrue();
+
+            // M-1: DB検証
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+            assertThat(isActive).isTrue();
         }
 
         @Test
