@@ -129,6 +129,8 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("code")).isTrue();
         }
 
         @Test
@@ -521,6 +523,39 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
                     new HttpEntity<>(staffHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_STAFFは更新不可 → 403")
+        void update_asStaff_returns403() throws Exception {
+            Long whId = createTestWarehouse("ITSU", "スタッフ更新テスト");
+            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
+            String body = """
+                    { "warehouseName": "スタッフ更新", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, staffHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_STAFFは有効/無効切替不可 → 403")
+        void toggle_asStaff_returns403() throws Exception {
+            Long whId = createTestWarehouse("ITST", "スタッフ切替テスト");
+            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, staffHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
 
         @Test

@@ -386,6 +386,39 @@ class BuildingIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("WAREHOUSE_STAFFは棟更新不可 → 403")
+        void update_asStaff_returns403() throws Exception {
+            Long buildingId = createBuilding(testWarehouseId, "R", "R棟");
+            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
+            String body = """
+                    { "buildingName": "スタッフ更新", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, staffHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + buildingId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("WAREHOUSE_STAFFは棟有効/無効切替不可 → 403")
+        void toggle_asStaff_returns403() throws Exception {
+            Long buildingId = createBuilding(testWarehouseId, "S", "S棟");
+            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, staffHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + buildingId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
         @DisplayName("WAREHOUSE_STAFFは一覧取得可能")
         void list_asStaff_returns200() throws Exception {
             HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);

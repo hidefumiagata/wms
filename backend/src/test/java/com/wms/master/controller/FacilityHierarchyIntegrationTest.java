@@ -172,15 +172,15 @@ class FacilityHierarchyIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("子を全て無効化した後なら親を無効化できる（ボトムアップ）")
-    void hierarchicalDeactivation_bottomUpSucceeds() throws Exception {
+    @DisplayName("ボトムアップ無効化: ロケーション→エリアは成功するが、棟は子エリア数で判定のため失敗する")
+    void hierarchicalDeactivation_bottomUp_areaSucceeds_buildingFails() throws Exception {
         // 階層構築
         Long warehouseId = createWarehouse("ITBU");
         Long buildingId = createBuilding(warehouseId, "A");
         Long areaId = createArea(buildingId, "A01", "STOCK");
         Long locationId = createLocation(areaId, "A-01-A01-01-01-01");
 
-        // ロケーションを無効化
+        // ロケーションを無効化 → 成功
         Integer locVersion = jdbcTemplate.queryForObject(
                 "SELECT version FROM locations WHERE id = ?", Integer.class, locationId);
         String locToggle = String.format("""
@@ -191,7 +191,7 @@ class FacilityHierarchyIntegrationTest extends IntegrationTestBase {
                 HttpMethod.PATCH, new HttpEntity<>(locToggle, adminHeaders), String.class);
         assertThat(locResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // エリアを無効化（子ロケーションは無効化済み→OK）
+        // エリアを無効化（子ロケーションは無効化済み）→ 成功
         Integer areaVersion = jdbcTemplate.queryForObject(
                 "SELECT version FROM areas WHERE id = ?", Integer.class, areaId);
         String areaToggle = String.format("""
@@ -202,9 +202,7 @@ class FacilityHierarchyIntegrationTest extends IntegrationTestBase {
                 HttpMethod.PATCH, new HttpEntity<>(areaToggle, adminHeaders), String.class);
         assertThat(areaResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // 棟を無効化（子エリアは存在するが…）
-        // 注: BuildingServiceは countByBuildingId > 0 で判定（有効/無効問わず）
-        // この場合、エリアが存在するため無効化は不可
+        // 棟を無効化 → 失敗（BuildingServiceは countByBuildingId > 0 で判定。有効/無効問わず）
         Integer buildingVersion = jdbcTemplate.queryForObject(
                 "SELECT version FROM buildings WHERE id = ?", Integer.class, buildingId);
         String buildingToggle = String.format("""
@@ -213,8 +211,9 @@ class FacilityHierarchyIntegrationTest extends IntegrationTestBase {
         ResponseEntity<String> buildingResp = restTemplate.exchange(
                 BUILDING_URL + "/" + buildingId + "/toggle-active",
                 HttpMethod.PATCH, new HttpEntity<>(buildingToggle, adminHeaders), String.class);
-        // 棟はエリア数で判定（有効/無効問わず）→ 422
         assertThat(buildingResp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        JsonNode json = parseJson(buildingResp.getBody());
+        assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_CHILDREN");
     }
 
     // ========================================================
