@@ -510,6 +510,131 @@ describe('useReturnForm', () => {
     })
   })
 
+  // --- 仕入先検索 ---
+  describe('searchSupplier', () => {
+    it('検索結果0件で info メッセージを表示', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({ content: [], totalElements: 0 }),
+      )
+      const { result } = setup()
+      result.form.partnerCode = 'NOTEXIST'
+      await result.searchSupplier()
+      expect(ElMessage.info).toHaveBeenCalledWith('returns.supplierSearchEmpty')
+      expect(result.selectedSupplier.value).toBeNull()
+    })
+
+    it('完全一致する仕入先コードが直接選択される', async () => {
+      const partners = [
+        { id: 10, partnerCode: 'SUP-001', partnerName: 'Supplier A' },
+        { id: 11, partnerCode: 'SUP-002', partnerName: 'Supplier B' },
+      ]
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({ content: partners, totalElements: 2 }),
+      )
+      const { result } = setup()
+      result.form.partnerCode = 'SUP-001'
+      await result.searchSupplier()
+      expect(result.selectedSupplier.value?.id).toBe(10)
+      expect(result.form.partnerId).toBe(10)
+      expect(result.form.partnerCode).toBe('SUP-001')
+      expect(result.supplierDialogVisible.value).toBe(false)
+    })
+
+    it('1件のみなら自動選択', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [{ id: 20, partnerCode: 'SUP-010', partnerName: 'Only Supplier' }],
+          totalElements: 1,
+        }),
+      )
+      const { result } = setup()
+      result.form.partnerCode = 'SUP'
+      await result.searchSupplier()
+      expect(result.selectedSupplier.value?.id).toBe(20)
+      expect(result.form.partnerId).toBe(20)
+    })
+
+    it('複数件で完全一致なしならダイアログ表示', async () => {
+      const partners = [
+        { id: 30, partnerCode: 'SUP-A01', partnerName: 'Partner A' },
+        { id: 31, partnerCode: 'SUP-A02', partnerName: 'Partner B' },
+      ]
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({ content: partners, totalElements: 2 }),
+      )
+      const { result } = setup()
+      result.form.partnerCode = 'SUP-A'
+      await result.searchSupplier()
+      expect(result.supplierDialogVisible.value).toBe(true)
+      expect(result.supplierSearchResults.value).toHaveLength(2)
+      expect(result.supplierSearchTotal.value).toBe(2)
+    })
+
+    it('空のコードでも検索できる（全件取得）', async () => {
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [{ id: 40, partnerCode: 'SUP-X', partnerName: 'Single' }],
+          totalElements: 1,
+        }),
+      )
+      const { result } = setup()
+      result.form.partnerCode = ''
+      await result.searchSupplier()
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/partners',
+        expect.objectContaining({
+          params: expect.objectContaining({ partnerType: 'SUPPLIER', isActive: true }),
+        }),
+      )
+      expect(result.selectedSupplier.value?.id).toBe(40)
+    })
+
+    it('API失敗時にエラーメッセージ', async () => {
+      vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network'))
+      const { result } = setup()
+      result.form.partnerCode = 'SUP'
+      await result.searchSupplier()
+      expect(ElMessage.error).toHaveBeenCalledWith('returns.supplierSearchError')
+    })
+
+    it('キャンセル時は何もしない', async () => {
+      const cancelError = new axios.CanceledError()
+      vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
+      vi.mocked(axios.isCancel).mockReturnValueOnce(true)
+      const { result } = setup()
+      result.form.partnerCode = 'SUP'
+      await result.searchSupplier()
+      expect(ElMessage.error).not.toHaveBeenCalled()
+    })
+  })
+
+  // --- selectSupplier ---
+  describe('selectSupplier', () => {
+    it('仕入先を選択してフォームに反映', () => {
+      const { result } = setup()
+      result.supplierDialogVisible.value = true
+      result.selectSupplier({ id: 50, partnerCode: 'SUP-050', partnerName: 'Test Supplier' })
+      expect(result.selectedSupplier.value?.id).toBe(50)
+      expect(result.form.partnerId).toBe(50)
+      expect(result.form.partnerCode).toBe('SUP-050')
+      expect(result.supplierDialogVisible.value).toBe(false)
+    })
+  })
+
+  // --- clearSupplier ---
+  describe('clearSupplier', () => {
+    it('仕入先選択をクリア', () => {
+      const { result } = setup()
+      result.selectedSupplier.value = { id: 50, partnerCode: 'SUP-050', partnerName: 'Test' }
+      result.form.partnerId = 50
+      result.form.partnerCode = 'SUP-050'
+      result.clearSupplier()
+      expect(result.selectedSupplier.value).toBeNull()
+      expect(result.form.partnerId).toBeNull()
+      expect(result.form.partnerCode).toBe('')
+    })
+  })
+
   // --- submitReturn ---
   describe('submitReturn', () => {
     function setupForSubmit() {
@@ -788,9 +913,15 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       }
+      result.selectedSupplier.value = { id: 789, partnerCode: 'SUP-001', partnerName: 'Test' }
       result.locationOptions.value = [
         { locationId: 100, locationCode: 'A-01', quantity: 10, allocatedQty: 0, availableQty: 10 },
       ]
+      result.supplierSearchResults.value = [
+        { id: 789, partnerCode: 'SUP-001', partnerName: 'Test' },
+      ]
+      result.supplierSearchTotal.value = 1
+      result.supplierDialogVisible.value = true
 
       result.resetForm()
 
@@ -807,7 +938,11 @@ describe('useReturnForm', () => {
       expect(result.form.partnerId).toBeNull()
       expect(result.form.partnerCode).toBe('')
       expect(result.selectedProduct.value).toBeNull()
+      expect(result.selectedSupplier.value).toBeNull()
       expect(result.locationOptions.value).toEqual([])
+      expect(result.supplierSearchResults.value).toEqual([])
+      expect(result.supplierSearchTotal.value).toBe(0)
+      expect(result.supplierDialogVisible.value).toBe(false)
       expect(formRef.value!.clearValidate).toHaveBeenCalled()
     })
   })

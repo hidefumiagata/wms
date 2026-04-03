@@ -101,9 +101,53 @@
           <el-input
             v-model="form.partnerCode"
             style="width: 280px"
-            :placeholder="t('returns.supplier')"
+            :placeholder="t('returns.supplierPlaceholder')"
+            :disabled="!!selectedSupplier"
+            @keyup.enter="searchSupplier"
           />
+          <el-button
+            v-if="!selectedSupplier"
+            style="margin-left: 8px"
+            :loading="supplierSearchLoading"
+            @click="searchSupplier"
+          >
+            {{ t('common.search') }}
+          </el-button>
+          <el-button
+            v-if="selectedSupplier"
+            style="margin-left: 8px"
+            @click="clearSupplier"
+          >
+            {{ t('common.clear') }}
+          </el-button>
         </el-form-item>
+
+        <el-form-item v-if="selectedSupplier" :label="t('returns.supplierName')">
+          <span>{{ selectedSupplier.partnerName }}</span>
+        </el-form-item>
+
+        <!-- 仕入先検索ダイアログ -->
+        <el-dialog
+          v-model="supplierDialogVisible"
+          :title="t('returns.supplierSearchTitle')"
+          width="600px"
+          destroy-on-close
+        >
+          <el-table
+            :data="supplierSearchResults"
+            style="width: 100%"
+            highlight-current-row
+            @row-click="selectSupplier"
+          >
+            <el-table-column prop="partnerCode" :label="t('returns.supplierCode')" width="160" />
+            <el-table-column prop="partnerName" :label="t('returns.supplierName')" />
+          </el-table>
+          <template v-if="supplierSearchTotal > 20" #footer>
+            <span class="dialog-footer-hint">
+              {{ t('returns.supplierSearchHint', { total: supplierSearchTotal }) }}
+            </span>
+          </template>
+        </el-dialog>
 
         <el-form-item :label="t('returns.returnReason')" prop="returnReason">
           <el-select
@@ -182,9 +226,14 @@ const {
   submitting,
   productSearchLoading,
   locationLoading,
+  supplierSearchLoading,
   selectedProduct,
+  selectedSupplier,
   locationOptions,
   selectedLocationInventory,
+  supplierDialogVisible,
+  supplierSearchResults,
+  supplierSearchTotal,
   isInventoryReturn,
   showRelatedSlip,
   showLotNumber,
@@ -192,6 +241,9 @@ const {
   hasAllocated,
   onReturnTypeChange,
   searchProduct,
+  searchSupplier,
+  selectSupplier,
+  clearSupplier,
   onUnitTypeChange,
   submitReturn,
   resetForm,
