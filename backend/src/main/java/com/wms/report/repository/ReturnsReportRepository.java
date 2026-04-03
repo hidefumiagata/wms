@@ -1,7 +1,7 @@
 package com.wms.report.repository;
 
-import com.wms.report.entity.BatchExecutionLog;
 import com.wms.report.repository.projection.ReturnsReportRow;
+import com.wms.returns.entity.ReturnSlip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +13,7 @@ import java.util.List;
  * RPT-18: 返品レポート用リポジトリ。
  * return_slips テーブルから返品明細を取得する（商品・取引先情報は非正規化カラム）。
  */
-public interface ReturnsReportRepository extends JpaRepository<BatchExecutionLog, Long> {
+public interface ReturnsReportRepository extends JpaRepository<ReturnSlip, Long> {
 
     /**
      * 返品レポートデータ取得。
