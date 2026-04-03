@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 
 interface BuildingOption {
@@ -32,7 +33,7 @@ export function useStocktakeForm() {
   // フォーム
   const selectedBuildingId = ref<number | null>(null)
   const selectedAreaId = ref<number | null>(null)
-  const stocktakeDate = ref(new Date().toISOString().slice(0, 10))
+  const stocktakeDate = ref(formatLocalDate(new Date()))
   const note = ref('')
 
   // マスタオプション
@@ -142,7 +143,7 @@ export function useStocktakeForm() {
       return
     }
     // 実施日は当日以降（フロントエンドバリデーション）
-    const today = new Date().toISOString().slice(0, 10)
+    const today = formatLocalDate(new Date())
     if (stocktakeDate.value < today) {
       ElMessage.error(t('inventory.stocktakeDateRequired'))
       return

@@ -5,6 +5,7 @@ import axios from 'axios'
 import apiClient from '@/api/client'
 import { toApiError } from '@/utils/apiError'
 import { downloadReport } from '@/utils/reportDownload'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { useAuthStore } from '@/stores/auth'
 import type { InboundSlipSummary } from '@/api/generated/models/inbound-slip-summary'
@@ -26,9 +27,6 @@ export function useInboundSlipList() {
   const pageSize = ref(20)
 
   // SCR-07 INB001-F02/F03: 初期値は営業日-7日〜+30日
-  function formatDate(d: Date): string {
-    return d.toISOString().slice(0, 10)
-  }
   const today = new Date()
   const defaultFrom = new Date(today)
   defaultFrom.setDate(defaultFrom.getDate() - 7)
@@ -37,8 +35,8 @@ export function useInboundSlipList() {
 
   const searchForm = reactive({
     slipNumber: '',
-    plannedDateFrom: formatDate(defaultFrom) as string | null,
-    plannedDateTo: formatDate(defaultTo) as string | null,
+    plannedDateFrom: formatLocalDate(defaultFrom) as string | null,
+    plannedDateTo: formatLocalDate(defaultTo) as string | null,
     partnerId: null as number | null,
     status: null as InboundSlipStatus | null,
   })
@@ -154,8 +152,8 @@ export function useInboundSlipList() {
     const to = new Date(now)
     to.setDate(to.getDate() + 30)
     searchForm.slipNumber = ''
-    searchForm.plannedDateFrom = formatDate(from)
-    searchForm.plannedDateTo = formatDate(to)
+    searchForm.plannedDateFrom = formatLocalDate(from)
+    searchForm.plannedDateTo = formatLocalDate(to)
     searchForm.partnerId = null
     searchForm.status = null
     page.value = 1
@@ -193,7 +191,7 @@ export function useInboundSlipList() {
         path: '/reports/inbound-plan',
         params,
         format: 'pdf',
-        filenameBase: 'inbound_plan_' + new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+        filenameBase: 'inbound_plan_' + formatLocalDate(new Date()).replace(/-/g, ''),
       })
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))
@@ -213,8 +211,7 @@ export function useInboundSlipList() {
           warehouseId: warehouseStore.selectedWarehouseId,
         },
         format: 'pdf',
-        filenameBase:
-          'unreceived_realtime_' + new Date().toISOString().slice(0, 10).replace(/-/g, ''),
+        filenameBase: 'unreceived_realtime_' + formatLocalDate(new Date()).replace(/-/g, ''),
       })
     } catch {
       ElMessage.error(t('inbound.slip.reportDownloadError'))

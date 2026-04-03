@@ -3,6 +3,7 @@ import apiClient from '@/api/client'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { withSetup, mockAxiosResponse } from '../../helpers'
 import { useStocktakeForm } from '@/composables/inventory/useStocktakeForm'
+import { formatLocalDate } from '@/utils/dateFormat'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { mockRouter } from '../../setup'
 
@@ -119,7 +120,7 @@ describe('useStocktakeForm', () => {
 
     result.selectedBuildingId.value = 1
     // Set date to today to pass validation
-    result.stocktakeDate.value = new Date().toISOString().slice(0, 10)
+    result.stocktakeDate.value = formatLocalDate(new Date())
     result.targetLocationCount.value = 5
 
     await result.submitStart()
