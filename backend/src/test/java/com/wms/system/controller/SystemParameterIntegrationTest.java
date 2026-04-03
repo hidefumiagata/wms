@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("結合テスト: システムパラメータ管理")
 class SystemParameterIntegrationTest extends IntegrationTestBase {
@@ -24,14 +25,16 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
     private static final String MANAGER_PASSWORD = "Manager@1234";
     private static final String STAFF_CODE = "wh_staff01";
     private static final String STAFF_PASSWORD = "Staff@1234";
+    private static final String VIEWER_CODE = "viewer01";
+    private static final String VIEWER_PASSWORD = "Test@1234";
 
     private HttpHeaders adminHeaders;
 
     @BeforeEach
     void setUp() {
-        // テストで変更したパラメータ値を初期値に戻す
+        // テストで変更したパラメータ値・バージョンを初期値に戻す
         jdbcTemplate.update(
-                "UPDATE system_parameters SET param_value = default_value WHERE param_key IN ('LOCATION_CAPACITY_CASE', 'SESSION_TIMEOUT_MINUTES')");
+                "UPDATE system_parameters SET param_value = default_value, version = 0 WHERE param_key IN ('LOCATION_CAPACITY_CASE', 'SESSION_TIMEOUT_MINUTES')");
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
@@ -83,7 +86,6 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
 
             // LOCATION_CAPACITY_CASE を探す
             JsonNode capacityCase = findByParamKey(json, "LOCATION_CAPACITY_CASE");
-            assertThat(capacityCase).isNotNull();
             assertThat(capacityCase.get("paramValue").asText()).isEqualTo("1");
             assertThat(capacityCase.get("defaultValue").asText()).isEqualTo("1");
             assertThat(capacityCase.get("category").asText()).isEqualTo("INVENTORY");
@@ -91,9 +93,44 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
 
             // SESSION_TIMEOUT_MINUTES を探す
             JsonNode sessionTimeout = findByParamKey(json, "SESSION_TIMEOUT_MINUTES");
-            assertThat(sessionTimeout).isNotNull();
             assertThat(sessionTimeout.get("paramValue").asText()).isEqualTo("60");
             assertThat(sessionTimeout.get("category").asText()).isEqualTo("SECURITY");
+        }
+
+        @Test
+        @DisplayName("SC-001: レスポンスがcategory+displayOrder順にソートされている")
+        void getAll_sortedByCategoryAndDisplayOrder() throws Exception {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL, HttpMethod.GET,
+                    new HttpEntity<>(adminHeaders), String.class);
+
+            JsonNode json = parseJson(response.getBody());
+
+            // category + displayOrder の順でソートされていることを検証
+            String prevCategory = "";
+            int prevDisplayOrder = Integer.MIN_VALUE;
+            for (JsonNode node : json) {
+                String category = node.get("category").asText();
+                int displayOrder = node.get("displayOrder").asInt();
+                if (category.equals(prevCategory)) {
+                    assertThat(displayOrder).as("displayOrder within category '%s'", category)
+                            .isGreaterThanOrEqualTo(prevDisplayOrder);
+                }
+                prevCategory = category;
+                prevDisplayOrder = displayOrder;
+            }
+        }
+
+        @Test
+        @DisplayName("SC-007: VIEWERはアクセス不可 → 403")
+        void getAll_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL, HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
 
         @Test
@@ -180,9 +217,10 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
                     """, version);
 
             HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            restTemplate.exchange(
+            ResponseEntity<String> putResponse = restTemplate.exchange(
                     BASE_URL + "/LOCATION_CAPACITY_CASE", HttpMethod.PUT,
                     request, String.class);
+            assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
             // 一覧取得で値を確認
             ResponseEntity<String> getResponse = restTemplate.exchange(
@@ -232,6 +270,38 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
                     request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        @Test
+        @DisplayName("SC-009: INTEGER型に負の値 → 422")
+        void update_negativeValue_returns422() throws Exception {
+            Integer version = getVersion("LOCATION_CAPACITY_CASE");
+            String body = String.format("""
+                    { "paramValue": "-5", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/LOCATION_CAPACITY_CASE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        @Test
+        @DisplayName("SC-009: INTEGER型に空文字 → 422")
+        void update_emptyValue_returns422() throws Exception {
+            Integer version = getVersion("LOCATION_CAPACITY_CASE");
+            String body = String.format("""
+                    { "paramValue": "", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/LOCATION_CAPACITY_CASE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isIn(HttpStatus.BAD_REQUEST, HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         @Test
@@ -309,6 +379,23 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-007: VIEWERは更新不可 → 403")
+        void update_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            String body = """
+                    { "paramValue": "99", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/LOCATION_CAPACITY_CASE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
         @DisplayName("SC-008: 未認証で更新 → 401")
         void update_unauthenticated_returns401() throws Exception {
             HttpHeaders headers = createJsonHeaders();
@@ -341,6 +428,7 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
                 return node;
             }
         }
-        throw new AssertionError("paramKey not found in response: " + paramKey);
+        fail("paramKey not found in response: " + paramKey);
+        return null; // unreachable
     }
 }

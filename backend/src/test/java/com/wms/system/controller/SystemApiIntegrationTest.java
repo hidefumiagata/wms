@@ -28,9 +28,9 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        // テストで変更したパラメータ値を初期値に戻す（テスト分離）
+        // テストで変更したパラメータ値・バージョンを初期値に戻す（テスト分離）
         jdbcTemplate.update(
-                "UPDATE system_parameters SET param_value = default_value WHERE param_key = 'SESSION_TIMEOUT_MINUTES'");
+                "UPDATE system_parameters SET param_value = default_value, version = 0 WHERE param_key = 'SESSION_TIMEOUT_MINUTES'");
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
@@ -55,6 +55,23 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
             assertThat(json.has("businessDate")).isTrue();
             // 日付形式の検証（yyyy-MM-dd）
             assertThat(json.get("businessDate").asText()).matches("\\d{4}-\\d{2}-\\d{2}");
+        }
+
+        @Test
+        @DisplayName("正常系: 営業日がDB値と一致する")
+        void getBusinessDate_matchesDatabase() throws Exception {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BUSINESS_DATE_URL, HttpMethod.GET,
+                    new HttpEntity<>(adminHeaders), String.class);
+
+            JsonNode json = parseJson(response.getBody());
+            String apiDate = json.get("businessDate").asText();
+
+            // DB値と照合
+            String dbDate = jdbcTemplate.queryForObject(
+                    "SELECT TO_CHAR(business_date, 'YYYY-MM-DD') FROM business_date WHERE id = 1",
+                    String.class);
+            assertThat(apiDate).isEqualTo(dbDate);
         }
 
         @Test
@@ -130,9 +147,7 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
         @DisplayName("正常系: パラメータ更新後にセッション設定に反映される")
         void getSessionConfig_afterParamUpdate_reflectsNewValue() throws Exception {
             // SESSION_TIMEOUT_MINUTES を 30 に更新
-            Integer version = jdbcTemplate.queryForObject(
-                    "SELECT version FROM system_parameters WHERE param_key = 'SESSION_TIMEOUT_MINUTES'",
-                    Integer.class);
+            Integer version = getVersion("SESSION_TIMEOUT_MINUTES");
             String updateBody = String.format("""
                     { "paramValue": "30", "version": %d }
                     """, version);
@@ -165,5 +180,15 @@ class SystemApiIntegrationTest extends IntegrationTestBase {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    // ========================================================
+    // Helper methods
+    // ========================================================
+
+    private Integer getVersion(String paramKey) {
+        return jdbcTemplate.queryForObject(
+                "SELECT version FROM system_parameters WHERE param_key = ?",
+                Integer.class, paramKey);
     }
 }
