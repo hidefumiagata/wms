@@ -31,6 +31,8 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -281,6 +283,10 @@ class InterfaceControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(0))
                     .andExpect(jsonPath("$.content").isEmpty());
+
+            verify(interfaceService).listExecutions(
+                    eq("INBOUND_PLAN"), any(), any(), eq("COMPLETED"),
+                    isNull(), eq("INB"), any());
         }
 
         @Test
@@ -297,6 +303,9 @@ class InterfaceControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalElements").value(1))
                     .andExpect(jsonPath("$.content[0].warehouseId").value(1));
+
+            verify(interfaceService).listExecutions(
+                    isNull(), isNull(), isNull(), isNull(), eq(1L), isNull(), any());
         }
 
         @Test
