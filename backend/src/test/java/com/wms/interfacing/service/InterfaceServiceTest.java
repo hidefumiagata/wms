@@ -30,6 +30,11 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -113,6 +118,51 @@ class InterfaceServiceTest {
                 new UsernamePasswordAuthenticationToken(userDetails, null, List.of());
         when(context.getAuthentication()).thenReturn(auth);
         SecurityContextHolder.setContext(context);
+    }
+
+    @Nested
+    @DisplayName("listExecutions")
+    class ListExecutions {
+
+        @Test
+        @DisplayName("正常系 — 全パラメータnullでリポジトリに委譲する")
+        void listExecutions_allNull_delegatesToRepository() {
+            Pageable pageable = PageRequest.of(0, 20);
+            Page<IfExecution> expected = new PageImpl<>(List.of(), pageable, 0);
+            when(ifExecutionRepository.search(null, null, null, null, null, null, pageable))
+                    .thenReturn(expected);
+
+            Page<IfExecution> result = interfaceService.listExecutions(
+                    null, null, null, null, null, null, pageable);
+
+            assertThat(result).isSameAs(expected);
+            verify(ifExecutionRepository).search(null, null, null, null, null, null, pageable);
+        }
+
+        @Test
+        @DisplayName("正常系 — 全フィルタ指定でリポジトリに委譲する")
+        void listExecutions_allFilters_delegatesToRepository() {
+            Pageable pageable = PageRequest.of(0, 10);
+            OffsetDateTime from = OffsetDateTime.parse("2026-03-01T00:00:00+09:00");
+            OffsetDateTime to = OffsetDateTime.parse("2026-04-01T00:00:00+09:00");
+            IfExecution exec = IfExecution.builder()
+                    .id(1L).ifType("INBOUND_PLAN").fileName("test.csv")
+                    .totalCount(10).successCount(10).errorCount(0)
+                    .mode("SUCCESS_ONLY").status("COMPLETED")
+                    .blobMoveFailed(false).warehouseId(5L)
+                    .executedAt(OffsetDateTime.now()).executedBy(1L)
+                    .build();
+            Page<IfExecution> expected = new PageImpl<>(List.of(exec), pageable, 1);
+            when(ifExecutionRepository.search("INBOUND_PLAN", from, to, "COMPLETED", 5L, "test", pageable))
+                    .thenReturn(expected);
+
+            Page<IfExecution> result = interfaceService.listExecutions(
+                    "INBOUND_PLAN", from, to, "COMPLETED", 5L, "test", pageable);
+
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getIfType()).isEqualTo("INBOUND_PLAN");
+            verify(ifExecutionRepository).search("INBOUND_PLAN", from, to, "COMPLETED", 5L, "test", pageable);
+        }
     }
 
     @Nested

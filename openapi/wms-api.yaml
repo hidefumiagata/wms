@@ -5397,6 +5397,12 @@ paths:
           schema:
             $ref: '#/components/schemas/IfExecutionStatus'
           description: 結果ステータスでフィルタ
+        - name: warehouseId
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: 倉庫IDでフィルタ
         - name: fileName
           in: query
           schema:
