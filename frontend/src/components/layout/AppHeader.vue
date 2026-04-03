@@ -37,7 +37,9 @@
       <el-dropdown @command="handleCommand">
         <span class="app-header__user">
           <el-avatar :size="32" icon="UserFilled" />
-          <span class="app-header__username">{{ auth.user?.fullName }}</span>
+          <span class="app-header__username" data-testid="header-user-name">
+            {{ auth.user?.fullName }}
+          </span>
           <el-icon><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
@@ -45,7 +47,9 @@
             <el-dropdown-item command="change-password">
               {{ t('auth.changePassword') }}
             </el-dropdown-item>
-            <el-dropdown-item command="logout" divided>{{ t('auth.logout') }}</el-dropdown-item>
+            <el-dropdown-item command="logout" divided data-testid="logout-button">
+              {{ t('auth.logout') }}
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>

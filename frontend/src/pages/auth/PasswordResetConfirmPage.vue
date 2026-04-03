@@ -30,6 +30,7 @@
         show-icon
         :closable="false"
         class="reset-confirm-page__banner"
+        data-testid="error-banner"
       />
 
       <el-form
@@ -46,6 +47,7 @@
             size="large"
             show-password
             autocomplete="new-password"
+            data-testid="reset-new-password"
           />
           <!-- パスワード強度インジケーター -->
           <div v-if="form.newPassword" class="reset-confirm-page__strength">
@@ -69,6 +71,7 @@
             size="large"
             show-password
             autocomplete="new-password"
+            data-testid="reset-confirm-password"
           />
         </el-form-item>
 
@@ -78,6 +81,7 @@
           :loading="loading"
           native-type="submit"
           style="width: 100%; margin-top: 8px"
+          data-testid="reset-confirm-submit"
         >
           {{ t('auth.resetPasswordButton') }}
         </el-button>

@@ -11,6 +11,7 @@
       show-icon
       :closable="false"
       class="reset-request-page__banner"
+      data-testid="success-message"
     />
 
     <!-- エラーバナー -->
@@ -32,7 +33,13 @@
         @submit.prevent="handleSubmit"
       >
         <el-form-item :label="t('auth.identifier')" prop="identifier">
-          <el-input v-model="form.identifier" size="large" autocomplete="username" clearable />
+          <el-input
+            v-model="form.identifier"
+            size="large"
+            autocomplete="username"
+            clearable
+            data-testid="reset-identifier"
+          />
         </el-form-item>
 
         <el-button
@@ -41,6 +48,7 @@
           :loading="loading"
           native-type="submit"
           style="width: 100%; margin-top: 8px"
+          data-testid="reset-submit"
         >
           {{ t('auth.sendResetLink') }}
         </el-button>

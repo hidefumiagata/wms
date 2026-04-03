@@ -20,6 +20,7 @@
       show-icon
       :closable="false"
       class="login-page__banner"
+      data-testid="error-banner"
     />
 
     <el-form
@@ -36,6 +37,7 @@
           size="large"
           autocomplete="username"
           clearable
+          data-testid="user-code"
         />
       </el-form-item>
 
@@ -47,6 +49,7 @@
           size="large"
           autocomplete="current-password"
           show-password
+          data-testid="password"
         />
       </el-form-item>
 
@@ -56,6 +59,7 @@
         :loading="loading"
         native-type="submit"
         style="width: 100%; margin-top: 8px"
+        data-testid="login-submit"
       >
         {{ t('auth.loginButton') }}
       </el-button>

@@ -24,15 +24,21 @@
           <div class="summary">
             <span class="summary-label">{{ t('validationResult.summary') }}</span>
             <span class="summary-item">
-              {{ t('validationResult.totalRows') }}: <strong>{{ result.totalRows }}</strong>{{ t('validationResult.rows') }}
+              {{ t('validationResult.totalRows') }}:
+              <strong>{{ result.totalRows }}</strong>
+              {{ t('validationResult.rows') }}
             </span>
             <el-divider direction="vertical" />
             <span class="summary-item success">
-              {{ t('validationResult.successCount') }}: <strong>{{ result.successCount }}</strong>{{ t('validationResult.rows') }}
+              {{ t('validationResult.successCount') }}:
+              <strong>{{ result.successCount }}</strong>
+              {{ t('validationResult.rows') }}
             </span>
-            <el-divider direction="vertical" v-if="result.errorCount > 0" />
-            <span class="summary-item error" v-if="result.errorCount > 0">
-              {{ t('validationResult.errorCount') }}: <strong>{{ result.errorCount }}</strong>{{ t('validationResult.rows') }}
+            <el-divider v-if="result.errorCount > 0" direction="vertical" />
+            <span v-if="result.errorCount > 0" class="summary-item error">
+              {{ t('validationResult.errorCount') }}:
+              <strong>{{ result.errorCount }}</strong>
+              {{ t('validationResult.rows') }}
             </span>
           </div>
         </el-card>
@@ -52,13 +58,23 @@
         <div v-if="result.rows && result.rows.length > 0" class="error-detail">
           <div class="error-detail-header">
             {{ t('validationResult.errorDetail') }}
-            <el-tag type="danger" size="small">{{ t('validationResult.errorCount') }}: {{ result.errorCount }}</el-tag>
+            <el-tag type="danger" size="small">
+              {{ t('validationResult.errorCount') }}: {{ result.errorCount }}
+            </el-tag>
           </div>
           <el-table :data="flatErrors" stripe border style="width: 100%" max-height="300">
             <el-table-column prop="rowNumber" :label="t('validationResult.rowNumber')" width="80" />
             <el-table-column prop="column" :label="t('validationResult.column')" width="160" />
-            <el-table-column prop="errorCode" :label="t('validationResult.errorCode')" width="160" />
-            <el-table-column prop="message" :label="t('validationResult.message')" min-width="200" />
+            <el-table-column
+              prop="errorCode"
+              :label="t('validationResult.errorCode')"
+              width="160"
+            />
+            <el-table-column
+              prop="message"
+              :label="t('validationResult.message')"
+              min-width="200"
+            />
           </el-table>
         </div>
       </template>
