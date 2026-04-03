@@ -26,6 +26,13 @@ interface LocationInventory {
   availableQty: number
 }
 
+interface PartnerOption {
+  id: number
+  partnerCode: string
+  partnerName: string
+}
+
+
 export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   const { t } = useI18n()
   const route = useRoute()
@@ -35,9 +42,16 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   const submitting = ref(false)
   const productSearchLoading = ref(false)
   const locationLoading = ref(false)
+  const supplierSearchLoading = ref(false)
 
   // 商品選択結果
   const selectedProduct = ref<ProductOption | null>(null)
+  // 仕入先選択結果
+  const selectedSupplier = ref<PartnerOption | null>(null)
+  // 仕入先検索ダイアログ
+  const supplierDialogVisible = ref(false)
+  const supplierSearchResults = ref<PartnerOption[]>([])
+  const supplierSearchTotal = ref(0)
   // ロケーション候補（在庫返品時）
   const locationOptions = ref<LocationInventory[]>([])
   // 選択中ロケーションの在庫情報
@@ -151,10 +165,14 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         ],
   }))
 
-  // --- AbortController ---
-  let abortController: AbortController | null = null
+  // --- AbortController（操作ごとに分離して相互キャンセルを防止） ---
+  let productAbortController: AbortController | null = null
+  let supplierAbortController: AbortController | null = null
+  let locationAbortController: AbortController | null = null
   onUnmounted(() => {
-    abortController?.abort()
+    productAbortController?.abort()
+    supplierAbortController?.abort()
+    locationAbortController?.abort()
   })
 
   // --- 返品種別変更時 ---
@@ -172,8 +190,8 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   // --- 商品検索 ---
   async function searchProduct() {
     if (!form.productCode.trim()) return
-    abortController?.abort()
-    abortController = new AbortController()
+    productAbortController?.abort()
+    productAbortController = new AbortController()
     productSearchLoading.value = true
     try {
       const res = await apiClient.get('/master/products', {
@@ -183,7 +201,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
           page: 0,
           size: 10,
         },
-        signal: abortController.signal,
+        signal: productAbortController.signal,
       })
       const products = res.data.content ?? []
       if (products.length === 0) {
@@ -230,11 +248,82 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     }
   }
 
+  // --- 仕入先検索 ---
+  async function searchSupplier() {
+    supplierAbortController?.abort()
+    supplierAbortController = new AbortController()
+    supplierSearchLoading.value = true
+    try {
+      const params: Record<string, unknown> = {
+        partnerType: 'SUPPLIER',
+        isActive: true,
+        page: 0,
+        size: 20,
+      }
+      const keyword = form.partnerCode.trim()
+      if (keyword) {
+        // partnerCode is prefix match, partnerName is partial match on backend
+        // Use partnerName for general search (covers both name and kana)
+        params.partnerName = keyword
+      }
+      const res = await apiClient.get('/master/partners', {
+        params,
+        signal: supplierAbortController.signal,
+      })
+      const partners = res.data.content ?? []
+      const total = res.data.totalElements ?? 0
+      if (partners.length === 0) {
+        ElMessage.info(t('returns.supplierSearchEmpty'))
+        return
+      }
+      // 完全一致 or 1件 → 直接選択
+      if (keyword) {
+        const exact = partners.find(
+          (p: PartnerOption) => p.partnerCode === keyword,
+        )
+        if (exact) {
+          selectSupplier(exact)
+          return
+        }
+      }
+      if (partners.length === 1) {
+        selectSupplier(partners[0])
+        return
+      }
+      // 複数件 → ダイアログ表示
+      supplierSearchResults.value = partners.map((p: Record<string, unknown>) => ({
+        id: p.id as number,
+        partnerCode: p.partnerCode as string,
+        partnerName: p.partnerName as string,
+      }))
+      supplierSearchTotal.value = total
+      supplierDialogVisible.value = true
+    } catch (err) {
+      if (axios.isCancel(err)) return
+      ElMessage.error(t('returns.supplierSearchError'))
+    } finally {
+      supplierSearchLoading.value = false
+    }
+  }
+
+  function selectSupplier(partner: PartnerOption) {
+    selectedSupplier.value = partner
+    form.partnerId = partner.id
+    form.partnerCode = partner.partnerCode
+    supplierDialogVisible.value = false
+  }
+
+  function clearSupplier() {
+    selectedSupplier.value = null
+    form.partnerId = null
+    form.partnerCode = ''
+  }
+
   // --- ロケーション候補取得（在庫返品時） ---
   async function fetchLocationCandidates() {
     if (!selectedProduct.value || !form.unitType || !warehouseStore.selectedWarehouseId) return
-    abortController?.abort()
-    abortController = new AbortController()
+    locationAbortController?.abort()
+    locationAbortController = new AbortController()
     locationLoading.value = true
     try {
       const res = await apiClient.get('/inventory', {
@@ -246,7 +335,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
           page: 0,
           size: 100,
         },
-        signal: abortController.signal,
+        signal: locationAbortController.signal,
       })
       const items = res.data.content ?? []
       locationOptions.value = items.map((i: Record<string, unknown>) => ({
@@ -379,7 +468,11 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
 
   function resetForm() {
     selectedProduct.value = null
+    selectedSupplier.value = null
     locationOptions.value = []
+    supplierSearchResults.value = []
+    supplierSearchTotal.value = 0
+    supplierDialogVisible.value = false
     form.returnType = ''
     form.productCode = ''
     form.quantity = null
@@ -411,9 +504,14 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     submitting,
     productSearchLoading,
     locationLoading,
+    supplierSearchLoading,
     selectedProduct,
+    selectedSupplier,
     locationOptions,
     selectedLocationInventory,
+    supplierDialogVisible,
+    supplierSearchResults,
+    supplierSearchTotal,
     isInventoryReturn,
     showRelatedSlip,
     showLotNumber,
@@ -421,6 +519,9 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     hasAllocated,
     onReturnTypeChange,
     searchProduct,
+    searchSupplier,
+    selectSupplier,
+    clearSupplier,
     onUnitTypeChange,
     submitReturn,
     resetForm,
