@@ -127,13 +127,12 @@ public class OrderCsvProcessor {
         }
 
         // planned_date: 必須・yyyy-MM-dd形式
-        LocalDate plannedDate = null;
         if (plannedDateStr == null) {
             errors.add(new InboundPlanCsvProcessor.FieldError("planned_date", "WMS-E-IFX-202",
                     "出荷予定日は必須です"));
         } else {
             try {
-                plannedDate = LocalDate.parse(plannedDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
+                LocalDate.parse(plannedDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
                 errors.add(new InboundPlanCsvProcessor.FieldError("planned_date", "WMS-E-IFX-202",
                         "出荷予定日はyyyy-MM-dd形式で入力してください"));
