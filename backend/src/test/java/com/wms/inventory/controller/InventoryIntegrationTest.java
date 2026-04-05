@@ -89,6 +89,11 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                 "SELECT id FROM products WHERE product_code = 'REF-001'", Long.class);
     }
 
+    @BeforeAll
+    void initAuth() {
+        adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
+    }
+
     @BeforeEach
     void setUp() {
         // テスト間の独立性のためにデータクリーンアップ
@@ -98,8 +103,6 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         jdbcTemplate.update("DELETE FROM inventories");
         // 棚卸ロック解除
         jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false WHERE warehouse_id = ?", warehouseId);
-
-        adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
     // ========== ヘルパーメソッド ==========
@@ -238,7 +241,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-INV-003: 在庫一覧を荷姿でフィルタする")
+        @DisplayName("SC-INV-003-2: 在庫一覧を荷姿でフィルタする")
         void listByLocation_filterByUnitType() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 10, 0);
             insertInventory(locA01_01_01_01, productAmbId, "PIECE", 5, 0);
@@ -292,7 +295,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-INV-004: 保管条件でフィルタする")
+        @DisplayName("SC-INV-004-2: 保管条件でフィルタする")
         void listByLocation_filterByStorageCondition() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 10, 0);
             insertInventory(locB01_01_01_01, productRefId, "CASE", 5, 0,
@@ -397,7 +400,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-INV-012: 棚卸ロック中のロケーションへの移動もエラー")
+        @DisplayName("SC-INV-012-2: 棚卸ロック中のロケーションへの移動もエラー")
         void move_toStocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
             lockLocationForStocktake(locA01_02_01_01);
@@ -460,6 +463,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(response.getBody()).get("code").asText()).isEqualTo("INVENTORY_INSUFFICIENT");
 
             // 2個移動（有効在庫ちょうど）→ 成功
             String body2 = String.format("""
@@ -621,6 +625,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postJson(BREAKDOWN_URL, body, adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(response.getBody()).get("code").asText()).isEqualTo("INVENTORY_INSUFFICIENT");
         }
 
         @Test
@@ -642,6 +647,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(BREAKDOWN_URL, body, adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(response.getBody()).get("code").asText()).isEqualTo("INVENTORY_INSUFFICIENT");
 
             // 1個ばらし → 成功
             String body2 = String.format("""
@@ -840,7 +846,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("在庫訂正後に訂正履歴が照会できる")
+        @DisplayName("SC-INV-032-2: 在庫訂正後に訂正履歴が照会できる")
         void correctionHistory_afterCorrection_returnsRecords() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 3, 0);
 
@@ -1065,7 +1071,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> confirmResp = postNoBody(
                     STOCKTAKES_URL + "/" + stocktakeId + "/confirm", adminHeaders);
 
-            assertThat(confirmResp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(confirmResp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(parseJson(confirmResp.getBody()).get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_NOT_ALL_COUNTED");
 
             // DB: ステータスはSTARTEDのまま
             String status = jdbcTemplate.queryForObject(
@@ -1128,7 +1135,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
     class StocktakeQuery {
 
         @Test
-        @DisplayName("棚卸一覧が正常に取得できる")
+        @DisplayName("SC-INV-050-2: 棚卸一覧が正常に取得できる")
         void listStocktakes_returnsPage() throws Exception {
             // 棚卸を1件作成
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
@@ -1158,7 +1165,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("棚卸一覧をステータスでフィルタできる")
+        @DisplayName("SC-INV-050-3: 棚卸一覧をステータスでフィルタできる")
         void listStocktakes_filterByStatus() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
             String startBody = String.format("""
@@ -1241,6 +1248,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> moveResp2 = postJson(MOVE_URL, moveBody2, adminHeaders);
             assertThat(moveResp2.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(moveResp2.getBody()).get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
 
         @Test
