@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,11 +27,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
     private static final String ALLOCATION_EXECUTE_URL = "/api/v1/allocation/execute";
     private static final String ADMIN_CODE = "admin001";
     private static final String ADMIN_PASSWORD = "Admin@1234";
-    private static final String STAFF_CODE = "wh_staff01";
-    private static final String STAFF_PASSWORD = "Staff@1234";
-
     private HttpHeaders adminHeaders;
-    private HttpHeaders staffHeaders;
     private Long warehouseId;
     private String warehouseCode;
     private String warehouseName;
@@ -94,7 +89,6 @@ class OutboundIntegrationTest extends IntegrationTestBase {
     @BeforeAll
     void initAuth() {
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
-        staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
     }
 
     @BeforeEach
@@ -153,11 +147,18 @@ class OutboundIntegrationTest extends IntegrationTestBase {
 
     private void insertInventory(Long locationId, Long productId, String unitType,
                                   int quantity, int allocatedQty) {
+        insertInventory(locationId, productId, unitType, quantity, allocatedQty, null, null);
+    }
+
+    private void insertInventory(Long locationId, Long productId, String unitType,
+                                  int quantity, int allocatedQty,
+                                  String lotNumber, LocalDate expiryDate) {
         jdbcTemplate.update(
                 "INSERT INTO inventories (warehouse_id, location_id, product_id, unit_type, " +
                         "lot_number, expiry_date, quantity, allocated_qty, updated_at) " +
-                        "VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, now())",
-                warehouseId, locationId, productId, unitType, quantity, allocatedQty);
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, now())",
+                warehouseId, locationId, productId, unitType,
+                lotNumber, expiryDate, quantity, allocatedQty);
     }
 
     private String getSlipStatus(Long slipId) {
@@ -294,18 +295,19 @@ class OutboundIntegrationTest extends IntegrationTestBase {
                       ]
                     }""", warehouseId, customerPartnerId, plannedDate, stoppedProductId);
 
-            ResponseEntity<String> response = postJson(SLIPS_URL, body, adminHeaders);
+            try {
+                ResponseEntity<String> response = postJson(SLIPS_URL, body, adminHeaders);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("code").asText()).isEqualTo("OUTBOUND_PRODUCT_SHIPMENT_STOPPED");
-
-            // クリーンアップ
-            jdbcTemplate.update("DELETE FROM products WHERE product_code = 'PRD-STOP'");
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                JsonNode json = parseJson(response.getBody());
+                assertThat(json.get("code").asText()).isEqualTo("OUTBOUND_PRODUCT_SHIPMENT_STOPPED");
+            } finally {
+                jdbcTemplate.update("DELETE FROM products WHERE product_code = 'PRD-STOP'");
+            }
         }
 
         @Test
-        @DisplayName("通常出荷でpartnerIdがnullの場合422エラー")
+        @DisplayName("SC-OUT-003: 通常出荷でpartnerIdがnullの場合422エラー")
         void create_normalSlipWithoutPartner_returns422() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             String body = String.format("""
@@ -326,7 +328,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("出荷先がSUPPLIERの場合422エラー")
+        @DisplayName("SC-OUT-003: 出荷先がSUPPLIERの場合422エラー")
         void create_supplierPartner_returns422() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             String body = String.format("""
@@ -348,7 +350,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("同一伝票内に同じ商品が複数指定された場合409エラー")
+        @DisplayName("SC-OUT-003: 同一伝票内に同じ商品が複数指定された場合409エラー")
         void create_duplicateProductInLines_returns409() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             String body = createSlipRequestBody(plannedDate, productAmbId, 10, productAmbId, 20);
@@ -449,7 +451,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
     class GetOutboundSlip {
 
         @Test
-        @DisplayName("正常系: 出荷伝票詳細を取得できる")
+        @DisplayName("SC-OUT-005: 出荷伝票詳細を取得できる")
         void get_existingSlip_returns200() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             Long slipId = insertOutboundSlip("OUT-TEST-GET01", "ORDERED", plannedDate);
@@ -471,7 +473,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("異常系: 存在しない伝票IDで404エラー")
+        @DisplayName("SC-OUT-005: 存在しない伝票IDで404エラー")
         void get_nonExistingSlip_returns404() throws Exception {
             ResponseEntity<String> response = get(SLIPS_URL + "/999999", adminHeaders);
 
@@ -490,7 +492,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
     class DeleteOutboundSlip {
 
         @Test
-        @DisplayName("正常系: ORDERED状態の伝票を削除できる")
+        @DisplayName("SC-OUT-DEL: ORDERED状態の伝票を削除できる")
         void delete_orderedSlip_returns204() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             Long slipId = insertOutboundSlip("OUT-TEST-DEL01", "ORDERED", plannedDate);
@@ -504,7 +506,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("異常系: ALLOCATED状態の伝票は削除できない")
+        @DisplayName("SC-OUT-DEL: ALLOCATED状態の伝票は削除できない")
         void delete_allocatedSlip_returns409() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             Long slipId = insertOutboundSlip("OUT-TEST-DEL02", "ALLOCATED", plannedDate);
@@ -518,7 +520,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("異常系: 存在しない伝票の削除は404エラー")
+        @DisplayName("SC-OUT-DEL: 存在しない伝票の削除は404エラー")
         void delete_nonExistingSlip_returns404() throws Exception {
             ResponseEntity<String> response = delete(SLIPS_URL + "/999999", adminHeaders);
 
@@ -608,8 +610,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
             // 引当明細を直接投入
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 10, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',10, now(), now())",
                     slipId, lineId, locA01_01_01_01, productAmbId);
 
             String body = String.format("{\"slipIds\":[%d],\"areaId\":%d}", slipId, areaA01Id);
@@ -639,8 +641,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
                     "ミネラルウォーター 500ml", "PIECE", 5, "ALLOCATED");
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 5, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',5, now(), now())",
                     slipId1, lineId1, locA01_01_01_01, productAmbId);
 
             Long slipId2 = insertOutboundSlip("OUT-TEST-PIC02B", "ALLOCATED", plannedDate);
@@ -648,8 +650,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
                     "緑茶ペットボトル 500ml", "PIECE", 8, "ALLOCATED");
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 8, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',8, now(), now())",
                     slipId2, lineId2, locA01_01_01_01, productAmb2Id);
 
             String body = String.format("{\"slipIds\":[%d,%d],\"areaId\":%d}", slipId1, slipId2, areaA01Id);
@@ -661,7 +663,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("異常系: ORDERED状態の伝票ではピッキング指示を作成できない")
+        @DisplayName("SC-OUT-011: ORDERED状態の伝票ではピッキング指示を作成できない")
         void create_orderedSlip_returns409() throws Exception {
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             Long slipId = insertOutboundSlip("OUT-TEST-PIC03", "ORDERED", plannedDate);
@@ -685,8 +687,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
             // 引当明細
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 10, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',10, now(), now())",
                     slipId, lineId, locA01_01_01_01, productAmbId);
 
             // 未完了ばらし指示
@@ -715,7 +717,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
     class ListAndGetPickingInstruction {
 
         @Test
-        @DisplayName("正常系: ピッキング指示一覧を取得できる")
+        @DisplayName("SC-OUT-PIC: ピッキング指示一覧を取得できる")
         void list_returns200() throws Exception {
             // ピッキング指示をDB直接投入
             jdbcTemplate.update(
@@ -739,7 +741,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("正常系: ステータスフィルタでピッキング指示を絞り込みできる")
+        @DisplayName("SC-OUT-PIC: ステータスフィルタでピッキング指示を絞り込みできる")
         void list_filterByStatus_returnsFiltered() throws Exception {
             jdbcTemplate.update(
                     "INSERT INTO picking_instructions (instruction_number, warehouse_id, area_id, " +
@@ -763,7 +765,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("正常系: ピッキング指示詳細を取得できる")
+        @DisplayName("SC-OUT-PIC: ピッキング指示詳細を取得できる")
         void get_existingInstruction_returns200() throws Exception {
             // ピッキング指示 + 明細を準備
             LocalDate plannedDate = LocalDate.now().plusDays(1);
@@ -773,8 +775,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
 
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 10, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',10, now(), now())",
                     slipId, lineId, locA01_01_01_01, productAmbId);
 
             // APIでピッキング指示作成
@@ -796,7 +798,7 @@ class OutboundIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("異常系: 存在しないピッキング指示IDで404エラー")
+        @DisplayName("SC-OUT-PIC: 存在しないピッキング指示IDで404エラー")
         void get_nonExistingInstruction_returns404() throws Exception {
             ResponseEntity<String> response = get(PICKING_URL + "/999999", adminHeaders);
 
@@ -827,13 +829,13 @@ class OutboundIntegrationTest extends IntegrationTestBase {
 
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 10, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',10, now(), now())",
                     slipId, lineId1, locA01_01_01_01, productAmbId);
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 20, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',20, now(), now())",
                     slipId, lineId2, locA01_01_01_01, productAmb2Id);
 
             // ピッキング指示作成
@@ -885,8 +887,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
 
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 5, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',5, now(), now())",
                     slipId, lineId, locA01_01_01_01, productAmbId);
 
             String createBody = String.format("{\"slipIds\":[%d],\"areaId\":%d}", slipId, areaA01Id);
@@ -920,8 +922,8 @@ class OutboundIntegrationTest extends IntegrationTestBase {
 
             jdbcTemplate.update(
                     "INSERT INTO allocation_details (outbound_slip_id, outbound_slip_line_id, " +
-                            "location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, 'PIECE', 5, now(), now())",
+                            "warehouse_id, location_id, product_id, unit_type, allocated_qty, created_at, updated_at) " +
+                            "VALUES (?, ?, " + warehouseId + ", ?, ?, 'PIECE',5, now(), now())",
                     slipId, lineId, locA01_01_01_01, productAmbId);
 
             String createBody = String.format("{\"slipIds\":[%d],\"areaId\":%d}", slipId, areaA01Id);
