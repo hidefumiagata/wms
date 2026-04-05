@@ -5,12 +5,13 @@ import com.wms.report.repository.BatchExecutionLogRepository;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.security.WmsUserDetails;
 import com.wms.system.service.UserService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class DailyCloseService {
 
@@ -35,13 +35,24 @@ public class DailyCloseService {
 
     private final BatchExecutionLogRepository logRepository;
     private final JdbcTemplate jdbcTemplate;
-    private final PlatformTransactionManager txManager;
+    private final TransactionTemplate txTemplate;
     private final UserService userService;
+
+    public DailyCloseService(BatchExecutionLogRepository logRepository,
+                              JdbcTemplate jdbcTemplate,
+                              PlatformTransactionManager txManager,
+                              UserService userService) {
+        this.logRepository = logRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.txTemplate = new TransactionTemplate(txManager);
+        this.txTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.userService = userService;
+    }
 
     public record StepResult(String status, String errorMessage) {
         public static StepResult success() { return new StepResult("SUCCESS", null); }
         public static StepResult failed(String msg) { return new StepResult("FAILED", msg); }
-        public static StepResult skipped() { return new StepResult("SUCCESS", null); }
+        public static StepResult skipped() { return new StepResult("SKIPPED", null); }
         public boolean isFailed() { return "FAILED".equals(status); }
     }
 
@@ -73,37 +84,39 @@ public class DailyCloseService {
                     targetBusinessDate + " のバッチ処理が実行中です。");
         }
 
-        // Check for FAILED record (retry scenario)
+        // Check for FAILED record (retry scenario) and create RUNNING record atomically
         boolean[] previouslyCompleted = new boolean[6];
-        Optional<BatchExecutionLog> failedLog = logRepository.findByTargetBusinessDateAndStatus(
-                targetBusinessDate, "FAILED");
-        if (failedLog.isPresent()) {
-            for (int i = 0; i < 6; i++) {
-                previouslyCompleted[i] = "SUCCESS".equals(failedLog.get().getStepStatus(i + 1));
-            }
-            // Delete FAILED record in a new transaction
-            executeInNewTransaction(() -> {
-                logRepository.deleteFailedByTargetBusinessDate(targetBusinessDate);
-            });
-        }
-
-        // Create RUNNING record
         OffsetDateTime startedAt = OffsetDateTime.now();
-        BatchExecutionLog execLog = executeInNewTransaction(() -> {
-            BatchExecutionLog newLog = BatchExecutionLog.builder()
-                    .targetBusinessDate(targetBusinessDate)
-                    .status("RUNNING")
-                    .startedAt(startedAt)
-                    .executedBy(executedBy)
-                    .build();
-            return logRepository.save(newLog);
-        });
+        BatchExecutionLog execLog;
+        try {
+            execLog = executeInNewTransaction(() -> {
+                Optional<BatchExecutionLog> failedLog = logRepository.findByTargetBusinessDateAndStatus(
+                        targetBusinessDate, "FAILED");
+                if (failedLog.isPresent()) {
+                    for (int i = 0; i < 6; i++) {
+                        previouslyCompleted[i] = "SUCCESS".equals(failedLog.get().getStepStatus(i + 1));
+                    }
+                    logRepository.deleteFailedByTargetBusinessDate(targetBusinessDate);
+                }
+
+                BatchExecutionLog newLog = BatchExecutionLog.builder()
+                        .targetBusinessDate(targetBusinessDate)
+                        .status("RUNNING")
+                        .startedAt(startedAt)
+                        .executedBy(executedBy)
+                        .build();
+                return logRepository.save(newLog);
+            });
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateResourceException("BATCH_ALREADY_RUNNING",
+                    targetBusinessDate + " のバッチ処理が既に実行中または実行済みです。");
+        }
 
         // Execute each step
         StepResult[] results = new StepResult[6];
         for (int step = 1; step <= 6; step++) {
             if (previouslyCompleted[step - 1]) {
-                results[step - 1] = StepResult.skipped();
+                results[step - 1] = StepResult.success();
                 final int s = step;
                 executeInNewTransaction(() -> {
                     updateStepStatus(execLog.getId(), s, "SUCCESS");
@@ -113,7 +126,7 @@ public class DailyCloseService {
 
             final int currentStep = step;
             try {
-                results[step - 1] = executeStepInNewTransaction(currentStep, targetBusinessDate, execLog.getId());
+                results[step - 1] = executeStepInNewTransaction(currentStep, targetBusinessDate, execLog.getId(), executedBy);
             } catch (Exception e) {
                 results[step - 1] = StepResult.failed(e.getMessage());
             }
@@ -158,11 +171,10 @@ public class DailyCloseService {
         return userService.getUserFullName(userId);
     }
 
-    private StepResult executeStepInNewTransaction(int step, LocalDate targetDate, Long logId) {
-        TransactionTemplate txTemplate = new TransactionTemplate(txManager);
+    private StepResult executeStepInNewTransaction(int step, LocalDate targetDate, Long logId, Long executedBy) {
         return txTemplate.execute(status -> {
             return switch (step) {
-                case 1 -> step1UpdateBusinessDate(targetDate);
+                case 1 -> step1UpdateBusinessDate(targetDate, executedBy);
                 case 2 -> step2AggregateInbound(targetDate);
                 case 3 -> step3AggregateOutbound(targetDate);
                 case 4 -> step4SnapshotInventory(targetDate);
@@ -174,7 +186,7 @@ public class DailyCloseService {
     }
 
     // Step 1: Update business date
-    private StepResult step1UpdateBusinessDate(LocalDate targetDate) {
+    private StepResult step1UpdateBusinessDate(LocalDate targetDate, Long executedBy) {
         LocalDate currentDate = jdbcTemplate.queryForObject(
                 "SELECT current_business_date FROM business_date WHERE id = 1 FOR UPDATE",
                 LocalDate.class);
@@ -190,8 +202,8 @@ public class DailyCloseService {
         }
 
         jdbcTemplate.update(
-                "UPDATE business_date SET current_business_date = ?, updated_at = now() WHERE id = 1",
-                targetDate);
+                "UPDATE business_date SET current_business_date = ?, updated_at = now(), updated_by = ? WHERE id = 1",
+                targetDate, executedBy);
 
         log.info("Step 1: Business date updated to {}", targetDate);
         return StepResult.success();
@@ -489,18 +501,24 @@ public class DailyCloseService {
         return StepResult.success();
     }
 
+    private static final String[] STEP_COLUMNS = {
+            "step1_status", "step2_status", "step3_status",
+            "step4_status", "step5_status", "step6_status"
+    };
+
     private void updateStepStatus(Long logId, int step, String status) {
-        String col = "step" + step + "_status";
+        if (step < 1 || step > 6) {
+            throw new IllegalArgumentException("Invalid step: " + step);
+        }
+        String col = STEP_COLUMNS[step - 1];
         jdbcTemplate.update("UPDATE batch_execution_logs SET " + col + " = ? WHERE id = ?", status, logId);
     }
 
     private <T> T executeInNewTransaction(java.util.function.Supplier<T> action) {
-        TransactionTemplate txTemplate = new TransactionTemplate(txManager);
         return txTemplate.execute(status -> action.get());
     }
 
     private void executeInNewTransaction(Runnable action) {
-        TransactionTemplate txTemplate = new TransactionTemplate(txManager);
         txTemplate.executeWithoutResult(status -> action.run());
     }
 
