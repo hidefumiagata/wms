@@ -272,6 +272,26 @@ class InventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-INV-004: 倉庫IDを変えると異なる在庫が返る")
+        void listByLocation_differentWarehouse_returnsDifferentData() throws Exception {
+            insertInventory(locA01_01_01_01, productAmbId, "CASE", 10, 0);
+
+            // WH001の在庫は返る
+            String url = INVENTORY_URL + "?warehouseId=" + warehouseId
+                    + "&page=0&size=20&sort=locationCode,asc";
+            ResponseEntity<String> response = get(url, adminHeaders);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(parseJson(response.getBody()).get("totalElements").asInt()).isGreaterThanOrEqualTo(1);
+
+            // 存在しない倉庫IDでは0件
+            String url2 = INVENTORY_URL + "?warehouseId=999999"
+                    + "&page=0&size=20&sort=locationCode,asc";
+            ResponseEntity<String> response2 = get(url2, adminHeaders);
+            assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(parseJson(response2.getBody()).get("totalElements").asInt()).isEqualTo(0);
+        }
+
+        @Test
         @DisplayName("SC-INV-004: 保管条件でフィルタする")
         void listByLocation_filterByStorageCondition() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 10, 0);
@@ -346,6 +366,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_INSUFFICIENT");
 
             // DB: 在庫は変化なし
             assertThat(getInventoryQty(locA01_01_01_01, productAmbId, "CASE")).isEqualTo(2);
@@ -354,7 +376,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("SC-INV-012: 棚卸ロック中のロケーションからの移動はエラー")
-        void move_fromStocktakeLocked_returns409() throws Exception {
+        void move_fromStocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
             lockLocationForStocktake(locA01_01_01_01);
 
@@ -369,12 +391,14 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
 
         @Test
         @DisplayName("SC-INV-012: 棚卸ロック中のロケーションへの移動もエラー")
-        void move_toStocktakeLocked_returns409() throws Exception {
+        void move_toStocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
             lockLocationForStocktake(locA01_02_01_01);
 
@@ -389,7 +413,33 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
+        }
+
+        @Test
+        @DisplayName("SC-INV-013: 移動先ロケーション収容上限超過はエラー")
+        void move_capacityExceeded_returns422() throws Exception {
+            // LOCATION_CAPACITY_CASE = 1（システムパラメータ初期値）
+            // 移動先に既にCASE 1個 → 上限到達
+            insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
+            insertInventory(locA01_02_01_01, productAmbId, "CASE", 1, 0);
+
+            String body = String.format("""
+                    {
+                        "fromLocationId": %d,
+                        "productId": %d,
+                        "unitType": "CASE",
+                        "toLocationId": %d,
+                        "moveQty": 1
+                    }""", locA01_01_01_01, productAmbId, locA01_02_01_01);
+
+            ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_CAPACITY_EXCEEDED");
         }
 
         @Test
@@ -435,7 +485,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("SC-INV-015: 移動先に別商品が存在する場合はエラー")
-        void move_differentProductAtDestination_returns409() throws Exception {
+        void move_differentProductAtDestination_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 5, 0);
             insertInventory(locA01_02_01_01, productAmb2Id, "CASE", 3, 0);
 
@@ -450,8 +500,9 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(MOVE_URL, body, adminHeaders);
 
-            // 別商品がある場合は409 or 422
-            assertThat(response.getStatusCode().value()).isIn(409, 422);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("LOCATION_PRODUCT_MISMATCH");
         }
     }
 
@@ -609,7 +660,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("SC-INV-025: 棚卸ロック中のロケーションでのばらしはエラー")
-        void breakdown_stocktakeLocked_returns409() throws Exception {
+        void breakdown_stocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 3, 0);
             lockLocationForStocktake(locA01_01_01_01);
 
@@ -625,7 +676,9 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(BREAKDOWN_URL, body, adminHeaders);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
     }
 
@@ -729,7 +782,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
         @Test
         @DisplayName("SC-INV-033: 棚卸ロック中の在庫訂正はエラー")
-        void correction_stocktakeLocked_returns409() throws Exception {
+        void correction_stocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 3, 0);
             lockLocationForStocktake(locA01_01_01_01);
 
@@ -744,7 +797,9 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(CORRECTION_URL, body, adminHeaders);
 
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
             assertThat(getInventoryQty(locA01_01_01_01, productAmbId, "CASE")).isEqualTo(3);
         }
 
@@ -766,6 +821,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = postJson(CORRECTION_URL, body, adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode errJson = parseJson(response.getBody());
+            assertThat(errJson.get("code").asText()).isEqualTo("CORRECTION_BELOW_ALLOCATED");
 
             // 引当数と同値（3）は成功
             String body2 = String.format("""
@@ -780,6 +837,39 @@ class InventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response2 = postJson(CORRECTION_URL, body2, adminHeaders);
             assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(getInventoryQty(locA01_01_01_01, productAmbId, "CASE")).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("在庫訂正後に訂正履歴が照会できる")
+        void correctionHistory_afterCorrection_returnsRecords() throws Exception {
+            insertInventory(locA01_01_01_01, productAmbId, "CASE", 3, 0);
+
+            // 訂正実行
+            String body = String.format("""
+                    {
+                        "locationId": %d,
+                        "productId": %d,
+                        "unitType": "CASE",
+                        "newQty": 5,
+                        "reason": "入庫漏れ補正"
+                    }""", locA01_01_01_01, productAmbId);
+            postJson(CORRECTION_URL, body, adminHeaders);
+
+            // 訂正履歴照会
+            String url = CORRECTION_HISTORY_URL
+                    + "?warehouseId=" + warehouseId
+                    + "&locationId=" + locA01_01_01_01
+                    + "&productId=" + productAmbId
+                    + "&unitType=CASE";
+            ResponseEntity<String> response = get(url, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.isArray()).isTrue();
+            assertThat(json.size()).isGreaterThanOrEqualTo(1);
+            assertThat(json.get(0).get("reason").asText()).isEqualTo("入庫漏れ補正");
+            assertThat(json.get(0).get("quantityBefore").asInt()).isEqualTo(3);
+            assertThat(json.get(0).get("quantityAfter").asInt()).isEqualTo(5);
         }
     }
 
@@ -937,7 +1027,9 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                     LocalDate.now().toString());
 
             ResponseEntity<String> second = postJson(STOCKTAKES_URL, startBody2, adminHeaders);
-            assertThat(second.getStatusCode().value()).isIn(409, 422);
+            assertThat(second.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode errJson = parseJson(second.getBody());
+            assertThat(errJson.get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
 
         @Test
@@ -1133,7 +1225,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                     }""", locA01_01_01_01, productAmbId, locA02_01_01_01);
 
             ResponseEntity<String> moveResp = postJson(MOVE_URL, moveBody, adminHeaders);
-            assertThat(moveResp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(moveResp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(moveResp.getBody()).get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
 
             // ロック外 → ロック中ロケーションへの移動もエラー
             insertInventory(locA02_01_01_01, productAmbId, "CASE", 3, 0);
@@ -1147,7 +1240,7 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                     }""", locA02_01_01_01, productAmbId, locA01_01_01_01);
 
             ResponseEntity<String> moveResp2 = postJson(MOVE_URL, moveBody2, adminHeaders);
-            assertThat(moveResp2.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(moveResp2.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         }
 
         @Test
@@ -1178,7 +1271,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                     }""", locA01_01_01_01, productAmbId, locA01_01_01_01);
 
             ResponseEntity<String> resp = postJson(BREAKDOWN_URL, breakdownBody, adminHeaders);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(resp.getBody()).get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
 
         @Test
@@ -1208,7 +1302,8 @@ class InventoryIntegrationTest extends IntegrationTestBase {
                     }""", locA01_01_01_01, productAmbId);
 
             ResponseEntity<String> resp = postJson(CORRECTION_URL, correctionBody, adminHeaders);
-            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+            assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            assertThat(parseJson(resp.getBody()).get("code").asText()).isEqualTo("INVENTORY_STOCKTAKE_IN_PROGRESS");
         }
     }
 }
