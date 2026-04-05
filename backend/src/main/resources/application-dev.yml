@@ -33,6 +33,16 @@ cookie:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
+# WMS Application Properties
+wms:
+  storage:
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME:devstorageaccount}
+  acs:
+    connection-string: ${ACS_CONNECTION_STRING:}
+    sender-address: ${ACS_SENDER_ADDRESS:DoNotReply@localhost}
+  frontdoor:
+    id: ${AZURE_FRONTDOOR_ID:}
+
 # Logging
 logging:
   level:
