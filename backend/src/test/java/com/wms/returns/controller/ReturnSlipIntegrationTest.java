@@ -78,7 +78,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false");
     }
 
-    // ========== ヘルパーメ��ッド ==========
+    // ========== ヘルパーメソッド ==========
 
     private ResponseEntity<String> get(String url, HttpHeaders headers) {
         return restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
@@ -140,7 +140,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
 
     private int getInventoryQuantity(Long locationId, Long productId, String unitType) {
         return jdbcTemplate.queryForObject(
-                "SELECT quantity FROM inventories WHERE location_id = ? AND product_id = ? AND unit_type = ?",
+                "SELECT SUM(quantity) FROM inventories WHERE location_id = ? AND product_id = ? AND unit_type = ?",
                 Integer.class, locationId, productId, unitType);
     }
 
@@ -149,7 +149,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
     // ========================================================
 
     @Nested
-    @DisplayName("POST /api/v1/returns — 返���登録")
+    @DisplayName("POST /api/v1/returns — 返品登録")
     class CreateReturn {
 
         @Test
@@ -185,7 +185,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
             // DB検証: return_slips に1件追加
             assertThat(countReturnSlips()).isEqualTo(1);
 
-            // DB検証: 在庫は変動なし（入荷返品は在庫操作なし���
+            // DB検証: 在庫は変動なし（入荷返品は在庫操作なし）
             assertThat(getInventoryQuantity(locA01_01_01_01, productAmbId, "CASE")).isEqualTo(10);
 
             // DB検証: inventory_movements は追加なし
@@ -193,7 +193,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-002: 在庫返品の登��（在庫即時減算）")
+        @DisplayName("SC-002: 在庫返品の登録（在庫即時減算）")
         void create_inventoryReturn_returns201AndDeductsInventory() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 20, 0);
 
@@ -213,11 +213,13 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
             assertThat(getInventoryQuantity(locA01_01_01_01, productAmbId, "CASE")).isEqualTo(17);
 
             // DB検証: inventory_movements に1件追加
-            assertThat(countInventoryMovements()).isGreaterThanOrEqualTo(1);
-            int movementQty = jdbcTemplate.queryForObject(
-                    "SELECT quantity FROM inventory_movements WHERE reference_type = 'RETURN_SLIP' " +
-                            "ORDER BY id DESC LIMIT 1", Integer.class);
-            assertThat(movementQty).isEqualTo(-3);
+            assertThat(countInventoryMovements()).isEqualTo(1);
+            var movement = jdbcTemplate.queryForMap(
+                    "SELECT movement_type, quantity, quantity_after FROM inventory_movements " +
+                            "WHERE reference_type = 'RETURN_SLIP' ORDER BY id DESC LIMIT 1");
+            assertThat(((Number) movement.get("quantity")).intValue()).isEqualTo(-3);
+            assertThat(movement.get("movement_type")).isEqualTo("RETURN_OUT");
+            assertThat(((Number) movement.get("quantity_after")).intValue()).isEqualTo(17);
         }
 
         @Test
@@ -275,7 +277,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
             String noteInDb = jdbcTemplate.queryForObject(
                     "SELECT return_reason_note FROM return_slips WHERE return_reason = 'OTHER'",
                     String.class);
-            assertThat(noteInDb).isEqualTo("サンプル品の返却の���め");
+            assertThat(noteInDb).isEqualTo("サンプル品の返却のため");
         }
 
         @Test
@@ -347,7 +349,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-009: 在庫返品で棚卸ロック中のロケーション→422エ���ー")
+        @DisplayName("SC-009: 在庫返品で棚卸ロック中のロケーション→422エラー")
         void create_inventoryReturnStocktakeLocked_returns422() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "CASE", 10, 0);
 
@@ -439,14 +441,14 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("SC-014: 存在しない商品IDで返品→404エラー")
         void create_nonExistingProduct_returns404() throws Exception {
-            String body = String.format("""
+            String body = """
                     {
                       "returnType": "INBOUND",
                       "productId": 999999,
                       "quantity": 1,
                       "unitType": "CASE",
                       "returnReason": "QUALITY_DEFECT"
-                    }""");
+                    }""";
 
             ResponseEntity<String> response = postJson(RETURNS_URL, body, adminHeaders);
 
@@ -520,7 +522,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("全件取得: 3件の返品が取得���きる")
+        @DisplayName("全件取得: 3件の返品が取得できる")
         void getAll_returns3Items() throws Exception {
             createReturnSlips();
 
@@ -600,7 +602,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("存在しない倉庫IDで検索→404エ��ー")
+        @DisplayName("存在しない倉庫IDで検索→404エラー")
         void getReturns_nonExistingWarehouse_returns404() throws Exception {
             ResponseEntity<String> response = get(
                     RETURNS_URL + "?warehouseId=999999&page=0&size=20&sort=returnDate,desc",
@@ -619,6 +621,24 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        @Test
+        @DisplayName("返品日範囲指定で正常にフィルタされる")
+        void filter_byDateRange_returnsFiltered() throws Exception {
+            createReturnSlips();
+
+            // 本日の営業日で登録されているので、本日を含む範囲で検索
+            String today = java.time.LocalDate.now().toString();
+            ResponseEntity<String> response = get(
+                    RETURNS_URL + "?warehouseId=" + warehouseId +
+                            "&returnDateFrom=" + today + "&returnDateTo=" + today +
+                            "&page=0&size=20&sort=returnDate,desc",
+                    adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("totalElements").asInt()).isGreaterThanOrEqualTo(1);
         }
     }
 
@@ -644,7 +664,7 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("VIEWERロー���で返品一覧取得→403エラー")
+        @DisplayName("VIEWERロールで返品一覧取得→403エラー")
         void getReturns_asViewer_returns403() throws Exception {
             HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
 
@@ -664,6 +684,91 @@ class ReturnSlipIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = postJson(RETURNS_URL, body, headers);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("未認証で返品一覧取得→401エラー")
+        void getReturns_unauthenticated_returns401() throws Exception {
+            HttpHeaders headers = createJsonHeaders();
+
+            ResponseEntity<String> response = get(
+                    RETURNS_URL + "?warehouseId=" + warehouseId + "&page=0&size=20&sort=returnDate,desc",
+                    headers);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    // ========================================================
+    // SC-013: 必須項目バリデーション
+    // ========================================================
+
+    @Nested
+    @DisplayName("必須項目バリデーション")
+    class RequiredFieldValidation {
+
+        @Test
+        @DisplayName("SC-013: productIdが未指定→400エラー")
+        void create_missingProductId_returns400() throws Exception {
+            String body = """
+                    {
+                      "returnType": "INBOUND",
+                      "quantity": 1,
+                      "unitType": "CASE",
+                      "returnReason": "QUALITY_DEFECT"
+                    }""";
+
+            ResponseEntity<String> response = postJson(RETURNS_URL, body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("SC-013: quantityが未指定→400エラー")
+        void create_missingQuantity_returns400() throws Exception {
+            String body = String.format("""
+                    {
+                      "returnType": "INBOUND",
+                      "productId": %d,
+                      "unitType": "CASE",
+                      "returnReason": "QUALITY_DEFECT"
+                    }""", productAmbId);
+
+            ResponseEntity<String> response = postJson(RETURNS_URL, body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("SC-013: unitTypeが未指定→400エラー")
+        void create_missingUnitType_returns400() throws Exception {
+            String body = String.format("""
+                    {
+                      "returnType": "INBOUND",
+                      "productId": %d,
+                      "quantity": 1,
+                      "returnReason": "QUALITY_DEFECT"
+                    }""", productAmbId);
+
+            ResponseEntity<String> response = postJson(RETURNS_URL, body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("SC-013: returnReasonが未指定→400エラー")
+        void create_missingReturnReason_returns400() throws Exception {
+            String body = String.format("""
+                    {
+                      "returnType": "INBOUND",
+                      "productId": %d,
+                      "quantity": 1,
+                      "unitType": "CASE"
+                    }""", productAmbId);
+
+            ResponseEntity<String> response = postJson(RETURNS_URL, body, adminHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
     }
 }
