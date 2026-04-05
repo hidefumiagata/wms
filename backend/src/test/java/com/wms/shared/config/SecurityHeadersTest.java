@@ -24,6 +24,7 @@ class SecurityHeadersTest {
     @DisplayName("Content-Security-Policyヘッダーが付与される")
     void response_containsContentSecurityPolicyHeader() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType("application/json")
                         .content("{\"loginId\":\"test\",\"password\":\"test\"}"))
                 .andExpect(header().exists("Content-Security-Policy"))
@@ -35,6 +36,7 @@ class SecurityHeadersTest {
     @DisplayName("Permissions-Policyヘッダーが付与される")
     void response_containsPermissionsPolicyHeader() throws Exception {
         mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Requested-With", "XMLHttpRequest")
                         .contentType("application/json")
                         .content("{\"loginId\":\"test\",\"password\":\"test\"}"))
                 .andExpect(header().exists("Permissions-Policy"))
