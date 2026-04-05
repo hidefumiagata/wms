@@ -34,6 +34,7 @@ class AllocationIntegrationTest extends IntegrationTestBase {
     private static final String STAFF_PASSWORD = "Staff@1234";
 
     private HttpHeaders adminHeaders;
+    private HttpHeaders staffHeaders;
     private Long warehouseId;
     private String warehouseCode;
     private String warehouseName;
@@ -90,6 +91,7 @@ class AllocationIntegrationTest extends IntegrationTestBase {
     @BeforeAll
     void initAuth() {
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
+        staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
     }
 
     @BeforeEach
@@ -256,6 +258,16 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             // Assert: DB — 在庫のallocated_qty
             assertThat(getAllocatedQty(locA01_01_01_01, productAmbId, "PIECE")).isEqualTo(5);
             assertThat(getAllocatedQty(locA01_01_01_02, productAmbId, "PIECE")).isEqualTo(5);
+
+            // Assert: DB — allocation_details のロケーション別引当（FIFO順序確認）
+            int qtyFromLocA = jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(allocated_qty), 0) FROM allocation_details WHERE outbound_slip_id = ? AND location_id = ?",
+                    Integer.class, slipId, locA01_01_01_01);
+            int qtyFromLocB = jdbcTemplate.queryForObject(
+                    "SELECT COALESCE(SUM(allocated_qty), 0) FROM allocation_details WHERE outbound_slip_id = ? AND location_id = ?",
+                    Integer.class, slipId, locA01_01_01_02);
+            assertThat(qtyFromLocA).isEqualTo(5); // ロケーションA: FIFO順で先に全量引当
+            assertThat(qtyFromLocB).isEqualTo(5); // ロケーションB: 残り5個を引当
         }
 
         @Test
@@ -296,15 +308,17 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             insertOutboundSlipLine(slipId, 1, productRefId, "REF-001", "牛乳 1L",
                     "PIECE", 8, "ORDERED");
 
-            // ロケーションA: 期限2026-04-30, 5個
+            // 基準日から相対的に未来の期限を設定（テストの日付依存を排除）
+            LocalDate baseExpiry = LocalDate.now().plusMonths(1);
+            // ロケーションA: 期限 baseExpiry+1ヶ月, 5個
             insertInventory(locA01_01_01_01, productRefId, "PIECE", 5, 0,
-                    "LOT-A", LocalDate.of(2026, 4, 30));
-            // ロケーションB: 期限2026-06-30, 10個
+                    "LOT-A", baseExpiry.plusMonths(1));
+            // ロケーションB: 期限 baseExpiry+3ヶ月, 10個
             insertInventory(locA01_01_01_02, productRefId, "PIECE", 10, 0,
-                    "LOT-B", LocalDate.of(2026, 6, 30));
-            // ロケーションC: 期限2026-03-31, 3個（最短期限→最優先）
+                    "LOT-B", baseExpiry.plusMonths(3));
+            // ロケーションC: 期限 baseExpiry, 3個（最短期限→最優先）
             insertInventory(locA01_02_01_01, productRefId, "PIECE", 3, 0,
-                    "LOT-C", LocalDate.of(2026, 3, 31));
+                    "LOT-C", baseExpiry);
 
             // Act
             String body = String.format("{\"outboundSlipIds\":[%d]}", slipId);
@@ -361,9 +375,8 @@ class AllocationIntegrationTest extends IntegrationTestBase {
 
             // Assert: DB — バラ在庫のallocated_qty
             assertThat(getAllocatedQty(locA01_01_01_01, productAmbId, "PIECE")).isEqualTo(5);
-            // Assert: DB — ボール在庫のallocated_qty（仮確保）
-            int ballAllocated = getAllocatedQty(locA01_01_01_02, productAmbId, "BALL");
-            assertThat(ballAllocated).isGreaterThan(0);
+            // Assert: DB — ボール在庫のallocated_qty（仮確保: 不足5÷ball_qty4=ceil→2ボール全量）
+            assertThat(getAllocatedQty(locA01_01_01_02, productAmbId, "BALL")).isEqualTo(2);
             // Assert: DB — ばらし指示レコード
             assertThat(countUnpackInstructions(slipId)).isEqualTo(1);
         }
@@ -371,18 +384,18 @@ class AllocationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("SC-004a: ばらし指示自動生成（ケース→バラ）")
         void execute_unpackCaseToPiece_returns200() throws Exception {
-            // Arrange: 受注50個(PIECE)、バラ在庫10、ボール在庫0、ケース在庫3
-            // AMB-001: case_qty=6(ケース入数), ball_qty=4(ボール入数)
-            // ケース→PIECEの変換率 = case_quantity = 6
-            // ただしケースからピースの変換はcaseQuantity=6を使う
+            // Arrange: 受注28個(PIECE)、バラ在庫10、ボール在庫0、ケース在庫3
+            // AMB-001: case_qty=6(ケース入数→PIECEへの変換率), ball_qty=4(ボール入数)
+            // ケース→PIECE変換率 = case_quantity = 6
+            // 必要: 28-10=18バラ分 → ceil(18/6)=3ケース全量仮確保
             LocalDate plannedDate = LocalDate.now().plusDays(1);
             Long slipId = insertOutboundSlip("OUT-TEST-004A", "ORDERED", plannedDate);
             insertOutboundSlipLine(slipId, 1, productAmbId, "AMB-001", "ミネラルウォーター 500ml",
-                    "PIECE", 50, "ORDERED");
+                    "PIECE", 28, "ORDERED");
 
             // バラ在庫: 10個
             insertInventory(locA01_01_01_01, productAmbId, "PIECE", 10, 0);
-            // ケース在庫: 3個（3×6=18バラ分） ※ バラ+ケース=10+18=28 < 50 → 部分引当
+            // ケース在庫: 3個（3×6=18バラ分） ※ バラ+ケース=10+18=28 → 全量引当
             insertInventory(locA01_01_01_02, productAmbId, "CASE", 3, 0);
 
             // Act
@@ -392,6 +405,7 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             // Assert: レスポンス
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("allocatedSlips").get(0).get("status").asText()).isEqualTo("ALLOCATED");
 
             // ばらし指示（ケース→バラ）
             JsonNode unpackInstructions = json.get("unpackInstructions");
@@ -401,8 +415,8 @@ class AllocationIntegrationTest extends IntegrationTestBase {
 
             // Assert: DB — バラ在庫のallocated_qty
             assertThat(getAllocatedQty(locA01_01_01_01, productAmbId, "PIECE")).isEqualTo(10);
-            // Assert: DB — ケース在庫のallocated_qty（仮確保）
-            assertThat(getAllocatedQty(locA01_01_01_02, productAmbId, "CASE")).isGreaterThan(0);
+            // Assert: DB — ケース在庫のallocated_qty（仮確保: 不足18÷case_qty6=3ケース全量）
+            assertThat(getAllocatedQty(locA01_01_01_02, productAmbId, "CASE")).isEqualTo(3);
             // Assert: DB — ばらし指示レコード
             assertThat(countUnpackInstructions(slipId)).isEqualTo(1);
         }
@@ -440,8 +454,11 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             // Assert
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("allocatedCount").asInt()).isEqualTo(1); // 全量引当成功は1件
-            assertThat(json.get("allocatedSlips")).hasSize(2);
+            assertThat(json.get("allocatedCount").asInt()).isEqualTo(1); // 全量引当成功は1件のみ
+            assertThat(json.get("allocatedSlips")).hasSize(2); // 全量+部分合わせて2件
+            // 未引当明細あり（受注BのPRD-002が12個不足）
+            assertThat(json.get("unallocatedLines")).hasSize(1);
+            assertThat(json.get("unallocatedLines").get(0).get("shortageQty").asInt()).isEqualTo(12);
 
             // Assert: DB — 受注A: ALLOCATED, 受注B: PARTIAL_ALLOCATED
             assertThat(getSlipStatus(slipIdA)).isEqualTo("ALLOCATED");
@@ -481,7 +498,7 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             // ばらし指示IDを取得
             Long unpackId = execJson.get("unpackInstructions").get(0).get("id").asLong();
 
-            // ばらし前のボール在庫を記録
+            // ばらし前の在庫状態を記録
             int ballQtyBefore = getInventoryQty(locA01_01_01_02, productAmbId, "BALL");
             int ballAllocBefore = getAllocatedQty(locA01_01_01_02, productAmbId, "BALL");
 
@@ -503,6 +520,12 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             String unpackStatus = jdbcTemplate.queryForObject(
                     "SELECT status FROM unpack_instructions WHERE id = ?", String.class, unpackId);
             assertThat(unpackStatus).isEqualTo("COMPLETED");
+
+            // Assert: DB — ボール在庫の変動（allocated_qty減算、quantity減算）
+            int ballQtyAfter = getInventoryQty(locA01_01_01_02, productAmbId, "BALL");
+            int ballAllocAfter = getAllocatedQty(locA01_01_01_02, productAmbId, "BALL");
+            assertThat(ballQtyAfter).isLessThan(ballQtyBefore);
+            assertThat(ballAllocAfter).isLessThan(ballAllocBefore);
 
             // Assert: DB — inventory_movements
             assertThat(countInventoryMovements("BREAKDOWN_OUT")).isGreaterThanOrEqualTo(1);
@@ -694,8 +717,6 @@ class AllocationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("SC-013: WAREHOUSE_STAFFでの引当実行は403エラー")
         void execute_withStaffRole_returns403() throws Exception {
-            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
-
             String body = "{\"outboundSlipIds\":[1]}";
             ResponseEntity<String> response = postJson(ALLOCATION_EXECUTE_URL, body, staffHeaders);
 
@@ -705,8 +726,6 @@ class AllocationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("SC-013: WAREHOUSE_STAFFでの引当対象受注一覧取得は403エラー")
         void getOrders_withStaffRole_returns403() throws Exception {
-            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
-
             ResponseEntity<String> response = get(
                     ALLOCATION_ORDERS_URL + "?warehouseId=" + warehouseId + "&page=0&size=20&sort=plannedDate,asc",
                     staffHeaders);
@@ -717,8 +736,6 @@ class AllocationIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("SC-013: WAREHOUSE_STAFFでの引当解放は403エラー")
         void release_withStaffRole_returns403() throws Exception {
-            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
-
             String body = "{\"outboundSlipIds\":[1]}";
             ResponseEntity<String> response = postJson(ALLOCATION_RELEASE_URL, body, staffHeaders);
 
@@ -745,7 +762,6 @@ class AllocationIntegrationTest extends IntegrationTestBase {
             Long unpackId = execJson.get("unpackInstructions").get(0).get("id").asLong();
 
             // Act: staff でばらし完了
-            HttpHeaders staffHeaders = loginAndGetHeaders(STAFF_CODE, STAFF_PASSWORD);
             String completeUrl = UNPACK_INSTRUCTIONS_URL + "/" + unpackId + "/complete";
             ResponseEntity<String> response = put(completeUrl, null, staffHeaders);
 
