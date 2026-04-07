@@ -28,6 +28,7 @@
           <el-input
             v-model="form.productCode"
             style="width: 280px"
+            :maxlength="100"
             :placeholder="t('returns.productCode')"
             @keyup.enter="searchProduct"
           />
