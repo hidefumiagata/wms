@@ -126,6 +126,14 @@
           <span>{{ selectedSupplier.partnerName }}</span>
         </el-form-item>
 
+        <!-- 商品検索ダイアログ -->
+        <ProductSearchDialog
+          v-model:visible="productDialogVisible"
+          :results="productSearchResults"
+          :total="productSearchTotal"
+          @select="selectProduct"
+        />
+
         <!-- 仕入先検索ダイアログ -->
         <el-dialog
           v-model="supplierDialogVisible"
@@ -215,6 +223,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance } from 'element-plus'
 import { useReturnForm } from '@/composables/returns/useReturnForm'
+import ProductSearchDialog from '@/components/master/ProductSearchDialog.vue'
 import { formatNumber } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
@@ -228,6 +237,9 @@ const {
   locationLoading,
   supplierSearchLoading,
   selectedProduct,
+  productDialogVisible,
+  productSearchResults,
+  productSearchTotal,
   selectedSupplier,
   locationOptions,
   selectedLocationInventory,
@@ -241,6 +253,7 @@ const {
   hasAllocated,
   onReturnTypeChange,
   searchProduct,
+  selectProduct,
   searchSupplier,
   selectSupplier,
   clearSupplier,

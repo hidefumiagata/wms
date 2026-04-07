@@ -879,6 +879,10 @@ export default {
     registerError: '返品伝票の登録に失敗しました。時間をおいて再試行してください。',
     productNotFound: '指定された商品コードが見つかりません。',
     productSearchEmpty: '検索条件に一致する商品がありません。',
+    productSearchTitle: '商品検索',
+    productCodeColumn: '商品コード',
+    productNameColumn: '商品名',
+    productSearchHint: '全{total}件中{count}件を表示しています',
     locationCandidateEmpty: '選択した商品・荷姿の在庫があるロケーションが見つかりません。',
     insufficientQuantity:
       '返品数量が有効在庫数を超えています。（有効在庫数: {available}{unitType}）',

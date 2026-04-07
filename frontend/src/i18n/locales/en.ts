@@ -875,6 +875,10 @@ export default {
     registerError: 'Failed to register return slip. Please try again later.',
     productNotFound: 'Product code not found.',
     productSearchEmpty: 'No products match the search criteria.',
+    productSearchTitle: 'Product Search',
+    productCodeColumn: 'Product Code',
+    productNameColumn: 'Product Name',
+    productSearchHint: 'Showing {count} of {total} results',
     locationCandidateEmpty: 'No locations found with inventory for the selected product/unit type.',
     insufficientQuantity:
       'Return quantity exceeds available stock. (Available: {available} {unitType})',
