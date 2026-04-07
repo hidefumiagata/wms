@@ -200,8 +200,15 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         },
         signal: productAbortController.signal,
       })
-      const rawProducts = (res.data.content ?? []) as Record<string, unknown>[]
-      const total = res.data.totalElements ?? rawProducts.length
+      const content = res.data.content
+      const rawProducts: Record<string, unknown>[] = Array.isArray(content) ? content : []
+      const total =
+        typeof res.data.totalElements === 'number'
+          ? res.data.totalElements
+          : (console.warn(
+              '[searchProduct] API contract violation: totalElements missing',
+            ),
+            rawProducts.length)
       if (rawProducts.length === 0) {
         ElMessage.info(t('returns.productSearchEmpty'))
         selectedProduct.value = null
@@ -234,6 +241,8 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   }
 
   function selectProduct(product: ProductOption) {
+    // 同一商品の再選択時はロット・有効期限を保持する（C-3-m5）
+    const isSameProduct = selectedProduct.value?.id === product.id
     selectedProduct.value = product
     form.productCode = product.productCode
     // ロケーション候補リセット
@@ -242,8 +251,11 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     // 前商品の条件付き入力値（ロット・有効期限）を必ずクリアする。
     // showLotNumber=false で非表示になっても、クリアしないと submit ペイロードに
     // 前商品の値が残るため明示的にリセットする。
-    form.lotNumber = ''
-    form.expiryDate = ''
+    // ただし同一商品を再選択した場合は入力済みの値を保持する。
+    if (!isSameProduct) {
+      form.lotNumber = ''
+      form.expiryDate = ''
+    }
     // 在庫返品時かつ荷姿選択済みならロケーション候補取得
     if (isInventoryReturn.value && form.unitType) {
       fetchLocationCandidates()
