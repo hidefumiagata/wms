@@ -184,7 +184,7 @@ describe('useReturnForm', () => {
       expect(result.form.productCode).toBe('P005')
     })
 
-    it('複数件で完全一致なしなら最初の1件を選択', async () => {
+    it('複数件で完全一致なしならダイアログ表示', async () => {
       vi.mocked(apiClient.get).mockResolvedValueOnce(
         mockAxiosResponse({
           content: [
@@ -209,7 +209,44 @@ describe('useReturnForm', () => {
       const { result } = setup()
       result.form.productCode = 'PA'
       await result.searchProduct()
-      expect(result.selectedProduct.value?.id).toBe(10)
+      expect(result.selectedProduct.value).toBeNull()
+      expect(result.productDialogVisible.value).toBe(true)
+      expect(result.productSearchResults.value).toHaveLength(2)
+      expect(result.productSearchTotal.value).toBe(2)
+    })
+
+    it('ダイアログから selectProduct を呼ぶとフォーム反映・ダイアログ閉じる', () => {
+      const { result } = setup()
+      result.productDialogVisible.value = true
+      result.selectProduct({
+        id: 99,
+        productCode: 'P099',
+        productName: 'Selected',
+        lotManageFlag: false,
+        expiryManageFlag: false,
+      })
+      expect(result.selectedProduct.value?.id).toBe(99)
+      expect(result.form.productCode).toBe('P099')
+      expect(result.productDialogVisible.value).toBe(false)
+    })
+
+    it('resetForm で productDialogVisible/Results/Total がクリアされる', () => {
+      const { result } = setup()
+      result.productDialogVisible.value = true
+      result.productSearchResults.value = [
+        {
+          id: 1,
+          productCode: 'P001',
+          productName: 'A',
+          lotManageFlag: false,
+          expiryManageFlag: false,
+        },
+      ]
+      result.productSearchTotal.value = 5
+      result.resetForm()
+      expect(result.productDialogVisible.value).toBe(false)
+      expect(result.productSearchResults.value).toEqual([])
+      expect(result.productSearchTotal.value).toBe(0)
     })
 
     it('API失敗時にエラーメッセージ', async () => {

@@ -9,14 +9,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { ReturnType } from '@/api/generated/models/return-type'
 import { ReturnReason } from '@/api/generated/models/return-reason'
-
-interface ProductOption {
-  id: number
-  productCode: string
-  productName: string
-  lotManageFlag: boolean
-  expiryManageFlag: boolean
-}
+import type { ProductOption } from '@/types/master'
 
 interface LocationInventory {
   locationId: number
@@ -46,6 +39,10 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
 
   // 商品選択結果
   const selectedProduct = ref<ProductOption | null>(null)
+  // 商品検索ダイアログ
+  const productDialogVisible = ref(false)
+  const productSearchResults = ref<ProductOption[]>([])
+  const productSearchTotal = ref(0)
   // 仕入先選択結果
   const selectedSupplier = ref<PartnerOption | null>(null)
   // 仕入先検索ダイアログ
@@ -204,6 +201,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         signal: productAbortController.signal,
       })
       const products = res.data.content ?? []
+      const total = res.data.totalElements ?? products.length
       if (products.length === 0) {
         ElMessage.info(t('returns.productSearchEmpty'))
         selectedProduct.value = null
@@ -211,13 +209,25 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
       }
       // 完全一致 or 1件の場合は直接選択
       const exact = products.find((p: ProductOption) => p.productCode === form.productCode.trim())
-      const target = exact ?? (products.length === 1 ? products[0] : null)
-      if (target) {
-        selectProduct(target)
-      } else {
-        // 複数件の場合、最初の1件を選択（将来はダイアログ表示）
-        selectProduct(products[0])
+      if (exact) {
+        selectProduct(exact)
+        return
       }
+      if (products.length === 1) {
+        selectProduct(products[0])
+        return
+      }
+      // 複数件で完全一致なし → ダイアログ表示
+      productSearchResults.value = products.map((p: Record<string, unknown>) => ({
+        id: p.id as number,
+        productCode: p.productCode as string,
+        productName: p.productName as string,
+        lotManageFlag: p.lotManageFlag as boolean,
+        expiryManageFlag: p.expiryManageFlag as boolean,
+      }))
+      productSearchTotal.value = total
+      selectedProduct.value = null
+      productDialogVisible.value = true
     } catch (err) {
       if (axios.isCancel(err)) return
       ElMessage.error(t('returns.productNotFound'))
@@ -237,6 +247,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     if (isInventoryReturn.value && form.unitType) {
       fetchLocationCandidates()
     }
+    productDialogVisible.value = false
   }
 
   // --- 荷姿変更時 ---
@@ -470,6 +481,9 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     selectedProduct.value = null
     selectedSupplier.value = null
     locationOptions.value = []
+    productSearchResults.value = []
+    productSearchTotal.value = 0
+    productDialogVisible.value = false
     supplierSearchResults.value = []
     supplierSearchTotal.value = 0
     supplierDialogVisible.value = false
@@ -506,6 +520,9 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     locationLoading,
     supplierSearchLoading,
     selectedProduct,
+    productDialogVisible,
+    productSearchResults,
+    productSearchTotal,
     selectedSupplier,
     locationOptions,
     selectedLocationInventory,
@@ -519,6 +536,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     hasAllocated,
     onReturnTypeChange,
     searchProduct,
+    selectProduct,
     searchSupplier,
     selectSupplier,
     clearSupplier,
