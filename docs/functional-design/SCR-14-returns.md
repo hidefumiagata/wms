@@ -125,7 +125,7 @@
 | イベントID | トリガー | 処理概要 | 遷移先 / 結果 | 実行可能ロール |
 |----------|---------|---------|-------------|-------------|
 | `EVT-RTN001-001` | 画面初期表示 | クエリパラメータを確認し、`returnType` があれば返品種別をプリセット、`relatedSlipNumber` があれば関連伝票番号をプリセット（入荷検品画面からの遷移時） | 同画面（初期値設定） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
-| `EVT-RTN001-002` | 商品検索ボタンクリック / 商品コード入力後Enter | API `GET /api/v1/master/products?keyword={keyword}` で商品を検索し、検索結果ダイアログを表示。1件の場合は直接選択 | 同画面（検索ダイアログ表示） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
+| `EVT-RTN001-002` | 商品検索ボタンクリック / 商品コード入力後Enter | API `GET /api/v1/master/products?keyword={keyword}&size=10` で商品を検索（最大10件取得）。完全一致する商品コードが存在する場合は、ダイアログを出さずに直接選択する。存在しない場合は: 検索結果が1件→直接選択、複数件→検索結果ダイアログを表示。ヒット総件数が表示件数を超える場合、ダイアログ下部に「全{total}件中{count}件を表示しています」のヒントを表示 | 同画面（検索ダイアログ表示） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
 | `EVT-RTN001-003` | 商品選択（検索結果から選択） | 商品名を自動表示。商品マスタの `lot_manage_flag`・`expiry_manage_flag` を判定してロット番号・賞味期限フィールドの表示を制御。在庫返品時はロケーション候補をリセット | 同画面（フィールド表示制御） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
 | `EVT-RTN001-004` | 返品種別変更 | 返品種別に応じた条件付き表示を制御。「在庫返品」→ロケーション選択を表示、仕入先は手動選択（編集可能）。「入荷返品」→関連伝票番号を表示、仕入先は伝票から自動セット。「出荷返品」→関連伝票番号を表示、仕入先は非表示。種別変更時は仕入先の自動セット値をクリアし読み取り専用を解除する。他の種別固有項目は非表示に戻す | 同画面（フィールド表示切替） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
 | `EVT-RTN001-004a` | 入荷返品時: 関連伝票番号入力後Enter / フォーカスアウト | 入力された伝票番号で入荷伝票を検索（API `GET /api/v1/inbound/slips?slipNumber={slipNumber}`）。該当伝票が1件の場合、仕入先（`partner_code` / `partner_name`）を自動セットし読み取り専用にする。該当なし又は複数件の場合はエラーメッセージ（`MSG-E-RTN001-014`）を表示し仕入先をクリア | 同画面（仕入先自動セット） | WAREHOUSE_MANAGER, WAREHOUSE_STAFF |
