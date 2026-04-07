@@ -1,10 +1,9 @@
 <template>
   <el-dialog
-    :model-value="visible"
-    :title="t('returns.productSearchTitle')"
+    v-model="visible"
+    :title="t('master.productSearch.title')"
     width="600px"
     destroy-on-close
-    @update:model-value="(v: boolean) => emit('update:visible', v)"
   >
     <el-table
       :data="results"
@@ -14,14 +13,14 @@
     >
       <el-table-column
         prop="productCode"
-        :label="t('returns.productCodeColumn')"
+        :label="t('master.productSearch.codeColumn')"
         width="160"
       />
-      <el-table-column prop="productName" :label="t('returns.productNameColumn')" />
+      <el-table-column prop="productName" :label="t('master.productSearch.nameColumn')" />
     </el-table>
     <template v-if="total > results.length" #footer>
       <span class="product-search-dialog-hint">
-        {{ t('returns.productSearchHint', { total, count: results.length }) }}
+        {{ t('master.productSearch.hint', { total, count: results.length }) }}
       </span>
     </template>
   </el-dialog>
@@ -31,14 +30,14 @@
 import { useI18n } from 'vue-i18n'
 import type { ProductOption } from '@/types/master'
 
+const visible = defineModel<boolean>('visible', { required: true })
+
 defineProps<{
-  visible: boolean
   results: ProductOption[]
   total: number
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:visible', value: boolean): void
   (e: 'select', product: ProductOption): void
 }>()
 
