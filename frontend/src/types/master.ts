@@ -21,9 +21,9 @@ export interface ProductOption {
  */
 export function toProductOption(p: Record<string, unknown>): ProductOption {
   return {
-    id: p.id as number,
-    productCode: p.productCode as string,
-    productName: p.productName as string,
+    id: typeof p.id === 'number' ? p.id : Number(p.id ?? 0),
+    productCode: typeof p.productCode === 'string' ? p.productCode : String(p.productCode ?? ''),
+    productName: typeof p.productName === 'string' ? p.productName : String(p.productName ?? ''),
     lotManageFlag: p.lotManageFlag === true,
     expiryManageFlag: p.expiryManageFlag === true,
   }
