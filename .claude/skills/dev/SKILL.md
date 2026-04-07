@@ -1,457 +1,369 @@
 ---
 name: dev
-description: バックエンド開発タスクを一気通貫で実行する。開発準備→TDD開発→テストカバレッジ100%→レビュー→指摘対応→PR作成まで。
-argument-hint: <開発内容の説明 または Issue番号>
+description: バックエンド／フロントエンド開発タスクを完全自動で実行する。設計書調査→計画→TDD実装→テスト批評→PR作成→3ラウンドレビュー（並列）→修正→完了報告までを、専門サブエージェント群への完全委譲方式で進める。原則ユーザーへの質問はせず、Claude 内で議論して結論を出す。
+argument-hint: <Issue番号 または 開発内容の説明>
 ---
 
-# 開発タスクスキル
+# 開発タスクスキル v2（完全委譲型）
 
 開発対象: $ARGUMENTS
 
 ---
 
-## Phase 1: 開発準備
+## このスキルの基本原則
 
-**目的**: 最新コードベースの取得、設計書の理解、タスク計画、Issue・ブランチの作成
-
-### Step 1.1: mainブランチの最新化
-
-```
-git checkout main
-git pull origin main
-```
-
-### Step 1.2: プロジェクトルール読み込み
-
-以下のファイルを**必ず**読み込んでコンテキストに入れる:
-1. `CLAUDE.md` — プロジェクト全体のルール
-2. `CLAUDE-LESSONS-LEARNED.md` — 過去の学び
-3. `docs/ARCHITECTURE-RULES.md` — アーキテクチャルール集
-
-### Step 1.3: 対象設計書の特定と読み込み
-
-`docs/document-map.yaml` で対象モジュールの関連ドキュメントを確認し、読み込む:
-- `docs/functional-design/API-*.md` — API設計書（バックエンドの場合）
-- `docs/functional-design/SCR-*.md` — 画面設計書（フロントエンドの場合）
-- `docs/functional-requirements/` — 機能要件定義書
-- `docs/data-model/` — データモデル定義
-- `openapi/wms-api.yaml` — OpenAPI定義
-
-既存の類似実装も探して読む（既存パターンの踏襲のため）。
-
-### Step 1.4: タスク計画
-
-設計書を元に、作業タスクを細分化してチェックリスト形式のタスク一覧を作成する。
-タスク粒度の目安:
-- 1タスク = 1つのクラスまたは1つの機能単位
-- テストは本体実装とセットで1タスク
-
-### Step 1.5: GitHub Issue 作成
-
-CLAUDE.md の Issue ルールに従い Issue を作成する。
-既にIssueが存在する場合（Issue番号指定時）は、タスク一覧を更新する。
-
-### Step 1.6: ブランチ作成
-
-```
-git checkout -b feature/{Issue番号}_{短い説明}
-```
+1. **完全委譲型**: メインエージェントは「指示」と「統合」のみ。コードを書く・テストを実行する・git 操作する等の実作業はすべて専門サブエージェント（`.claude/agents/` 配下）に委譲する
+2. **メインも設計書を読む**: Phase 0 で特定された関連設計書はメイン自身が Read で読み込み、コンテキストに保持してサブエージェント呼び出し時の prompt 品質を上げる
+3. **ユーザーへの質問禁止**: 判断に迷った場合はサブエージェント間で議論して結論を出す。最終手段（技術的に不可能 / 業務判断必須）以外、ユーザーには聞かない
+4. **3ラウンドレビューサイクル**: レビュー → 修正を最大 3 回繰り返し、各ラウンドの結果を PR コメントに追記して状況を時系列で追えるようにする
+5. **Critical/Major/Minor は PR 内で全件対応**。Issue 化は厳格な3条件 (a/b/c) のみ
 
 ---
 
-## Phase 2: バックエンド開発
+## 使用するサブエージェント一覧
 
-**目的**: テスト駆動で機能を実装する
-
-### Step 2.1: OpenAPI コード生成
-
-OpenAPI定義を変更した場合、バックエンドのコード生成を実行する:
-```
-cd backend && ./gradlew openApiGenerate
-```
-
-生成先:
-- インターフェース: `com.wms.generated.api.{Domain}Api`
-- DTOモデル: `com.wms.generated.model.*`
-
-設定は `backend/build.gradle` の `openApiGenerate` タスクで定義済み（`interfaceOnly: true`, `useTags: true`）。
-
-### Step 2.2: テストコード先行
-
-**テスト駆動開発を厳守する。**
-
-#### Serviceテスト（`@ExtendWith(MockitoExtension.class)`）
-```java
-@ExtendWith(MockitoExtension.class)
-@DisplayName("XxxService")
-class XxxServiceTest {
-    @Mock private XxxRepository xxxRepository;
-    @InjectMocks private XxxService xxxService;
-
-    // テスト群を @Nested でメソッド単位にグループ化
-    @Nested
-    @DisplayName("create")
-    class Create {
-        @Test
-        @DisplayName("正常系の説明")
-        void create_validInput_returnsCreated() { ... }
-    }
-}
-```
-
-**テスト必須パターン:**
-- 正常系テスト
-- 異常系テスト（バリデーションエラー、Not Found、ステータス不正等）
-- 境界値テスト
-- テストメソッド名: `{method}_{condition}_{expectedResult}` の3部構成
-- 全テストに `@DisplayName` を付与
-- Entity の id 設定には `setField` リフレクションユーティリティを使用:
-```java
-private static void setField(Object obj, String fieldName, Object value) {
-    Class<?> clazz = obj.getClass();
-    while (clazz != null) {
-        try {
-            java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(obj, value);
-            return;
-        } catch (NoSuchFieldException e) { clazz = clazz.getSuperclass(); }
-        catch (Exception e) { throw new RuntimeException(e); }
-    }
-    throw new RuntimeException("Field not found: " + fieldName);
-}
-```
-
-#### Controllerテスト（`@WebMvcTest`）
-```java
-@WebMvcTest(XxxController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class XxxControllerTest {
-    @Autowired private MockMvc mockMvc;
-    @MockitoBean private XxxService xxxService;
-    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
-    @MockitoBean private JwtTokenProvider jwtTokenProvider;
-}
-```
-
-**テスト対象**: 200/201正常系、400バリデーション、404 Not Found、409 Conflict、422業務ルール違反
-
-### Step 2.3: 実装
-
-テストを通すための実装を行う:
-1. **Entity** — JPA エンティティ（Flyway migration も作成: `V{次の番号}__{説明}.sql`）
-2. **Repository** — Spring Data JPA リポジトリ
-3. **Service** — ビジネスロジック（`@Transactional` 付与）
-4. **Controller** — `{Domain}Api` インターフェースを `implements`
-
-**実装ルール**（`docs/ARCHITECTURE-RULES.md` の RULE-* 参照）:
-- 手書きDTOは禁止、OpenAPI生成モデルのみ使用
-- Entity → DTO 変換は Controller 内の `private` メソッド（`toDetail()`, `toListItem()` 等）
-- 関連Entity情報の合成はバッチフェッチ + Map合成で N+1 を回避
-- 例外は `shared.exception` パッケージのカスタム例外を使用
-- エラーコードは `{RESOURCE}_{ERROR_TYPE}` 形式のリテラル
-
-**コード修正時の設計書チェック**:
-- コードを修正すると設計書のコード例が古くなる可能性がある。修正時は `Grep` で `docs/` 配下の参照箇所を洗い出し、乖離があれば設計書も更新する
-- パッケージ構造図、設定例、コードスニペットは設計書の複数箇所に散在していることが多い
-
-**DB migration（Flyway）**:
-- テーブル追加・変更時は `backend/src/main/resources/db/migration/V{n}__{description}.sql` を作成
-- 既存の最大バージョン番号を確認してインクリメント
-- 命名: スネークケース（例: `V20__add_column_to_xxx.sql`）
-
-### Step 2.4: タスク進捗更新
-
-1タスク完了ごとに Issue のチェックリストにチェックを付ける。
+| エージェント | 用途 | 使用 Phase |
+|---|---|---|
+| `Explore`（組み込み） | 関連設計書の特定 | Phase 0 |
+| `Plan`（組み込み） | 詳細作業計画の立案 | Phase 1 |
+| `java-spring-tdd` | バックエンド TDD 実装 | Phase 2 (BE) |
+| `vue-ts-tdd` | フロントエンド TDD 実装 | Phase 2 (FE) |
+| `test-critic` | テスト品質批評 | Phase 3 |
+| `general-purpose` | git 操作・PR 作成・Issue 操作 | Phase 1, 4, 8 |
+| `code-expert-reviewer` | コード品質レビュー | Phase 5–7 |
+| `security-reviewer` | セキュリティレビュー | Phase 5–7 |
+| `design-conformance-reviewer` | 設計準拠レビュー | Phase 5–7 |
+| `review-fix-specialist` | レビュー指摘修正 | Phase 5–7 |
 
 ---
 
-## Phase 2F: フロントエンド開発（該当する場合）
+## Phase 0: Context Discovery（関連設計書の特定）
 
-**目的**: Vue 3 + Element Plus で画面を実装する
+**目的**: 対象タスクに関連する設計書を全て洗い出す
 
-### Step 2F.1: OpenAPI TypeScript 生成
+### 実施内容
+メインエージェントは `Explore` サブエージェントを起動し、以下を依頼:
 
-OpenAPI定義を変更した場合:
-```
-cd frontend && npm run generate:api
-```
+> 開発対象: {$ARGUMENTS}
+> 
+> 1. `docs/document-map.yaml` を読み、対象モジュールを特定する
+> 2. 対象モジュールに関連する以下のドキュメントを全てリストアップせよ:
+>    - 機能要件定義書
+>    - API 設計書 / 画面設計書
+>    - データモデル定義
+>    - アーキテクチャ設計書
+>    - テスト仕様書
+>    - OpenAPI 定義（該当部分）
+> 3. Issue 番号が指定されていれば `gh issue view {番号}` で内容を取得し、何を作るのかも含めてサマリせよ
+> 4. 既存の類似実装ファイルパスも調査せよ
+> 
+> 出力: ドキュメントパスのリスト、Issue サマリ、類似実装パスのリスト
 
-生成先: `frontend/src/api/generated/`（models/ + api/）
+### メイン側の作業
+返ってきたドキュメントパスを **メイン自身が Read で全て読み込む**。これにより以降のフェーズでコンテキストとして活用できる。
 
-### Step 2F.2: Composable 作成
-
-画面ロジックは1画面1Composableに閉じ込める（RULE-FE-003）:
-- 一覧画面: `src/composables/{module}/use{Resource}List.ts`
-- 登録・編集画面: `src/composables/{module}/use{Resource}Form.ts`
-
-**実装パターン**:
-```typescript
-export function use{Resource}List() {
-  const items = ref<XxxItem[]>([])
-  const loading = ref(false)
-  const searchForm = reactive({ ... })
-  let abortController: AbortController | null = null
-
-  onUnmounted(() => { abortController?.abort() })
-
-  async function fetchList() {
-    abortController?.abort()
-    abortController = new AbortController()
-    loading.value = true
-    try {
-      const res = await apiClient.get<PageResponse<XxxItem>>('/path', {
-        params: { ... }, signal: abortController.signal
-      })
-      items.value = res.data.content
-    } catch (err) {
-      if (axios.isCancel(err)) return
-      ElMessage.error(t('xxx.fetchError'))
-    } finally {
-      loading.value = false
-    }
-  }
-  return { items, loading, searchForm, fetchList, ... }
-}
-```
-
-**フォームバリデーション**: vee-validate + Zod
-```typescript
-const validationSchema = computed(() =>
-  toTypedSchema(z.object({
-    code: z.string().min(1).max(20).regex(/^[A-Za-z0-9-]+$/),
-    name: z.string().min(1).max(200),
-  }))
-)
-const { errors, handleSubmit, setFieldError, defineField } = useForm({ validationSchema })
-```
-
-### Step 2F.3: Vue コンポーネント
-
-`.vue` ファイルは表示とイベントバインディングのみ。ロジックはComposableに委譲（RULE-FE-005）。
+加えて以下を必ず Read:
+- `CLAUDE.md`
+- `CLAUDE-LESSONS-LEARNED.md`
+- `docs/ARCHITECTURE-RULES.md`
 
 ---
 
-## Phase 3: テストカバレッジ
+## Phase 1: Plan & Branch（計画立案とブランチ作成）
 
-**目的**: カバレッジ目標を達成する
+**目的**: タスク詳細化、Issue 整備、ブランチ作成
 
-### カバレッジ目標
+### Step 1.1: main 最新化
+`general-purpose` サブエージェントに依頼:
+> `git checkout main && git pull origin main` を実行し結果を報告せよ
 
-| 対象 | C0（Stmts/LINE） | C1（Branch） | 計測コマンド |
-|------|-----------------|-------------|-------------|
-| バックエンド | 100% | 100% | `cd backend && ./gradlew test jacocoTestReport` |
-| フロントエンド | 100% | 95% | `cd frontend && npm run test:coverage` |
+### Step 1.2: 詳細計画立案
+`Plan` サブエージェントに依頼:
+> 以下の設計書とコンテキストを元に、TDD で実装するための詳細タスクリストを作成せよ。
+> 
+> 設計書: {Phase 0 で読んだファイルのパスとメインが理解した要点を貼り付け}
+> Issue 内容: {Phase 0 で取得した Issue サマリ}
+> 
+> タスク粒度: 1 タスク = 1 クラス / 1 機能単位。テストは本体実装とセット。
+> 
+> 出力: チェックリスト形式のタスク一覧、想定する変更ファイル、依存関係
 
-### Step 3.1: バックエンド カバレッジ
+### Step 1.3: Issue 作成 / 更新
+`general-purpose` サブエージェントに依頼:
+> 以下のタスク一覧を Issue {番号 or 新規} に反映せよ。
+> 新規の場合は CLAUDE.md の Issue ルール（日本語、ラベル feature/bugfix/docs）に従え。
+> 既存 Issue の場合はチェックリストを上書き更新せよ。
 
-JaCoCo XML レポートを Python で解析する:
-```bash
-python3 << 'PYEOF'
-import xml.etree.ElementTree as ET
-tree = ET.parse('backend/build/reports/jacoco/test/jacocoTestReport.xml')
-root = tree.getroot()
-for pkg in root.findall('.//package'):
-    for cls in pkg.findall('class'):
-        name = cls.get('name').split('/')[-1]
-        if name in ['対象クラス名']:
-            for method in cls.findall('method'):
-                for c in method.findall('counter'):
-                    if c.get('type') == 'BRANCH' and int(c.get('missed')) > 0:
-                        print(f"  {method.get('name')}: BRANCH miss={c.get('missed')}")
-PYEOF
-```
+### Step 1.4: ブランチ作成
+`general-purpose` サブエージェントに依頼:
+> `git checkout -b feature/{Issue番号}_{短い英語説明}` でブランチを作成せよ
 
-**BE許容される100%未達理由**:
-- `&&` 演算子の短絡評価によるJaCoCo制約
-- 到達不可能な防御コード（SHA-256 NoSuchAlgorithmException 等）
-- フレームワーク起因（Spring Boot main()、@PreAuthorize到達不可分岐等）
+---
 
-### Step 3.2: フロントエンド カバレッジ
+## Phase 2: TDD 実装
 
-`npm run test:coverage` のテキスト出力で Stmts / Branch を確認する。
-対象: `src/composables/`, `src/stores/`, `src/utils/`（vitest.config.ts で設定済み）
+**目的**: テスト先行で機能を実装し、カバレッジ目標を達成する
 
-**FE典型的な未カバーパターンと対処法**:
-- エラーハンドリング分岐（`!error.response`, `status === 409` 等）→ apiClientモックでステータスコードを変える
-- `axios.isCancel(err)` → `vi.mocked(axios.isCancel).mockReturnValue(true)`
-- `ElMessageBox.confirm` のキャンセル → `vi.mocked(ElMessageBox.confirm).mockRejectedValue('cancel')`
+### Step 2.1: 実装エージェントへの委譲
 
-**FE許容される95%未達理由**:
-- optional chaining (`?.`) がv8 coverageでブランチカウントされる
-- AbortController キャンセルタイミング依存の分岐
-- DOM操作依存（Blob URL生成等）
+バックエンド変更がある場合: `java-spring-tdd` を起動
+フロントエンド変更がある場合: `vue-ts-tdd` を起動
+両方ある場合: **異なるファイルを担当する形で並列起動**（同一ファイル同時編集を避ける）
 
-### Step 3.3: テスト追加・達成確認
+各エージェントへの prompt テンプレート:
+> あなたは WMS プロジェクトの {Java / Vue} TDD スペシャリストです。
+> 
+> ## タスク
+> {Phase 1 のタスクリストのうち、このエージェントが担当する範囲}
+> 
+> ## 必読設計書
+> {Phase 0 で特定した関連設計書のパス一覧}
+> 
+> ## 制約
+> - テスト先行を厳守
+> - ARCHITECTURE-RULES に完全準拠
+> - カバレッジ目標達成必須（BE: C0/C1 100%、FE: Stmts 100%/Branch 95%）
+> - ユーザーへの質問禁止。判断に迷ったら最善案を選び根拠を報告
+> - 1 タスク完了ごとにコミット
+> 
+> ## 報告
+> 完了後、変更ファイル一覧、テスト件数、カバレッジ実測値、コミットハッシュ、判断に迷った点とその根拠を返せ
 
-未カバー箇所にテストを追加し、目標達成まで繰り返す。
+### Step 2.2: 並列時の調整
+複数エージェント並列時、メインは終了を待ち、衝突がないか確認。衝突があれば原因究明用に追加サブエージェントを起動。
+
+---
+
+## Phase 3: テスト妥当性検証
+
+**目的**: 実装エージェントが書いたテストが「テストを通すためのテスト」になっていないか検証
+
+### 実施内容
+`test-critic` サブエージェントを起動:
+> 以下のテストファイルを批評せよ:
+> {Phase 2 で作成 / 修正されたテストファイル一覧}
+> 
+> 関連設計書: {Phase 0 のリスト}
+> 
+> 観点: ハッピーパス偏重、アサーション貧弱、モック過多、テストを通すためのテスト、ビジネスロジック網羅、独立性、命名
+> 
+> 出力: 重要度（Critical/Major/Minor）付きの指摘リスト
+
+### 差し戻し判定
+- Critical / Major が 1 件以上 → 該当の TDD エージェント（`java-spring-tdd` / `vue-ts-tdd`）を再起動して修正させ、再度 `test-critic` で確認
+- Critical / Major が 0 件 → Phase 4 へ進む
+- Minor のみ → Phase 4 で対応するか、レビューサイクルで対応
+
+**最大差し戻し回数: 2 回**。それでも残る場合は Phase 5 のレビューサイクルに送る
 
 ---
 
 ## Phase 4: PR 作成
 
-**目的**: mainブランチへのPRを作成する
+**目的**: PR を作成し、テンプレートに沿った本文を投稿
 
-### Step 4.1: コミット・プッシュ
-
-コミットメッセージ形式:
-```
-feat: 日本語の変更概要 / English summary
-
-詳細説明（日本語）
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-```
-
-プレフィックス: `feat:` / `fix:` / `test:` / `docs:` / `chore:`
-
-**注意**: pre-commit hookでCheckstyleが、pre-push hookでSpotBugsが自動実行される。
-
-### Step 4.2: PR 作成
-
-PR 本文に `Closes #{Issue番号}` を含めてIssueと紐付ける:
-
-```markdown
-Closes #{Issue番号}
-
-## Summary
-- 変更内容の箇条書き
-
-## Test coverage
-
-### Backend (JaCoCo)
-| 指標 | 値 |
-|------|-----|
-| C0（LINE） | XX% |
-| C1（BRANCH） | XX% |
-
-### Frontend (v8) ※FE変更がある場合
-| 指標 | 値 |
-|------|-----|
-| Stmts | XX% |
-| Branch | XX% |
-
-## Test plan
-- [x] テスト内容の箇条書き
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-```
-
-100% でない場合はその理由も記載する。
+### 実施内容
+`general-purpose` サブエージェントに依頼:
+> 以下の手順で PR を作成せよ:
+> 1. 未コミットの変更があれば論理単位でコミット
+> 2. `git push -u origin {ブランチ名}`
+> 3. 以下のテンプレートで PR 作成（`gh pr create`）。本文に `Closes #{Issue番号}` を含める
+> 4. PR URL と PR 番号を返す
+> 
+> ## PR 本文テンプレート
+> ```markdown
+> Closes #{Issue番号}
+> 
+> ## Summary
+> - 変更内容の箇条書き
+> 
+> ## Test coverage
+> ### Backend (JaCoCo)
+> | 指標 | 値 |
+> |------|-----|
+> | C0（LINE） | XX% |
+> | C1（BRANCH） | XX% |
+> 
+> ### Frontend (v8) ※FE変更がある場合
+> | 指標 | 値 |
+> |------|-----|
+> | Stmts | XX% |
+> | Branch | XX% |
+> 
+> ## Test plan
+> - [x] テスト内容の箇条書き
+> 
+> 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+> ```
+> 
+> 100% 未達がある場合は理由も記載すること。
 
 ---
 
-## Phase 5: レビュー
+## Phase 5–7: レビュー × 修正サイクル（最大 3 ラウンド）
 
-**目的**: 3つの観点で並列レビューし、結果をPRコメントに投稿する
+**目的**: 3 観点の並列レビュー → 集約 → 一括修正を最大 3 回繰り返し、品質を担保する
 
-3つのサブエージェントを**並列で**（バックグラウンドで）起動する:
+### ラウンド N の流れ
 
-### Agent 1: 専門家レビュー
-対象領域の技術的品質をレビューする:
-- コード品質・可読性
-- パフォーマンス
-- 設計パターンの適切さ
-- エラーハンドリング
+#### Step A: 並列レビュー（3 サブエージェント同時起動）
 
-### Agent 2: セキュリティレビュー
-セキュリティ専門家の観点でSAST的な静的解析:
-- OWASP Top 10
-- インジェクション（SQL、コマンド、LDAP等）
-- 認証・認可の不備
-- 機密情報の漏洩
+メインエージェントは **同一メッセージ内で 3 つの Agent ツール呼び出しを並列実行**:
 
-### Agent 3: 設計準拠レビュー
-以下を読み込み、実装が設計に準拠しているかチェック:
-1. `docs/ARCHITECTURE-RULES.md` — RULE-* への準拠
-2. `docs/document-map.yaml` で対象モジュールの関連ドキュメントを特定
-3. 該当の機能設計書（`docs/functional-design/API-*.md`, `SCR-*.md` 等）— API仕様・画面仕様との整合
-4. 該当の要件定義書（`docs/functional-requirements/*.md`）— 業務ルール・業務フローとの整合
+1. `code-expert-reviewer` 起動
+   > PR 番号: {PR番号}（ブランチ: {ブランチ名}）
+   > Round: {N}
+   > 前ラウンドで指摘済みの番号: {前ラウンドの全指摘番号} （重複指摘を避けること）
+   > 
+   > PR 差分を全て読み、コード品質・性能・設計の観点で指摘を Critical/Major/Minor/Suggestion で返せ
 
-### レビュー結果の投稿
+2. `security-reviewer` 起動
+   > 同上、セキュリティ観点（OWASP Top 10、認可、機密情報、Spring Security）でレビューせよ
 
-3つのレビュー結果を統合し、PRコメントとして投稿する:
+3. `design-conformance-reviewer` 起動
+   > 同上、設計準拠（ARCHITECTURE-RULES、API 設計書、データモデル、SSOT）の観点でレビューせよ
+   > 関連ドキュメント: {Phase 0 のリスト}
+
+#### Step B: 集約と PR コメント投稿
+
+メインは 3 つの結果を集約して以下の形式で PR にコメント投稿（`gh pr comment`）:
+
 ```markdown
-## レビュー結果
+## Round {N} - レビュー結果
 
-### 1. セキュリティレビュー — PASS/FAIL
+### サマリー
+| 種別 | Critical | Major | Minor | Suggestion |
+|---|---|---|---|---|
+| 専門家 | N | N | N | N |
+| セキュリティ | N | N | N | N |
+| 設計準拠 | N | N | N | N |
+
+### 専門家レビュー
+| # | 重要度 | ファイル:行 | 指摘 | 修正方針 |
+| C-1 | Critical | ... | ... | ... |
 ...
 
-### 2. 専門家レビュー — PASS
-**Critical**: なし / **Major**: なし
-| # | 重要度 | 指摘内容 |
-|---|--------|---------|
-| m-1 | Minor | ... |
-| S-1 | Suggestion | ... |
+### セキュリティレビュー
+| # | 重要度 | OWASP | ファイル:行 | 指摘 | 攻撃シナリオ | 修正方針 |
+...
 
-### 3. 設計準拠レビュー
-| # | チェック項目 | 結果 | 備考 |
-|---|------------|------|------|
-| 1 | RULE-API-001 | ✅ | ... |
+### 設計準拠レビュー
+| # | 重要度 | ファイル | 指摘 | 準拠すべき | 修正方針 |
+...
 ```
 
-**指摘番号の採番規則**: `C-{n}` (Critical), `M-{n}` (Major), `m-{n}` (Minor), `S-{n}` (Suggestion), `F#{n}` (設計準拠)
+#### Step C: 早期終了判定
+**全レビュアーで Critical / Major / Minor が合計 0 件** ならこのラウンドで終了し、Phase 8 へ。
+それ以外は Step D へ。
 
----
+#### Step D: 修正エージェント起動
 
-## Phase 6: レビュー指摘対応
+`review-fix-specialist` を 1 体だけ起動（並列ではなく 1 体）:
+> Round {N} のレビュー指摘を全件受け取った。Critical/Major/Minor を全件 PR 内で対応せよ。
+> 
+> ## 受領した指摘
+> {Step B で投稿した全指摘テーブルをそのまま貼り付け}
+> 
+> ## ルール
+> - Issue 化が許されるのは条件 (a/b/c) のみ
+> - 該当しなければ全て PR 内で修正
+> - 修正後にテスト実行、カバレッジ確認
+> - 論理単位でコミット & プッシュ
+> - 完了後、対応結果表（指摘番号 × 対応 × コミット）を返せ
 
-**目的**: レビュー指摘事項をすべて対応する
+#### Step E: 対応結果を PR コメント投稿
 
-### 対応ルール
-
-1. **コード修正・テスト追加・リファクタリング** → そのPR内で即対応
-   - 1件ごとに: 修正 → テスト → コミット → プッシュ
-2. **設計書（docs/配下）の修正が必要** → 新しいIssueを作成
-3. **設計判断・方針決定が必要** → 新しいIssueを作成
-
-### 対応後の確認
-
-指摘対応後に再度テストを実行して全テスト通過を確認する:
-```
-cd backend && ./gradlew test
-```
-
-### 最終確認: 全指摘事項の棚卸し
-
-全レビュー指摘の対応状況を一覧表にまとめ、PRコメントに投稿する:
+返ってきた対応結果表を以下の形式で PR にコメント投稿:
 
 ```markdown
-## レビュー指摘 対応結果
+## Round {N} - 修正結果
 
-| # | 重要度 | 指摘内容 | 対応 | コミット |
-|---|--------|---------|------|---------|
-| M-1 | Major | 〇〇の修正 | ✅ 対応済み | abc1234 |
-| m-2 | Minor | △△の改善 | ✅ 対応済み | def5678 |
-| S-1 | Suggestion | □□の提案 | 対応見送り（理由: ...） | — |
-| F#1 | Medium | ××の不整合 | 📋 Issue #999 で追跡 | — |
+### サマリー
+| 重要度 | 受領 | PR内対応 | Issue化 | 見送り |
+|---|---|---|---|---|
+| Critical | N | N | 0 | 0 |
+| Major | N | N | 0 | 0 |
+| Minor | N | N | N | 0 |
+| Suggestion | N | N | 0 | N |
+
+### 詳細
+| # | 重要度 | 対応 | 根拠 | コミット |
+| C-1 | Critical | ✅ PR内修正 | — | abc1234 |
+| M-1 | Major | 📋 Issue #999 | 条件(a) docs他モジュール波及 | — |
+...
+
+### テスト結果
+- backend: ✅ N 件通過 / C0 XX% / C1 XX%
+- frontend: ✅ N 件通過 / Stmts XX% / Branch XX%
+
+### 作成した Issue
+- #999: [M-1] ...
 ```
 
-### 未対応指摘のIssue化
-
-以下に該当する指摘は **GitHub Issue を作成して追跡**する:
-- 設計書（docs/配下）の修正が必要な指摘
-- 設計判断・方針決定が必要な指摘
-- スコープ外だが将来対応すべき指摘
-
-Issue作成時のルール:
-- タイトルに元のレビュー指摘番号を含める（例: `[M-3] 〇〇の対応`）
-- 本文に指摘内容・背景・対応方針案を記載する
-
-**対応見送りの理由は必ず明記する。**
+#### ラウンド遷移
+- Round 1 終了 → Round 2 へ（Step A から繰り返し）
+- Round 2 終了 → Round 3 へ
+- Round 3 終了 → Phase 8 へ
+- 途中で早期終了条件（Step C）を満たした場合 → Phase 8 へ
 
 ---
 
-## 完了条件
+## Phase 8: 完了確認
 
-以下がすべて満たされていることを確認:
-- [ ] 全テストがグリーン
-- [ ] BE: C0/C1 カバレッジが100%（または理由付きで例外）
-- [ ] FE（変更がある場合）: C0 100% / C1 95%（または理由付きで例外）
-- [ ] PR本文にカバレッジ記載
-- [ ] 3種レビュー完了・結果をPRコメント
-- [ ] **全指摘事項の対応状況を一覧表でPRコメントに投稿済み**
-- [ ] **未対応指摘のうちIssue化が必要なものはすべてIssue作成済み**
-- [ ] Issue のタスク一覧すべてチェック済み
+**目的**: 全成果物の最終チェックと完了報告
 
-**注意: PRのマージはユーザーが行う。Claudeは絶対にマージしない。**
+### Step 8.1: 完了条件チェック
+`general-purpose` サブエージェントに依頼:
+> PR {PR番号} について以下を確認し、結果を返せ:
+> - [ ] 全テストグリーン（`gh pr checks`）
+> - [ ] BE カバレッジ C0/C1 100%（または許容理由付き）
+> - [ ] FE カバレッジ Stmts 100% / Branch 95%（または許容理由付き）
+> - [ ] PR 本文にカバレッジ記載
+> - [ ] 全レビューラウンドの結果が PR コメントとして投稿済み
+> - [ ] 全レビューラウンドの修正結果が PR コメントとして投稿済み
+> - [ ] 未対応指摘のうち Issue 化したものがリストアップ済み
+> - [ ] 関連 Issue のチェックリストが全てチェック済み
+
+### Step 8.2: 最終サマリ投稿
+全ラウンドの集計を以下の形式で PR コメント投稿:
+
+```markdown
+## 最終サマリ
+
+### レビューラウンド集計
+| ラウンド | Critical | Major | Minor | Suggestion | 状態 |
+|---|---|---|---|---|---|
+| Round 1 | N→0 | N→0 | N→0 | N→? | 完了 |
+| Round 2 | N→0 | N→0 | N→0 | N→? | 完了 |
+| Round 3 | 0 | 0 | 0 | 0 | 早期終了 |
+
+### 作成した Issue 一覧
+- #999: [M-1] ...
+
+### カバレッジ
+- BE: C0 XX% / C1 XX%
+- FE: Stmts XX% / Branch XX%
+
+### 完了状態
+✅ マージ可能（ユーザー判断待ち）
+```
+
+### Step 8.3: メインエージェントからユーザーへの最終報告
+
+メインはユーザーに以下を報告:
+- PR URL
+- 何ラウンド回したか
+- 残った Issue 化件数とその一覧
+- カバレッジ最終値
+- マージ判断を委ねる旨
+
+---
+
+## 絶対ルール（再掲）
+
+1. **PR のマージはユーザーが行う**。Claude は絶対にマージしない
+2. **メインは実作業をせず、サブエージェントに委譲する**
+3. **メインは設計書を Read してコンテキストに保持する**
+4. **ユーザーへの質問は最終手段のみ**
+5. **Critical/Major/Minor は PR 内全件対応**、Issue 化は条件 (a/b/c) のみ
+6. **各ラウンドのレビューと修正結果は必ず PR コメントに追記**
