@@ -6,7 +6,9 @@ import com.wms.generated.model.InterfaceValidateRequest;
 import com.wms.generated.model.ImportMode;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
-import com.wms.interfacing.service.InboundPlanCsvProcessor;
+import com.wms.interfacing.model.FieldError;
+import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.ValidationResult;
 import com.wms.interfacing.service.InterfaceService;
 import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.security.JwtAuthenticationFilter;
@@ -101,7 +103,7 @@ class InterfaceControllerTest {
         void validate_success_returns200() throws Exception {
             InterfaceService.InterfaceValidationResponse resp =
                     InterfaceService.InterfaceValidationResponse.success("INB-PLAN-001.csv",
-                            new InboundPlanCsvProcessor.ValidationResult(10, 10, 0, List.of()));
+                            new ValidationResult(10, 10, 0, List.of()));
             when(interfaceService.validate(eq("IFX-001"), eq("INB-PLAN-001.csv"), eq(1L)))
                     .thenReturn(resp);
 
@@ -122,12 +124,12 @@ class InterfaceControllerTest {
         @Test
         @DisplayName("200 — バリデーションエラーありの結果を返す")
         void validate_withErrors_returns200() throws Exception {
-            var rowError = new InboundPlanCsvProcessor.RowError(5, List.of(
-                    new InboundPlanCsvProcessor.FieldError("partner_code", "WMS-E-IFX-301",
+            var rowError = new RowError(5, List.of(
+                    new FieldError("partner_code", "WMS-E-IFX-301",
                             "取引先コードが存在しません")));
             InterfaceService.InterfaceValidationResponse resp =
                     InterfaceService.InterfaceValidationResponse.success("INB-PLAN-001.csv",
-                            new InboundPlanCsvProcessor.ValidationResult(10, 9, 1, List.of(rowError)));
+                            new ValidationResult(10, 9, 1, List.of(rowError)));
             when(interfaceService.validate(any(), any(), any())).thenReturn(resp);
 
             InterfaceValidateRequest request = new InterfaceValidateRequest()
@@ -394,7 +396,7 @@ class InterfaceControllerTest {
         void validate_ifx002_returns200() throws Exception {
             InterfaceService.InterfaceValidationResponse resp =
                     InterfaceService.InterfaceValidationResponse.success("ORD-001.csv",
-                            new InboundPlanCsvProcessor.ValidationResult(5, 5, 0, List.of()));
+                            new ValidationResult(5, 5, 0, List.of()));
             when(interfaceService.validate(eq("IFX-002"), eq("ORD-001.csv"), eq(1L)))
                     .thenReturn(resp);
 

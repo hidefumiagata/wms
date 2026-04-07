@@ -4,6 +4,11 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
+import com.wms.interfacing.model.FieldError;
+import com.wms.interfacing.model.MasterCache;
+import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.SlipNumberGenerator;
+import com.wms.interfacing.model.ValidationResult;
 import com.wms.interfacing.repository.IfExecutionRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.Product;
@@ -124,12 +129,12 @@ public class InterfaceService {
         }
 
         // マスタキャッシュ構築
-        InboundPlanCsvProcessor.MasterCache masterCache =
+        MasterCache masterCache =
                 buildMasterCache(parseResult.getDataRows(), warehouseId);
 
         // L2〜L5バリデーション
         LocalDate businessDate = businessDateProvider.today();
-        InboundPlanCsvProcessor.ValidationResult result =
+        ValidationResult result =
                 validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         return InterfaceValidationResponse.success(fileName, result);
@@ -166,11 +171,11 @@ public class InterfaceService {
             throw new BusinessRuleViolationException("CSV_HEADER_ERROR", e.getMessage());
         }
 
-        InboundPlanCsvProcessor.MasterCache masterCache =
+        MasterCache masterCache =
                 buildMasterCache(parseResult.getDataRows(), warehouseId);
         LocalDate businessDate = businessDateProvider.today();
 
-        InboundPlanCsvProcessor.ValidationResult validationResult =
+        ValidationResult validationResult =
                 validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         // DB操作をトランザクション内で実行
@@ -179,8 +184,8 @@ public class InterfaceService {
                     warehouseId, businessDate, currentUserId, fileName);
 
             return saveExecution(ifId, fileName, null,
-                    validationResult.getTotalRows(), validationResult.getSuccessCount(),
-                    validationResult.getErrorCount(), mode, "COMPLETED",
+                    validationResult.totalRows(), validationResult.successCount(),
+                    validationResult.errorCount(), mode, "COMPLETED",
                     warehouseId, currentUserId);
         });
 
@@ -188,8 +193,8 @@ public class InterfaceService {
         moveBlobSafely(directory, fileName, execution);
 
         return new InterfaceImportResponse(
-                validationResult.getSuccessCount(),
-                validationResult.getErrorCount(),
+                validationResult.successCount(),
+                validationResult.errorCount(),
                 mode, "COMPLETED");
     }
 
@@ -264,9 +269,9 @@ public class InterfaceService {
         }
     }
 
-    private InboundPlanCsvProcessor.ValidationResult validateByIfId(
+    private ValidationResult validateByIfId(
             String ifId, List<String[]> dataRows,
-            InboundPlanCsvProcessor.MasterCache masterCache, LocalDate businessDate) {
+            MasterCache masterCache, LocalDate businessDate) {
         if ("IFX-001".equals(ifId)) {
             return inboundPlanCsvProcessor.validate(dataRows, masterCache, businessDate);
         } else if ("IFX-002".equals(ifId)) {
@@ -278,8 +283,8 @@ public class InterfaceService {
     }
 
     private void saveSlipsByIfId(String ifId, List<String[]> dataRows,
-                                  InboundPlanCsvProcessor.ValidationResult validationResult,
-                                  InboundPlanCsvProcessor.MasterCache masterCache,
+                                  ValidationResult validationResult,
+                                  MasterCache masterCache,
                                   Long warehouseId, LocalDate businessDate,
                                   Long currentUserId, String fileName) {
         if ("IFX-001".equals(ifId)) {
@@ -326,7 +331,7 @@ public class InterfaceService {
         return String.format("OUT-%s-%04d", dateStr, nextSeq);
     }
 
-    InboundPlanCsvProcessor.MasterCache buildMasterCache(List<String[]> dataRows,
+    MasterCache buildMasterCache(List<String[]> dataRows,
                                                           Long warehouseId) {
         Set<String> partnerCodes = dataRows.stream()
                 .map(row -> row.length > 0 ? CsvParser.normalizeEmpty(row[0]) : null)
@@ -352,7 +357,7 @@ public class InterfaceService {
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "WAREHOUSE_NOT_FOUND", "warehouse", warehouseId));
 
-        return new InboundPlanCsvProcessor.MasterCache(partnerMap, productMap, warehouse);
+        return new MasterCache(partnerMap, productMap, warehouse);
     }
 
     private String resolveDirectory(String ifId) {
@@ -394,7 +399,7 @@ public class InterfaceService {
             int errorCount,
             String fileErrorCode,
             String fileErrorMessage,
-            List<InboundPlanCsvProcessor.RowError> rowErrors) {
+            List<RowError> rowErrors) {
 
         public static InterfaceValidationResponse fileError(String fileName,
                                                              String errorCode,
@@ -405,10 +410,10 @@ public class InterfaceService {
 
         public static InterfaceValidationResponse success(
                 String fileName,
-                InboundPlanCsvProcessor.ValidationResult result) {
+                ValidationResult result) {
             return new InterfaceValidationResponse(fileName,
-                    result.getTotalRows(), result.getSuccessCount(), result.getErrorCount(),
-                    null, null, result.getRowErrors());
+                    result.totalRows(), result.successCount(), result.errorCount(),
+                    null, null, result.rowErrors());
         }
 
         public boolean hasFileError() {

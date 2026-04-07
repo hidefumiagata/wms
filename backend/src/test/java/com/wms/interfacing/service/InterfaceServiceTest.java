@@ -4,6 +4,11 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
+import com.wms.interfacing.model.FieldError;
+import com.wms.interfacing.model.MasterCache;
+import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.SlipNumberGenerator;
+import com.wms.interfacing.model.ValidationResult;
 import com.wms.interfacing.repository.IfExecutionRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
@@ -234,8 +239,8 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -360,8 +365,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -519,10 +524,10 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult valResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 0, 1, List.of(
-                            new InboundPlanCsvProcessor.RowError(1, List.of(
-                                    new InboundPlanCsvProcessor.FieldError("partner_code",
+            ValidationResult valResult =
+                    new ValidationResult(1, 0, 1, List.of(
+                            new RowError(1, List.of(
+                                    new FieldError("partner_code",
                                             "WMS-E-IFX-301", "err")))));
             when(inboundPlanCsvProcessor.validate(any(), any(), any())).thenReturn(valResult);
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
@@ -607,7 +612,7 @@ class InterfaceServiceTest {
             List<String[]> dataRows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""});
 
-            InboundPlanCsvProcessor.MasterCache cache =
+            MasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getPartner("SUP-0001")).isNotNull();
@@ -628,7 +633,7 @@ class InterfaceServiceTest {
             // Empty data rows — no partner/product codes to look up
             List<String[]> dataRows = List.<String[]>of(new String[]{"", "", ""});
 
-            InboundPlanCsvProcessor.MasterCache cache =
+            MasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -664,7 +669,7 @@ class InterfaceServiceTest {
             // row.length == 0: row.length > 0 is false, row.length > 2 is false
             List<String[]> dataRows = List.<String[]>of(new String[]{});
 
-            InboundPlanCsvProcessor.MasterCache cache =
+            MasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -685,7 +690,7 @@ class InterfaceServiceTest {
             // row.length > 2 is false (no product_code)
             List<String[]> dataRows = List.<String[]>of(new String[]{"SUP-0001"});
 
-            InboundPlanCsvProcessor.MasterCache cache =
+            MasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -745,8 +750,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -754,7 +759,7 @@ class InterfaceServiceTest {
 
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
-                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        SlipNumberGenerator gen = inv.getArgument(4);
                         gen.generate(LocalDate.of(2026, 3, 20));
                         return List.of();
                     });
@@ -809,15 +814,15 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(inboundSlipRepository.findMaxSequenceByDate("INB-20260320-")).thenReturn(5);
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
             final String[] capturedSlipNumber = new String[1];
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
-                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        SlipNumberGenerator gen = inv.getArgument(4);
                         capturedSlipNumber[0] = gen.generate(LocalDate.of(2026, 3, 20));
                         return List.of();
                     });
@@ -868,8 +873,8 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -957,8 +962,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -1042,15 +1047,15 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(outboundSlipRepository.findMaxSequenceByDate("20260320")).thenReturn(3);
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
             final String[] capturedSlipNumber = new String[1];
             when(orderCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
-                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        SlipNumberGenerator gen = inv.getArgument(4);
                         capturedSlipNumber[0] = gen.generate(LocalDate.of(2026, 3, 20));
                         return List.of();
                     });
@@ -1093,14 +1098,14 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(outboundSlipRepository.findMaxSequenceByDate(any())).thenReturn(9999);
 
-            InboundPlanCsvProcessor.ValidationResult validationResult =
-                    new InboundPlanCsvProcessor.ValidationResult(1, 1, 0, List.of());
+            ValidationResult validationResult =
+                    new ValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
             when(orderCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenAnswer(inv -> {
-                        InboundPlanCsvProcessor.SlipNumberGenerator gen = inv.getArgument(4);
+                        SlipNumberGenerator gen = inv.getArgument(4);
                         gen.generate(LocalDate.of(2026, 3, 20));
                         return List.of();
                     });
