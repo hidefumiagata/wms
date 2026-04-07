@@ -166,6 +166,25 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         assertThat(new String(body, 0, 4)).isEqualTo("%PDF");
     }
 
+    private void assertCsvResponse(ResponseEntity<byte[]> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType())
+                .isNotNull()
+                .satisfies(ct -> assertThat(ct.toString()).contains("text/csv"));
+        byte[] body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.length).isGreaterThanOrEqualTo(3);
+        assertThat(body[0]).isEqualTo((byte) 0xEF);
+        assertThat(body[1]).isEqualTo((byte) 0xBB);
+        assertThat(body[2]).isEqualTo((byte) 0xBF);
+    }
+
+    private HttpHeaders unauthHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setAccept(java.util.List.of(org.springframework.http.MediaType.APPLICATION_JSON));
+        return h;
+    }
+
     // ========================================================
     // RPT-12: ピッキング指示書
     // ========================================================
@@ -234,6 +253,29 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
+
+        @Test
+        @DisplayName("権限: 未認証で401")
+        void getPicking_unauthenticated_returns401() {
+            ResponseEntity<String> response = get(
+                    "/api/v1/reports/picking-instruction?pickingInstructionId=1&format=json",
+                    unauthHeaders());
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getPicking_csv_returnsCsv() {
+            Long slipId = insertOutboundSlip("OUT-RPT12-CSV", LocalDate.of(2026, 3, 20),
+                    "PICKING_COMPLETED", null, null,
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, 0, "PICKING_COMPLETED");
+            Long instructionId = insertPickingInstruction("PI-RPT12-CSV", slipId, 10, 10);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/picking-instruction?pickingInstructionId=" + instructionId
+                            + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -287,6 +329,29 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
                     .isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getShippingInspection_authChecks() {
+            Long slipId = insertOutboundSlip("OUT-RPT13-AUTH", LocalDate.of(2026, 3, 20),
+                    "INSPECTING", null, null,
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, 10, 0, "PICKING_COMPLETED");
+            String url = "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getShippingInspection_csv_returnsCsv() {
+            Long slipId = insertOutboundSlip("OUT-RPT13-CSV", LocalDate.of(2026, 3, 20),
+                    "INSPECTING", null, null,
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, 10, 0, "PICKING_COMPLETED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -367,6 +432,25 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getDeliveryList_authChecks() {
+            String url = "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getDeliveryList_csv_returnsCsv() {
+            insertOutboundSlip("OUT-RPT14-CSV", LocalDate.of(2026, 3, 20), "ALLOCATED",
+                    null, null, productAmbId, "AMB-001", "ミネラルウォーター", 10, null, 0, "ALLOCATED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -418,6 +502,37 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                     "/api/v1/reports/unshipped-realtime?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("正常系: データ0件で空配列")
+        void getUnshippedRealtime_noData_returnsEmpty() throws Exception {
+            ResponseEntity<String> response = get(
+                    "/api/v1/reports/unshipped-realtime?warehouseId=" + warehouseId
+                            + "&asOfDate=2026-03-20&format=json",
+                    adminHeaders);
+            assertThat(parseJson(response.getBody())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getUnshippedRealtime_authChecks() {
+            String url = "/api/v1/reports/unshipped-realtime?warehouseId=" + warehouseId
+                    + "&asOfDate=2026-03-20&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getUnshippedRealtime_csv_returnsCsv() {
+            insertOutboundSlip("OUT-RPT15-CSV", LocalDate.of(2026, 3, 19), "ALLOCATED",
+                    null, null, productAmbId, "AMB-001", "ミネラルウォーター", 10, null, 0, "ALLOCATED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/unshipped-realtime?warehouseId=" + warehouseId
+                            + "&asOfDate=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -483,6 +598,29 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                             + "&batchBusinessDate=2026-03-20&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getUnshippedConfirmed_authChecks() {
+            String url = "/api/v1/reports/unshipped-confirmed?warehouseId=" + warehouseId
+                    + "&batchBusinessDate=2026-03-20&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getUnshippedConfirmed_csv_returnsCsv() {
+            Long slipId = insertOutboundSlip("OUT-RPT16-CSV", LocalDate.of(2026, 3, 19), "ALLOCATED",
+                    null, null, productAmbId, "AMB-001", "ミネラルウォーター", 10, null, 0, "ALLOCATED");
+            insertUnshippedListRecord(LocalDate.of(2026, 3, 20), slipId, "OUT-RPT16-CSV",
+                    LocalDate.of(2026, 3, 19), 10, "ALLOCATED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/unshipped-confirmed?warehouseId=" + warehouseId
+                            + "&batchBusinessDate=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 }

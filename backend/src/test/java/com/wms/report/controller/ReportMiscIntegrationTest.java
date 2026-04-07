@@ -138,6 +138,25 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
         assertThat(new String(body, 0, 4)).isEqualTo("%PDF");
     }
 
+    private void assertCsvResponse(ResponseEntity<byte[]> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType())
+                .isNotNull()
+                .satisfies(ct -> assertThat(ct.toString()).contains("text/csv"));
+        byte[] body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.length).isGreaterThanOrEqualTo(3);
+        assertThat(body[0]).isEqualTo((byte) 0xEF);
+        assertThat(body[1]).isEqualTo((byte) 0xBB);
+        assertThat(body[2]).isEqualTo((byte) 0xBF);
+    }
+
+    private HttpHeaders unauthHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setAccept(java.util.List.of(org.springframework.http.MediaType.APPLICATION_JSON));
+        return h;
+    }
+
     // ========================================================
     // RPT-17: 日次集計レポート
     // ========================================================
@@ -202,6 +221,27 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
                     "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=json",
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("権限: 未認証で401")
+        void getDailySummary_unauthenticated_returns401() {
+            ResponseEntity<String> response = get(
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=json",
+                    unauthHeaders());
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getDailySummary_csv_returnsCsv() {
+            LocalDate businessDate = LocalDate.of(2026, 3, 20);
+            insertBatchLogSuccess(businessDate);
+            insertDailySummary(businessDate, 5, 3, 0, 0);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -298,6 +338,25 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
                     "/api/v1/reports/returns?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getReturns_authChecks() {
+            String url = "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getReturns_csv_returnsCsv() {
+            insertReturnSlip("RTN-RPT18-CSV", "INBOUND", LocalDate.of(2026, 3, 20),
+                    5, "QUALITY_DEFECT");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 }

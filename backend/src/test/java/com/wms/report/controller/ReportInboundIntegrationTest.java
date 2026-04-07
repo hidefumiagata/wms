@@ -37,7 +37,6 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
     private HttpHeaders viewerHeaders;
 
     private Long warehouseId;
-    private String warehouseCode;
     private Long productAmbId;
     private Long productAmb2Id;
     private Long supplierPartnerId;
@@ -47,7 +46,6 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
     void initMasterIds() {
         warehouseId = jdbcTemplate.queryForObject(
                 "SELECT id FROM warehouses WHERE warehouse_code = 'WH001'", Long.class);
-        warehouseCode = "WH001";
         productAmbId = jdbcTemplate.queryForObject(
                 "SELECT id FROM products WHERE product_code = 'AMB-001'", Long.class);
         productAmb2Id = jdbcTemplate.queryForObject(
@@ -107,30 +105,20 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
         return slipId;
     }
 
-    private void insertUnreceivedListRecord(LocalDate batchDate, String slipNumber,
-                                            LocalDate plannedDate, int plannedQty, String currentStatus) {
+    /**
+     * unreceived_list_records は inbound_slips への FK を持つため、
+     * 親となる入荷伝票を先に投入し、その slipId を返す前提で呼び出す。
+     */
+    private void insertUnreceivedListRecord(LocalDate batchDate, Long inboundSlipId,
+                                            String slipNumber, LocalDate plannedDate,
+                                            int plannedQty, String currentStatus) {
         jdbcTemplate.update("""
                 INSERT INTO unreceived_list_records (batch_business_date, inbound_slip_id, slip_number,
                     planned_date, warehouse_code, partner_code, partner_name, product_code, product_name,
                     unit_type, planned_qty, current_status, created_at)
                 VALUES (?, ?, ?, ?, 'WH001', 'SUP001', '仕入先A', 'AMB-001', 'ミネラルウォーター',
                     'PIECE', ?, ?, now())
-                """, batchDate,
-                // dummy slipId reference - we need a real one from inbound_slips for FK
-                requireSlipIdOrInsertDummy(slipNumber, plannedDate),
-                slipNumber, plannedDate, plannedQty, currentStatus);
-    }
-
-    private Long requireSlipIdOrInsertDummy(String slipNumber, LocalDate plannedDate) {
-        Long existing = jdbcTemplate.query(
-                "SELECT id FROM inbound_slips WHERE slip_number = ?",
-                rs -> rs.next() ? rs.getLong(1) : null, slipNumber);
-        if (existing != null) {
-            return existing;
-        }
-        return insertInboundSlip(slipNumber, plannedDate, "PLANNED",
-                productAmbId, "AMB-001", "ミネラルウォーター",
-                10, null, null, "PENDING");
+                """, batchDate, inboundSlipId, slipNumber, plannedDate, plannedQty, currentStatus);
     }
 
     private void assertPdfResponse(ResponseEntity<byte[]> response) {
@@ -147,6 +135,32 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
         assertThat(body.length).isGreaterThan(4);
         // %PDF magic bytes
         assertThat(new String(body, 0, 4)).isEqualTo("%PDF");
+    }
+
+    /** CSV: 200 + Content-Type text/csv + UTF-8 BOM (0xEF 0xBB 0xBF) を検証。 */
+    private void assertCsvResponse(ResponseEntity<byte[]> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType())
+                .isNotNull()
+                .satisfies(ct -> assertThat(ct.toString()).contains("text/csv"));
+        assertThat(response.getHeaders().getFirst("Content-Disposition"))
+                .isNotNull()
+                .contains("attachment")
+                .contains(".csv");
+        byte[] body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.length).isGreaterThanOrEqualTo(3);
+        // UTF-8 BOM
+        assertThat(body[0]).isEqualTo((byte) 0xEF);
+        assertThat(body[1]).isEqualTo((byte) 0xBB);
+        assertThat(body[2]).isEqualTo((byte) 0xBF);
+    }
+
+    /** Spring Security フィルタは Controller より前に走るため、伝票投入なしでも 401 を返す。 */
+    private HttpHeaders unauthHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+        return h;
     }
 
     // ========================================================
@@ -223,11 +237,21 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("権限: 未認証で401")
         void getInboundInspection_unauthenticated_returns401() {
-            HttpHeaders unauth = new HttpHeaders();
-            unauth.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inbound-inspection?slipId=1&format=json", unauth);
+                    "/api/v1/reports/inbound-inspection?slipId=1&format=json", unauthHeaders());
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getInboundInspection_csv_returnsCsv() {
+            Long slipId = insertInboundSlip("INB-RPT01-CSV", LocalDate.of(2026, 3, 20), "STORED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, 10,
+                    "2026-03-20T10:00:00+09:00", "STORED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inbound-inspection?slipId=" + slipId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -327,6 +351,26 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
+
+        @Test
+        @DisplayName("権限: 未認証で401")
+        void getInboundPlan_unauthenticated_returns401() {
+            ResponseEntity<String> response = get(
+                    "/api/v1/reports/inbound-plan?warehouseId=" + warehouseId + "&format=json",
+                    unauthHeaders());
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getInboundPlan_csv_returnsCsv() {
+            insertInboundSlip("INB-RPT03-CSV", LocalDate.of(2026, 3, 20), "PLANNED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, null, "PENDING");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inbound-plan?warehouseId=" + warehouseId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -408,6 +452,29 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getInboundResult_authChecks() {
+            assertThat(get(
+                    "/api/v1/reports/inbound-result?warehouseId=" + warehouseId + "&format=json",
+                    viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(
+                    "/api/v1/reports/inbound-result?warehouseId=" + warehouseId + "&format=json",
+                    unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getInboundResult_csv_returnsCsv() {
+            insertInboundSlip("INB-RPT04-CSV", LocalDate.of(2026, 3, 20), "STORED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, 10,
+                    "2026-03-20T10:00:00+09:00", "STORED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inbound-result?warehouseId=" + warehouseId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -472,6 +539,27 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getUnreceivedRealtime_authChecks() {
+            String url = "/api/v1/reports/unreceived-realtime?warehouseId=" + warehouseId
+                    + "&asOfDate=2026-03-20&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getUnreceivedRealtime_csv_returnsCsv() {
+            insertInboundSlip("INB-RPT05-CSV", LocalDate.of(2026, 3, 19), "PLANNED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, null, "PENDING");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/unreceived-realtime?warehouseId=" + warehouseId
+                            + "&asOfDate=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -485,7 +573,9 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("正常系: 確定済リストが返る")
         void getUnreceivedConfirmed_records_returnsItems() throws Exception {
-            insertUnreceivedListRecord(LocalDate.of(2026, 3, 20), "INB-RPT06-001",
+            Long slipId = insertInboundSlip("INB-RPT06-001", LocalDate.of(2026, 3, 19), "PLANNED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, null, "PENDING");
+            insertUnreceivedListRecord(LocalDate.of(2026, 3, 20), slipId, "INB-RPT06-001",
                     LocalDate.of(2026, 3, 19), 10, "PLANNED");
 
             ResponseEntity<String> response = get(
@@ -514,7 +604,9 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
         @Test
         @DisplayName("正常系: PDF形式で200")
         void getUnreceivedConfirmed_pdf_returnsBinary() {
-            insertUnreceivedListRecord(LocalDate.of(2026, 3, 20), "INB-RPT06-PDF",
+            Long slipId = insertInboundSlip("INB-RPT06-PDF", LocalDate.of(2026, 3, 19), "PLANNED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, null, "PENDING");
+            insertUnreceivedListRecord(LocalDate.of(2026, 3, 20), slipId, "INB-RPT06-PDF",
                     LocalDate.of(2026, 3, 19), 10, "PLANNED");
 
             ResponseEntity<byte[]> response = getBytes(
@@ -532,6 +624,29 @@ class ReportInboundIntegrationTest extends IntegrationTestBase {
                             + "&batchBusinessDate=2026-03-20&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getUnreceivedConfirmed_authChecks() {
+            String url = "/api/v1/reports/unreceived-confirmed?warehouseId=" + warehouseId
+                    + "&batchBusinessDate=2026-03-20&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getUnreceivedConfirmed_csv_returnsCsv() {
+            Long slipId = insertInboundSlip("INB-RPT06-CSV", LocalDate.of(2026, 3, 19), "PLANNED",
+                    productAmbId, "AMB-001", "ミネラルウォーター", 10, null, null, "PENDING");
+            insertUnreceivedListRecord(LocalDate.of(2026, 3, 20), slipId, "INB-RPT06-CSV",
+                    LocalDate.of(2026, 3, 19), 10, "PLANNED");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/unreceived-confirmed?warehouseId=" + warehouseId
+                            + "&batchBusinessDate=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 }

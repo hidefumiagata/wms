@@ -37,7 +37,6 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
     private Long warehouseId;
     private Long buildingAId;
-    private Long areaA01Id;
     private Long locA01_01_01_01;
     private Long locA01_01_01_02;
     private Long productAmbId;
@@ -51,9 +50,6 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         buildingAId = jdbcTemplate.queryForObject(
                 "SELECT id FROM buildings WHERE building_code = 'A' AND warehouse_id = ?",
                 Long.class, warehouseId);
-        areaA01Id = jdbcTemplate.queryForObject(
-                "SELECT id FROM areas WHERE area_code = 'A01' AND building_id = ?",
-                Long.class, buildingAId);
         locA01_01_01_01 = jdbcTemplate.queryForObject(
                 "SELECT id FROM locations WHERE location_code = 'A-01-A01-01-01-01' AND warehouse_id = ?",
                 Long.class, warehouseId);
@@ -167,6 +163,25 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         assertThat(new String(body, 0, 4)).isEqualTo("%PDF");
     }
 
+    private void assertCsvResponse(ResponseEntity<byte[]> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType())
+                .isNotNull()
+                .satisfies(ct -> assertThat(ct.toString()).contains("text/csv"));
+        byte[] body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.length).isGreaterThanOrEqualTo(3);
+        assertThat(body[0]).isEqualTo((byte) 0xEF);
+        assertThat(body[1]).isEqualTo((byte) 0xBB);
+        assertThat(body[2]).isEqualTo((byte) 0xBF);
+    }
+
+    private HttpHeaders unauthHeaders() {
+        HttpHeaders h = new HttpHeaders();
+        h.setAccept(java.util.List.of(org.springframework.http.MediaType.APPLICATION_JSON));
+        return h;
+    }
+
     // ========================================================
     // RPT-07: 在庫一覧レポート
     // ========================================================
@@ -176,7 +191,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
     class InventoryReport {
 
         @Test
-        @DisplayName("正常系: 在庫データが返る（available = quantity - allocated）")
+        @DisplayName("正常系: 在庫データが返る（available = quantity - allocated を全件で検証）")
         void getInventory_data_returnsItems() throws Exception {
             insertInventory(locA01_01_01_01, productAmbId, "PIECE", 100, 30);
             insertInventory(locA01_01_01_02, productAmb2Id, "PIECE", 50, 0);
@@ -188,9 +203,15 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             JsonNode body = parseJson(response.getBody());
             assertThat(body).hasSize(2);
-            JsonNode first = body.get(0);
-            assertThat(first.get("availableQty").asInt())
-                    .isEqualTo(first.get("quantity").asInt() - first.get("allocatedQty").asInt());
+            // 全件で available = quantity - allocated を検証
+            for (JsonNode row : body) {
+                assertThat(row.get("availableQty").asInt())
+                        .isEqualTo(row.get("quantity").asInt() - row.get("allocatedQty").asInt());
+            }
+            // 投入した両商品コードが含まれる
+            java.util.Set<String> codes = new java.util.HashSet<>();
+            body.forEach(row -> codes.add(row.get("productCode").asText()));
+            assertThat(codes).containsExactlyInAnyOrder("AMB-001", "AMB-002");
         }
 
         @Test
@@ -238,12 +259,21 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("権限: VIEWERでも閲覧可能")
-        void getInventory_viewer_succeeds() {
-            ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=json",
-                    viewerHeaders);
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getInventory_authChecks() {
+            String url = "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getInventory_csv_returnsCsv() {
+            insertInventory(locA01_01_01_01, productAmbId, "PIECE", 100, 0);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -323,6 +353,29 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             assertThat(parseJson(response.getBody()).get("code").asText())
                     .isEqualTo("PRODUCT_NOT_FOUND");
         }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getTransition_authChecks() {
+            String url = "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
+                    + "&productId=" + productAmbId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getTransition_csv_returnsCsv() {
+            insertInventoryMovement(locA01_01_01_01, "A-01-A01-01-01-01", productAmbId,
+                    "AMB-001", "ミネラルウォーター", "INBOUND", 50, 50,
+                    "2026-03-20T10:00:00+09:00", null);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
+                            + "&productId=" + productAmbId
+                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -392,6 +445,37 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
                     "/api/v1/reports/inventory-correction?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("正常系: データ0件で空配列")
+        void getCorrection_noData_returnsEmpty() throws Exception {
+            ResponseEntity<String> response = get(
+                    "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId + "&format=json",
+                    adminHeaders);
+            assertThat(parseJson(response.getBody())).isEmpty();
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getCorrection_authChecks() {
+            String url = "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId
+                    + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getCorrection_csv_returnsCsv() {
+            insertInventoryMovement(locA01_01_01_01, "A-01-A01-01-01-01", productAmbId,
+                    "AMB-001", "ミネラルウォーター", "CORRECTION", 5, 105,
+                    "2026-03-20T10:00:00+09:00", "差異補正");
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId
+                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 
@@ -467,6 +551,27 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getStocktakeList_authChecks() {
+            Long stocktakeId = insertStocktake("ST-RPT10-AUTH", "STARTED", false, false);
+            String url = "/api/v1/reports/stocktake-list?stocktakeId=" + stocktakeId
+                    + "&hideBookQty=true&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getStocktakeList_csv_returnsCsv() {
+            Long stocktakeId = insertStocktake("ST-RPT10-CSV", "STARTED", false, false);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/stocktake-list?stocktakeId=" + stocktakeId
+                            + "&hideBookQty=true&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
+        }
     }
 
     // ========================================================
@@ -512,6 +617,25 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
                     .isEqualTo("STOCKTAKE_NOT_FOUND");
+        }
+
+        @Test
+        @DisplayName("権限: VIEWERでも閲覧可能 / 未認証で401")
+        void getStocktakeResult_authChecks() {
+            Long stocktakeId = insertStocktake("ST-RPT11-AUTH", "CONFIRMED", true, false);
+            String url = "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=json";
+            assertThat(get(url, viewerHeaders).getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(get(url, unauthHeaders()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("正常系: CSV形式で200 + UTF-8 BOM")
+        void getStocktakeResult_csv_returnsCsv() {
+            Long stocktakeId = insertStocktake("ST-RPT11-CSV", "CONFIRMED", true, true);
+            ResponseEntity<byte[]> response = getBytes(
+                    "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=csv",
+                    adminHeaders);
+            assertCsvResponse(response);
         }
     }
 }
