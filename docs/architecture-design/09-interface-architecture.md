@@ -534,6 +534,8 @@ com.wms.interfacing/
 │   ├── ValidationResult.java             ← バリデーション結果集約 (record)
 │   ├── MasterCache.java                  ← マスタデータキャッシュ
 │   └── SlipNumberGenerator.java          ← 伝票番号採番関数インターフェース
+├── entity/
+│   └── IfExecution.java                  ← 取り込み履歴エンティティ
 ├── repository/
 │   └── IfExecutionRepository.java        ← 取り込み履歴リポジトリ
 └── blob/
