@@ -203,11 +203,11 @@ describe('ProductSearchDialog', () => {
     })
     const footer = wrapper.find('.el-dialog-footer')
     // テンプレートには total/count の実値も反映されている
-    expect(footer.text()).toContain('returns.productSearchHint')
+    expect(footer.text()).toContain('master.productSearch.hint')
     expect(footer.text()).toContain('total=10')
     expect(footer.text()).toContain('count=2')
     // t 関数に正しい置換引数が渡ったことを検証
-    expect(tSpy).toHaveBeenCalledWith('returns.productSearchHint', { total: 10, count: 2 })
+    expect(tSpy).toHaveBeenCalledWith('master.productSearch.hint', { total: 10, count: 2 })
   })
 
   it('total === results.length の場合は件数ヒントが表示されない', () => {
@@ -221,7 +221,7 @@ describe('ProductSearchDialog', () => {
     // footer slot は描画されないため空
     expect(footer.text()).toBe('')
     expect(tSpy).not.toHaveBeenCalledWith(
-      'returns.productSearchHint',
+      'master.productSearch.hint',
       expect.anything(),
     )
   })
@@ -236,7 +236,7 @@ describe('ProductSearchDialog', () => {
     const footer = wrapper.find('.el-dialog-footer')
     expect(footer.text()).toBe('')
     expect(tSpy).not.toHaveBeenCalledWith(
-      'returns.productSearchHint',
+      'master.productSearch.hint',
       expect.anything(),
     )
   })
