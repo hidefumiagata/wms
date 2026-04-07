@@ -9,7 +9,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { ReturnType } from '@/api/generated/models/return-type'
 import { ReturnReason } from '@/api/generated/models/return-reason'
-import type { ProductOption } from '@/types/master'
+import { toProductOption, type ProductOption } from '@/types/master'
 
 interface LocationInventory {
   locationId: number
@@ -200,31 +200,27 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         },
         signal: productAbortController.signal,
       })
-      const products = res.data.content ?? []
-      const total = res.data.totalElements ?? products.length
-      if (products.length === 0) {
+      const rawProducts = (res.data.content ?? []) as Record<string, unknown>[]
+      const total = res.data.totalElements ?? rawProducts.length
+      if (rawProducts.length === 0) {
         ElMessage.info(t('returns.productSearchEmpty'))
         selectedProduct.value = null
         return
       }
+      // 全経路で同一の ProductOption 型を流すため、ここで正規化
+      const normalized = rawProducts.map(toProductOption)
       // 完全一致 or 1件の場合は直接選択
-      const exact = products.find((p: ProductOption) => p.productCode === form.productCode.trim())
+      const exact = normalized.find((p) => p.productCode === form.productCode.trim())
       if (exact) {
         selectProduct(exact)
         return
       }
-      if (products.length === 1) {
-        selectProduct(products[0])
+      if (normalized.length === 1) {
+        selectProduct(normalized[0])
         return
       }
       // 複数件で完全一致なし → ダイアログ表示
-      productSearchResults.value = products.map((p: Record<string, unknown>) => ({
-        id: p.id as number,
-        productCode: p.productCode as string,
-        productName: p.productName as string,
-        lotManageFlag: p.lotManageFlag as boolean,
-        expiryManageFlag: p.expiryManageFlag as boolean,
-      }))
+      productSearchResults.value = normalized
       productSearchTotal.value = total
       selectedProduct.value = null
       productDialogVisible.value = true
@@ -243,6 +239,11 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     // ロケーション候補リセット
     form.locationId = null
     locationOptions.value = []
+    // 前商品の条件付き入力値（ロット・有効期限）を必ずクリアする。
+    // showLotNumber=false で非表示になっても、クリアしないと submit ペイロードに
+    // 前商品の値が残るため明示的にリセットする。
+    form.lotNumber = ''
+    form.expiryDate = ''
     // 在庫返品時かつ荷姿選択済みならロケーション候補取得
     if (isInventoryReturn.value && form.unitType) {
       fetchLocationCandidates()

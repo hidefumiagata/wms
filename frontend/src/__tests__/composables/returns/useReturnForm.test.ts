@@ -410,6 +410,38 @@ describe('useReturnForm', () => {
       expect(result.productSearchResults.value).toEqual([])
       expect(result.productSearchTotal.value).toBe(0)
     })
+
+    it('別商品を selectProduct すると form.lotNumber と form.expiryDate がクリアされる (C-2-M1)', () => {
+      const { result } = setup()
+      // 商品Aを選択した後の状態を再現：ロット・有効期限管理ありで値をセット済み
+      result.selectProduct({
+        id: 1,
+        productCode: 'P001',
+        productName: '商品A（ロット・期限管理あり）',
+        lotManageFlag: true,
+        expiryManageFlag: true,
+      })
+      result.form.lotNumber = 'LOT-A-001'
+      result.form.expiryDate = '2027-01-31'
+      expect(result.showLotNumber.value).toBe(true)
+      expect(result.showExpiryDate.value).toBe(true)
+
+      // 商品B（ロット・期限管理なし）に切り替え
+      result.selectProduct({
+        id: 2,
+        productCode: 'P002',
+        productName: '商品B（管理なし）',
+        lotManageFlag: false,
+        expiryManageFlag: false,
+      })
+
+      // 前商品の値が残っていないことを検証
+      expect(result.form.lotNumber).toBe('')
+      expect(result.form.expiryDate).toBe('')
+      // 非表示になっていることも確認
+      expect(result.showLotNumber.value).toBe(false)
+      expect(result.showExpiryDate.value).toBe(false)
+    })
   })
 
   // --- resetForm の商品検索状態クリア（resetForm 全般テストは別describeに存在） ---
