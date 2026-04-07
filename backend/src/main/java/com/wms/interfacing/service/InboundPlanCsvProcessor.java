@@ -2,10 +2,14 @@ package com.wms.interfacing.service;
 
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
+import com.wms.interfacing.model.FieldError;
+import com.wms.interfacing.model.MasterCache;
+import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.SlipNumberGenerator;
+import com.wms.interfacing.model.ValidationResult;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -389,61 +393,6 @@ public class InboundPlanCsvProcessor {
 
     // --- Inner types ---
 
-    public record FieldError(String column, String errorCode, String message) {
-    }
-
-    public record RowError(int rowNumber, List<FieldError> errors) {
-    }
-
-    @Getter
-    public static class ValidationResult {
-        private final int totalRows;
-        private final int successCount;
-        private final int errorCount;
-        private final List<RowError> rowErrors;
-
-        public ValidationResult(int totalRows, int successCount, int errorCount,
-                                List<RowError> rowErrors) {
-            this.totalRows = totalRows;
-            this.successCount = successCount;
-            this.errorCount = errorCount;
-            this.rowErrors = rowErrors;
-        }
-    }
-
     private record IndexedRow(int index, String[] data) {
-    }
-
-    /**
-     * マスタデータのキャッシュ。CSV内のユニークコードを一括検索して保持する。
-     */
-    @Getter
-    public static class MasterCache {
-        private final Map<String, Partner> partnerMap;
-        private final Map<String, Product> productMap;
-        private final Warehouse warehouse;
-
-        public MasterCache(Map<String, Partner> partnerMap, Map<String, Product> productMap,
-                           Warehouse warehouse) {
-            this.partnerMap = partnerMap;
-            this.productMap = productMap;
-            this.warehouse = warehouse;
-        }
-
-        public Partner getPartner(String code) {
-            return partnerMap.get(code);
-        }
-
-        public Product getProduct(String code) {
-            return productMap.get(code);
-        }
-    }
-
-    /**
-     * 伝票番号の採番インターフェース。テスト時にモック可能。
-     */
-    @FunctionalInterface
-    public interface SlipNumberGenerator {
-        String generate(LocalDate businessDate);
     }
 }
