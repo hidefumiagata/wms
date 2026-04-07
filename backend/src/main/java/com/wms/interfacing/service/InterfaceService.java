@@ -4,11 +4,10 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
-import com.wms.interfacing.model.FieldError;
-import com.wms.interfacing.model.MasterCache;
-import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.CsvMasterCache;
+import com.wms.interfacing.model.CsvRowError;
+import com.wms.interfacing.model.CsvValidationResult;
 import com.wms.interfacing.model.SlipNumberGenerator;
-import com.wms.interfacing.model.ValidationResult;
 import com.wms.interfacing.repository.IfExecutionRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.Product;
@@ -129,12 +128,12 @@ public class InterfaceService {
         }
 
         // マスタキャッシュ構築
-        MasterCache masterCache =
+        CsvMasterCache masterCache =
                 buildMasterCache(parseResult.getDataRows(), warehouseId);
 
         // L2〜L5バリデーション
         LocalDate businessDate = businessDateProvider.today();
-        ValidationResult result =
+        CsvValidationResult result =
                 validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         return InterfaceValidationResponse.success(fileName, result);
@@ -171,11 +170,11 @@ public class InterfaceService {
             throw new BusinessRuleViolationException("CSV_HEADER_ERROR", e.getMessage());
         }
 
-        MasterCache masterCache =
+        CsvMasterCache masterCache =
                 buildMasterCache(parseResult.getDataRows(), warehouseId);
         LocalDate businessDate = businessDateProvider.today();
 
-        ValidationResult validationResult =
+        CsvValidationResult validationResult =
                 validateByIfId(ifId, parseResult.getDataRows(), masterCache, businessDate);
 
         // DB操作をトランザクション内で実行
@@ -269,9 +268,9 @@ public class InterfaceService {
         }
     }
 
-    private ValidationResult validateByIfId(
+    private CsvValidationResult validateByIfId(
             String ifId, List<String[]> dataRows,
-            MasterCache masterCache, LocalDate businessDate) {
+            CsvMasterCache masterCache, LocalDate businessDate) {
         if ("IFX-001".equals(ifId)) {
             return inboundPlanCsvProcessor.validate(dataRows, masterCache, businessDate);
         } else if ("IFX-002".equals(ifId)) {
@@ -283,8 +282,8 @@ public class InterfaceService {
     }
 
     private void saveSlipsByIfId(String ifId, List<String[]> dataRows,
-                                  ValidationResult validationResult,
-                                  MasterCache masterCache,
+                                  CsvValidationResult validationResult,
+                                  CsvMasterCache masterCache,
                                   Long warehouseId, LocalDate businessDate,
                                   Long currentUserId, String fileName) {
         if ("IFX-001".equals(ifId)) {
@@ -331,7 +330,7 @@ public class InterfaceService {
         return String.format("OUT-%s-%04d", dateStr, nextSeq);
     }
 
-    MasterCache buildMasterCache(List<String[]> dataRows,
+    CsvMasterCache buildMasterCache(List<String[]> dataRows,
                                                           Long warehouseId) {
         Set<String> partnerCodes = dataRows.stream()
                 .map(row -> row.length > 0 ? CsvParser.normalizeEmpty(row[0]) : null)
@@ -357,7 +356,7 @@ public class InterfaceService {
                 .orElseThrow(() -> ResourceNotFoundException.of(
                         "WAREHOUSE_NOT_FOUND", "warehouse", warehouseId));
 
-        return new MasterCache(partnerMap, productMap, warehouse);
+        return new CsvMasterCache(partnerMap, productMap, warehouse);
     }
 
     private String resolveDirectory(String ifId) {
@@ -399,7 +398,7 @@ public class InterfaceService {
             int errorCount,
             String fileErrorCode,
             String fileErrorMessage,
-            List<RowError> rowErrors) {
+            List<CsvRowError> rowErrors) {
 
         public static InterfaceValidationResponse fileError(String fileName,
                                                              String errorCode,
@@ -410,7 +409,7 @@ public class InterfaceService {
 
         public static InterfaceValidationResponse success(
                 String fileName,
-                ValidationResult result) {
+                CsvValidationResult result) {
             return new InterfaceValidationResponse(fileName,
                     result.totalRows(), result.successCount(), result.errorCount(),
                     null, null, result.rowErrors());

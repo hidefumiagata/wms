@@ -438,7 +438,7 @@ sequenceDiagram
 
     Note over S: L5: クロスバリデーション<br/>伝票内重複チェック
 
-    S-->>B: ValidationResult
+    S-->>B: CsvValidationResult
     B-->>F: 200 OK {fileName, totalRows, successCount, errorCount, rows}
     F-->>U: バリデーション結果表示<br/>成功行数・エラー行数・エラー詳細
 ```
@@ -529,10 +529,10 @@ com.wms.interfacing/
 │   ├── InboundPlanCsvProcessor.java      ← IFX-001固有の変換・バリデーション
 │   └── OrderCsvProcessor.java            ← IFX-002固有の変換・バリデーション
 ├── model/
-│   ├── FieldError.java                   ← フィールド単位エラー (record)
-│   ├── RowError.java                     ← 行単位エラー集約 (record)
-│   ├── ValidationResult.java             ← バリデーション結果集約 (record)
-│   ├── MasterCache.java                  ← マスタデータキャッシュ
+│   ├── CsvFieldError.java                ← フィールド単位エラー (record)
+│   ├── CsvRowError.java                  ← 行単位エラー集約 (record)
+│   ├── CsvValidationResult.java          ← バリデーション結果集約 (record)
+│   ├── CsvMasterCache.java               ← マスタデータキャッシュ
 │   └── SlipNumberGenerator.java          ← 伝票番号採番関数インターフェース
 ├── entity/
 │   └── IfExecution.java                  ← 取り込み履歴エンティティ

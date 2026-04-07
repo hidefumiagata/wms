@@ -4,11 +4,11 @@ import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
-import com.wms.interfacing.model.FieldError;
-import com.wms.interfacing.model.MasterCache;
-import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.CsvFieldError;
+import com.wms.interfacing.model.CsvMasterCache;
+import com.wms.interfacing.model.CsvRowError;
 import com.wms.interfacing.model.SlipNumberGenerator;
-import com.wms.interfacing.model.ValidationResult;
+import com.wms.interfacing.model.CsvValidationResult;
 import com.wms.interfacing.repository.IfExecutionRepository;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
@@ -239,8 +239,8 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -365,8 +365,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -524,10 +524,10 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult valResult =
-                    new ValidationResult(1, 0, 1, List.of(
-                            new RowError(1, List.of(
-                                    new FieldError("partner_code",
+            CsvValidationResult valResult =
+                    new CsvValidationResult(1, 0, 1, List.of(
+                            new CsvRowError(1, List.of(
+                                    new CsvFieldError("partner_code",
                                             "WMS-E-IFX-301", "err")))));
             when(inboundPlanCsvProcessor.validate(any(), any(), any())).thenReturn(valResult);
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
@@ -588,12 +588,12 @@ class InterfaceServiceTest {
     }
 
     @Nested
-    @DisplayName("buildMasterCache")
-    class BuildMasterCache {
+    @DisplayName("buildCsvMasterCache")
+    class BuildCsvMasterCache {
 
         @Test
         @DisplayName("正常系 — マスタキャッシュが正しく構築される")
-        void buildMasterCache_success() {
+        void buildCsvMasterCache_success() {
             Long warehouseId = 1L;
             Warehouse warehouse = new Warehouse();
             warehouse.setWarehouseCode("WH-001");
@@ -612,7 +612,7 @@ class InterfaceServiceTest {
             List<String[]> dataRows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""});
 
-            MasterCache cache =
+            CsvMasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getPartner("SUP-0001")).isNotNull();
@@ -622,7 +622,7 @@ class InterfaceServiceTest {
 
         @Test
         @DisplayName("正常系 — 空データ行でもキャッシュが構築される")
-        void buildMasterCache_emptyDataRows() {
+        void buildCsvMasterCache_emptyDataRows() {
             Long warehouseId = 1L;
             Warehouse warehouse = new Warehouse();
             warehouse.setWarehouseCode("WH-001");
@@ -633,7 +633,7 @@ class InterfaceServiceTest {
             // Empty data rows — no partner/product codes to look up
             List<String[]> dataRows = List.<String[]>of(new String[]{"", "", ""});
 
-            MasterCache cache =
+            CsvMasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -644,7 +644,7 @@ class InterfaceServiceTest {
 
         @Test
         @DisplayName("異常系 — 倉庫が存在しない場合ResourceNotFoundException")
-        void buildMasterCache_warehouseNotFound() {
+        void buildCsvMasterCache_warehouseNotFound() {
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
             when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of());
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
@@ -658,7 +658,7 @@ class InterfaceServiceTest {
 
         @Test
         @DisplayName("境界値 — カラム数が0の行でもNullPointerにならない")
-        void buildMasterCache_zeroLengthRow_handledGracefully() {
+        void buildCsvMasterCache_zeroLengthRow_handledGracefully() {
             Long warehouseId = 1L;
             Warehouse warehouse = new Warehouse();
             warehouse.setWarehouseCode("WH-001");
@@ -669,7 +669,7 @@ class InterfaceServiceTest {
             // row.length == 0: row.length > 0 is false, row.length > 2 is false
             List<String[]> dataRows = List.<String[]>of(new String[]{});
 
-            MasterCache cache =
+            CsvMasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -677,7 +677,7 @@ class InterfaceServiceTest {
 
         @Test
         @DisplayName("境界値 — カラム数が1の行（partner_codeのみ）")
-        void buildMasterCache_singleColumnRow_handledGracefully() {
+        void buildCsvMasterCache_singleColumnRow_handledGracefully() {
             Long warehouseId = 1L;
             Warehouse warehouse = new Warehouse();
             warehouse.setWarehouseCode("WH-001");
@@ -690,7 +690,7 @@ class InterfaceServiceTest {
             // row.length > 2 is false (no product_code)
             List<String[]> dataRows = List.<String[]>of(new String[]{"SUP-0001"});
 
-            MasterCache cache =
+            CsvMasterCache cache =
                     interfaceService.buildMasterCache(dataRows, warehouseId);
 
             assertThat(cache.getWarehouse()).isNotNull();
@@ -750,8 +750,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -814,8 +814,8 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(inboundSlipRepository.findMaxSequenceByDate("INB-20260320-")).thenReturn(5);
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(inboundPlanCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -873,8 +873,8 @@ class InterfaceServiceTest {
             when(productRepository.findByProductCodeIn(any())).thenReturn(List.of());
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -962,8 +962,8 @@ class InterfaceServiceTest {
 
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -1047,8 +1047,8 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(outboundSlipRepository.findMaxSequenceByDate("20260320")).thenReturn(3);
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
@@ -1098,8 +1098,8 @@ class InterfaceServiceTest {
             when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
             when(outboundSlipRepository.findMaxSequenceByDate(any())).thenReturn(9999);
 
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
             when(orderCsvProcessor.validate(any(), any(), any()))
                     .thenReturn(validationResult);
 
