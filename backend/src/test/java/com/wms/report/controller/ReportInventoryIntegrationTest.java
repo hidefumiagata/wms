@@ -182,7 +182,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             insertInventory(locA01_01_01_02, productAmb2Id, "PIECE", 50, 0);
 
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=JSON",
+                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -201,7 +201,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory?warehouseId=" + warehouseId
-                            + "&productId=" + productAmbId + "&format=JSON",
+                            + "&productId=" + productAmbId + "&format=json",
                     adminHeaders);
 
             JsonNode body = parseJson(response.getBody());
@@ -214,7 +214,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         void getInventory_pdf_returnsBinary() {
             insertInventory(locA01_01_01_01, productAmbId, "PIECE", 100, 0);
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=PDF",
+                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -223,7 +223,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("正常系: データ0件で空配列")
         void getInventory_noData_returnsEmpty() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=JSON",
+                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=json",
                     adminHeaders);
             assertThat(parseJson(response.getBody())).isEmpty();
         }
@@ -232,7 +232,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない倉庫IDで404")
         void getInventory_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory?warehouseId=99999999&format=JSON",
+                    "/api/v1/reports/inventory?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -241,7 +241,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("権限: VIEWERでも閲覧可能")
         void getInventory_viewer_succeeds() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=JSON",
+                    "/api/v1/reports/inventory?warehouseId=" + warehouseId + "&format=json",
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -268,7 +268,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
                             + "&productId=" + productAmbId
-                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=JSON",
+                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -286,7 +286,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
                             + "&productId=" + productAmbId
-                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=PDF",
+                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -297,7 +297,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
                             + "&productId=" + productAmbId
-                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=JSON",
+                            + "&dateFrom=2026-03-20&dateTo=2026-03-20&format=json",
                     adminHeaders);
             assertThat(parseJson(response.getBody())).isEmpty();
         }
@@ -307,7 +307,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         void getTransition_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-transition?warehouseId=99999999"
-                            + "&productId=" + productAmbId + "&format=JSON",
+                            + "&productId=" + productAmbId + "&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -317,7 +317,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         void getTransition_productNotFound_returns404() throws Exception {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-transition?warehouseId=" + warehouseId
-                            + "&productId=99999999&format=JSON",
+                            + "&productId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
@@ -342,7 +342,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId
-                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=JSON",
+                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -364,7 +364,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId
-                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=JSON",
+                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=json",
                     adminHeaders);
 
             JsonNode body = parseJson(response.getBody());
@@ -380,7 +380,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/inventory-correction?warehouseId=" + warehouseId
-                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=PDF",
+                            + "&correctionDateFrom=2026-03-20&correctionDateTo=2026-03-20&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -389,7 +389,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない倉庫IDで404")
         void getCorrection_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/inventory-correction?warehouseId=99999999&format=JSON",
+                    "/api/v1/reports/inventory-correction?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -410,7 +410,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/stocktake-list?stocktakeId=" + stocktakeId
-                            + "&hideBookQty=true&format=JSON",
+                            + "&hideBookQty=true&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -427,7 +427,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/stocktake-list?buildingId=" + buildingAId
-                            + "&hideBookQty=false&format=JSON",
+                            + "&hideBookQty=false&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -442,7 +442,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/stocktake-list?stocktakeId=" + stocktakeId
-                            + "&hideBookQty=true&format=PDF",
+                            + "&hideBookQty=true&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -452,7 +452,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         void getStocktakeList_stocktakeNotFound_returns404() throws Exception {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/stocktake-list?stocktakeId=99999999"
-                            + "&hideBookQty=true&format=JSON",
+                            + "&hideBookQty=true&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
@@ -463,7 +463,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: stocktakeId/buildingId 両方未指定で422")
         void getStocktakeList_noKey_returns422() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/stocktake-list?hideBookQty=true&format=JSON",
+                    "/api/v1/reports/stocktake-list?hideBookQty=true&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         }
@@ -483,7 +483,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             Long stocktakeId = insertStocktake("ST-RPT11-001", "CONFIRMED", true, true);
 
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=JSON",
+                    "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -498,7 +498,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
             Long stocktakeId = insertStocktake("ST-RPT11-PDF", "CONFIRMED", true, false);
 
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=PDF",
+                    "/api/v1/reports/stocktake-result?stocktakeId=" + stocktakeId + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -507,7 +507,7 @@ class ReportInventoryIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない棚卸IDで404")
         void getStocktakeResult_notFound_returns404() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/stocktake-result?stocktakeId=99999999&format=JSON",
+                    "/api/v1/reports/stocktake-result?stocktakeId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())

@@ -154,7 +154,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
             insertDailySummary(businessDate, 5, 3, 1, 2);
 
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=JSON",
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -175,7 +175,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
             insertDailySummary(businessDate, 5, 3, 0, 0);
 
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=PDF",
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -184,7 +184,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 日替処理未完了の営業日で404")
         void getDailySummary_batchNotCompleted_returns404() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-30&format=JSON",
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-30&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
@@ -199,7 +199,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
             insertDailySummary(businessDate, 1, 1, 0, 0);
 
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=JSON",
+                    "/api/v1/reports/daily-summary?targetBusinessDate=2026-03-20&format=json",
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -223,7 +223,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/returns?warehouseId=" + warehouseId
-                            + "&returnDateFrom=2026-03-20&returnDateTo=2026-03-21&format=JSON",
+                            + "&returnDateFrom=2026-03-20&returnDateTo=2026-03-21&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -244,7 +244,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/returns?warehouseId=" + warehouseId
-                            + "&returnType=INBOUND&format=JSON",
+                            + "&returnType=INBOUND&format=json",
                     adminHeaders);
 
             JsonNode body = parseJson(response.getBody());
@@ -262,7 +262,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/returns?warehouseId=" + warehouseId
-                            + "&returnReason=DAMAGED&format=JSON",
+                            + "&returnReason=DAMAGED&format=json",
                     adminHeaders);
 
             JsonNode body = parseJson(response.getBody());
@@ -277,7 +277,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
                     5, "QUALITY_DEFECT");
 
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=PDF",
+                    "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -286,7 +286,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
         @DisplayName("正常系: データ0件で空配列")
         void getReturns_noData_returnsEmpty() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=JSON",
+                    "/api/v1/reports/returns?warehouseId=" + warehouseId + "&format=json",
                     adminHeaders);
             assertThat(parseJson(response.getBody())).isEmpty();
         }
@@ -295,7 +295,7 @@ class ReportMiscIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない倉庫IDで404")
         void getReturns_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/returns?warehouseId=99999999&format=JSON",
+                    "/api/v1/reports/returns?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }

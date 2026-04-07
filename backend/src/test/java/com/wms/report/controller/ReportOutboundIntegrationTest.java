@@ -184,7 +184,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/picking-instruction?pickingInstructionId=" + instructionId
-                            + "&format=JSON",
+                            + "&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -204,7 +204,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/picking-instruction?pickingInstructionId=" + instructionId
-                            + "&format=PDF",
+                            + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -213,7 +213,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しないピッキング指示IDで404")
         void getPicking_notFound_returns404() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/picking-instruction?pickingInstructionId=99999999&format=JSON",
+                    "/api/v1/reports/picking-instruction?pickingInstructionId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
@@ -230,7 +230,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/picking-instruction?pickingInstructionId=" + instructionId
-                            + "&format=JSON",
+                            + "&format=json",
                     viewerHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         }
@@ -253,7 +253,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
             insertPickingInstruction("PI-RPT13-001", slipId, 10, 10);
 
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=JSON",
+                    "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -273,7 +273,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                     productAmbId, "AMB-001", "ミネラルウォーター", 10, 10, 0, "PICKING_COMPLETED");
 
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=PDF",
+                    "/api/v1/reports/shipping-inspection?slipId=" + slipId + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -282,7 +282,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない伝票IDで404")
         void getShippingInspection_notFound_returns404() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/shipping-inspection?slipId=99999999&format=JSON",
+                    "/api/v1/reports/shipping-inspection?slipId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             assertThat(parseJson(response.getBody()).get("code").asText())
@@ -307,7 +307,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/delivery-list?warehouseId=" + warehouseId
-                            + "&plannedDateFrom=2026-03-20&plannedDateTo=2026-03-20&format=JSON",
+                            + "&plannedDateFrom=2026-03-20&plannedDateTo=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -330,7 +330,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/delivery-list?warehouseId=" + warehouseId
-                            + "&status=SHIPPED&format=JSON",
+                            + "&status=SHIPPED&format=json",
                     adminHeaders);
 
             JsonNode body = parseJson(response.getBody());
@@ -345,7 +345,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
                     null, null, productAmbId, "AMB-001", "ミネラルウォーター", 10, null, 0, "ALLOCATED");
 
             ResponseEntity<byte[]> response = getBytes(
-                    "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=PDF",
+                    "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -354,7 +354,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         @DisplayName("正常系: データ0件で空配列")
         void getDeliveryList_noData_returnsEmpty() throws Exception {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=JSON",
+                    "/api/v1/reports/delivery-list?warehouseId=" + warehouseId + "&format=json",
                     adminHeaders);
             assertThat(parseJson(response.getBody())).isEmpty();
         }
@@ -363,7 +363,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない倉庫IDで404")
         void getDeliveryList_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/delivery-list?warehouseId=99999999&format=JSON",
+                    "/api/v1/reports/delivery-list?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -388,7 +388,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/unshipped-realtime?warehouseId=" + warehouseId
-                            + "&asOfDate=2026-03-20&format=JSON",
+                            + "&asOfDate=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -406,7 +406,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/unshipped-realtime?warehouseId=" + warehouseId
-                            + "&asOfDate=2026-03-20&format=PDF",
+                            + "&asOfDate=2026-03-20&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -415,7 +415,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         @DisplayName("異常系: 存在しない倉庫IDで404")
         void getUnshippedRealtime_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
-                    "/api/v1/reports/unshipped-realtime?warehouseId=99999999&format=JSON",
+                    "/api/v1/reports/unshipped-realtime?warehouseId=99999999&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -439,7 +439,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<String> response = get(
                     "/api/v1/reports/unshipped-confirmed?warehouseId=" + warehouseId
-                            + "&batchBusinessDate=2026-03-20&format=JSON",
+                            + "&batchBusinessDate=2026-03-20&format=json",
                     adminHeaders);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -454,7 +454,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         void getUnshippedConfirmed_noData_returnsEmpty() throws Exception {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/unshipped-confirmed?warehouseId=" + warehouseId
-                            + "&batchBusinessDate=2026-03-30&format=JSON",
+                            + "&batchBusinessDate=2026-03-30&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(parseJson(response.getBody())).isEmpty();
@@ -470,7 +470,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
 
             ResponseEntity<byte[]> response = getBytes(
                     "/api/v1/reports/unshipped-confirmed?warehouseId=" + warehouseId
-                            + "&batchBusinessDate=2026-03-20&format=PDF",
+                            + "&batchBusinessDate=2026-03-20&format=pdf",
                     adminHeaders);
             assertPdfResponse(response);
         }
@@ -480,7 +480,7 @@ class ReportOutboundIntegrationTest extends IntegrationTestBase {
         void getUnshippedConfirmed_warehouseNotFound_returns404() {
             ResponseEntity<String> response = get(
                     "/api/v1/reports/unshipped-confirmed?warehouseId=99999999"
-                            + "&batchBusinessDate=2026-03-20&format=JSON",
+                            + "&batchBusinessDate=2026-03-20&format=json",
                     adminHeaders);
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
