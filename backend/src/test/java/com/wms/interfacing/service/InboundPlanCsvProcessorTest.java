@@ -188,10 +188,10 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getTotalRows()).isEqualTo(2);
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(0);
-            assertThat(result.getRowErrors()).isEmpty();
+            assertThat(result.totalRows()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(0);
+            assertThat(result.rowErrors()).isEmpty();
         }
 
         @Test
@@ -203,8 +203,8 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(1);
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.errorCount()).isEqualTo(1);
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-101"));
         }
 
@@ -218,7 +218,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-101"));
         }
 
@@ -231,7 +231,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-102"));
         }
 
@@ -244,7 +244,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-102"));
         }
 
@@ -257,7 +257,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-103"));
         }
 
@@ -271,7 +271,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-103"));
         }
 
@@ -284,7 +284,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-104"));
         }
 
@@ -297,7 +297,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-104"));
         }
 
@@ -310,7 +310,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-105"));
         }
 
@@ -323,7 +323,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-105"));
         }
 
@@ -336,7 +336,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-105"));
         }
 
@@ -350,7 +350,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-106"));
         }
 
@@ -363,7 +363,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-107"));
         }
 
@@ -377,7 +377,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-108"));
         }
 
@@ -390,7 +390,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-301"));
         }
 
@@ -403,7 +403,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-302"));
         }
 
@@ -416,7 +416,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-303"));
         }
 
@@ -429,7 +429,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-304"));
         }
 
@@ -442,7 +442,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-305"));
         }
 
@@ -455,7 +455,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-401"));
         }
 
@@ -468,7 +468,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-402"));
         }
 
@@ -481,7 +481,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-403"));
         }
 
@@ -494,7 +494,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-404"));
         }
 
@@ -507,7 +507,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-404"));
         }
 
@@ -521,10 +521,10 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(1);
-            assertThat(result.getRowErrors()).hasSize(1);
-            assertThat(result.getRowErrors().get(0).rowNumber()).isEqualTo(2);
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.errorCount()).isEqualTo(1);
+            assertThat(result.rowErrors()).hasSize(1);
+            assertThat(result.rowErrors().get(0).rowNumber()).isEqualTo(2);
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-501"));
         }
 
@@ -542,8 +542,8 @@ class InboundPlanCsvProcessorTest {
                     processor.validate(rows, masterCache, businessDate);
 
             // Row 2 has L2 error, Row 3 has L5 error (duplicate of Row 1)
-            assertThat(result.getErrorCount()).isEqualTo(2);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         @Test
@@ -557,8 +557,8 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(2);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         @Test
@@ -577,9 +577,9 @@ class InboundPlanCsvProcessorTest {
                     processor.validate(rows, masterCache, businessDate);
 
             // Row 3 has L5 duplicate error
-            assertThat(result.getErrorCount()).isEqualTo(1);
-            assertThat(result.getRowErrors()).hasSize(1);
-            assertThat(result.getRowErrors().get(0).rowNumber()).isEqualTo(3);
+            assertThat(result.errorCount()).isEqualTo(1);
+            assertThat(result.rowErrors()).hasSize(1);
+            assertThat(result.rowErrors().get(0).rowNumber()).isEqualTo(3);
         }
 
         @Test
@@ -592,8 +592,8 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(0);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(0);
         }
 
         @Test
@@ -605,7 +605,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getRowErrors().get(0).errors()).hasSizeGreaterThanOrEqualTo(4);
+            assertThat(result.rowErrors().get(0).errors()).hasSizeGreaterThanOrEqualTo(4);
         }
 
         @Test
@@ -630,8 +630,8 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, cacheWithBoth, businessDate);
 
-            assertThat(result.getSuccessCount()).isEqualTo(1);
-            assertThat(result.getErrorCount()).isEqualTo(0);
+            assertThat(result.successCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(0);
         }
 
         @Test
@@ -647,9 +647,9 @@ class InboundPlanCsvProcessorTest {
                     processor.validate(rows, masterCache, businessDate);
 
             // Should have WMS-E-IFX-107 (format error) but NOT WMS-E-IFX-403 (missing)
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .anyMatch(e -> e.errorCode().equals("WMS-E-IFX-107"));
-            assertThat(result.getRowErrors().get(0).errors())
+            assertThat(result.rowErrors().get(0).errors())
                     .noneMatch(e -> e.errorCode().equals("WMS-E-IFX-403"));
         }
 
@@ -662,7 +662,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         @Test
@@ -675,8 +675,8 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(0);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(0);
         }
 
         @Test
@@ -688,7 +688,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
         }
 
         @Test
@@ -698,7 +698,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
         }
 
         @Test
@@ -708,7 +708,7 @@ class InboundPlanCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
         }
     }
 

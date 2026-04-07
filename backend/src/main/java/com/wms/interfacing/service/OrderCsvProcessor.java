@@ -286,7 +286,7 @@ public class OrderCsvProcessor {
             LocalDate businessDate,
             Long currentUserId) {
 
-        Set<Integer> errorRows = validationResult.getRowErrors().stream()
+        Set<Integer> errorRows = validationResult.rowErrors().stream()
                 .map(RowError::rowNumber)
                 .collect(Collectors.toSet());
 

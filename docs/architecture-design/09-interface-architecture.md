@@ -528,19 +528,19 @@ com.wms.interfacing/
 │   ├── CsvParser.java                    ← CSVパース共通処理
 │   ├── InboundPlanCsvProcessor.java      ← IFX-001固有の変換・バリデーション
 │   └── OrderCsvProcessor.java            ← IFX-002固有の変換・バリデーション
-├── dto/
-│   ├── ValidateRequest.java              ← バリデーションリクエスト
-│   ├── ImportRequest.java                ← 取り込みリクエスト
-│   ├── ValidationResult.java             ← バリデーション結果
-│   ├── ImportResult.java                 ← 取り込み結果
-│   ├── ValidationRowResult.java          ← 行単位バリデーション結果
-│   ├── FileInfoResponse.java             ← ファイル一覧レスポンス
-│   └── ImportHistoryResponse.java        ← 取り込み履歴レスポンス
+├── model/
+│   ├── FieldError.java                   ← フィールド単位エラー (record)
+│   ├── RowError.java                     ← 行単位エラー集約 (record)
+│   ├── ValidationResult.java             ← バリデーション結果集約 (record)
+│   ├── MasterCache.java                  ← マスタデータキャッシュ
+│   └── SlipNumberGenerator.java          ← 伝票番号採番関数インターフェース
 ├── repository/
 │   └── IfExecutionRepository.java        ← 取り込み履歴リポジトリ
 └── blob/
     └── BlobStorageClient.java            ← Azure Blob Storage操作
 ```
+
+> **補記**: `model/` 配下は IFX-001（入荷予定）/ IFX-002（受注）共通の内部バリュー型。両 CSV プロセッサが共有することで、IFX-001 内部変更時の IFX-002 への波及リスクを排除する。Issue #370 で抽出。API の DTO は OpenAPI から自動生成される型を直接利用するため、`dto/` パッケージは存在しない。
 
 ---
 

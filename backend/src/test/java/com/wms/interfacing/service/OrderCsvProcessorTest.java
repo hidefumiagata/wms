@@ -220,10 +220,10 @@ class OrderCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
-            assertThat(result.getTotalRows()).isEqualTo(2);
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(0);
-            assertThat(result.getRowErrors()).isEmpty();
+            assertThat(result.totalRows()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(0);
+            assertThat(result.rowErrors()).isEmpty();
         }
 
         @Test
@@ -234,7 +234,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         // --- L2: 形式チェック ---
@@ -247,7 +247,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
             assertErrorCode(result, "WMS-E-IFX-201");
         }
 
@@ -402,7 +402,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         // --- L3: マスタ参照バリデーション ---
@@ -484,7 +484,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
             assertErrorCode(result, "WMS-E-IFX-502");
         }
 
@@ -497,7 +497,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(2);
         }
 
         // --- 複合テスト ---
@@ -510,9 +510,9 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getRowErrors()).hasSize(1);
+            assertThat(result.rowErrors()).hasSize(1);
             // partner_code, planned_date, product_code, unit_type, ordered_qty = 5エラー
-            assertThat(result.getRowErrors().get(0).errors()).hasSizeGreaterThanOrEqualTo(5);
+            assertThat(result.rowErrors().get(0).errors()).hasSizeGreaterThanOrEqualTo(5);
         }
 
         @Test
@@ -525,9 +525,9 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getTotalRows()).isEqualTo(3);
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.totalRows()).isEqualTo(3);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(1);
         }
 
         @Test
@@ -538,7 +538,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
         }
 
         @Test
@@ -551,8 +551,8 @@ class OrderCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
             // 2行目はL2エラー（ordered_qty）のみ。クロスバリデーションはスキップ
-            assertThat(result.getErrorCount()).isEqualTo(1);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         @Test
@@ -568,8 +568,8 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(2);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(1);
             assertErrorCode(result, "WMS-E-IFX-502");
         }
     }
@@ -727,7 +727,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getErrorCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(1);
             assertErrorCode(result, "WMS-E-IFX-201");
         }
 
@@ -752,7 +752,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getErrorCount()).isEqualTo(2);
+            assertThat(result.errorCount()).isEqualTo(2);
         }
 
         @Test
@@ -769,8 +769,8 @@ class OrderCsvProcessorTest {
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
             // 2行目: L2エラー、3行目: L5エラー（重複）、1行目: 成功
-            assertThat(result.getSuccessCount()).isEqualTo(1);
-            assertThat(result.getErrorCount()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(2);
         }
 
         @Test
@@ -781,7 +781,7 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
+            assertThat(result.successCount()).isEqualTo(1);
         }
 
         @Test
@@ -790,8 +790,8 @@ class OrderCsvProcessorTest {
             List<String[]> rows = List.of();
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getTotalRows()).isEqualTo(0);
-            assertThat(result.getSuccessCount()).isEqualTo(0);
+            assertThat(result.totalRows()).isEqualTo(0);
+            assertThat(result.successCount()).isEqualTo(0);
         }
 
         @Test
@@ -804,8 +804,8 @@ class OrderCsvProcessorTest {
             );
             ValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
-            assertThat(result.getSuccessCount()).isEqualTo(1);
-            assertThat(result.getErrorCount()).isEqualTo(2);
+            assertThat(result.successCount()).isEqualTo(1);
+            assertThat(result.errorCount()).isEqualTo(2);
         }
     }
 
@@ -813,8 +813,8 @@ class OrderCsvProcessorTest {
 
     private void assertErrorCode(ValidationResult result,
                                   String expectedCode) {
-        assertThat(result.getRowErrors()).isNotEmpty();
-        boolean found = result.getRowErrors().stream()
+        assertThat(result.rowErrors()).isNotEmpty();
+        boolean found = result.rowErrors().stream()
                 .flatMap(re -> re.errors().stream())
                 .anyMatch(e -> e.errorCode().equals(expectedCode));
         assertThat(found).as("Expected error code " + expectedCode).isTrue();

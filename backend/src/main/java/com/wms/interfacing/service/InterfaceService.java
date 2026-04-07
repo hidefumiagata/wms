@@ -184,8 +184,8 @@ public class InterfaceService {
                     warehouseId, businessDate, currentUserId, fileName);
 
             return saveExecution(ifId, fileName, null,
-                    validationResult.getTotalRows(), validationResult.getSuccessCount(),
-                    validationResult.getErrorCount(), mode, "COMPLETED",
+                    validationResult.totalRows(), validationResult.successCount(),
+                    validationResult.errorCount(), mode, "COMPLETED",
                     warehouseId, currentUserId);
         });
 
@@ -193,8 +193,8 @@ public class InterfaceService {
         moveBlobSafely(directory, fileName, execution);
 
         return new InterfaceImportResponse(
-                validationResult.getSuccessCount(),
-                validationResult.getErrorCount(),
+                validationResult.successCount(),
+                validationResult.errorCount(),
                 mode, "COMPLETED");
     }
 
@@ -412,8 +412,8 @@ public class InterfaceService {
                 String fileName,
                 ValidationResult result) {
             return new InterfaceValidationResponse(fileName,
-                    result.getTotalRows(), result.getSuccessCount(), result.getErrorCount(),
-                    null, null, result.getRowErrors());
+                    result.totalRows(), result.successCount(), result.errorCount(),
+                    null, null, result.rowErrors());
         }
 
         public boolean hasFileError() {

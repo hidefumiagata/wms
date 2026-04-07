@@ -307,7 +307,7 @@ public class InboundPlanCsvProcessor {
                                         SlipNumberGenerator slipNumberGenerator,
                                         LocalDate businessDate, Long currentUserId) {
         // エラー行番号を抽出
-        Set<Integer> errorRows = validationResult.getRowErrors().stream()
+        Set<Integer> errorRows = validationResult.rowErrors().stream()
                 .map(RowError::rowNumber)
                 .collect(Collectors.toSet());
 
