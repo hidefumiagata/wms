@@ -486,6 +486,12 @@ export default {
         passwordMismatch: 'パスワードが一致しません',
       },
     },
+    productSearch: {
+      title: '商品検索',
+      codeColumn: '商品コード',
+      nameColumn: '商品名',
+      hint: '全{total}件中{count}件を表示しています',
+    },
   },
   system: {
     parameters: {

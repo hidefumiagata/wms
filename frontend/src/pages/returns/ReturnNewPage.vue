@@ -28,6 +28,7 @@
           <el-input
             v-model="form.productCode"
             style="width: 280px"
+            :maxlength="20"
             :placeholder="t('returns.productCode')"
             @keyup.enter="searchProduct"
           />
@@ -199,6 +200,14 @@
         </template>
       </el-form>
 
+      <!-- 商品検索ダイアログ（el-form 外に配置：form-item 兄弟位置にあると意図しないバリデーション挙動を招くため） -->
+      <ProductSearchDialog
+        v-model:visible="productDialogVisible"
+        :results="productSearchResults"
+        :total="productSearchTotal"
+        @select="selectProduct"
+      />
+
       <!-- ボタン -->
       <div class="form-actions">
         <el-button @click="resetForm">{{ t('common.cancel') }}</el-button>
@@ -215,6 +224,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance } from 'element-plus'
 import { useReturnForm } from '@/composables/returns/useReturnForm'
+import ProductSearchDialog from '@/components/master/ProductSearchDialog.vue'
 import { formatNumber } from '@/utils/inventoryFormatters'
 
 const { t } = useI18n()
@@ -228,6 +238,9 @@ const {
   locationLoading,
   supplierSearchLoading,
   selectedProduct,
+  productDialogVisible,
+  productSearchResults,
+  productSearchTotal,
   selectedSupplier,
   locationOptions,
   selectedLocationInventory,
@@ -241,6 +254,7 @@ const {
   hasAllocated,
   onReturnTypeChange,
   searchProduct,
+  selectProduct,
   searchSupplier,
   selectSupplier,
   clearSupplier,

@@ -9,14 +9,7 @@ import { toApiError } from '@/utils/apiError'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { ReturnType } from '@/api/generated/models/return-type'
 import { ReturnReason } from '@/api/generated/models/return-reason'
-
-interface ProductOption {
-  id: number
-  productCode: string
-  productName: string
-  lotManageFlag: boolean
-  expiryManageFlag: boolean
-}
+import { toProductOption, type ProductOption } from '@/types/master'
 
 interface LocationInventory {
   locationId: number
@@ -46,6 +39,10 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
 
   // 商品選択結果
   const selectedProduct = ref<ProductOption | null>(null)
+  // 商品検索ダイアログ
+  const productDialogVisible = ref(false)
+  const productSearchResults = ref<ProductOption[]>([])
+  const productSearchTotal = ref(0)
   // 仕入先選択結果
   const selectedSupplier = ref<PartnerOption | null>(null)
   // 仕入先検索ダイアログ
@@ -203,21 +200,37 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
         },
         signal: productAbortController.signal,
       })
-      const products = res.data.content ?? []
-      if (products.length === 0) {
+      const content = res.data.content
+      const rawProducts: Record<string, unknown>[] = Array.isArray(content) ? content : []
+      const total =
+        typeof res.data.totalElements === 'number'
+          ? res.data.totalElements
+          : (console.warn(
+              '[searchProduct] API contract violation: totalElements missing',
+            ),
+            rawProducts.length)
+      if (rawProducts.length === 0) {
         ElMessage.info(t('returns.productSearchEmpty'))
         selectedProduct.value = null
         return
       }
+      // 全経路で同一の ProductOption 型を流すため、ここで正規化
+      const normalized = rawProducts.map(toProductOption)
       // 完全一致 or 1件の場合は直接選択
-      const exact = products.find((p: ProductOption) => p.productCode === form.productCode.trim())
-      const target = exact ?? (products.length === 1 ? products[0] : null)
-      if (target) {
-        selectProduct(target)
-      } else {
-        // 複数件の場合、最初の1件を選択（将来はダイアログ表示）
-        selectProduct(products[0])
+      const exact = normalized.find((p) => p.productCode === form.productCode.trim())
+      if (exact) {
+        selectProduct(exact)
+        return
       }
+      if (normalized.length === 1) {
+        selectProduct(normalized[0])
+        return
+      }
+      // 複数件で完全一致なし → ダイアログ表示
+      productSearchResults.value = normalized
+      productSearchTotal.value = total
+      selectedProduct.value = null
+      productDialogVisible.value = true
     } catch (err) {
       if (axios.isCancel(err)) return
       ElMessage.error(t('returns.productNotFound'))
@@ -228,15 +241,29 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
   }
 
   function selectProduct(product: ProductOption) {
+    // 同一商品の再選択時はロット・有効期限を保持する（C-3-m5）
+    const isSameProduct = selectedProduct.value?.id === product.id
     selectedProduct.value = product
     form.productCode = product.productCode
     // ロケーション候補リセット
     form.locationId = null
     locationOptions.value = []
+    // 前商品の条件付き入力値（ロット・有効期限）を必ずクリアする。
+    // showLotNumber=false で非表示になっても、クリアしないと submit ペイロードに
+    // 前商品の値が残るため明示的にリセットする。
+    // ただし同一商品を再選択した場合は入力済みの値を保持する。
+    if (!isSameProduct) {
+      form.lotNumber = ''
+      form.expiryDate = ''
+    }
     // 在庫返品時かつ荷姿選択済みならロケーション候補取得
     if (isInventoryReturn.value && form.unitType) {
       fetchLocationCandidates()
     }
+    // ダイアログを閉じ、検索結果の残骸もクリアする
+    productDialogVisible.value = false
+    productSearchResults.value = []
+    productSearchTotal.value = 0
   }
 
   // --- 荷姿変更時 ---
@@ -470,6 +497,9 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     selectedProduct.value = null
     selectedSupplier.value = null
     locationOptions.value = []
+    productSearchResults.value = []
+    productSearchTotal.value = 0
+    productDialogVisible.value = false
     supplierSearchResults.value = []
     supplierSearchTotal.value = 0
     supplierDialogVisible.value = false
@@ -506,6 +536,9 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     locationLoading,
     supplierSearchLoading,
     selectedProduct,
+    productDialogVisible,
+    productSearchResults,
+    productSearchTotal,
     selectedSupplier,
     locationOptions,
     selectedLocationInventory,
@@ -519,6 +552,7 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     hasAllocated,
     onReturnTypeChange,
     searchProduct,
+    selectProduct,
     searchSupplier,
     selectSupplier,
     clearSupplier,

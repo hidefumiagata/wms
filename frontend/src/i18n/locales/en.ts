@@ -493,6 +493,12 @@ export default {
         passwordMismatch: 'Passwords do not match',
       },
     },
+    productSearch: {
+      title: 'Product Search',
+      codeColumn: 'Product Code',
+      nameColumn: 'Product Name',
+      hint: 'Showing {count} of {total} results',
+    },
   },
   system: {
     parameters: {
