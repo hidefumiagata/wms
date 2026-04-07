@@ -247,7 +247,10 @@ export function useReturnForm(formRef: Ref<FormInstance | undefined>) {
     if (isInventoryReturn.value && form.unitType) {
       fetchLocationCandidates()
     }
+    // ダイアログを閉じ、検索結果の残骸もクリアする
     productDialogVisible.value = false
+    productSearchResults.value = []
+    productSearchTotal.value = 0
   }
 
   // --- 荷姿変更時 ---

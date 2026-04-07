@@ -124,6 +124,13 @@ describe('useReturnForm', () => {
       expect(apiClient.get).not.toHaveBeenCalled()
     })
 
+    it('空白のみのコード（"   "）は trim 結果が空のため検索しない', async () => {
+      const { result } = setup()
+      result.form.productCode = '   '
+      await result.searchProduct()
+      expect(apiClient.get).not.toHaveBeenCalled()
+    })
+
     it('検索結果0件で info メッセージを表示', async () => {
       vi.mocked(apiClient.get).mockResolvedValueOnce(
         mockAxiosResponse({ content: [], totalElements: 0 }),
@@ -133,9 +140,21 @@ describe('useReturnForm', () => {
       await result.searchProduct()
       expect(ElMessage.info).toHaveBeenCalledWith('returns.productSearchEmpty')
       expect(result.selectedProduct.value).toBeNull()
+      // API パラメータ検証（C-1）
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/products',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            keyword: 'NOTEXIST',
+            isActive: true,
+            page: 0,
+            size: 10,
+          }),
+        }),
+      )
     })
 
-    it('完全一致する商品が選択される', async () => {
+    it('完全一致する商品が選択される（ダイアログは非表示・API パラメータ検証）', async () => {
       const products = [
         {
           id: 1,
@@ -156,32 +175,136 @@ describe('useReturnForm', () => {
         mockAxiosResponse({ content: products, totalElements: 2 }),
       )
       const { result } = setup()
-      result.form.productCode = 'P001'
+      // 前後空白 → trim 動作検証（C-1）
+      result.form.productCode = '  P001  '
       await result.searchProduct()
+      // API パラメータが trim された keyword を受け取っていることを検証
+      expect(apiClient.get).toHaveBeenCalledWith(
+        '/master/products',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            keyword: 'P001',
+            isActive: true,
+            page: 0,
+            size: 10,
+          }),
+        }),
+      )
       expect(result.selectedProduct.value?.id).toBe(1)
       expect(result.form.productCode).toBe('P001')
+      // M-1: ダイアログ非表示を検証
+      expect(result.productDialogVisible.value).toBe(false)
     })
 
-    it('1件のみなら自動選択', async () => {
+    it('複数件検索でダイアログ表示後、完全一致検索すると残骸（productSearchResults）がクリアされる', async () => {
+      // 1回目: 複数件・完全一致なし → ダイアログ表示
       vi.mocked(apiClient.get).mockResolvedValueOnce(
         mockAxiosResponse({
           content: [
             {
-              id: 5,
-              productCode: 'P005',
-              productName: 'Product 5',
-              lotManageFlag: true,
+              id: 10,
+              productCode: 'PA01',
+              productName: 'A',
+              lotManageFlag: false,
+              expiryManageFlag: false,
+            },
+            {
+              id: 11,
+              productCode: 'PA02',
+              productName: 'B',
+              lotManageFlag: false,
+              expiryManageFlag: false,
+            },
+          ],
+          totalElements: 2,
+        }),
+      )
+      const { result } = setup()
+      result.form.productCode = 'PA'
+      await result.searchProduct()
+      expect(result.productDialogVisible.value).toBe(true)
+      expect(result.productSearchResults.value).toHaveLength(2)
+      expect(result.productSearchTotal.value).toBe(2)
+
+      // 2回目: 完全一致 → 直接選択されダイアログ閉・残骸クリア
+      vi.mocked(apiClient.get).mockResolvedValueOnce(
+        mockAxiosResponse({
+          content: [
+            {
+              id: 1,
+              productCode: 'P001',
+              productName: 'Product 1',
+              lotManageFlag: false,
               expiryManageFlag: false,
             },
           ],
           totalElements: 1,
         }),
       )
+      result.form.productCode = 'P001'
+      await result.searchProduct()
+      expect(result.selectedProduct.value?.id).toBe(1)
+      expect(result.productDialogVisible.value).toBe(false)
+      expect(result.productSearchResults.value).toEqual([])
+      expect(result.productSearchTotal.value).toBe(0)
+    })
+
+    it('1件のみなら自動選択（副作用: ダイアログ非表示・locationId リセット・在庫候補取得）', async () => {
+      // 1回目: 商品検索 → 2回目: ロケーション候補取得（INVENTORY + unitType 設定済みなのでトリガー）
+      vi.mocked(apiClient.get)
+        .mockResolvedValueOnce(
+          mockAxiosResponse({
+            content: [
+              {
+                id: 5,
+                productCode: 'P005',
+                productName: 'Product 5',
+                lotManageFlag: true,
+                expiryManageFlag: false,
+              },
+            ],
+            totalElements: 1,
+          }),
+        )
+        .mockResolvedValueOnce(
+          mockAxiosResponse({
+            content: [
+              {
+                locationId: 100,
+                locationCode: 'A-01',
+                quantity: 10,
+                allocatedQty: 0,
+                availableQty: 10,
+              },
+            ],
+          }),
+        )
       const { result } = setup()
+      // INVENTORY + unitType を事前設定し、1件ヒットで fetchLocationCandidates がトリガーされる条件を作る
+      result.form.returnType = 'INVENTORY'
+      result.form.unitType = 'CASE'
+      // locationId を初期値から外して reset されることを検証
+      result.form.locationId = 999
       result.form.productCode = 'P0'
       await result.searchProduct()
+
       expect(result.selectedProduct.value?.id).toBe(5)
       expect(result.form.productCode).toBe('P005')
+      // M-2: 副作用検証
+      expect(result.productDialogVisible.value).toBe(false)
+      expect(result.form.locationId).toBeNull()
+      // fetchLocationCandidates が呼ばれたこと（商品検索 + 在庫候補取得 = 2回）
+      expect(apiClient.get).toHaveBeenCalledTimes(2)
+      expect(apiClient.get).toHaveBeenNthCalledWith(
+        2,
+        '/inventory',
+        expect.objectContaining({
+          params: expect.objectContaining({
+            productId: 5,
+            unitType: 'CASE',
+          }),
+        }),
+      )
     })
 
     it('複数件で完全一致なしならダイアログ表示', async () => {
@@ -215,9 +338,63 @@ describe('useReturnForm', () => {
       expect(result.productSearchTotal.value).toBe(2)
     })
 
-    it('ダイアログから selectProduct を呼ぶとフォーム反映・ダイアログ閉じる', () => {
+    it('API失敗時にエラーメッセージ（createAxiosError ヘルパ使用、500）', async () => {
+      vi.mocked(apiClient.get).mockRejectedValueOnce(
+        createAxiosError(500, { message: 'Server error' }),
+      )
       const { result } = setup()
+      result.form.productCode = 'P001'
+      await result.searchProduct()
+      expect(ElMessage.error).toHaveBeenCalledWith('returns.productNotFound')
+      expect(result.selectedProduct.value).toBeNull()
+    })
+
+    it('API 404 エラー時もエラーメッセージ（createAxiosError ヘルパ使用）', async () => {
+      vi.mocked(apiClient.get).mockRejectedValueOnce(
+        createAxiosError(404, { message: 'Not found' }),
+      )
+      const { result } = setup()
+      result.form.productCode = 'P001'
+      await result.searchProduct()
+      expect(ElMessage.error).toHaveBeenCalledWith('returns.productNotFound')
+      expect(result.selectedProduct.value).toBeNull()
+    })
+
+    it('キャンセル時は何もしない', async () => {
+      const cancelError = new axios.CanceledError()
+      vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
+      vi.mocked(axios.isCancel).mockReturnValueOnce(true)
+      const { result } = setup()
+      result.form.productCode = 'P001'
+      await result.searchProduct()
+      expect(ElMessage.error).not.toHaveBeenCalled()
+    })
+  })
+
+  // --- selectProduct（ダイアログ経由の文脈） ---
+  describe('selectProduct', () => {
+    it('複数件ダイアログ表示状態から selectProduct を呼ぶとフォーム反映・ダイアログ閉・残骸クリア', () => {
+      const { result } = setup()
+      // 複数件ダイアログ状態を事前に再現（M-3）
       result.productDialogVisible.value = true
+      result.productSearchResults.value = [
+        {
+          id: 98,
+          productCode: 'P098',
+          productName: 'Other',
+          lotManageFlag: false,
+          expiryManageFlag: false,
+        },
+        {
+          id: 99,
+          productCode: 'P099',
+          productName: 'Selected',
+          lotManageFlag: false,
+          expiryManageFlag: false,
+        },
+      ]
+      result.productSearchTotal.value = 2
+
       result.selectProduct({
         id: 99,
         productCode: 'P099',
@@ -225,11 +402,18 @@ describe('useReturnForm', () => {
         lotManageFlag: false,
         expiryManageFlag: false,
       })
+
       expect(result.selectedProduct.value?.id).toBe(99)
       expect(result.form.productCode).toBe('P099')
       expect(result.productDialogVisible.value).toBe(false)
+      // 残骸クリアを検証（M-1 実装修正と整合）
+      expect(result.productSearchResults.value).toEqual([])
+      expect(result.productSearchTotal.value).toBe(0)
     })
+  })
 
+  // --- resetForm の商品検索状態クリア（resetForm 全般テストは別describeに存在） ---
+  describe('resetForm (productSearch 関連)', () => {
     it('resetForm で productDialogVisible/Results/Total がクリアされる', () => {
       const { result } = setup()
       result.productDialogVisible.value = true
@@ -247,25 +431,6 @@ describe('useReturnForm', () => {
       expect(result.productDialogVisible.value).toBe(false)
       expect(result.productSearchResults.value).toEqual([])
       expect(result.productSearchTotal.value).toBe(0)
-    })
-
-    it('API失敗時にエラーメッセージ', async () => {
-      vi.mocked(apiClient.get).mockRejectedValueOnce(new Error('Network'))
-      const { result } = setup()
-      result.form.productCode = 'P001'
-      await result.searchProduct()
-      expect(ElMessage.error).toHaveBeenCalledWith('returns.productNotFound')
-      expect(result.selectedProduct.value).toBeNull()
-    })
-
-    it('キャンセル時は何もしない', async () => {
-      const cancelError = new axios.CanceledError()
-      vi.mocked(apiClient.get).mockRejectedValueOnce(cancelError)
-      vi.mocked(axios.isCancel).mockReturnValueOnce(true)
-      const { result } = setup()
-      result.form.productCode = 'P001'
-      await result.searchProduct()
-      expect(ElMessage.error).not.toHaveBeenCalled()
     })
   })
 
