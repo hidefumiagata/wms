@@ -295,7 +295,9 @@ class PartnerServiceTest {
 
             assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
+                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND")
+                    // C-R2-3: 入荷要因のメッセージは「入荷予定」を明示する
+                    .hasMessageContaining("処理中の入荷予定");
 
             // inboundで即ブロックされ、outbound checker は評価されない
             verify(outboundChecker, never()).findBlockingReason(any());
@@ -354,7 +356,9 @@ class PartnerServiceTest {
 
             assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
+                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND")
+                    // C-R2-3: 受注要因のメッセージは「受注」を明示する
+                    .hasMessageContaining("処理中の受注");
 
             verify(partnerRepository, never()).save(any());
         }

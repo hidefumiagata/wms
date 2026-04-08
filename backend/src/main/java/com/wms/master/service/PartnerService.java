@@ -111,8 +111,17 @@ public class PartnerService {
                 Optional<String> reason = checker.findBlockingReason(id);
                 if (reason.isPresent()) {
                     log.warn("Partner deactivation blocked: id={}, code={}", id, reason.get());
-                    throw new BusinessRuleViolationException(reason.get(),
-                            "処理中の伝票が存在するため取引先を無効化できません (id=" + id + ")");
+                    // C-R2-3: ブロック要因 (入荷/受注) をメッセージで区別し、運用調査を容易にする
+                    String errorCode = reason.get();
+                    String message;
+                    if ("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND".equals(errorCode)) {
+                        message = "処理中の入荷予定が存在するため取引先を無効化できません (id=" + id + ")";
+                    } else if ("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND".equals(errorCode)) {
+                        message = "処理中の受注が存在するため取引先を無効化できません (id=" + id + ")";
+                    } else {
+                        message = "処理中の伝票が存在するため取引先を無効化できません (id=" + id + ")";
+                    }
+                    throw new BusinessRuleViolationException(errorCode, message);
                 }
             }
         }
