@@ -340,7 +340,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | PUT /api/v1/allocation/unpack-instructions/201/complete をAPIで直接リクエスト | 400 ALREADY_COMPLETED が返される | HTTPステータス400 |
+| 1 | PUT /api/v1/allocation/unpack-instructions/201/complete をAPIで直接リクエスト | 409 ALREADY_COMPLETED が返される | HTTPステータス409 |
 
 **DB検証（結合テストのみ）:**
 

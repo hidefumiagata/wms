@@ -796,7 +796,7 @@ void storeInbound_updatesInventory() {
 <table>
 <thead><tr><th>#</th><th>操作</th><th>期待結果</th><th>確認方法</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>PUT /api/v1/allocation/unpack-instructions/201/complete をAPIで直接リクエスト</td><td>400 ALREADY_COMPLETED が返される</td><td>HTTPステータス400</td></tr>
+<tr><td>1</td><td>PUT /api/v1/allocation/unpack-instructions/201/complete をAPIで直接リクエスト</td><td>409 ALREADY_COMPLETED が返される</td><td>HTTPステータス409</td></tr>
 <p></tbody><br></table></p>
 <p><strong>DB検証（結合テストのみ）:</strong></p>
 <table>
