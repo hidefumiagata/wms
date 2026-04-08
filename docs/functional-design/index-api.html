@@ -9624,7 +9624,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tr><td><code>400 Bad Request</code></td><td><code>VALIDATION_ERROR</code></td><td><code>paramValue</code> が未指定、または <code>valueType</code> に対して不正な値</td></tr>
 <tr><td><code>401 Unauthorized</code></td><td><code>UNAUTHORIZED</code></td><td>未認証</td></tr>
 <tr><td><code>403 Forbidden</code></td><td><code>FORBIDDEN</code></td><td>SYSTEM_ADMIN 以外のロールでアクセス</td></tr>
-<tr><td><code>404 Not Found</code></td><td><code>PARAM_NOT_FOUND</code></td><td>指定した <code>paramKey</code> が存在しない</td></tr>
+<tr><td><code>404 Not Found</code></td><td><code>SYSTEM_PARAMETER_NOT_FOUND</code></td><td>指定した <code>paramKey</code> が存在しない</td></tr>
 <p></tbody><br></table></p>
 <p>バリデーションエラー例:</p>
 <pre><code class="lang-json">{
@@ -9645,7 +9645,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
     AUTH -->|SYSTEM_ADMIN以外| ERR_403[403 FORBIDDEN]
     AUTH -->|SYSTEM_ADMIN| FETCH["SELECT FROM system_parameters\nWHERE param_key = :paramKey"]
 
-    FETCH -->|存在しない| ERR_404[404 PARAM_NOT_FOUND]
+    FETCH -->|存在しない| ERR_404[404 SYSTEM_PARAMETER_NOT_FOUND]
     FETCH -->|存在する| VALIDATE[paramValue バリデーション\nvalueTypeに応じた型チェック]
 
     VALIDATE -->|NG| ERR_400[400 VALIDATION_ERROR\n詳細エラーを返す]
@@ -9656,7 +9656,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <table>
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>指定された <code>paramKey</code> に一致するパラメータが存在しない場合は404を返す</td><td><code>PARAM_NOT_FOUND</code></td></tr>
+<tr><td>1</td><td>指定された <code>paramKey</code> に一致するパラメータが存在しない場合は404を返す</td><td><code>SYSTEM_PARAMETER_NOT_FOUND</code></td></tr>
 <tr><td>2</td><td><code>valueType = INTEGER</code> の場合、<code>paramValue</code> は正の整数（0以上の整数）であること</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>3</td><td><code>valueType = STRING</code> の場合、<code>paramValue</code> は1文字以上500文字以内であること</td><td><code>VALIDATION_ERROR</code></td></tr>
 <tr><td>3a</td><td><code>valueType = BOOLEAN</code> の場合、<code>paramValue</code> は <code>true</code> または <code>false</code>（大文字小文字を区別しない）であること</td><td><code>VALIDATION_ERROR</code></td></tr>
@@ -9674,7 +9674,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tr><td><code>UNAUTHORIZED</code></td><td>401</td><td>全API</td><td>未認証（Cookieなし・JWT期限切れ）</td></tr>
 <tr><td><code>FORBIDDEN</code></td><td>403</td><td>全API</td><td>SYSTEM_ADMIN 以外のロールによるアクセス</td></tr>
 <tr><td><code>VALIDATION_ERROR</code></td><td>400</td><td>002</td><td>入力バリデーションエラー（valueTypeに対する不正な値）</td></tr>
-<tr><td><code>PARAM_NOT_FOUND</code></td><td>404</td><td>002</td><td>指定したパラメータキーが存在しない</td></tr>
+<tr><td><code>SYSTEM_PARAMETER_NOT_FOUND</code></td><td>404</td><td>002</td><td>指定したパラメータキーが存在しない</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h2>付録: パラメータオブジェクト共通フィールド定義</h2>
