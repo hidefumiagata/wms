@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,15 +30,36 @@ class PartnerIntegrationTest extends IntegrationTestBase {
 
     private HttpHeaders adminHeaders;
 
+    // M-2: insertInboundSlip/insertOutboundSlip から参照する共通データを
+    //      setUp で一度だけ取得してキャッシュする (N+1 クエリ解消)
+    private Long defaultWarehouseId;
+    private String defaultWarehouseCode;
+    private String defaultWarehouseName;
+    private Long adminUserId;
+
     @BeforeEach
     void setUp() {
         // テスト用データのクリーンアップ
         // FK制約のため、伝票 → 取引先の順で削除する
-        jdbcTemplate.update("DELETE FROM inbound_slips WHERE slip_number LIKE 'IT-%'");
-        jdbcTemplate.update("DELETE FROM outbound_slips WHERE slip_number LIKE 'IT-%'");
+        // m-3: slip_number の LIKE 条件に加え、IT-% 取引先に紐付く行も掃除する
+        jdbcTemplate.update(
+                "DELETE FROM inbound_slips WHERE slip_number LIKE 'IT-%' "
+                        + "OR partner_id IN (SELECT id FROM partners WHERE partner_code LIKE 'IT-%')");
+        jdbcTemplate.update(
+                "DELETE FROM outbound_slips WHERE slip_number LIKE 'IT-%' "
+                        + "OR partner_id IN (SELECT id FROM partners WHERE partner_code LIKE 'IT-%')");
         jdbcTemplate.update("DELETE FROM partners WHERE partner_code LIKE 'IT-%'");
 
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
+
+        // M-2: 伝票 INSERT ヘルパーが参照する共通値をキャッシュ
+        Map<String, Object> wh = jdbcTemplate.queryForMap(
+                "SELECT id, warehouse_code, warehouse_name FROM warehouses ORDER BY id LIMIT 1");
+        this.defaultWarehouseId = ((Number) wh.get("id")).longValue();
+        this.defaultWarehouseCode = (String) wh.get("warehouse_code");
+        this.defaultWarehouseName = (String) wh.get("warehouse_name");
+        this.adminUserId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
     }
 
     // ========================================================
@@ -582,22 +604,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             Long partnerId = createTestPartner(code, "PAR03_" + status, "SUPPLIER");
             insertInboundSlip(code, partnerId, status);
 
-            String body = """
-                    { "isActive": false, "version": 0 }
-                    """;
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
-
-            // DB検証: 無効化されていないこと
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isTrue();
+            // M-5 / m-7: DRY 化した共通ヘルパ経由で version を動的取得しつつ 422 を検証
+            assertDeactivationRejected(partnerId, "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
         }
 
         // NOTE: 設計書 (API-03) では「処理中受注」を PENDING/ALLOCATED/PICKING/INSPECTING と
@@ -613,21 +621,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             Long partnerId = createTestPartner(code, "PAR04_" + status, "CUSTOMER");
             insertOutboundSlip(code, partnerId, status);
 
-            String body = """
-                    { "isActive": false, "version": 0 }
-                    """;
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isTrue();
+            // M-5 / m-7: DRY 化した共通ヘルパ経由で version を動的取得しつつ 422 を検証
+            assertDeactivationRejected(partnerId, "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
         }
 
         @Test
@@ -696,21 +691,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             }
             insertInboundSlip("IT-PAR05C-P1", partnerId, "PLANNED");
 
-            String body = """
-                    { "isActive": false, "version": 0 }
-                    """;
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isTrue();
+            // m-7: DRY 化した共通ヘルパ経由で検証
+            assertDeactivationRejected(partnerId, "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
         }
 
         @Test
@@ -723,21 +705,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             }
             insertOutboundSlip("IT-PAR05D-O1", partnerId, "ORDERED");
 
-            String body = """
-                    { "isActive": false, "version": 0 }
-                    """;
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isTrue();
+            // m-7: DRY 化した共通ヘルパ経由で検証
+            assertDeactivationRejected(partnerId, "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
         }
 
         @Test
@@ -748,22 +717,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             insertInboundSlip("IT-PAR-BOTH-IN", partnerId, "PLANNED");
             insertOutboundSlip("IT-PAR-BOTH-OUT", partnerId, "ORDERED");
 
-            String body = """
-                    { "isActive": false, "version": 0 }
-                    """;
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
-            JsonNode json = parseJson(response.getBody());
             // 入荷チェックが先に評価されるため、inbound エラーが返る
-            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isTrue();
+            assertDeactivationRejected(partnerId, "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
         }
     }
 
@@ -772,40 +727,71 @@ class PartnerIntegrationTest extends IntegrationTestBase {
     // ========================================================
 
     /**
-     * テスト用入荷伝票を直接INSERT（業務ロジックを経由しない）。
-     * slip_type='NORMAL', warehouse は seed の最初を使用。
+     * テスト用入荷伝票を直接INSERTする（業務ロジックを経由しない）。
+     *
+     * <p>warehouse / 作成ユーザは setUp でキャッシュ済みのデフォルト値を使用し、
+     * N+1 を避けている (M-2)。</p>
+     *
+     * <p>created_at / updated_at は DB スキーマ
+     * (V9__create_inbound_slips_table.sql) の DEFAULT now() に依存しており、
+     * ここでは明示的に指定していない。テスト側で時刻ロジックを扱わないための
+     * 意図的な単純化である (M-3)。</p>
      */
     private void insertInboundSlip(String slipNumber, Long partnerId, String status) {
-        var wh = jdbcTemplate.queryForMap(
-                "SELECT id, warehouse_code, warehouse_name FROM warehouses ORDER BY id LIMIT 1");
-        Long adminUserId = jdbcTemplate.queryForObject(
-                "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
         jdbcTemplate.update("""
                 INSERT INTO inbound_slips
                   (slip_number, slip_type, warehouse_id, warehouse_code, warehouse_name,
                    partner_id, planned_date, status, created_by, updated_by)
                 VALUES (?, 'NORMAL', ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                slipNumber, wh.get("id"), wh.get("warehouse_code"), wh.get("warehouse_name"),
+                slipNumber, defaultWarehouseId, defaultWarehouseCode, defaultWarehouseName,
                 partnerId, LocalDate.now(), status, adminUserId, adminUserId);
     }
 
     /**
-     * テスト用出荷伝票を直接INSERT（業務ロジックを経由しない）。
+     * テスト用出荷伝票を直接INSERTする（業務ロジックを経由しない）。
+     *
+     * <p>warehouse / 作成ユーザは setUp でキャッシュ済みのデフォルト値を使用し、
+     * N+1 を避けている (M-2)。</p>
+     *
+     * <p>created_at / updated_at は DB スキーマ
+     * (V10__create_outbound_slips_table.sql) の DEFAULT now() に依存しており、
+     * ここでは明示的に指定していない。テスト側で時刻ロジックを扱わないための
+     * 意図的な単純化である (M-3)。</p>
      */
     private void insertOutboundSlip(String slipNumber, Long partnerId, String status) {
-        var wh = jdbcTemplate.queryForMap(
-                "SELECT id, warehouse_code, warehouse_name FROM warehouses ORDER BY id LIMIT 1");
-        Long adminUserId = jdbcTemplate.queryForObject(
-                "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
         jdbcTemplate.update("""
                 INSERT INTO outbound_slips
                   (slip_number, slip_type, warehouse_id, warehouse_code, warehouse_name,
                    partner_id, planned_date, status, created_by, updated_by)
                 VALUES (?, 'NORMAL', ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                slipNumber, wh.get("id"), wh.get("warehouse_code"), wh.get("warehouse_name"),
+                slipNumber, defaultWarehouseId, defaultWarehouseCode, defaultWarehouseName,
                 partnerId, LocalDate.now(), status, adminUserId, adminUserId);
+    }
+
+    /**
+     * 取引先の無効化リクエストが業務制約によって拒否されることを検証する共通ヘルパ (m-7)。
+     * 現行 version を取得してリクエストを組み立て、422 とエラーコードおよび
+     * DB 上で is_active が維持されていることを一括検証する。
+     */
+    private void assertDeactivationRejected(Long partnerId, String expectedCode) throws Exception {
+        Integer version = getVersion(partnerId);
+        String body = String.format("""
+                { "isActive": false, "version": %d }
+                """, version);
+        HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+        ResponseEntity<String> response = restTemplate.exchange(
+                BASE_URL + "/" + partnerId + "/toggle-active",
+                HttpMethod.PATCH, request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+        JsonNode json = parseJson(response.getBody());
+        assertThat(json.get("code").asText()).isEqualTo(expectedCode);
+
+        Boolean isActive = jdbcTemplate.queryForObject(
+                "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+        assertThat(isActive).isTrue();
     }
 
 
