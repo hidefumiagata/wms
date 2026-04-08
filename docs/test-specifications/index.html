@@ -8165,7 +8165,7 @@ test('SC-RPT10-002: hideBookQty=false でPDF帳簿数量表示', async ({ page }
 <table>
 <thead><tr><th>#</th><th>操作</th><th>期待結果</th><th>確認方法</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>API直接呼び出し: <code>PUT /api/v1/system/parameters/NON_EXISTENT_PARAM</code> (body: <code>{&quot;paramValue&quot;:&quot;100&quot;}</code>)</td><td>404 Not Found <code>PARAM_NOT_FOUND</code> が返される</td><td>HTTPレスポンスステータス</td></tr>
+<tr><td>1</td><td>API直接呼び出し: <code>PUT /api/v1/system/parameters/NON_EXISTENT_PARAM</code> (body: <code>{&quot;paramValue&quot;:&quot;100&quot;}</code>)</td><td>404 Not Found <code>SYSTEM_PARAMETER_NOT_FOUND</code> が返される</td><td>HTTPレスポンスステータス</td></tr>
 <p></tbody><br></table></p>
 <p><strong>DB検証（結合テストのみ）:</strong></p>
 <table>

@@ -316,7 +316,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | API直接呼び出し: `PUT /api/v1/system/parameters/NON_EXISTENT_PARAM` (body: `{"paramValue":"100"}`) | 404 Not Found `PARAM_NOT_FOUND` が返される | HTTPレスポンスステータス |
+| 1 | API直接呼び出し: `PUT /api/v1/system/parameters/NON_EXISTENT_PARAM` (body: `{"paramValue":"100"}`) | 404 Not Found `SYSTEM_PARAMETER_NOT_FOUND` が返される | HTTPレスポンスステータス |
 
 **DB検証（結合テストのみ）:**
 

@@ -4910,7 +4910,7 @@ paths:
               examples:
                 notFound:
                   value:
-                    errorCode: PARAM_NOT_FOUND
+                    errorCode: SYSTEM_PARAMETER_NOT_FOUND
                     message: 指定されたパラメータキーが見つかりません
         '409':
           $ref: '#/components/responses/OptimisticLockConflict'
