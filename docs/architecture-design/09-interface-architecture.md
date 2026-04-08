@@ -491,24 +491,39 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     START["取り込み実行開始"]
-    BLOB_READ["Blob読み取り\n（トランザクション外）"]
-    VALIDATE["再バリデーション\n（トランザクション外）"]
-    TX_START["@Transactional 開始"]
-    DB_INSERT["DB登録\n（inbound_slips / outbound_slips）"]
-    HISTORY["取り込み履歴保存\n（if_executions）"]
-    TX_COMMIT["@Transactional コミット"]
-    BLOB_MOVE["Blobファイル移動\n（トランザクション外）"]
+    BLOB_READ["Blob読み取り<br/>（トランザクション外）"]
+    VALIDATE["再バリデーション<br/>（トランザクション外）"]
+    TX1_START["tx1: TransactionTemplate 開始"]
+    DB_INSERT["DB登録<br/>（inbound_slips / outbound_slips）"]
+    HISTORY["取り込み履歴保存<br/>（if_executions）<br/>※悲観デフォルト blob_move_failed=true"]
+    TX1_COMMIT["tx1 コミット"]
+    BLOB_MOVE["Blobファイル移動<br/>（トランザクション外）"]
+    TX2["tx2: 独立トランザクションで<br/>blob_move_failed=false に更新"]
     END_OK["完了（成功）"]
     ROLLBACK["ロールバック"]
-    BLOB_MOVE_FAIL["Blob移動失敗\n※DB登録は確定済み\n→ エラーログ出力\n→ pendingにファイル残留"]
+    BLOB_MOVE_FAIL["Blob移動/フラグ更新失敗<br/>※DB登録は確定済み<br/>※悲観デフォルト true のまま残留<br/>→ ERRORログ出力<br/>→ リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済"]
 
-    START --> BLOB_READ --> VALIDATE --> TX_START --> DB_INSERT --> HISTORY --> TX_COMMIT
-    TX_COMMIT --> BLOB_MOVE
-    BLOB_MOVE -->|成功| END_OK
+    START --> BLOB_READ --> VALIDATE --> TX1_START --> DB_INSERT --> HISTORY --> TX1_COMMIT
+    TX1_COMMIT --> BLOB_MOVE
+    BLOB_MOVE -->|成功| TX2 --> END_OK
     BLOB_MOVE -->|失敗| BLOB_MOVE_FAIL
+    TX2 -->|失敗| BLOB_MOVE_FAIL
     DB_INSERT -->|例外| ROLLBACK
     HISTORY -->|例外| ROLLBACK
 ```
+
+**悲観デフォルト方針（Issue #374）**:
+
+- `if_executions.blob_move_failed` はカラムレベルで `DEFAULT TRUE`、アプリ層の
+  `IfExecution` ビルダーでも `true` を明示設定する。
+- tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間で
+  アプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で
+  残ることが保証される。
+- Blob 移動が成功した場合のみ、独立トランザクション（`TransactionTemplate`）で
+  `blob_move_failed=false` に更新する。`@Transactional` を使わず `TransactionTemplate`
+  を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。
+- 悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）
+  の対象となり、Blob の移動状態を突き合わせて自動復旧する。
 
 **設計判断: DB登録とBlob移動の順序**
 
@@ -556,7 +571,7 @@ com.wms.interfacing/
 | **CSVパースエラー** | CSV読み取り・解析 | L1バリデーションエラーとして返却 |
 | **バリデーションエラー** | 各行のバリデーション | 行単位のエラー詳細を返却。ユーザーがSUCCESS_ONLY/DISCARDを選択 |
 | **DB登録エラー** | トランザクション内の登録処理 | トランザクションロールバック。ユーザーにエラー表示 |
-| **Blob移動エラー** | processed移動 | ERRORログ出力。DB登録は確定済み。取り込み履歴に移動失敗フラグを記録 |
+| **Blob移動エラー** | processed移動 | ERRORログ出力。DB登録は確定済み。`blob_move_failed` は悲観デフォルト `true` のまま残留し、リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済 |
 
 ### 8.2 リトライ方針
 
@@ -597,7 +612,7 @@ wms:
 |------------|------|---------|
 | Blob Storage一時障害 | ファイル一覧取得・バリデーション・取り込み実行が全て不可 | Blob Storageの復旧を待って再操作 |
 | DB登録中のエラー | トランザクションロールバック。ファイルはpendingに残留 | 原因調査後にユーザーが再度取り込み操作 |
-| Blob移動失敗（DB登録成功後） | DB登録は完了。ファイルがpendingに残留。取り込み履歴に記録あり | 手動でファイルをprocessedに移動。または取り込み履歴を確認し二重取り込みでないことを確認の上、再取り込みは不要 |
+| Blob移動失敗（DB登録成功後） | DB登録は完了。ファイルがpendingに残留。`blob_move_failed` は悲観デフォルト `true` のまま残留 | リカバリバッチ（BAT-IF-RECONCILE, Issue #440）が `blob_move_failed=true` の履歴を走査し、Blob 実体状態と突き合わせて自動復旧する。手動対応する場合は取り込み履歴を確認し二重取り込みでないことを確認のうえでファイルを processed へ移動、フラグを false に更新 |
 | 取り込み中のアプリケーション再起動 | トランザクション未コミットの場合はロールバック。ファイルはpendingに残留 | ユーザーが再度取り込み操作 |
 
 ---

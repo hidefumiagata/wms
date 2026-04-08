@@ -274,7 +274,7 @@ INSERT INTO if_executions (
     :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
     :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
     :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
-    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    true,                 -- Blob移動失敗フラグ（悲観デフォルトtrueで初期化、Blob移動成功時にfalseへUPDATE / Issue #374）
     :warehouseId,         -- 取り込み対象倉庫ID
     NOW(),                -- 実行日時
     :currentUserId        -- 実行ユーザーID
@@ -398,7 +398,7 @@ outboundSlipRepository.flush();  // バッチINSERT即時実行
 | パターン | 影響 | リカバリ |
 |---------|------|---------|
 | DB INSERT中の例外 | 全伝票ロールバック。ファイルは `pending` に残留 | ユーザーが原因を確認し再操作 |
-| Blob移動失敗（DB登録成功後） | DB登録は確定済み。ファイルが `pending` に残留 | `if_executions` に `blob_move_failed = true` を記録。手動でファイル移動 |
+| Blob移動失敗（DB登録成功後） | DB登録は確定済み。ファイルが `pending` に残留 | `if_executions.blob_move_failed` は悲観デフォルト `true` のまま残留。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済。手動対応する場合は取り込み履歴確認のうえファイル移動 |
 | アプリ再起動（トランザクション中） | 未コミット分はロールバック。ファイルは `pending` に残留 | ユーザーが再操作 |
 
 ---
@@ -543,7 +543,7 @@ for (String key : grouped.keySet()) {
 | E-02 | 伝票番号重複 | UNIQUE制約違反が発生した場合にトランザクションがロールバックされること |
 | E-03 | 採番上限 | 同一日付で9999件超の採番でエラーとなること |
 | E-04 | Blob読み取り失敗 | Blob Storage接続エラー時にリトライ後、適切なエラーメッセージが返却されること |
-| E-05 | Blob移動失敗 | DB登録成功後にBlob移動が失敗した場合、`if_executions.blob_move_failed = true` が記録されること |
+| E-05 | Blob移動失敗 | DB登録成功後にBlob移動が失敗した場合、`if_executions.blob_move_failed` が悲観デフォルト `true` のまま残留し、catch ブロックで追加 save が行われないこと（Issue #374） |
 | E-06 | 再バリデーション不一致 | バリデーション後〜取り込み実行間にマスタが変更された場合、再バリデーションでエラーが検出されること |
 | E-07 | 文字コード不正 | UTF-8以外のファイルでL1バリデーションエラーとなること |
 

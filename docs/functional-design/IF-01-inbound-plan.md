@@ -305,7 +305,7 @@ INSERT INTO if_executions (
     :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
     :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
     :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
-    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    true,                 -- Blob移動失敗フラグ（悲観デフォルトtrueで初期化、Blob移動成功時にfalseへUPDATE / Issue #374）
     :warehouseId,         -- 取り込み対象倉庫ID
     NOW(),                -- 実行日時
     :currentUserId        -- 実行ユーザーID
@@ -425,8 +425,11 @@ private Long id;
 │                                                                 │
 │  [トランザクション外]                                              │
 │  8. Blob ファイルを pending → processed へ移動                   │
-│     → 移動失敗時: if_executions の blob_move_failed を                │
-│       true に UPDATE（別トランザクション）+ ERROR ログ出力           │
+│     → 成功時: 独立トランザクション（TransactionTemplate）で        │
+│       if_executions.blob_move_failed を false へ UPDATE             │
+│     → 失敗時: 悲観デフォルト true のまま残留 + ERROR ログ出力        │
+│       リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済           │
+│     ※ Issue #374: tx1 コミット時は blob_move_failed=true で確定     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -487,7 +490,7 @@ CSV 100行（バリデーションエラー3行含む）
 | 障害パターン | ロールバック範囲 | ファイル状態 | 復旧 |
 |------------|--------------|-----------|------|
 | DB INSERT中の例外 | 伝票・明細・履歴全てロールバック | pending に残留 | ユーザーが再度取り込み操作 |
-| Blob移動失敗（DB登録成功後） | ロールバックなし（DB確定済み） | pending に残留 | 手動でprocessedへ移動 or 履歴で確認 |
+| Blob移動失敗（DB登録成功後） | ロールバックなし（DB確定済み） | pending に残留 | `blob_move_failed` は悲観デフォルト `true` のまま残留。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済。手動対応時は履歴確認のうえファイル移動 |
 
 詳細は [09-interface-architecture.md セクション7.4](../architecture-design/09-interface-architecture.md#74-トランザクション制御) を参照。
 
@@ -657,7 +660,7 @@ for (InboundSlipKey key : grouped.keySet()) {
 | # | テストケース | 検証内容 |
 |---|------------|---------|
 | T-01 | DB INSERT中の例外 | 全伝票・全明細・履歴がロールバックされること。ファイルはpendingに残留 |
-| T-02 | Blob移動失敗 | DB登録は確定済み。`blob_move_failed=true` で履歴が更新されること |
+| T-02 | Blob移動失敗 | DB登録は確定済み。`blob_move_failed` は悲観デフォルト `true` のまま残留し、catch ブロックで追加の save が実行されないこと（Issue #374） |
 | T-03 | Blob読み取り失敗 | リトライ（3回）後にエラーレスポンスが返ること |
 | T-04 | バリデーション後にマスタが変更された場合 | 取り込み実行時の再バリデーションでエラーとなること |
 
