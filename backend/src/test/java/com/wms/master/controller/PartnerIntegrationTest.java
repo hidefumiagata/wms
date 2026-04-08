@@ -373,6 +373,32 @@ class PartnerIntegrationTest extends IntegrationTestBase {
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         }
+
+        @Test
+        @DisplayName("[#453] 既無効化 + stale version の no-op 再送 → 409 (OL を握り潰さない)")
+        void toggle_noOpWithStaleVersion_returns409() throws Exception {
+            Long partnerId = createTestPartner("IT-TGL04", "no-op競合", "SUPPLIER");
+
+            // 最初に無効化 (version 0 → 1 に上がる)
+            Integer version = getVersion(partnerId);
+            String deactivateBody = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+            ResponseEntity<String> firstResp = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, new HttpEntity<>(deactivateBody, adminHeaders), String.class);
+            assertThat(firstResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            // 再度 isActive=false を stale version (元の 0) で送信 → no-op だが 409 を返すべき
+            String staleNoOpBody = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+            ResponseEntity<String> secondResp = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, new HttpEntity<>(staleNoOpBody, adminHeaders), String.class);
+
+            assertThat(secondResp.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
     }
 
     // ========================================================

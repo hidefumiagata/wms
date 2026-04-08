@@ -99,6 +99,14 @@ public class PartnerService {
     @Transactional
     public Partner toggleActive(Long id, boolean isActive, Integer version) {
         Partner partner = findById(id);
+        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // (Issue #453) version 先行チェックを行うことで、no-op 時の stale version を 409 で検知し、
+        // かつ BR 違反より OL 競合を優先できるようにする
+        if (!partner.getVersion().equals(version)) {
+            throw new OptimisticLockConflictException(
+                    "OPTIMISTIC_LOCK_CONFLICT",
+                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        }
         if (partner.getIsActive().equals(isActive)) {
             log.info("Partner toggleActive no-op: id={}, isActive={}", id, isActive);
             return partner;

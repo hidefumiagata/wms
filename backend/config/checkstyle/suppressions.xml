@@ -15,4 +15,5 @@
     <!-- Complex business logic services that legitimately exceed 500 lines -->
     <suppress checks="FileLength" files="AllocationService\.java$"/>
     <suppress checks="FileLength" files="InboundSlipService\.java$"/>
+    <suppress checks="FileLength" files="DailyCloseService\.java$"/>
 </suppressions>

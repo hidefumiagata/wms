@@ -391,6 +391,68 @@ class PartnerServiceTest {
             verifyNoInteractions(outboundChecker);
             verify(partnerRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("未知のエラーコードでもデフォルトメッセージで BusinessRuleViolationException")
+        void toggleActive_unknownBlockingReason_throwsBusinessRuleViolationWithDefaultMessage() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L)).thenReturn(Optional.of("UNKNOWN_REASON"));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "UNKNOWN_REASON")
+                    .hasMessageContaining("処理中の伝票");
+
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("id=1");
+
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.setVersion(5);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            // version 先行チェックで止まるため BR チェッカーは呼ばれない
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] version 不一致 (有効化リクエスト) でも 409 を返す")
+        void toggleActive_activateWithStaleVersion_throwsOptimisticLockConflict() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            existing.setVersion(2);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, true, 1))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(partnerRepository, never()).save(any());
+        }
     }
 
     @Nested

@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -124,7 +123,9 @@ public class BatchController implements BatchApi {
     }
 
     private BatchStepStatus toBatchStepStatus(String status) {
-        if (status == null) return null;
+        if (status == null) {
+            return null;
+        }
         return BatchStepStatus.fromValue(status);
     }
 
