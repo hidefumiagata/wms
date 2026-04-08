@@ -10074,7 +10074,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <table>
 <thead><tr><th>HTTPステータス</th><th>エラーコード</th><th>説明</th></tr></thead>
 <tbody>
-<tr><td><code>400</code></td><td><code>ALREADY_COMPLETED</code></td><td>既に完了済みのばらし指示</td></tr>
+<tr><td><code>409</code></td><td><code>ALREADY_COMPLETED</code></td><td>既に完了済みのばらし指示</td></tr>
 <tr><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>未認証</td></tr>
 <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>権限不足</td></tr>
 <tr><td><code>404</code></td><td><code>BREAKDOWN_INSTRUCTION_NOT_FOUND</code></td><td>指定IDのばらし指示が存在しない</td></tr>
@@ -10085,7 +10085,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
     START([開始]) --> FIND[ばらし指示検索\nID指定]
     FIND -->|存在しない| ERR_NF[404 BREAKDOWN_INSTRUCTION_NOT_FOUND]
     FIND -->|存在する| CHECK_STATUS{ステータス確認}
-    CHECK_STATUS -->|COMPLETED| ERR_DONE[400 ALREADY_COMPLETED]
+    CHECK_STATUS -->|COMPLETED| ERR_DONE[409 ALREADY_COMPLETED]
     CHECK_STATUS -->|INSTRUCTED| BEGIN_TX[トランザクション開始\n悲観的ロック取得]
     BEGIN_TX --> STEP1[Step1: ばらし元の仮確保を解放\nばらし元 inventories.allocated_qty -= from_qty]
     STEP1 --> STEP2[Step2: ばらし元の在庫を減算\nばらし元 inventories.quantity -= from_qty]
@@ -10294,7 +10294,7 @@ ORDER BY rs.return_type ASC, rs.return_date ASC, rs.return_number ASC</code></pr
 <tbody>
 <tr><td><code>VALIDATION_ERROR</code></td><td>400</td><td>リクエストパラメータ不正</td></tr>
 <tr><td><code>INVALID_STATUS</code></td><td>400</td><td>引当不可能なステータス</td></tr>
-<tr><td><code>ALREADY_COMPLETED</code></td><td>400</td><td>既に完了済みのばらし指示</td></tr>
+<tr><td><code>ALREADY_COMPLETED</code></td><td>409</td><td>既に完了済みのばらし指示</td></tr>
 <tr><td><code>UNAUTHORIZED</code></td><td>401</td><td>未認証</td></tr>
 <tr><td><code>FORBIDDEN</code></td><td>403</td><td>権限不足（対象ロール外）</td></tr>
 <tr><td><code>OUTBOUND_SLIP_NOT_FOUND</code></td><td>404</td><td>出荷伝票が存在しない</td></tr>
