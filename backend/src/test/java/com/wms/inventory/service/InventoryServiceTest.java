@@ -431,6 +431,48 @@ class InventoryServiceTest {
     }
 
     @Nested
+    @DisplayName("hasInventoryByWarehouseId")
+    class HasInventoryInWarehouseTests {
+
+        @Test
+        @DisplayName("倉庫に在庫が存在する場合 true を返す")
+        void hasInventoryByWarehouseId_exists_returnsTrue() {
+            when(inventoryRepository.existsByWarehouseIdWithPositiveQty(10L)).thenReturn(true);
+
+            assertThat(inventoryService.hasInventoryByWarehouseId(10L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("倉庫に在庫が存在しない場合 false を返す")
+        void hasInventoryByWarehouseId_notExists_returnsFalse() {
+            when(inventoryRepository.existsByWarehouseIdWithPositiveQty(10L)).thenReturn(false);
+
+            assertThat(inventoryService.hasInventoryByWarehouseId(10L)).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("hasInventoryByLocationId")
+    class HasInventoryInLocationTests {
+
+        @Test
+        @DisplayName("ロケーションに在庫が存在する場合 true を返す")
+        void hasInventoryByLocationId_exists_returnsTrue() {
+            when(inventoryRepository.existsByLocationIdWithPositiveQty(200L)).thenReturn(true);
+
+            assertThat(inventoryService.hasInventoryByLocationId(200L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("ロケーションに在庫が存在しない場合 false を返す")
+        void hasInventoryByLocationId_notExists_returnsFalse() {
+            when(inventoryRepository.existsByLocationIdWithPositiveQty(200L)).thenReturn(false);
+
+            assertThat(inventoryService.hasInventoryByLocationId(200L)).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("deductReturnStock")
     class DeductReturnStock {
 

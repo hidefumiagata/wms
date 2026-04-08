@@ -30,6 +30,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.productId = :productId AND i.quantity > 0")
     boolean existsByProductIdWithPositiveQty(@Param("productId") Long productId);
 
+    @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.warehouseId = :warehouseId AND i.quantity > 0")
+    boolean existsByWarehouseIdWithPositiveQty(@Param("warehouseId") Long warehouseId);
+
+    @Query("SELECT CASE WHEN COUNT(i) > 0 THEN true ELSE false END FROM Inventory i WHERE i.locationId = :locationId AND i.quantity > 0")
+    boolean existsByLocationIdWithPositiveQty(@Param("locationId") Long locationId);
+
     /**
      * 引当用在庫検索 — FEFO/FIFO順でソート。有効在庫（quantity - allocated_qty > 0）のみ対象。
      * FIFO基準: inventory_movements の最古INBOUND入庫日時（executed_at）。

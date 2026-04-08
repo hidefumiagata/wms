@@ -1,8 +1,10 @@
 package com.wms.master.service;
 
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Warehouse;
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.WarehouseRepository;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
+    private final InventoryService inventoryService;
 
     public Page<Warehouse> search(String warehouseCode, String warehouseName,
                                   Boolean isActive, Pageable pageable) {
@@ -103,10 +106,17 @@ public class WarehouseService {
                     "OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
-        // TODO: 在庫テーブル実装後に在庫存在チェックを追加（無効化時）
+        // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (warehouse.getIsActive().equals(isActive)) {
             log.info("Warehouse toggleActive no-op: id={}, isActive={}", id, isActive);
             return warehouse;
+        }
+        // 無効化時: 在庫が存在する倉庫は無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
+        // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
+        if (!isActive && inventoryService.hasInventoryByWarehouseId(id)) {
+            throw new BusinessRuleViolationException(
+                    "CANNOT_DEACTIVATE_HAS_INVENTORY",
+                    "在庫が存在するため無効化できません (id=" + id + ")");
         }
         if (isActive) {
             warehouse.activate();
