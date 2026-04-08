@@ -231,13 +231,13 @@ class WarehouseServiceTest {
         void toggleActive_deactivate_success() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(false);
+            when(inventoryService.hasInventoryByWarehouseId(1L)).thenReturn(false);
             when(warehouseRepository.save(any(Warehouse.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Warehouse result = warehouseService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
-            verify(inventoryService).hasInventoryInWarehouse(1L);
+            verify(inventoryService).hasInventoryByWarehouseId(1L);
         }
 
         @Test
@@ -245,7 +245,7 @@ class WarehouseServiceTest {
         void toggleActive_deactivate_hasInventory_throwsBusinessRuleViolation() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(true);
+            when(inventoryService.hasInventoryByWarehouseId(1L)).thenReturn(true);
 
             assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -277,7 +277,7 @@ class WarehouseServiceTest {
 
             assertThat(result.getIsActive()).isTrue();
             verify(warehouseRepository, never()).save(any());
-            verify(inventoryService, never()).hasInventoryInWarehouse(any());
+            verify(inventoryService, never()).hasInventoryByWarehouseId(any());
         }
 
         @Test
@@ -291,7 +291,7 @@ class WarehouseServiceTest {
 
             assertThat(result.getIsActive()).isFalse();
             verify(warehouseRepository, never()).save(any());
-            verify(inventoryService, never()).hasInventoryInWarehouse(any());
+            verify(inventoryService, never()).hasInventoryByWarehouseId(any());
         }
 
         @Test
@@ -309,7 +309,7 @@ class WarehouseServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(false);
+            when(inventoryService.hasInventoryByWarehouseId(1L)).thenReturn(false);
             when(warehouseRepository.save(any(Warehouse.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Warehouse.class.getName(), 1L));
 

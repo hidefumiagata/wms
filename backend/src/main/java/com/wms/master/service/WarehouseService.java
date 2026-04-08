@@ -106,13 +106,14 @@ public class WarehouseService {
                     "OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
+        // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (warehouse.getIsActive().equals(isActive)) {
             log.info("Warehouse toggleActive no-op: id={}, isActive={}", id, isActive);
             return warehouse;
         }
         // 無効化時: 在庫が存在する倉庫は無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
-        // 冪等性のため、状態が実際に変化する場合のみチェックする
-        if (!isActive && inventoryService.hasInventoryInWarehouse(id)) {
+        // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
+        if (!isActive && inventoryService.hasInventoryByWarehouseId(id)) {
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
                     "在庫が存在するため無効化できません (id=" + id + ")");

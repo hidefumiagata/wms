@@ -57,7 +57,7 @@ public class InventoryService {
      * 指定した倉庫に在庫（quantity > 0）が存在するかチェックする。
      * 倉庫無効化時の業務ルール検証に使用する。
      */
-    public boolean hasInventoryInWarehouse(Long warehouseId) {
+    public boolean hasInventoryByWarehouseId(Long warehouseId) {
         return inventoryRepository.existsByWarehouseIdWithPositiveQty(warehouseId);
     }
 
@@ -65,7 +65,7 @@ public class InventoryService {
      * 指定したロケーションに在庫（quantity > 0）が存在するかチェックする。
      * ロケーション無効化時の業務ルール検証に使用する。
      */
-    public boolean hasInventoryInLocation(Long locationId) {
+    public boolean hasInventoryByLocationId(Long locationId) {
         return inventoryRepository.existsByLocationIdWithPositiveQty(locationId);
     }
 

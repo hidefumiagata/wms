@@ -431,44 +431,44 @@ class InventoryServiceTest {
     }
 
     @Nested
-    @DisplayName("hasInventoryInWarehouse")
+    @DisplayName("hasInventoryByWarehouseId")
     class HasInventoryInWarehouseTests {
 
         @Test
         @DisplayName("倉庫に在庫が存在する場合 true を返す")
-        void hasInventoryInWarehouse_exists_returnsTrue() {
+        void hasInventoryByWarehouseId_exists_returnsTrue() {
             when(inventoryRepository.existsByWarehouseIdWithPositiveQty(10L)).thenReturn(true);
 
-            assertThat(inventoryService.hasInventoryInWarehouse(10L)).isTrue();
+            assertThat(inventoryService.hasInventoryByWarehouseId(10L)).isTrue();
         }
 
         @Test
         @DisplayName("倉庫に在庫が存在しない場合 false を返す")
-        void hasInventoryInWarehouse_notExists_returnsFalse() {
+        void hasInventoryByWarehouseId_notExists_returnsFalse() {
             when(inventoryRepository.existsByWarehouseIdWithPositiveQty(10L)).thenReturn(false);
 
-            assertThat(inventoryService.hasInventoryInWarehouse(10L)).isFalse();
+            assertThat(inventoryService.hasInventoryByWarehouseId(10L)).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("hasInventoryInLocation")
+    @DisplayName("hasInventoryByLocationId")
     class HasInventoryInLocationTests {
 
         @Test
         @DisplayName("ロケーションに在庫が存在する場合 true を返す")
-        void hasInventoryInLocation_exists_returnsTrue() {
+        void hasInventoryByLocationId_exists_returnsTrue() {
             when(inventoryRepository.existsByLocationIdWithPositiveQty(200L)).thenReturn(true);
 
-            assertThat(inventoryService.hasInventoryInLocation(200L)).isTrue();
+            assertThat(inventoryService.hasInventoryByLocationId(200L)).isTrue();
         }
 
         @Test
         @DisplayName("ロケーションに在庫が存在しない場合 false を返す")
-        void hasInventoryInLocation_notExists_returnsFalse() {
+        void hasInventoryByLocationId_notExists_returnsFalse() {
             when(inventoryRepository.existsByLocationIdWithPositiveQty(200L)).thenReturn(false);
 
-            assertThat(inventoryService.hasInventoryInLocation(200L)).isFalse();
+            assertThat(inventoryService.hasInventoryByLocationId(200L)).isFalse();
         }
     }
 

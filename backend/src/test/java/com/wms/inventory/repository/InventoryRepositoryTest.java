@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @DataJpaTest
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @DisplayName("InventoryRepository")
 class InventoryRepositoryTest {
 
@@ -34,11 +32,12 @@ class InventoryRepositoryTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private static final long WAREHOUSE_A = 1L;
-    private static final long WAREHOUSE_B = 2L;
-    private static final long LOCATION_A = 1L;
-    private static final long LOCATION_B = 2L;
-    private static final long PRODUCT_ID = 1L;
+    // 値域を warehouse / location / product で分離し、テスト中の ID 取り違えを防止する
+    private static final long WAREHOUSE_A = 10L;
+    private static final long WAREHOUSE_B = 20L;
+    private static final long LOCATION_A = 100L;
+    private static final long LOCATION_B = 200L;
+    private static final long PRODUCT_ID = 1000L;
 
     @BeforeEach
     void setUp() {

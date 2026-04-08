@@ -374,13 +374,13 @@ class LocationServiceTest {
         void toggleActive_deactivate_success() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInLocation(1L)).thenReturn(false);
+            when(inventoryService.hasInventoryByLocationId(1L)).thenReturn(false);
             when(locationRepository.save(any(Location.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Location result = locationService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
-            verify(inventoryService).hasInventoryInLocation(1L);
+            verify(inventoryService).hasInventoryByLocationId(1L);
         }
 
         @Test
@@ -388,7 +388,7 @@ class LocationServiceTest {
         void toggleActive_deactivate_hasInventory_throwsBusinessRuleViolation() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInLocation(1L)).thenReturn(true);
+            when(inventoryService.hasInventoryByLocationId(1L)).thenReturn(true);
 
             assertThatThrownBy(() -> locationService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
@@ -420,7 +420,7 @@ class LocationServiceTest {
 
             assertThat(result.getIsActive()).isTrue();
             verify(locationRepository, never()).save(any());
-            verify(inventoryService, never()).hasInventoryInLocation(any());
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
         }
 
         @Test
@@ -434,7 +434,7 @@ class LocationServiceTest {
 
             assertThat(result.getIsActive()).isFalse();
             verify(locationRepository, never()).save(any());
-            verify(inventoryService, never()).hasInventoryInLocation(any());
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
         }
 
         @Test
@@ -453,7 +453,7 @@ class LocationServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inventoryService.hasInventoryInLocation(1L)).thenReturn(false);
+            when(inventoryService.hasInventoryByLocationId(1L)).thenReturn(false);
             when(locationRepository.save(any(Location.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Location.class.getName(), 1L));
 

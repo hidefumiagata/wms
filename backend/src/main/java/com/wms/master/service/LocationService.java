@@ -122,15 +122,16 @@ public class LocationService {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
+        // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (location.getIsActive().equals(isActive)) {
             log.info("Location toggleActive no-op: id={}, isActive={}", id, isActive);
             return location;
         }
         // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
-        // 冪等性のため、状態が実際に変化する場合のみチェックする
+        // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
         // TODO: stocktake_locations テーブル実装後、棚卸中チェック
         //       (CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS 422) を追加する
-        if (!isActive && inventoryService.hasInventoryInLocation(id)) {
+        if (!isActive && inventoryService.hasInventoryByLocationId(id)) {
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
                     "在庫が存在するため無効化できません (id=" + id + ")");
