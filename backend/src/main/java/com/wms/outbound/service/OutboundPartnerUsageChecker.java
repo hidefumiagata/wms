@@ -3,6 +3,7 @@ package com.wms.outbound.service;
 import com.wms.master.service.spi.PartnerUsageChecker;
 import com.wms.outbound.repository.OutboundSlipRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -20,8 +21,14 @@ import java.util.Set;
  * 存在しない。本実装では {@code SHIPPED}/{@code CANCELLED} を除く全ステータス
  * (= {@code ORDERED}, {@code PARTIAL_ALLOCATED}, {@code ALLOCATED},
  * {@code PICKING_COMPLETED}, {@code INSPECTING}) を「処理中」として扱う。</p>
+ *
+ * <p><b>実行順序:</b> API-03 4章の業務フロー図では「入荷チェック → 受注チェック」の
+ * 順序が契約として規定されているため、{@code @Order(20)} を付与して
+ * {@link com.wms.inbound.service.InboundPartnerUsageChecker} ({@code @Order(10)})
+ * より後に評価されることを Spring DI レベルで保証する。</p>
  */
 @Component
+@Order(20)
 @RequiredArgsConstructor
 public class OutboundPartnerUsageChecker implements PartnerUsageChecker {
 

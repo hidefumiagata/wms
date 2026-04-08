@@ -3,6 +3,7 @@ package com.wms.inbound.service;
 import com.wms.inbound.repository.InboundSlipRepository;
 import com.wms.master.service.spi.PartnerUsageChecker;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -13,8 +14,14 @@ import java.util.Set;
  *
  * <p>処理中の入荷伝票 (PLANNED / CONFIRMED / INSPECTING) が紐付いている取引先は
  * 無効化できないことを判定する (API-03 BR-001)。</p>
+ *
+ * <p><b>実行順序:</b> API-03 4章の業務フロー図では「入荷チェック → 受注チェック」の
+ * 順序が契約として規定されているため、{@code @Order(10)} を付与して
+ * {@link com.wms.outbound.service.OutboundPartnerUsageChecker} ({@code @Order(20)})
+ * より先に評価されることを Spring DI レベルで保証する。</p>
  */
 @Component
+@Order(10)
 @RequiredArgsConstructor
 public class InboundPartnerUsageChecker implements PartnerUsageChecker {
 
