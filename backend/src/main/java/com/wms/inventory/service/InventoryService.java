@@ -54,6 +54,22 @@ public class InventoryService {
     }
 
     /**
+     * 指定した倉庫に在庫（quantity > 0）が存在するかチェックする。
+     * 倉庫無効化時の業務ルール検証に使用する。
+     */
+    public boolean hasInventoryInWarehouse(Long warehouseId) {
+        return inventoryRepository.existsByWarehouseIdWithPositiveQty(warehouseId);
+    }
+
+    /**
+     * 指定したロケーションに在庫（quantity > 0）が存在するかチェックする。
+     * ロケーション無効化時の業務ルール検証に使用する。
+     */
+    public boolean hasInventoryInLocation(Long locationId) {
+        return inventoryRepository.existsByLocationIdWithPositiveQty(locationId);
+    }
+
+    /**
      * 入荷格納時に在庫をUPSERTし、INBOUND移動記録を作成する。
      */
     @Transactional

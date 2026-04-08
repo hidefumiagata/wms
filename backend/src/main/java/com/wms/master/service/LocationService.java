@@ -1,5 +1,6 @@
 package com.wms.master.service;
 
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Location;
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.AreaRepository;
@@ -30,6 +31,7 @@ public class LocationService {
 
     private final LocationRepository locationRepository;
     private final AreaRepository areaRepository;
+    private final InventoryService inventoryService;
 
     /** INBOUND/OUTBOUND/RETURN エリアに登録可能なロケーション最大件数 */
     private static final long SINGLE_LOCATION_AREA_LIMIT = 1L;
@@ -120,13 +122,18 @@ public class LocationService {
             throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
                     "他のユーザーによる更新が先行しました (id=" + id + ")");
         }
-        if (!isActive) {
-            // TODO: 在庫テーブル実装後に在庫存在チェックを追加
-            //       在庫あり → CANNOT_DEACTIVATE_HAS_INVENTORY (422)
-        }
         if (location.getIsActive().equals(isActive)) {
             log.info("Location toggleActive no-op: id={}, isActive={}", id, isActive);
             return location;
+        }
+        // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
+        // 冪等性のため、状態が実際に変化する場合のみチェックする
+        // TODO: stocktake_locations テーブル実装後、棚卸中チェック
+        //       (CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS 422) を追加する
+        if (!isActive && inventoryService.hasInventoryInLocation(id)) {
+            throw new BusinessRuleViolationException(
+                    "CANNOT_DEACTIVATE_HAS_INVENTORY",
+                    "在庫が存在するため無効化できません (id=" + id + ")");
         }
         if (isActive) {
             location.activate();

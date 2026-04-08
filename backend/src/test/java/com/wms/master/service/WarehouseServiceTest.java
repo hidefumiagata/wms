@@ -1,7 +1,9 @@
 package com.wms.master.service;
 
+import com.wms.inventory.service.InventoryService;
 import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -36,6 +38,9 @@ class WarehouseServiceTest {
 
     @Mock
     private WarehouseRepository warehouseRepository;
+
+    @Mock
+    private InventoryService inventoryService;
 
     @InjectMocks
     private WarehouseService warehouseService;
@@ -222,15 +227,31 @@ class WarehouseServiceTest {
     @DisplayName("toggleActive")
     class ToggleActive {
         @Test
-        @DisplayName("倉庫を無効化できる")
+        @DisplayName("倉庫を無効化できる（在庫なし）")
         void toggleActive_deactivate_success() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(false);
             when(warehouseRepository.save(any(Warehouse.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Warehouse result = warehouseService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
+            verify(inventoryService).hasInventoryInWarehouse(1L);
+        }
+
+        @Test
+        @DisplayName("SC-WH01: 在庫が存在する倉庫の無効化はCANNOT_DEACTIVATE_HAS_INVENTORY(422)をスロー")
+        void toggleActive_deactivate_hasInventory_throwsBusinessRuleViolation() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(true);
+
+            assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("在庫が存在するため無効化できません")
+                    .extracting("errorCode").isEqualTo("CANNOT_DEACTIVATE_HAS_INVENTORY");
+            verify(warehouseRepository, never()).save(any());
         }
 
         @Test
@@ -247,7 +268,7 @@ class WarehouseServiceTest {
         }
 
         @Test
-        @DisplayName("既に同じ状態の場合はUPDATEなし（冪等性）")
+        @DisplayName("既に同じ状態の場合はUPDATEなし・在庫チェックも呼ばれない（冪等性）")
         void toggleActive_alreadySameState_noUpdate() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -256,6 +277,7 @@ class WarehouseServiceTest {
 
             assertThat(result.getIsActive()).isTrue();
             verify(warehouseRepository, never()).save(any());
+            verify(inventoryService, never()).hasInventoryInWarehouse(any());
         }
 
         @Test
@@ -273,6 +295,7 @@ class WarehouseServiceTest {
         void toggleActive_optimisticLockConflict_throwsException() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inventoryService.hasInventoryInWarehouse(1L)).thenReturn(false);
             when(warehouseRepository.save(any(Warehouse.class)))
                     .thenThrow(new ObjectOptimisticLockingFailureException(Warehouse.class.getName(), 1L));
 
