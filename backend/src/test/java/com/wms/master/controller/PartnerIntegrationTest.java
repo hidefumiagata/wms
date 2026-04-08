@@ -6,11 +6,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,6 +32,9 @@ class PartnerIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // テスト用データのクリーンアップ
+        // FK制約のため、伝票 → 取引先の順で削除する
+        jdbcTemplate.update("DELETE FROM inbound_slips WHERE slip_number LIKE 'IT-%'");
+        jdbcTemplate.update("DELETE FROM outbound_slips WHERE slip_number LIKE 'IT-%'");
         jdbcTemplate.update("DELETE FROM partners WHERE partner_code LIKE 'IT-%'");
 
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
@@ -559,8 +566,158 @@ class PartnerIntegrationTest extends IntegrationTestBase {
     }
 
     // ========================================================
+    // 取引先無効化の業務制約 (API-03 BR-001)
+    // ========================================================
+
+    @Nested
+    @DisplayName("PATCH /api/v1/master/partners/{id}/toggle-active — 業務制約 (BR-001)")
+    class DeactivationBusinessRules {
+
+        @ParameterizedTest(name = "SC-PAR03: 入荷伝票 status={0} の取引先は無効化不可")
+        @ValueSource(strings = {"PLANNED", "CONFIRMED", "INSPECTING"})
+        @DisplayName("SC-PAR03: 処理中入荷伝票がある取引先は無効化不可 → 422 CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND")
+        void deactivate_withActiveInbound_returns422(String status) throws Exception {
+            String code = "IT-PAR03-" + status.substring(0, Math.min(7, status.length()));
+            Long partnerId = createTestPartner(code, "PAR03_" + status, "SUPPLIER");
+            insertInboundSlip(code, partnerId, status);
+
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
+
+            // DB検証: 無効化されていないこと
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+            assertThat(isActive).isTrue();
+        }
+
+        // NOTE: 設計書 (API-03) では「処理中受注」を PENDING/ALLOCATED/PICKING/INSPECTING と
+        //       記載しているが、実装/DB制約 (outbound_slips.status) には PENDING/PICKING が
+        //       存在しないため、それぞれ ORDERED/PICKING_COMPLETED が対応する。
+        //       チェック対象は SHIPPED/CANCELLED 以外の全ステータス (5種)。
+        @ParameterizedTest(name = "SC-PAR04: 出荷伝票 status={0} の取引先は無効化不可")
+        @ValueSource(strings = {"ORDERED", "PARTIAL_ALLOCATED", "ALLOCATED", "PICKING_COMPLETED", "INSPECTING"})
+        @DisplayName("SC-PAR04: 処理中受注伝票がある取引先は無効化不可 → 422 CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND")
+        void deactivate_withActiveOutbound_returns422(String status) throws Exception {
+            String code = "IT-PAR04-" + status.substring(0, Math.min(7, status.length()));
+            Long partnerId = createTestPartner(code, "PAR04_" + status, "CUSTOMER");
+            insertOutboundSlip(code, partnerId, status);
+
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND");
+
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+            assertThat(isActive).isTrue();
+        }
+
+        @Test
+        @DisplayName("SC-PAR05a: 完了済み入荷伝票 (STORED/CANCELLED) のみの取引先は無効化可能")
+        void deactivate_withOnlyCompletedInbound_returns200() throws Exception {
+            Long partnerId = createTestPartner("IT-PAR05A", "PAR05A完了", "SUPPLIER");
+            insertInboundSlip("IT-PAR05A-S", partnerId, "STORED");
+            insertInboundSlip("IT-PAR05A-C", partnerId, "CANCELLED");
+
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("isActive").asBoolean()).isFalse();
+
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+            assertThat(isActive).isFalse();
+        }
+
+        @Test
+        @DisplayName("SC-PAR05b: 完了済み受注伝票 (SHIPPED/CANCELLED) のみの取引先は無効化可能")
+        void deactivate_withOnlyCompletedOutbound_returns200() throws Exception {
+            Long partnerId = createTestPartner("IT-PAR05B", "PAR05B完了", "CUSTOMER");
+            insertOutboundSlip("IT-PAR05B-S", partnerId, "SHIPPED");
+            insertOutboundSlip("IT-PAR05B-C", partnerId, "CANCELLED");
+
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + partnerId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("isActive").asBoolean()).isFalse();
+
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+            assertThat(isActive).isFalse();
+        }
+    }
+
+    // ========================================================
     // ヘルパーメソッド
     // ========================================================
+
+    /**
+     * テスト用入荷伝票を直接INSERT（業務ロジックを経由しない）。
+     * slip_type='NORMAL', warehouse は seed の最初を使用。
+     */
+    private void insertInboundSlip(String slipNumber, Long partnerId, String status) {
+        var wh = jdbcTemplate.queryForMap(
+                "SELECT id, warehouse_code, warehouse_name FROM warehouses ORDER BY id LIMIT 1");
+        Long adminUserId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
+        jdbcTemplate.update("""
+                INSERT INTO inbound_slips
+                  (slip_number, slip_type, warehouse_id, warehouse_code, warehouse_name,
+                   partner_id, planned_date, status, created_by, updated_by)
+                VALUES (?, 'NORMAL', ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                slipNumber, wh.get("id"), wh.get("warehouse_code"), wh.get("warehouse_name"),
+                partnerId, LocalDate.now(), status, adminUserId, adminUserId);
+    }
+
+    /**
+     * テスト用出荷伝票を直接INSERT（業務ロジックを経由しない）。
+     */
+    private void insertOutboundSlip(String slipNumber, Long partnerId, String status) {
+        var wh = jdbcTemplate.queryForMap(
+                "SELECT id, warehouse_code, warehouse_name FROM warehouses ORDER BY id LIMIT 1");
+        Long adminUserId = jdbcTemplate.queryForObject(
+                "SELECT id FROM users WHERE user_code = 'admin001'", Long.class);
+        jdbcTemplate.update("""
+                INSERT INTO outbound_slips
+                  (slip_number, slip_type, warehouse_id, warehouse_code, warehouse_name,
+                   partner_id, planned_date, status, created_by, updated_by)
+                VALUES (?, 'NORMAL', ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                slipNumber, wh.get("id"), wh.get("warehouse_code"), wh.get("warehouse_name"),
+                partnerId, LocalDate.now(), status, adminUserId, adminUserId);
+    }
+
 
     private Long createTestPartner(String code, String name, String type) throws Exception {
         String body = String.format("""
