@@ -7679,7 +7679,7 @@ test('SC-RPT10-002: hideBookQty=false でPDF帳簿数量表示', async ({ page }
 <table>
 <thead><tr><th>#</th><th>操作</th><th>期待結果</th><th>確認方法</th></tr></thead>
 <tbody>
-<tr><td>1</td><td>POST /api/v1/returns（returnReason=OTHER, returnReasonNote=null）</td><td>400 VALIDATION_ERROR</td><td>HTTPステータス400</td></tr>
+<tr><td>1</td><td>POST /api/v1/returns（returnReason=OTHER, returnReasonNote=null）</td><td>422 VALIDATION_ERROR</td><td>HTTPステータス422</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>SC-011: E2E: 入荷検品画面からの返品登録遷移</h3>

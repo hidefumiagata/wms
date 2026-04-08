@@ -325,7 +325,7 @@
 
 | # | 操作 | 期待結果 | 確認方法 |
 |:-:|------|---------|---------|
-| 1 | POST /api/v1/returns（returnReason=OTHER, returnReasonNote=null） | 400 VALIDATION_ERROR | HTTPステータス400 |
+| 1 | POST /api/v1/returns（returnReason=OTHER, returnReasonNote=null） | 422 VALIDATION_ERROR | HTTPステータス422 |
 
 ---
 
