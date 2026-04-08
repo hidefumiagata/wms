@@ -32,6 +32,33 @@
         </Or>
     </Match>
 
+    <!-- record-style 一時集約 DTO (CsvMasterCache 等) は import 処理内でのみ使用され
+         信頼境界を跨がない。Lombok @Getter 由来の EI_EXPOSE_REP / EI_EXPOSE_REP2 は False positive。
+         パッケージ全体ではなくクラス単位で列挙し、新規追加時は明示的に追記させる。 -->
+    <Match>
+        <Or>
+            <Class name="com.wms.interfacing.model.CsvMasterCache"/>
+            <Class name="com.wms.interfacing.model.CsvFieldError"/>
+            <Class name="com.wms.interfacing.model.CsvRowError"/>
+            <Class name="com.wms.interfacing.model.CsvValidationResult"/>
+            <Class name="com.wms.interfacing.model.SlipNumberGenerator"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- InterfaceService: NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE は
+         transactionTemplate.execute(...) の戻り値に対する SpotBugs の警告だが、
+         呼び出し元 (handleDiscard / importFile) で Objects.requireNonNull(...) により
+         NPE 不可能であることを保証している。追跡用 follow-up: #469 (メソッド単位 or
+         @SuppressFBWarnings への置換を予定)。 -->
+    <Match>
+        <Class name="com.wms.interfacing.service.InterfaceService"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
     <!-- Security package: suppress EI_EXPOSE_REP2 only for Spring filter/handler
          classes that inject ObjectMapper via constructor (false positives).
          JwtTokenProvider and WmsUserDetails remain fully checked. -->

@@ -246,7 +246,9 @@ class PartnerServiceTest {
             assertThatThrownBy(() -> partnerService.update(new UpdatePartnerCommand(1L, "名前", null, PartnerType.SUPPLIER,
                     null, null, null, null, 3)))
                     .isInstanceOf(OptimisticLockConflictException.class)
-                    .hasMessageContaining("id=1");
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -297,7 +299,9 @@ class PartnerServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND")
                     // C-R2-3: 入荷要因のメッセージは「入荷予定」を明示する
-                    .hasMessageContaining("処理中の入荷予定");
+                    .hasMessageContaining("処理中の入荷予定")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
 
             // inboundで即ブロックされ、outbound checker は評価されない
             verify(outboundChecker, never()).findBlockingReason(any());
@@ -358,7 +362,9 @@ class PartnerServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND")
                     // C-R2-3: 受注要因のメッセージは「受注」を明示する
-                    .hasMessageContaining("処理中の受注");
+                    .hasMessageContaining("処理中の受注")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
 
             verify(partnerRepository, never()).save(any());
         }
@@ -389,6 +395,72 @@ class PartnerServiceTest {
             assertThat(result.getIsActive()).isFalse();
             verifyNoInteractions(inboundChecker);
             verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("未知のエラーコードでもデフォルトメッセージで BusinessRuleViolationException")
+        void toggleActive_unknownBlockingReason_throwsBusinessRuleViolationWithDefaultMessage() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L)).thenReturn(Optional.of("UNKNOWN_REASON"));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "UNKNOWN_REASON")
+                    .hasMessageContaining("処理中の伝票")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
+
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
+
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.setVersion(5);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            // version 先行チェックで止まるため BR チェッカーは呼ばれない
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#453] version 不一致 (有効化リクエスト) でも 409 を返す")
+        void toggleActive_activateWithStaleVersion_throwsOptimisticLockConflict() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            existing.setVersion(2);
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, true, 1))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
             verify(partnerRepository, never()).save(any());
         }
     }

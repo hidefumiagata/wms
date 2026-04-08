@@ -50,10 +50,18 @@ public class DailyCloseService {
     }
 
     public record StepResult(String status, String errorMessage) {
-        public static StepResult success() { return new StepResult("SUCCESS", null); }
-        public static StepResult failed(String msg) { return new StepResult("FAILED", msg); }
-        public static StepResult skipped() { return new StepResult("SKIPPED", null); }
-        public boolean isFailed() { return "FAILED".equals(status); }
+        public static StepResult success() {
+            return new StepResult("SUCCESS", null);
+        }
+        public static StepResult failed(String msg) {
+            return new StepResult("FAILED", msg);
+        }
+        public static StepResult skipped() {
+            return new StepResult("SKIPPED", null);
+        }
+        public boolean isFailed() {
+            return "FAILED".equals(status);
+        }
     }
 
     public record DailyCloseResult(
@@ -547,7 +555,9 @@ public class DailyCloseService {
     }
 
     private String truncateError(String msg) {
-        if (msg == null) return null;
+        if (msg == null) {
+            return null;
+        }
         return msg.length() > 1000 ? msg.substring(0, 1000) : msg;
     }
 }
