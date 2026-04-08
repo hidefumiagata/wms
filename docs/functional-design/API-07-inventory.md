@@ -46,7 +46,7 @@
 ## 棚卸ロック（locations.is_stocktaking_locked）
 
 棚卸開始時、対象ロケーションに `is_stocktaking_locked = true` をセットする。
-棚卸ロック中のロケーションに対する在庫移動・ばらし・在庫訂正は `409 INVENTORY_STOCKTAKE_IN_PROGRESS` を返す。
+棚卸ロック中のロケーションに対する在庫移動・ばらし・在庫訂正は `422 INVENTORY_STOCKTAKE_IN_PROGRESS` を返す。
 棚卸確定後に `is_stocktaking_locked = false` へ戻す。
 
 ---
@@ -334,7 +334,7 @@ flowchart TD
 | `404` | `PRODUCT_NOT_FOUND` | 指定商品が存在しない |
 | `404` | `INVENTORY_NOT_FOUND` | 移動元に対象在庫が存在しない |
 | `422` | `INVENTORY_INSUFFICIENT` | 移動元在庫数 < `moveQty` |
-| `409` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 移動元または移動先ロケーションが棚卸ロック中 |
+| `422` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 移動元または移動先ロケーションが棚卸ロック中 |
 | `422` | `INVENTORY_CAPACITY_EXCEEDED` | 移動先ロケーションの収容数を超過 |
 | `422` | `LOCATION_PRODUCT_MISMATCH` | 移動先ロケーションに既に別商品の在庫が存在する |
 
@@ -351,7 +351,7 @@ flowchart TD
     CHECK_SAME -->|異なる| CHECK_LOC[移動元・移動先ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック\n移動元 or 移動先}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|ロックなし| LOCK_FROM[移動元在庫を\nSELECT FOR UPDATE]
     LOCK_FROM -->|存在しない| ERR_INV[404 INVENTORY_NOT_FOUND]
     LOCK_FROM -->|OK| CHECK_QTY{移動元有効在庫数\nquantity - allocated_qty\n>= moveQty?}
@@ -506,7 +506,7 @@ flowchart TD
 | `404` | `PRODUCT_NOT_FOUND` | 指定商品が存在しない |
 | `404` | `INVENTORY_NOT_FOUND` | ばらし元に対象在庫が存在しない |
 | `422` | `INVENTORY_INSUFFICIENT` | ばらし元在庫数 < `breakdownQty` |
-| `409` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | ばらし元または先ロケーションが棚卸ロック中 |
+| `422` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | ばらし元または先ロケーションが棚卸ロック中 |
 | `422` | `INVENTORY_CAPACITY_EXCEEDED` | ばらし先ロケーションの収容数超過 |
 | `422` | `BREAKDOWN_CONVERSION_FRACTION` | 変換後数量に端数が発生（割り切れない） |
 
@@ -523,7 +523,7 @@ flowchart TD
     CHECK_UNIT -->|OK| CHECK_LOC[ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| GET_PRODUCT[商品マスタ取得\ncase_quantity / ball_quantity]
     GET_PRODUCT -->|存在しない| ERR_PRD[404 PRODUCT_NOT_FOUND]
     GET_PRODUCT -->|OK| CALC_RATE[変換レート計算\nCASE→BALL: case_quantity\nCASE→PIECE: case_quantity × ball_quantity\nBALL→PIECE: ball_quantity]
@@ -672,7 +672,7 @@ flowchart TD
 | `404` | `LOCATION_NOT_FOUND` | 指定ロケーションが存在しない |
 | `404` | `PRODUCT_NOT_FOUND` | 指定商品が存在しない |
 | `404` | `INVENTORY_NOT_FOUND` | 対象在庫レコードが存在しない |
-| `409` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | ロケーションが棚卸ロック中 |
+| `422` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | ロケーションが棚卸ロック中 |
 | `422` | `CORRECTION_BELOW_ALLOCATED` | 訂正後の数量が引当数（`allocated_qty`）を下回っている |
 
 ---
@@ -688,7 +688,7 @@ flowchart TD
     CHECK_ROLE -->|OK| CHECK_LOC[ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| LOCK_INV[在庫レコードを\nSELECT FOR UPDATE]
     LOCK_INV -->|存在しない| ERR_INV[404 INVENTORY_NOT_FOUND]
     LOCK_INV -->|OK| CHECK_ALLOC{newQty >= allocated_qty?}
@@ -931,7 +931,7 @@ flowchart TD
 | `404` | `WAREHOUSE_NOT_FOUND` | 指定倉庫が存在しない |
 | `404` | `BUILDING_NOT_FOUND` | 指定棟が存在しない |
 | `404` | `AREA_NOT_FOUND` | 指定エリアが存在しない |
-| `409` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 同一ロケーション範囲に実施中棚卸が存在する |
+| `422` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 同一ロケーション範囲に実施中棚卸が存在する |
 
 ---
 
@@ -947,7 +947,7 @@ flowchart TD
     CHECK_MASTER -->|存在しない| ERR_MASTER[404 NOT_FOUND]
     CHECK_MASTER -->|OK| GET_LOCS[対象ロケーション一覧取得\nbuildingId/areaIdで絞り込み]
     GET_LOCS --> CHECK_LOCK{対象ロケーションのいずれかが\n既に棚卸ロック中か?}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| SNAP[対象ロケーションの\n現在在庫スナップショット取得\nSELECT FROM inventories]
     SNAP --> CREATE_HEADER[stocktake_headersにINSERT\nstocktake_number採番\nstatus=STARTED]
     CREATE_HEADER --> CREATE_LINES[stocktake_linesにBULK INSERT\n各在庫レコードをコピー\nquantity_before=現在quantity\nquantity_counted=NULL\nis_counted=false]
@@ -1418,7 +1418,7 @@ stateDiagram-v2
 |-----------|-------------|------|--------|
 | `INVENTORY_NOT_FOUND` | 404 | 在庫レコードが存在しない | INV-002, INV-003, INV-004 |
 | `INVENTORY_INSUFFICIENT` | 422 | 有効在庫数（quantity - allocated_qty）不足 | INV-002, INV-003 |
-| `INVENTORY_STOCKTAKE_IN_PROGRESS` | 409 | 棚卸ロック中のため操作不可 | INV-002, INV-003, INV-004, INV-012 |
+| `INVENTORY_STOCKTAKE_IN_PROGRESS` | 422 | 棚卸ロック中のため操作不可 | INV-002, INV-003, INV-004, INV-012 |
 | `INVENTORY_CAPACITY_EXCEEDED` | 422 | ロケーション収容数上限超過 | INV-002, INV-003 |
 | `LOCATION_PRODUCT_MISMATCH` | 422 | ロケーションに既に別商品の在庫が存在する（同一ロケーション単一商品制約） | INV-002 |
 | `BREAKDOWN_CONVERSION_FRACTION` | 422 | ばらし変換に端数が発生 | INV-003 |

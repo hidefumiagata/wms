@@ -306,7 +306,7 @@ flowchart TD
 |-----------|-------------|------|
 | `INVENTORY_NOT_FOUND` | 404 | 在庫レコードが見つからない |
 | `INVENTORY_INSUFFICIENT` | 422 | 在庫数量不足 |
-| `INVENTORY_STOCKTAKE_IN_PROGRESS` | 409 | 棚卸中のため操作不可 |
+| `INVENTORY_STOCKTAKE_IN_PROGRESS` | 422 | 棚卸中のため操作不可 |
 | `INVENTORY_CAPACITY_EXCEEDED` | 422 | ロケーションの収容数上限を超過 |
 | `INVENTORY_STOCKTAKE_NOT_ALL_COUNTED` | 409 | 未入力の実数がある（棚卸確定前に全明細の入力が必要） |
 | `STOCKTAKE_NOT_FOUND` | 404 | 棚卸が見つからない |

@@ -3358,7 +3358,7 @@ test('SC-009: 5回連続ログイン失敗でアカウントがロックされ�
 <thead><tr><th>#</th><th>APIリクエスト</th><th>期待HTTPステータス</th><th>期待エラーコード</th><th>説明</th></tr></thead>
 <tbody>
 <tr><td>2</td><td>POST /api/v1/inbound/slips/{id}/store（入荷エリア以外のロケーション）</td><td>422</td><td>INBOUND_LOCATION_AREA_MISMATCH</td><td>入荷エリアでないロケーションへの入庫</td></tr>
-<tr><td>3</td><td>POST /api/v1/inbound/slips/{id}/store（棚卸ロック中ロケーション）</td><td>409</td><td>INVENTORY_STOCKTAKE_IN_PROGRESS</td><td>棚卸中ロケーションへの入庫</td></tr>
+<tr><td>3</td><td>POST /api/v1/inbound/slips/{id}/store（棚卸ロック中ロケーション）</td><td>422</td><td>INVENTORY_STOCKTAKE_IN_PROGRESS</td><td>棚卸中ロケーションへの入庫</td></tr>
 <tr><td>4</td><td>POST /api/v1/inbound/slips/{id}/store（line_status=PENDING の明細）</td><td>409</td><td>INBOUND_LINE_NOT_INSPECTED</td><td>未検品明細の入庫</td></tr>
 <tr><td>5</td><td>POST /api/v1/inbound/slips/{id}/store（line_status=STORED の明細）</td><td>409</td><td>INBOUND_LINE_NOT_INSPECTED</td><td>入庫済み明細の再入庫</td></tr>
 <p></tbody><br></table></p>

@@ -734,7 +734,7 @@
 | # | APIリクエスト | 期待HTTPステータス | 期待エラーコード | 説明 |
 |:-:|-------------|:-----------------:|---------------|------|
 | 2 | POST /api/v1/inbound/slips/{id}/store（入荷エリア以外のロケーション） | 422 | INBOUND_LOCATION_AREA_MISMATCH | 入荷エリアでないロケーションへの入庫 |
-| 3 | POST /api/v1/inbound/slips/{id}/store（棚卸ロック中ロケーション） | 409 | INVENTORY_STOCKTAKE_IN_PROGRESS | 棚卸中ロケーションへの入庫 |
+| 3 | POST /api/v1/inbound/slips/{id}/store（棚卸ロック中ロケーション） | 422 | INVENTORY_STOCKTAKE_IN_PROGRESS | 棚卸中ロケーションへの入庫 |
 | 4 | POST /api/v1/inbound/slips/{id}/store（line_status=PENDING の明細） | 409 | INBOUND_LINE_NOT_INSPECTED | 未検品明細の入庫 |
 | 5 | POST /api/v1/inbound/slips/{id}/store（line_status=STORED の明細） | 409 | INBOUND_LINE_NOT_INSPECTED | 入庫済み明細の再入庫 |
 
