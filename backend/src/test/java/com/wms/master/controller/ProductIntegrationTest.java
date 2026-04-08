@@ -27,7 +27,10 @@ class ProductIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
     void setUp() {
-        // テスト用データのクリーンアップ
+        // テスト用データのクリーンアップ（FK順: inventories → products）
+        jdbcTemplate.update(
+                "DELETE FROM inventories WHERE product_id IN " +
+                        "(SELECT id FROM products WHERE product_code LIKE 'IT-%')");
         jdbcTemplate.update("DELETE FROM products WHERE product_code LIKE 'IT-%'");
 
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
@@ -370,6 +373,78 @@ class ProductIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-PRD01: 在庫ありの商品のロット管理フラグを変更しようとすると422")
+        void update_changeLotFlag_withInventory_returns422() throws Exception {
+            Long productId = createTestProduct("IT-INV01", "在庫ありロット変更", "AMBIENT",
+                    false, false);
+            insertTestInventory(productId);
+            Integer version = getVersion(productId);
+
+            String body = String.format("""
+                    {
+                        "productName": "在庫ありロット変更",
+                        "caseQuantity": 1,
+                        "ballQuantity": 1,
+                        "storageCondition": "AMBIENT",
+                        "isHazardous": false,
+                        "lotManageFlag": true,
+                        "expiryManageFlag": false,
+                        "shipmentStopFlag": false,
+                        "version": %d
+                    }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + productId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_CHANGE_LOT_MANAGE_FLAG");
+
+            // DB検証: lot_manage_flag は変更されていない
+            Boolean lotFlag = jdbcTemplate.queryForObject(
+                    "SELECT lot_manage_flag FROM products WHERE id = ?", Boolean.class, productId);
+            assertThat(lotFlag).isFalse();
+        }
+
+        @Test
+        @DisplayName("SC-PRD02: 在庫ありの商品の賞味期限管理フラグを変更しようとすると422")
+        void update_changeExpiryFlag_withInventory_returns422() throws Exception {
+            Long productId = createTestProduct("IT-INV02", "在庫あり期限変更", "REFRIGERATED",
+                    false, false);
+            insertTestInventory(productId);
+            Integer version = getVersion(productId);
+
+            String body = String.format("""
+                    {
+                        "productName": "在庫あり期限変更",
+                        "caseQuantity": 1,
+                        "ballQuantity": 1,
+                        "storageCondition": "REFRIGERATED",
+                        "isHazardous": false,
+                        "lotManageFlag": false,
+                        "expiryManageFlag": true,
+                        "shipmentStopFlag": false,
+                        "version": %d
+                    }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + productId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_CHANGE_EXPIRY_MANAGE_FLAG");
+
+            // DB検証: expiry_manage_flag は変更されていない
+            Boolean expiryFlag = jdbcTemplate.queryForObject(
+                    "SELECT expiry_manage_flag FROM products WHERE id = ?", Boolean.class, productId);
+            assertThat(expiryFlag).isFalse();
+        }
+
+        @Test
         @DisplayName("SC-C09: 楽観ロック競合 → 409")
         void update_versionMismatch_returns409() throws Exception {
             Long productId = createTestProduct("IT-UPD04", "ロック競合", "AMBIENT",
@@ -479,6 +554,33 @@ class ProductIntegrationTest extends IntegrationTestBase {
                     HttpMethod.PATCH, request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        }
+
+        @Test
+        @DisplayName("SC-PRD04: 在庫ありの商品を無効化しようとすると422")
+        void toggle_deactivate_withInventory_returns422() throws Exception {
+            Long productId = createTestProduct("IT-INV03", "在庫あり無効化", "AMBIENT",
+                    false, false);
+            insertTestInventory(productId);
+            Integer version = getVersion(productId);
+
+            String body = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + productId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_INVENTORY");
+
+            // DB検証: is_active は true のまま
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM products WHERE id = ?", Boolean.class, productId);
+            assertThat(isActive).isTrue();
         }
     }
 
@@ -722,5 +824,22 @@ class ProductIntegrationTest extends IntegrationTestBase {
     private Integer getVersion(Long id) {
         return jdbcTemplate.queryForObject(
                 "SELECT version FROM products WHERE id = ?", Integer.class, id);
+    }
+
+    /**
+     * 既存シードの倉庫(WH001)・任意のロケーションを使い、テスト商品の在庫を1件INSERTする。
+     * inventories は @BeforeEach で IT-* プレフィクスでクリーンアップする。
+     */
+    private void insertTestInventory(Long productId) {
+        Long warehouseId = jdbcTemplate.queryForObject(
+                "SELECT id FROM warehouses WHERE warehouse_code = 'WH001'", Long.class);
+        Long locationId = jdbcTemplate.queryForObject(
+                "SELECT id FROM locations WHERE warehouse_id = ? ORDER BY id LIMIT 1",
+                Long.class, warehouseId);
+        jdbcTemplate.update(
+                "INSERT INTO inventories (warehouse_id, location_id, product_id, unit_type, "
+                        + "quantity, allocated_qty, updated_at) "
+                        + "VALUES (?, ?, ?, 'PIECE', 5, 0, now())",
+                warehouseId, locationId, productId);
     }
 }
