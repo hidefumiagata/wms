@@ -4,19 +4,15 @@ import com.wms.outbound.repository.OutboundSlipRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collection;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +28,11 @@ class OutboundPartnerUsageCheckerTest {
     @Test
     @DisplayName("処理中受注伝票が存在する場合 errorCode を返す")
     void findBlockingReason_hasActiveSlip_returnsErrorCode() {
-        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(eq(1L), any())).thenReturn(true);
+        // m-1 / m-8: ステータス集合は本番定数 ACTIVE_STATUSES を基準に argThat で厳密検証する
+        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(
+                eq(1L),
+                argThat(s -> OutboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
+                .thenReturn(true);
 
         Optional<String> result = checker.findBlockingReason(1L);
 
@@ -42,7 +42,10 @@ class OutboundPartnerUsageCheckerTest {
     @Test
     @DisplayName("処理中受注伝票が存在しない場合 empty を返す")
     void findBlockingReason_noActiveSlip_returnsEmpty() {
-        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(eq(2L), any())).thenReturn(false);
+        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(
+                eq(2L),
+                argThat(s -> OutboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
+                .thenReturn(false);
 
         Optional<String> result = checker.findBlockingReason(2L);
 
@@ -50,18 +53,18 @@ class OutboundPartnerUsageCheckerTest {
     }
 
     @Test
-    @DisplayName("チェック対象ステータスは ORDERED/PARTIAL_ALLOCATED/ALLOCATED/PICKING_COMPLETED/INSPECTING の5種")
+    @DisplayName("チェック対象ステータスは ACTIVE_STATUSES と一致する (ORDERED/PARTIAL_ALLOCATED/ALLOCATED/PICKING_COMPLETED/INSPECTING)")
     void findBlockingReason_passesExpectedStatuses() {
-        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(eq(3L), any())).thenReturn(false);
-
-        checker.findBlockingReason(3L);
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Collection<String>> captor = ArgumentCaptor.forClass(Collection.class);
-        verify(outboundSlipRepository).existsByPartnerIdAndStatusIn(eq(3L), captor.capture());
+        // m-1: 生文字列を複製せず本番定数を参照。m-8: argThat で集合を厳密検証
         // NOTE: 設計書上の "PENDING" / "PICKING" は実装/DB制約に存在しないため、
         //       それぞれ ORDERED / PICKING_COMPLETED が対応する
-        assertThat(captor.getValue()).containsExactlyInAnyOrderElementsOf(
-                Set.of("ORDERED", "PARTIAL_ALLOCATED", "ALLOCATED", "PICKING_COMPLETED", "INSPECTING"));
+        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(
+                eq(3L),
+                argThat(s -> OutboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
+                .thenReturn(false);
+
+        Optional<String> result = checker.findBlockingReason(3L);
+
+        assertThat(result).isEmpty();
     }
 }

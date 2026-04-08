@@ -8,6 +8,7 @@ import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,13 +51,15 @@ class PartnerServiceTest {
     private PartnerService partnerService;
 
     /**
-     * NOTE (M-6): 本番コードでは {@code InboundPartnerUsageChecker} に {@code @Order(10)}、
+     * NOTE (m-9): 本番コードでは {@code InboundPartnerUsageChecker} に {@code @Order(10)}、
      * {@code OutboundPartnerUsageChecker} に {@code @Order(20)} が付与されているため、
      * Spring DI 時の {@code List<PartnerUsageChecker>} 注入順は inbound → outbound で保証される。
      * 本テストでは同じ並び順 ({@code List.of(inboundChecker, outboundChecker)}) を明示的に
-     * 組み立てて検証する。
+     * 組み立てて単体検証し、DI 順序は結合テスト
+     * ({@code PartnerIntegrationTest#deactivate_bothActive_inboundTakesPrecedence_returns422})
+     * で end-to-end 検証する。
      */
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void setUpService() {
         partnerService = new PartnerService(partnerRepository, List.of(inboundChecker, outboundChecker));
     }
@@ -337,20 +340,8 @@ class PartnerServiceTest {
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
 
-        @Test
-        @DisplayName("[BR-001] 処理中入荷伝票がある場合はBusinessRuleViolationException(CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND)")
-        void toggleActive_hasActiveInbound_throwsBusinessRuleViolation() {
-            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
-            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
-            when(inboundChecker.findBlockingReason(1L))
-                    .thenReturn(Optional.of("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND"));
-
-            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
-                    .isInstanceOf(BusinessRuleViolationException.class)
-                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
-
-            verify(partnerRepository, never()).save(any());
-        }
+        // m-6: 処理中入荷のみがあるケースは toggleActive_bothBlocking_inboundTakesPrecedence
+        //      (inbound が必ず outbound に優先して評価される) に集約したため削除
 
         @Test
         @DisplayName("[BR-001] 処理中受注伝票がある場合はBusinessRuleViolationException(CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND)")
