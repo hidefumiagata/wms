@@ -27,10 +27,12 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import org.mockito.InOrder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PartnerService")
@@ -47,6 +49,13 @@ class PartnerServiceTest {
 
     private PartnerService partnerService;
 
+    /**
+     * NOTE (M-6): 本番コードでは {@code InboundPartnerUsageChecker} に {@code @Order(10)}、
+     * {@code OutboundPartnerUsageChecker} に {@code @Order(20)} が付与されているため、
+     * Spring DI 時の {@code List<PartnerUsageChecker>} 注入順は inbound → outbound で保証される。
+     * 本テストでは同じ並び順 ({@code List.of(inboundChecker, outboundChecker)}) を明示的に
+     * 組み立てて検証する。
+     */
     @org.junit.jupiter.api.BeforeEach
     void setUpService() {
         partnerService = new PartnerService(partnerRepository, List.of(inboundChecker, outboundChecker));
@@ -255,15 +264,39 @@ class PartnerServiceTest {
     @DisplayName("toggleActive")
     class ToggleActive {
         @Test
-        @DisplayName("取引先を無効化できる")
+        @DisplayName("取引先を無効化できる (両チェッカーOK, inbound→outbound の順で呼ばれる)")
         void toggleActive_deactivate_success() {
             Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L)).thenReturn(Optional.empty());
+            when(outboundChecker.findBlockingReason(1L)).thenReturn(Optional.empty());
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Partner result = partnerService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
+
+            // M-5: inbound → outbound の順で呼び出されることを検証
+            InOrder inOrder = inOrder(inboundChecker, outboundChecker);
+            inOrder.verify(inboundChecker).findBlockingReason(1L);
+            inOrder.verify(outboundChecker).findBlockingReason(1L);
+        }
+
+        @Test
+        @DisplayName("[BR-001] 両チェッカーNGの場合はinboundエラーが優先される (outboundは呼ばれない)")
+        void toggleActive_bothBlocking_inboundTakesPrecedence() {
+            Partner existing = createPartner(1L, "BTH-001", "兼用取引先", "BOTH");
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L))
+                    .thenReturn(Optional.of("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND"));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND");
+
+            // inboundで即ブロックされ、outbound checker は評価されない
+            verify(outboundChecker, never()).findBlockingReason(any());
+            verify(partnerRepository, never()).save(any());
         }
 
         @Test
