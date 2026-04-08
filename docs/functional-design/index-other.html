@@ -984,7 +984,7 @@ RETURNING id;             -- 明細INSERT用にIDを取得</code></pre>
     :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
     :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
     :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
-    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    true,                 -- Blob移動失敗フラグ（悲観デフォルトtrueで初期化、Blob移動成功時にfalseへUPDATE / Issue #374）
     :warehouseId,         -- 取り込み対象倉庫ID
     NOW(),                -- 実行日時
     :currentUserId        -- 実行ユーザーID
@@ -1081,8 +1081,11 @@ private Long id;</code></pre>
 │                                                                 │
 │  [トランザクション外]                                              │
 │  8. Blob ファイルを pending → processed へ移動                   │
-│     → 移動失敗時: if_executions の blob_move_failed を                │
-│       true に UPDATE（別トランザクション）+ ERROR ログ出力           │
+│     → 成功時: 独立トランザクション（TransactionTemplate）で        │
+│       if_executions.blob_move_failed を false へ UPDATE             │
+│     → 失敗時: 悲観デフォルト true のまま残留 + ERROR ログ出力        │
+│       リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済           │
+│     ※ Issue #374: tx1 コミット時は blob_move_failed=true で確定     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
 <h3>4.2 1ファイル = 1トランザクション</h3>
@@ -1128,7 +1131,7 @@ if (grouped.isEmpty() &amp;&amp; request.getMode() == ImportMode.SUCCESS_ONLY) {
 <thead><tr><th>障害パターン</th><th>ロールバック範囲</th><th>ファイル状態</th><th>復旧</th></tr></thead>
 <tbody>
 <tr><td>DB INSERT中の例外</td><td>伝票・明細・履歴全てロールバック</td><td>pending に残留</td><td>ユーザーが再度取り込み操作</td></tr>
-<tr><td>Blob移動失敗（DB登録成功後）</td><td>ロールバックなし（DB確定済み）</td><td>pending に残留</td><td>手動でprocessedへ移動 or 履歴で確認</td></tr>
+<tr><td>Blob移動失敗（DB登録成功後）</td><td>ロールバックなし（DB確定済み）</td><td>pending に残留</td><td><code>blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済。手動対応時は履歴確認のうえファイル移動</td></tr>
 <p></tbody><br></table></p>
 <p>詳細は <a href="../architecture-design/09-interface-architecture.md#74-トランザクション制御" target="_blank">09-interface-architecture.md セクション7.4</a> を参照。</p>
 <hr>
@@ -1270,7 +1273,7 @@ for (InboundSlipKey key : grouped.keySet()) {
 <thead><tr><th>#</th><th>テストケース</th><th>検証内容</th></tr></thead>
 <tbody>
 <tr><td>T-01</td><td>DB INSERT中の例外</td><td>全伝票・全明細・履歴がロールバックされること。ファイルはpendingに残留</td></tr>
-<tr><td>T-02</td><td>Blob移動失敗</td><td>DB登録は確定済み。<code>blob_move_failed=true</code> で履歴が更新されること</td></tr>
+<tr><td>T-02</td><td>Blob移動失敗</td><td>DB登録は確定済み。<code>blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留し、catch ブロックで追加の save が実行されないこと（Issue #374）</td></tr>
 <tr><td>T-03</td><td>Blob読み取り失敗</td><td>リトライ（3回）後にエラーレスポンスが返ること</td></tr>
 <tr><td>T-04</td><td>バリデーション後にマスタが変更された場合</td><td>取り込み実行時の再バリデーションでエラーとなること</td></tr>
 <p></tbody><br></table></p>
@@ -1519,7 +1522,7 @@ RETURNING id;             -- 明細INSERT用に取得</code></pre>
     :mode,                -- 'SUCCESS_ONLY' or 'DISCARD'
     :status,              -- 'COMPLETED' or 'DISCARDED' or 'FAILED'
     :errorMessage,        -- エラーメッセージ（FAILED時のみ、それ以外はNULL）
-    false,                -- Blob移動失敗フラグ（初期値false、移動失敗時にUPDATE）
+    true,                 -- Blob移動失敗フラグ（悲観デフォルトtrueで初期化、Blob移動成功時にfalseへUPDATE / Issue #374）
     :warehouseId,         -- 取り込み対象倉庫ID
     NOW(),                -- 実行日時
     :currentUserId        -- 実行ユーザーID
@@ -1624,7 +1627,7 @@ outboundSlipRepository.flush();  // バッチINSERT即時実行</code></pre>
 <thead><tr><th>パターン</th><th>影響</th><th>リカバリ</th></tr></thead>
 <tbody>
 <tr><td>DB INSERT中の例外</td><td>全伝票ロールバック。ファイルは <code>pending</code> に残留</td><td>ユーザーが原因を確認し再操作</td></tr>
-<tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は確定済み。ファイルが <code>pending</code> に残留</td><td><code>if_executions</code> に <code>blob_move_failed = true</code> を記録。手動でファイル移動</td></tr>
+<tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は確定済み。ファイルが <code>pending</code> に残留</td><td><code>if_executions.blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済。手動対応する場合は取り込み履歴確認のうえファイル移動</td></tr>
 <tr><td>アプリ再起動（トランザクション中）</td><td>未コミット分はロールバック。ファイルは <code>pending</code> に残留</td><td>ユーザーが再操作</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -1746,7 +1749,7 @@ for (String key : grouped.keySet()) {
 <tr><td>E-02</td><td>伝票番号重複</td><td>UNIQUE制約違反が発生した場合にトランザクションがロールバックされること</td></tr>
 <tr><td>E-03</td><td>採番上限</td><td>同一日付で9999件超の採番でエラーとなること</td></tr>
 <tr><td>E-04</td><td>Blob読み取り失敗</td><td>Blob Storage接続エラー時にリトライ後、適切なエラーメッセージが返却されること</td></tr>
-<tr><td>E-05</td><td>Blob移動失敗</td><td>DB登録成功後にBlob移動が失敗した場合、<code>if_executions.blob_move_failed = true</code> が記録されること</td></tr>
+<tr><td>E-05</td><td>Blob移動失敗</td><td>DB登録成功後にBlob移動が失敗した場合、<code>if_executions.blob_move_failed</code> が悲観デフォルト <code>true</code> のまま残留し、catch ブロックで追加 save が行われないこと（Issue #374）</td></tr>
 <tr><td>E-06</td><td>再バリデーション不一致</td><td>バリデーション後〜取り込み実行間にマスタが変更された場合、再バリデーションでエラーが検出されること</td></tr>
 <tr><td>E-07</td><td>文字コード不正</td><td>UTF-8以外のファイルでL1バリデーションエラーとなること</td></tr>
 <p></tbody><br></table></p>

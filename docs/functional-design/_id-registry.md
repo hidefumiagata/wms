@@ -486,6 +486,7 @@
 | BAT ID | バッチ名 | 設計書 | 対応API |
 |--------|---------|--------|---------|
 | BAT-001 | 日替処理 | BAT-01-daily-close.md | API-BAT-001 |
+| BAT-IF-RECONCILE | I/F Blob移動リカバリ | BAT-IF-RECONCILE.md（未作成、Issue #440） | — |
 
 ### 3.5 I/F ID一覧
 
@@ -512,7 +513,7 @@
 | WMS-BAT | BAT-001〜002 | API-BAT-001〜003 | RPT-17 | BAT-001 | — |
 | WMS-SYS | SYS-001 | API-SYS-001〜003 | — | — | — |
 | WMS-RPT | RPT-001〜018 | API-RPT-001〜018 | RPT-01〜18 | — | — |
-| WMS-IF | IF-001〜003 | API-IF-001〜004 | — | — | IFX-001〜002 |
+| WMS-IF | IF-001〜003 | API-IF-001〜004 | — | BAT-IF-RECONCILE | IFX-001〜002 |
 
 ---
 

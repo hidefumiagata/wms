@@ -805,7 +805,7 @@ product_name    varchar NOT NULL          -- 登録時コピー</code></pre>
 <tr><td><code>mode</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>実行モード: <code>SUCCESS_ONLY</code>(成功行のみ取り込み) / <code>DISCARD</code>(全件破棄)</td></tr>
 <tr><td><code>status</code></td><td>varchar(20)</td><td>NOT NULL</td><td>—</td><td>実行状態: <code>COMPLETED</code>(取り込み成功) / <code>DISCARDED</code>(全件破棄) / <code>FAILED</code>(取り込み失敗)</td></tr>
 <tr><td><code>error_message</code></td><td>text</td><td>NULL</td><td>—</td><td>エラー発生時のメッセージ（FAILED時のみ）</td></tr>
-<tr><td><code>blob_move_failed</code></td><td>boolean</td><td>NOT NULL</td><td>false</td><td>Blob移動失敗フラグ</td></tr>
+<tr><td><code>blob_move_failed</code></td><td>boolean</td><td>NOT NULL</td><td><strong>true</strong></td><td>Blob移動失敗フラグ。悲観デフォルト <code>true</code> で初期化し、Blob移動成功時に <code>false</code> へ更新。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象選択に使用</td></tr>
 <tr><td><code>warehouse_id</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>FK → warehouses.id（取り込み対象倉庫）</td></tr>
 <tr><td><code>executed_at</code></td><td>timestamptz</td><td>NOT NULL</td><td>now()</td><td>実行日時</td></tr>
 <tr><td><code>executed_by</code></td><td>bigint</td><td>NOT NULL</td><td>—</td><td>実行ユーザー（FK → users.id）</td></tr>

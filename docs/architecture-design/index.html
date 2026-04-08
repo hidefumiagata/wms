@@ -11557,23 +11557,34 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
 <h3>7.4 トランザクション制御</h3>
 <div class="mermaid">flowchart TD
     START["取り込み実行開始"]
-    BLOB_READ["Blob読み取り\n（トランザクション外）"]
-    VALIDATE["再バリデーション\n（トランザクション外）"]
-    TX_START["@Transactional 開始"]
-    DB_INSERT["DB登録\n（inbound_slips / outbound_slips）"]
-    HISTORY["取り込み履歴保存\n（if_executions）"]
-    TX_COMMIT["@Transactional コミット"]
-    BLOB_MOVE["Blobファイル移動\n（トランザクション外）"]
+    BLOB_READ["Blob読み取り<br/>（トランザクション外）"]
+    VALIDATE["再バリデーション<br/>（トランザクション外）"]
+    TX1_START["tx1: TransactionTemplate 開始"]
+    DB_INSERT["DB登録<br/>（inbound_slips / outbound_slips）"]
+    HISTORY["取り込み履歴保存<br/>（if_executions）<br/>※悲観デフォルト blob_move_failed=true"]
+    TX1_COMMIT["tx1 コミット"]
+    BLOB_MOVE["Blobファイル移動<br/>（トランザクション外）"]
+    TX2["tx2: 独立トランザクションで<br/>blob_move_failed=false に更新"]
     END_OK["完了（成功）"]
     ROLLBACK["ロールバック"]
-    BLOB_MOVE_FAIL["Blob移動失敗\n※DB登録は確定済み\n→ エラーログ出力\n→ pendingにファイル残留"]
+    BLOB_MOVE_FAIL["Blob移動/フラグ更新失敗<br/>※DB登録は確定済み<br/>※悲観デフォルト true のまま残留<br/>→ ERRORログ出力<br/>→ リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済"]
 
-    START --> BLOB_READ --> VALIDATE --> TX_START --> DB_INSERT --> HISTORY --> TX_COMMIT
-    TX_COMMIT --> BLOB_MOVE
-    BLOB_MOVE -->|成功| END_OK
+    START --> BLOB_READ --> VALIDATE --> TX1_START --> DB_INSERT --> HISTORY --> TX1_COMMIT
+    TX1_COMMIT --> BLOB_MOVE
+    BLOB_MOVE -->|成功| TX2 --> END_OK
     BLOB_MOVE -->|失敗| BLOB_MOVE_FAIL
+    TX2 -->|失敗| BLOB_MOVE_FAIL
     DB_INSERT -->|例外| ROLLBACK
     HISTORY -->|例外| ROLLBACK</div>
+<p><strong>悲観デフォルト方針（Issue #374）</strong>:</p>
+<ul><li style="margin-left:0px"><code>if_executions.blob_move_failed</code> はカラムレベルで <code>DEFAULT TRUE</code>、アプリ層の</li></ul>
+<p>  <code>IfExecution</code> ビルダーでも <code>true</code> を明示設定する。</p>
+<ul><li style="margin-left:0px">tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間で</li></ul>
+<p>  アプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で<br>  残ることが保証される。</p>
+<ul><li style="margin-left:0px">Blob 移動が成功した場合のみ、独立トランザクション（<code>TransactionTemplate</code>）で</li></ul>
+<p>  <code>blob_move_failed=false</code> に更新する。<code>@Transactional</code> を使わず <code>TransactionTemplate</code><br>  を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。</p>
+<ul><li style="margin-left:0px">悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）</li></ul>
+<p>  の対象となり、Blob の移動状態を突き合わせて自動復旧する。</p>
 <p><strong>設計判断: DB登録とBlob移動の順序</strong></p>
 <table>
 <thead><tr><th>順序</th><th>方式</th><th>採用</th><th>理由</th></tr></thead>
@@ -11613,7 +11624,7 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
 <tr><td><strong>CSVパースエラー</strong></td><td>CSV読み取り・解析</td><td>L1バリデーションエラーとして返却</td></tr>
 <tr><td><strong>バリデーションエラー</strong></td><td>各行のバリデーション</td><td>行単位のエラー詳細を返却。ユーザーがSUCCESS_ONLY/DISCARDを選択</td></tr>
 <tr><td><strong>DB登録エラー</strong></td><td>トランザクション内の登録処理</td><td>トランザクションロールバック。ユーザーにエラー表示</td></tr>
-<tr><td><strong>Blob移動エラー</strong></td><td>processed移動</td><td>ERRORログ出力。DB登録は確定済み。取り込み履歴に移動失敗フラグを記録</td></tr>
+<tr><td><strong>Blob移動エラー</strong></td><td>processed移動</td><td>ERRORログ出力。DB登録は確定済み。<code>blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留し、リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済</td></tr>
 <p></tbody><br></table></p>
 <h3>8.2 リトライ方針</h3>
 <table>
@@ -11649,7 +11660,7 @@ wms:
 <tbody>
 <tr><td>Blob Storage一時障害</td><td>ファイル一覧取得・バリデーション・取り込み実行が全て不可</td><td>Blob Storageの復旧を待って再操作</td></tr>
 <tr><td>DB登録中のエラー</td><td>トランザクションロールバック。ファイルはpendingに残留</td><td>原因調査後にユーザーが再度取り込み操作</td></tr>
-<tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は完了。ファイルがpendingに残留。取り込み履歴に記録あり</td><td>手動でファイルをprocessedに移動。または取り込み履歴を確認し二重取り込みでないことを確認の上、再取り込みは不要</td></tr>
+<tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は完了。ファイルがpendingに残留。<code>blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留</td><td>リカバリバッチ（BAT-IF-RECONCILE, Issue #440）が <code>blob_move_failed=true</code> の履歴を走査し、Blob 実体状態と突き合わせて自動復旧する。手動対応する場合は取り込み履歴を確認し二重取り込みでないことを確認のうえでファイルを processed へ移動、フラグを false に更新</td></tr>
 <tr><td>取り込み中のアプリケーション再起動</td><td>トランザクション未コミットの場合はロールバック。ファイルはpendingに残留</td><td>ユーザーが再度取り込み操作</td></tr>
 <p></tbody><br></table></p>
 <hr>
