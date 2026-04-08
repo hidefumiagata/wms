@@ -438,6 +438,63 @@ class LocationServiceTest {
         }
 
         @Test
+        @DisplayName("SC-FAC11: 棚卸中ロケーションの無効化はCANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESSをスロー")
+        void toggleActive_deactivate_stocktakeLocked_throwsBusinessRuleViolation() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.setIsStocktakingLocked(true);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> locationService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageContaining("棚卸中のため無効化できません")
+                    .extracting("errorCode").isEqualTo("CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS");
+            verify(locationRepository, never()).save(any());
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+        }
+
+        @Test
+        @DisplayName("SC-FAC11: 棚卸中ロケーションでも no-op (有効→有効) はエラーにならない")
+        void toggleActive_stocktakeLocked_noOp_doesNotThrow() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.setIsStocktakingLocked(true);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            Location result = locationService.toggleActive(1L, true, 0);
+
+            assertThat(result.getIsActive()).isTrue();
+            verify(locationRepository, never()).save(any());
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+        }
+
+        @Test
+        @DisplayName("SC-FAC11: 棚卸中ロケーションでも有効化(false→true)は許可される")
+        void toggleActive_stocktakeLocked_activate_success() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.deactivate();
+            existing.setIsStocktakingLocked(true);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(locationRepository.save(any(Location.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            Location result = locationService.toggleActive(1L, true, 0);
+
+            assertThat(result.getIsActive()).isTrue();
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+        }
+
+        @Test
+        @DisplayName("SC-FAC11: 棚卸中チェックは在庫チェックより先に評価される")
+        void toggleActive_stocktakeLocked_takesPrecedenceOverInventory() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.setIsStocktakingLocked(true);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> locationService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS");
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+        }
+
+        @Test
         @DisplayName("バージョン不一致で事前チェックによるOptimisticLockConflictExceptionをスロー")
         void toggleActive_versionMismatch_throwsException() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");

@@ -127,10 +127,15 @@ public class LocationService {
             log.info("Location toggleActive no-op: id={}, isActive={}", id, isActive);
             return location;
         }
-        // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
+        // 無効化時: 棚卸中のロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS)
         // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
-        // TODO: stocktake_locations テーブル実装後、棚卸中チェック
-        //       (CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS 422) を追加する
+        // 在庫チェックより先に評価することで、棚卸中なら在庫チェックをスキップする
+        if (!isActive && Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
+            throw new BusinessRuleViolationException(
+                    "CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS",
+                    "棚卸中のため無効化できません (id=" + id + ")");
+        }
+        // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
         if (!isActive && inventoryService.hasInventoryByLocationId(id)) {
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
