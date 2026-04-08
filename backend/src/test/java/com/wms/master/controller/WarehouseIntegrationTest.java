@@ -30,6 +30,8 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() {
         // テスト用に作成した倉庫をクリーンアップ（テストデータのWH001は残す）
+        // 在庫 → ロケーション → エリア → 棟 → 倉庫 の順で FK 制約を守る
+        jdbcTemplate.update("DELETE FROM inventories WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM locations WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM areas WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM buildings WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
@@ -333,6 +335,45 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-WH01: 在庫が存在する倉庫の無効化 → 422 CANNOT_DEACTIVATE_HAS_INVENTORY")
+        void toggle_deactivate_withInventory_returns422() throws Exception {
+            // 倉庫/棟/エリア/ロケーション を作成
+            Long whId = createTestWarehouse("ITWH", "在庫あり無効化テスト");
+            Long buildingId = createTestBuilding(whId, "A", "A棟");
+            Long areaId = createTestArea(buildingId, "A01", "在庫エリア", "AMBIENT", "STOCK");
+            Long locationId = createTestLocation(areaId, "A-01-A01-01-01-01", "在庫保管ロケ");
+
+            // 在庫を直接 INSERT
+            Long productId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products ORDER BY id LIMIT 1", Long.class);
+            jdbcTemplate.update(
+                    "INSERT INTO inventories (warehouse_id, location_id, product_id, unit_type, " +
+                            "quantity, allocated_qty, updated_at) " +
+                            "VALUES (?, ?, ?, 'PIECE', 10, 0, now())",
+                    whId, locationId, productId);
+
+            // toggle-active で無効化リクエスト
+            Integer version = getWarehouseVersion(whId);
+            String body = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            // 422 + CANNOT_DEACTIVATE_HAS_INVENTORY
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_INVENTORY");
+
+            // DB検証: is_active は true のまま
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM warehouses WHERE id = ?", Boolean.class, whId);
+            assertThat(isActive).isTrue();
+        }
+
+        @Test
         @DisplayName("楽観ロック競合 → 409")
         void toggle_versionMismatch_returns409() throws Exception {
             Long whId = createTestWarehouse("ITTC", "ロック競合テスト");
@@ -589,5 +630,36 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
     private Integer getWarehouseVersion(Long id) {
         return jdbcTemplate.queryForObject(
                 "SELECT version FROM warehouses WHERE id = ?", Integer.class, id);
+    }
+
+    private Long createTestBuilding(Long warehouseId, String code, String name) throws Exception {
+        String body = String.format("""
+                { "warehouseId": %d, "buildingCode": "%s", "buildingName": "%s" }
+                """, warehouseId, code, name);
+        ResponseEntity<String> response = postJson("/api/v1/master/buildings", body, adminHeaders);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        return parseJson(response.getBody()).get("id").asLong();
+    }
+
+    private Long createTestArea(Long buildingId, String code, String name,
+                                String storageCondition, String areaType) throws Exception {
+        String body = String.format("""
+                {
+                    "buildingId": %d, "areaCode": "%s", "areaName": "%s",
+                    "storageCondition": "%s", "areaType": "%s"
+                }
+                """, buildingId, code, name, storageCondition, areaType);
+        ResponseEntity<String> response = postJson("/api/v1/master/areas", body, adminHeaders);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        return parseJson(response.getBody()).get("id").asLong();
+    }
+
+    private Long createTestLocation(Long areaId, String code, String name) throws Exception {
+        String body = String.format("""
+                { "areaId": %d, "locationCode": "%s", "locationName": "%s" }
+                """, areaId, code, name);
+        ResponseEntity<String> response = postJson("/api/v1/master/locations", body, adminHeaders);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        return parseJson(response.getBody()).get("id").asLong();
     }
 }

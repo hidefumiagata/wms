@@ -32,6 +32,8 @@ class LocationIntegrationTest extends IntegrationTestBase {
     @BeforeEach
     void setUp() throws Exception {
         // テスト用データのクリーンアップ
+        // 在庫 → ロケーション → エリア → 棟 → 倉庫 の順で FK 制約を守る
+        jdbcTemplate.update("DELETE FROM inventories WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM locations WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM areas WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
         jdbcTemplate.update("DELETE FROM buildings WHERE warehouse_id IN (SELECT id FROM warehouses WHERE warehouse_code LIKE 'IT%')");
@@ -328,6 +330,40 @@ class LocationIntegrationTest extends IntegrationTestBase {
             Boolean isActive = jdbcTemplate.queryForObject(
                     "SELECT is_active FROM locations WHERE id = ?", Boolean.class, locationId);
             assertThat(isActive).isFalse();
+        }
+
+        @Test
+        @DisplayName("SC-FAC10: 在庫が存在するロケーションの無効化 → 422 CANNOT_DEACTIVATE_HAS_INVENTORY")
+        void toggle_deactivate_withInventory_returns422() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-04-03-01", "在庫ありロケ");
+
+            // 在庫を直接 INSERT
+            Long productId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products ORDER BY id LIMIT 1", Long.class);
+            jdbcTemplate.update(
+                    "INSERT INTO inventories (warehouse_id, location_id, product_id, unit_type, " +
+                            "quantity, allocated_qty, updated_at) " +
+                            "VALUES (?, ?, ?, 'PIECE', 5, 0, now())",
+                    testWarehouseId, locationId, productId);
+
+            Integer version = getLocationVersion(locationId);
+            String body = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_HAS_INVENTORY");
+
+            // DB検証: is_active は true のまま
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM locations WHERE id = ?", Boolean.class, locationId);
+            assertThat(isActive).isTrue();
         }
 
         @Test
