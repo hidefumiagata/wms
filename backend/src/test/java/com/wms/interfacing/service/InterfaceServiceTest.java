@@ -393,6 +393,8 @@ class InterfaceServiceTest {
             assertThat(result.successCount()).isEqualTo(1);
             assertThat(result.mode()).isEqualTo("SUCCESS_ONLY");
             verify(inboundSlipRepository).saveAll(anyList());
+            // Regression guard (#374): tx1(saveExecution) + tx2(flag更新) = 2回
+            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
         }
 
         @Test
@@ -464,19 +466,11 @@ class InterfaceServiceTest {
         }
 
         @Test
-        @DisplayName("異常系 — Blob移動失敗時は悲観デフォルトtrueのまま、catchブロックで追加saveしない (#374)")
-        void importFile_blobMoveFailed_noAdditionalSave() {
-            setupTransactionTemplate();
+        @DisplayName("異常系 — Blob移動失敗でもtx1確定しflagはtrueのまま残る (#374)")
+        void importFile_blobMoveFailed_flagRemainsTrueAndRowPersisted() {
+            stubDiscardBasics("INB-PLAN-001.csv");
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
-
-            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
-            when(blobStorageClient.downloadFile("inbound-plan", fileName))
-                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
-
-            CsvParser.CsvParseResult parseResult =
-                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
-            when(csvParser.parse(any())).thenReturn(parseResult);
 
             IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
@@ -490,8 +484,63 @@ class InterfaceServiceTest {
             assertThat(result.status()).isEqualTo("DISCARDED");
             // saveExecution 内の1回のみ。catch ブロックでの追加 save は削除済み（悲観デフォルトと同値のため不要）
             verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            // tx1(saveExecution) の 1回のみ実行される。tx2(flag更新) は moveBlob が先に例外を投げるため呼ばれない
+            verify(transactionTemplate, org.mockito.Mockito.times(1)).execute(any());
             // 悲観デフォルトのまま残ること
             assertThat(execution.getBlobMoveFailed()).isTrue();
+        }
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("異常系 — Blob移動成功後のflag更新tx失敗でもtx1は確定しflagはtrueのまま (#374) [DISCARD]")
+        void importFile_discard_flagUpdateTxFailed_rowPersistsWithFlagTrue() {
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("inbound-plan", fileName))
+                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
+            CsvParser.CsvParseResult parseResult =
+                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
+            when(csvParser.parse(any())).thenReturn(parseResult);
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+
+            // Blob移動は成功
+            when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
+                    .thenReturn("processed/path");
+
+            // transactionTemplate.execute: 1回目(tx1=saveExecution)は通す、2回目(tx2=flag更新)は例外
+            when(transactionTemplate.execute(any()))
+                    .thenAnswer(inv -> {
+                        org.springframework.transaction.support.TransactionCallback<?> callback = inv.getArgument(0);
+                        return callback.doInTransaction(null);
+                    })
+                    .thenThrow(new RuntimeException("flag update tx failed"));
+
+            // moveBlobSafely の catch が握りつぶすので正常応答が返る
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
+
+            assertThat(result.status()).isEqualTo("DISCARDED");
+            // tx1 の saveExecution のみ。tx2 は中で例外を投げるので save 到達しない
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            // execute は 2回（tx1 成功 / tx2 throw）
+            verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
+            // flag は true のまま（moveBlobSafely 内で execution.setBlobMoveFailed(false) まで
+            // 到達せずに execute が例外を投げるため）
+            assertThat(execution.getBlobMoveFailed()).isTrue();
+        }
+
+        private void stubDiscardBasics(String fileName) {
+            setupTransactionTemplate();
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("inbound-plan", fileName))
+                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
+            CsvParser.CsvParseResult parseResult =
+                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
+            when(csvParser.parse(any())).thenReturn(parseResult);
         }
 
         @Test
@@ -529,8 +578,8 @@ class InterfaceServiceTest {
         }
 
         @Test
-        @DisplayName("悲観デフォルト — saveExecution経由のIfExecutionはblobMoveFailed=true (#374)")
-        void importFile_saveExecution_usesPessimisticDefaultTrue() {
+        @DisplayName("悲観デフォルト — saveExecution は blobMoveFailed=true / blobPath=null で新規作成する (#374)")
+        void importFile_ifExecution_createdWithPessimisticDefault() {
             setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
@@ -553,12 +602,132 @@ class InterfaceServiceTest {
 
             interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
 
-            verify(ifExecutionRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
-            // 最初の save（saveExecution 内）では悲観デフォルト true で構築されている
+            // tx1(saveExecution) + tx2(moveBlobSafely内のflag更新) = 2回
+            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(captor.capture());
             IfExecution firstArg = captor.getAllValues().get(0);
+            IfExecution secondArg = captor.getAllValues().get(1);
+
             assertThat(firstArg.getBlobMoveFailed())
-                    .as("saveExecution は悲観デフォルト true で IfExecution を作成する")
+                    .as("1回目(saveExecution) は悲観デフォルト true")
                     .isTrue();
+            assertThat(firstArg)
+                    .as("tx1 と tx2 で渡される IfExecution は別インスタンスでも同一参照でもどちらでも構わないが、"
+                            + "少なくとも tx2 は mock の返却した savedEcho でなければならない")
+                    .isNotSameAs(secondArg);
+            assertThat(firstArg.getBlobPath())
+                    .as("saveExecution の1回目引数は Blob 移動前なので blobPath は null")
+                    .isNull();
+        }
+
+        @Test
+        @DisplayName("異常系 — SUCCESS_ONLY: Blob移動失敗時もflagはtrueのまま (#374)")
+        void importFile_successOnly_blobMoveFailed_flagRemainsTrue() {
+            setupTransactionTemplate();
+            stubSuccessOnlyInboundBasics();
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+            when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
+                    .thenThrow(new RuntimeException("Blob move failed"));
+
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-001", fileName, warehouseId, "SUCCESS_ONLY");
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+            assertThat(result.successCount()).isEqualTo(1);
+            // tx1 の saveExecution 1回のみ。slips の saveAll はカウント外。
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            // tx1(handleImport 内の execute) の1回のみ
+            verify(transactionTemplate, org.mockito.Mockito.times(1)).execute(any());
+            // 悲観デフォルトのまま
+            assertThat(execution.getBlobMoveFailed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("正常系 — SUCCESS_ONLY: Blob移動成功時にflagがfalseに更新される独立tx (#374)")
+        void importFile_successOnly_blobMoveSuccess_flagUpdatedInIndependentTx() {
+            setupTransactionTemplate();
+            stubSuccessOnlyInboundBasics();
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+            when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
+                    .thenReturn("inbound-plan/processed/2026/03/20/xxx.csv");
+
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-001", fileName, warehouseId, "SUCCESS_ONLY");
+
+            assertThat(result.status()).isEqualTo("COMPLETED");
+            // tx1(saveExecution) + tx2(flag更新) = 2回（slips の saveAll はカウント外）
+            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
+            // tx1(handleImport) と tx2(moveBlobSafely) の 2回
+            verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
+            assertThat(execution.getBlobMoveFailed()).isFalse();
+        }
+
+        /**
+         * IFX-001 SUCCESS_ONLY 経路の共通スタブ。
+         * マスタ参照・CSVパース・バリデーション・slips 構築までをモック化する。
+         */
+        private void stubSuccessOnlyInboundBasics() {
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
+            String csvContent = "partner_code,planned_date,product_code,unit_type,planned_qty,"
+                    + "lot_number,expiry_date,note\nSUP-0001,2026-03-25,PRD-001,CASE,100,,,\n";
+            when(blobStorageClient.downloadFile("inbound-plan", fileName))
+                    .thenReturn(new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8)));
+
+            String[] header = {"partner_code", "planned_date", "product_code",
+                    "unit_type", "planned_qty", "lot_number", "expiry_date", "note"};
+            List<String[]> dataRows = List.<String[]>of(
+                    new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""});
+            when(csvParser.parse(any())).thenReturn(
+                    new CsvParser.CsvParseResult(header, dataRows));
+
+            Warehouse warehouse = new Warehouse();
+            warehouse.setWarehouseCode("WH-001");
+            warehouse.setWarehouseName("Warehouse 1");
+            setField(warehouse, "id", warehouseId);
+            when(warehouseRepository.findById(warehouseId)).thenReturn(Optional.of(warehouse));
+
+            Partner partner = new Partner();
+            partner.setPartnerCode("SUP-0001");
+            partner.setPartnerName("Supplier 1");
+            partner.setPartnerType(PartnerType.SUPPLIER);
+            setField(partner, "id", 1L);
+            setField(partner, "isActive", true);
+            when(partnerRepository.findByPartnerCodeIn(any())).thenReturn(List.of(partner));
+
+            Product product = new Product();
+            product.setProductCode("PRD-001");
+            product.setProductName("Product 1");
+            product.setLotManageFlag(false);
+            product.setExpiryManageFlag(false);
+            setField(product, "id", 10L);
+            setField(product, "isActive", true);
+            when(productRepository.findByProductCodeIn(any())).thenReturn(List.of(product));
+
+            when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 3, 20));
+
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
+            when(inboundPlanCsvProcessor.validate(any(), any(), any()))
+                    .thenReturn(validationResult);
+
+            InboundSlip mockSlip = InboundSlip.builder()
+                    .slipNumber("INB-20260320-0001")
+                    .slipType("NORMAL")
+                    .status("PLANNED")
+                    .build();
+            when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(List.of(mockSlip));
+            when(inboundSlipRepository.saveAll(anyList())).thenReturn(List.of(mockSlip));
         }
     }
 
