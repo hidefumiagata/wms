@@ -877,7 +877,7 @@ flowchart TD
 | `404` | `LOCATION_NOT_FOUND` | 指定のロケーションが存在しない |
 | `409` | `INBOUND_INVALID_STATUS` | ヘッダーステータスが `INSPECTING` / `PARTIAL_STORED` でない |
 | `409` | `INBOUND_LINE_NOT_INSPECTED` | 対象明細の `line_status` が `INSPECTED` でない（`PENDING` または `STORED`） |
-| `409` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 指定ロケーションが棚卸中のためロック中 |
+| `422` | `INVENTORY_STOCKTAKE_IN_PROGRESS` | 指定ロケーションが棚卸中のためロック中 |
 | `422` | `LOCATION_PRODUCT_MISMATCH` | 入庫先ロケーションに既に別商品の在庫が存在する |
 | `422` | `INBOUND_LOCATION_AREA_MISMATCH` | 指定ロケーションが入荷エリアに属さない |
 
@@ -902,7 +902,7 @@ flowchart TD
     CHECK_LOC -->|OK| CHECK_AREA[入荷エリアチェック\nロケーションの所属エリアの\narea_type = INBOUND?]
     CHECK_AREA -->|NG| ERR_AREA[422 INBOUND_LOCATION_AREA_MISMATCH]
     CHECK_AREA -->|OK| CHECK_STOCKTAKE[棚卸ロックチェック\nstocktake_headers WHERE\nlocation_id = ? AND status = STARTED]
-    CHECK_STOCKTAKE -->|ロック中| ERR_STOCKTAKE[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_STOCKTAKE -->|ロック中| ERR_STOCKTAKE[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_STOCKTAKE -->|OK| CHECK_LOC_PRODUCT{ロケーション単一商品チェック\nSELECT product_id FROM inventories\nWHERE location_id = :locationId\nAND product_id != :productId\nLIMIT 1}
     CHECK_LOC_PRODUCT -->|別商品あり| ERR_LOC_PRODUCT[422 LOCATION_PRODUCT_MISMATCH]
     CHECK_LOC_PRODUCT -->|OK| UPSERT_INV
