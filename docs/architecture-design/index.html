@@ -6102,6 +6102,14 @@ resource &quot;azurerm_container_app&quot; &quot;backend&quot; {
         secret_name = &quot;jwt-secret-key&quot;
       }
       env {
+        name  = &quot;JWT_ACCESS_TOKEN_EXPIRATION&quot;
+        value = tostring(var.jwt_access_token_expiration_ms)
+      }
+      env {
+        name  = &quot;JWT_REFRESH_TOKEN_EXPIRATION&quot;
+        value = tostring(var.jwt_refresh_token_expiration_ms)
+      }
+      env {
         name        = &quot;ACS_CONNECTION_STRING&quot;
         secret_name = &quot;acs-connection-string&quot;
       }
@@ -9192,7 +9200,9 @@ export function useSessionTimeout() {
 <hr>
 <h2>15. 設定パラメータ一覧</h2>
 <h3>15.1 環境変数</h3>
-<blockquote><strong>SSOT</strong>: 認証関連の環境変数（<code>JWT_SECRET_KEY</code>, <code>JWT_ACCESS_TOKEN_EXPIRATION</code>, <code>JWT_REFRESH_TOKEN_EXPIRATION</code>, <code>CORS_ALLOWED_ORIGINS</code>, <code>SPRING_PROFILES_ACTIVE</code>, <code>ACS_CONNECTION_STRING</code>, <code>PASSWORD_RESET_BASE_URL</code> 等）の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。</blockquote>
+<blockquote><strong>SSOT</strong>: 認証関連の環境変数（<code>JWT_SECRET_KEY</code>, <code>JWT_ACCESS_TOKEN_EXPIRATION</code>, <code>JWT_REFRESH_TOKEN_EXPIRATION</code>, <code>CORS_ALLOWED_ORIGINS</code>, <code>SPRING_PROFILES_ACTIVE</code>, <code>ACS_CONNECTION_STRING</code> 等）の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。</blockquote>
+<p>></p>
+<blockquote><strong>未配線</strong>: パスワードリセットリンクのベースURL（旧 <code>PASSWORD_RESET_BASE_URL</code>）はバックエンド未実装のため、本リリースでは Spring Boot プロパティ <code>wms.email.password-reset-base-url</code> のデフォルト値（<code>http://localhost:5173</code>）が使われる。実装は別 Issue で対応。</blockquote>
 <h3>15.2 application.yml パラメータ</h3>
 <table>
 <thead><tr><th>パラメータ</th><th>デフォルト</th><th>説明</th></tr></thead>
@@ -12833,10 +12843,10 @@ jwt:
 <pre><code class="lang-java">@Component
 public class JwtTokenProvider {
 
-    @Value(&quot;${jwt.secret}&quot;)
+    @Value(&quot;${jwt.secret-key}&quot;)
     private String jwtSecret;
 
-    @Value(&quot;${jwt.expiration-ms}&quot;)
+    @Value(&quot;${jwt.access-token-expiration}&quot;)
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
@@ -15319,12 +15329,10 @@ az acr credential show --name acrwms
 <tr><td><code>AZURE_STORAGE_ACCOUNT_NAME</code></td><td>Blob Storageアカウント名（Managed Identity）</td><td>No</td><td><code>wms.storage.account-name</code></td><td><code>devstorageaccount</code></td><td><code>stwmsprdeast</code></td></tr>
 <tr><td><code>ACS_CONNECTION_STRING</code></td><td>Azure Communication Services接続文字列</td><td>Yes</td><td><code>wms.acs.connection-string</code></td><td>(環境依存)</td><td>(環境依存)</td></tr>
 <tr><td><code>ACS_SENDER_ADDRESS</code></td><td>メール送信元アドレス</td><td>No</td><td><code>wms.acs.sender-address</code></td><td><code>DoNotReply@...</code></td><td><code>DoNotReply@...</code></td></tr>
-<tr><td><code>PASSWORD_RESET_BASE_URL</code></td><td>パスワードリセットリンクのベースURL</td><td>No</td><td><code>wms.email.password-reset-base-url</code></td><td><code>http://localhost:5173</code></td><td>Front Door URL</td></tr>
 <tr><td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td><td>Application Insights接続文字列</td><td>No</td><td>(自動検出)</td><td>(環境依存)</td><td>(環境依存)</td></tr>
 <tr><td><code>AZURE_FRONTDOOR_ID</code></td><td>Front Door ID（X-Azure-FDIDヘッダー検証用）</td><td>No</td><td><code>wms.frontdoor.id</code></td><td>(未設定)</td><td>(Front Door ID)</td></tr>
 <p></tbody><br></table></p>
 <blockquote><strong>※1 <code>JWT_SECRET_KEY</code> の dev デフォルト値について</strong>: 上記文字列はローカル開発専用フォールバック値であり、<strong>公開リポジトリにコミットされている</strong>ため秘密鍵としての強度を持たない。dev/demo/loadtest/prd の各デプロイ環境では、必ず GitHub Secrets (<code>JWT_SECRET_DEV</code> / <code>JWT_SECRET_PRD</code>) 経由で個別生成した 256bit 以上のランダム値を上書きすること。<strong>この値を実環境で使用することは禁止</strong>。</blockquote>
-<p>></p>
 <blockquote><strong>※2 環境変数とプロパティのバインディング</strong>: 上記「application.yml プロパティ」列はあくまで Spring Boot 上の対応プロパティを示す。Spring Boot は環境変数を自動マッピングするわけではなく、<code>application-*.yml</code> 内で明示的に <code>${ENV_VAR_NAME}</code> 形式で参照することで初めて該当プロパティにバインドされる。</blockquote>
 <h2>2. フロントエンド環境変数</h2>
 <p>Vite ビルド時に埋め込まれる環境変数。</p>
