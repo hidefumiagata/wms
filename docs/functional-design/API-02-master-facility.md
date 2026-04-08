@@ -2014,7 +2014,7 @@ flowchart TD
     G --> Z([200 OK])
     F -- Yes --> H{当該ロケーションに在庫が存在するか?\nSELECT COUNT FROM inventories\nWHERE location_id = ? AND quantity > 0}
     H -- 在庫あり --> H1[422 CANNOT_DEACTIVATE_HAS_INVENTORY]
-    H -- 在庫なし --> I{当該ロケーションが棚卸中か?\nSELECT COUNT FROM stocktake_locations\nWHERE location_id = ? AND status = 'IN_PROGRESS'}
+    H -- 在庫なし --> I{当該ロケーションが棚卸中か?\nSELECT is_stocktaking_locked FROM locations\nWHERE id = ?}
     I -- 棚卸中 --> I1[422 CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS]
     I -- 棚卸中でない --> J[isActive = false で UPDATE\nupdated_by に認証ユーザーIDをセット]
     J --> Z
@@ -2025,13 +2025,13 @@ flowchart TD
 | # | ルール |
 |---|--------|
 | BR-001 | 在庫チェックは `inventories.quantity > 0` の件数で判定する |
-| BR-002 | 棚卸中チェックは `stocktake_locations.status = 'IN_PROGRESS'` で判定する |
+| BR-002 | 棚卸中チェックは `locations.is_stocktaking_locked = true` で判定する（棚卸開始時に true、確定時に false にセットされる。詳細は [data-model/02-master-tables.md](../data-model/02-master-tables.md) を参照） |
 | BR-003 | 在庫チェックを先に行い、問題なければ棚卸中チェックを行う（チェック順序を統一） |
 | BR-004 | 有効化（`isActive=true`）は制約なく実行可能 |
 
 ### 5. 補足事項
 
-- 棚卸機能（`stocktake_locations` テーブル）は棚卸管理機能フェーズで実装する。それ以前は棚卸中チェックは常に「棚卸中でない」として扱う（フラグで制御可能にしておく）。
+- 棚卸ロック状態は `locations.is_stocktaking_locked` カラムで管理する（SSOT: [data-model/02-master-tables.md](../data-model/02-master-tables.md)）。棚卸開始時に `true`、確定時に `false` にセットされる。棚卸管理機能フェーズの実装前は当該カラムは常に `false` のため、棚卸中チェックは実質的に「棚卸中でない」として扱われる。
 
 ---
 

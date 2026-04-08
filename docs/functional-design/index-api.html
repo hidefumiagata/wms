@@ -2274,7 +2274,7 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
     G --> Z([200 OK])
     F -- Yes --> H{当該ロケーションに在庫が存在するか?\nSELECT COUNT FROM inventories\nWHERE location_id = ? AND quantity > 0}
     H -- 在庫あり --> H1[422 CANNOT_DEACTIVATE_HAS_INVENTORY]
-    H -- 在庫なし --> I{当該ロケーションが棚卸中か?\nSELECT COUNT FROM stocktake_locations\nWHERE location_id = ? AND status = 'IN_PROGRESS'}
+    H -- 在庫なし --> I{当該ロケーションが棚卸中か?\nSELECT is_stocktaking_locked FROM locations\nWHERE id = ?}
     I -- 棚卸中 --> I1[422 CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS]
     I -- 棚卸中でない --> J[isActive = false で UPDATE\nupdated_by に認証ユーザーIDをセット]
     J --> Z</div>
@@ -2283,12 +2283,12 @@ GET /api/v1/master/locations?areaId=3&amp;page=0&amp;size=50</code></pre>
 <thead><tr><th>#</th><th>ルール</th></tr></thead>
 <tbody>
 <tr><td>BR-001</td><td>在庫チェックは <code>inventories.quantity &gt; 0</code> の件数で判定する</td></tr>
-<tr><td>BR-002</td><td>棚卸中チェックは <code>stocktake_locations.status = 'IN_PROGRESS'</code> で判定する</td></tr>
+<tr><td>BR-002</td><td>棚卸中チェックは <code>locations.is_stocktaking_locked = true</code> で判定する（棚卸開始時に true、確定時に false にセットされる。詳細は <a href="../data-model/02-master-tables.md" target="_blank">data-model/02-master-tables.md</a> を参照）</td></tr>
 <tr><td>BR-003</td><td>在庫チェックを先に行い、問題なければ棚卸中チェックを行う（チェック順序を統一）</td></tr>
 <tr><td>BR-004</td><td>有効化（<code>isActive=true</code>）は制約なく実行可能</td></tr>
 <p></tbody><br></table></p>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px">棚卸機能（<code>stocktake_locations</code> テーブル）は棚卸管理機能フェーズで実装する。それ以前は棚卸中チェックは常に「棚卸中でない」として扱う（フラグで制御可能にしておく）。</li></ul>
+<ul><li style="margin-left:0px">棚卸ロック状態は <code>locations.is_stocktaking_locked</code> カラムで管理する（SSOT: <a href="../data-model/02-master-tables.md" target="_blank">data-model/02-master-tables.md</a>）。棚卸開始時に <code>true</code>、確定時に <code>false</code> にセットされる。棚卸管理機能フェーズの実装前は当該カラムは常に <code>false</code> のため、棚卸中チェックは実質的に「棚卸中でない」として扱われる。</li></ul>
 <hr>
 <h2>API一覧サマリ</h2>
 <table>
