@@ -13,13 +13,8 @@ import java.util.Set;
  * 出荷モジュール側の {@link PartnerUsageChecker} 実装。
  *
  * <p>処理中の出荷伝票 (受注) が紐付いている取引先は無効化できないことを判定する
- * (API-03 BR-001)。</p>
- *
- * <p><b>ステータス対応:</b> 設計書 (API-03) では「処理中受注」を
- * {@code PENDING}/{@code ALLOCATED}/{@code PICKING}/{@code INSPECTING} と記載しているが、
- * 実装/DB制約 ({@code outbound_slips.status}) には {@code PENDING}/{@code PICKING} が
- * 存在しない。本実装では {@code SHIPPED}/{@code CANCELLED} を除く全ステータス
- * (= {@code ORDERED}, {@code PARTIAL_ALLOCATED}, {@code ALLOCATED},
+ * (API-03 §4 BR-001)。BR-001 記載のとおり {@code SHIPPED} / {@code CANCELLED}
+ * を除く全ステータス (= {@code ORDERED}, {@code PARTIAL_ALLOCATED}, {@code ALLOCATED},
  * {@code PICKING_COMPLETED}, {@code INSPECTING}) を「処理中」として扱う。</p>
  *
  * <p><b>実行順序:</b> API-03 4章の業務フロー図では「入荷チェック → 受注チェック」の

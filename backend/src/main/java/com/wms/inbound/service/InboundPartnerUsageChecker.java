@@ -26,8 +26,15 @@ import java.util.Set;
 public class InboundPartnerUsageChecker implements PartnerUsageChecker {
 
     /**
-     * 「処理中」とみなす入荷伝票ステータス。
-     * PARTIAL_STORED / STORED / CANCELLED は完了系のため対象外。
+     * 「処理中」とみなす入荷伝票ステータス集合。
+     *
+     * <p>API-03 §4 BR-001 に従い、{@code PLANNED} / {@code CONFIRMED} / {@code INSPECTING}
+     * を対象とする。{@code PARTIAL_STORED} は残数処理が続く状態だが、API-03 §4 BR-001 では
+     * チェック対象外と業務判断されている (運用上は無効化可能)。{@code STORED} / {@code CANCELLED}
+     * は完了系のため対象外。</p>
+     *
+     * <p><b>VisibleForTesting:</b> package-private 可視性はテストからの本番定数参照のため。
+     * 本番コードからは本サービス内部のみで使用する。</p>
      */
     static final Set<String> ACTIVE_STATUSES = Set.of("PLANNED", "CONFIRMED", "INSPECTING");
 
