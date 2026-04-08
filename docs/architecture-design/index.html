@@ -11577,14 +11577,7 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
     DB_INSERT -->|例外| ROLLBACK
     HISTORY -->|例外| ROLLBACK</div>
 <p><strong>悲観デフォルト方針（Issue #374）</strong>:</p>
-<ul><li style="margin-left:0px"><code>if_executions.blob_move_failed</code> はカラムレベルで <code>DEFAULT TRUE</code>、アプリ層の</li></ul>
-<p>  <code>IfExecution</code> ビルダーでも <code>true</code> を明示設定する。</p>
-<ul><li style="margin-left:0px">tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間で</li></ul>
-<p>  アプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で<br>  残ることが保証される。</p>
-<ul><li style="margin-left:0px">Blob 移動が成功した場合のみ、独立トランザクション（<code>TransactionTemplate</code>）で</li></ul>
-<p>  <code>blob_move_failed=false</code> に更新する。<code>@Transactional</code> を使わず <code>TransactionTemplate</code><br>  を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。</p>
-<ul><li style="margin-left:0px">悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）</li></ul>
-<p>  の対象となり、Blob の移動状態を突き合わせて自動復旧する。</p>
+<ul><li style="margin-left:0px"><code>if_executions.blob_move_failed</code> はカラムレベルで <code>DEFAULT TRUE</code>、アプリ層の <code>IfExecution</code> ビルダーでも <code>true</code> を明示設定する。</li><li style="margin-left:0px">tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間でアプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で残ることが保証される。</li><li style="margin-left:0px">Blob 移動が成功した場合のみ、独立トランザクション（<code>TransactionTemplate</code>）で <code>blob_move_failed=false</code> に更新する。<code>@Transactional</code> を使わず <code>TransactionTemplate</code> を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。</li><li style="margin-left:0px">tx2 は <code>@Modifying</code> クエリで <code>blob_move_failed</code> カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。</li><li style="margin-left:0px">悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となり、Blob の移動状態を突き合わせて自動復旧する。</li></ul>
 <p><strong>設計判断: DB登録とBlob移動の順序</strong></p>
 <table>
 <thead><tr><th>順序</th><th>方式</th><th>採用</th><th>理由</th></tr></thead>

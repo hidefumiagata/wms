@@ -514,16 +514,11 @@ flowchart TD
 
 **悲観デフォルト方針（Issue #374）**:
 
-- `if_executions.blob_move_failed` はカラムレベルで `DEFAULT TRUE`、アプリ層の
-  `IfExecution` ビルダーでも `true` を明示設定する。
-- tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間で
-  アプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で
-  残ることが保証される。
-- Blob 移動が成功した場合のみ、独立トランザクション（`TransactionTemplate`）で
-  `blob_move_failed=false` に更新する。`@Transactional` を使わず `TransactionTemplate`
-  を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。
-- 悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）
-  の対象となり、Blob の移動状態を突き合わせて自動復旧する。
+- `if_executions.blob_move_failed` はカラムレベルで `DEFAULT TRUE`、アプリ層の `IfExecution` ビルダーでも `true` を明示設定する。
+- tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間でアプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で残ることが保証される。
+- Blob 移動が成功した場合のみ、独立トランザクション（`TransactionTemplate`）で `blob_move_failed=false` に更新する。`@Transactional` を使わず `TransactionTemplate` を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。
+- tx2 は `@Modifying` クエリで `blob_move_failed` カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。
+- 悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となり、Blob の移動状態を突き合わせて自動復旧する。
 
 **設計判断: DB登録とBlob移動の順序**
 
