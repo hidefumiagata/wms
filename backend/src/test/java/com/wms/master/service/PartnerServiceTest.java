@@ -246,7 +246,9 @@ class PartnerServiceTest {
             assertThatThrownBy(() -> partnerService.update(new UpdatePartnerCommand(1L, "名前", null, PartnerType.SUPPLIER,
                     null, null, null, null, 3)))
                     .isInstanceOf(OptimisticLockConflictException.class)
-                    .hasMessageContaining("id=1");
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -417,7 +419,9 @@ class PartnerServiceTest {
 
             assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 3))
                     .isInstanceOf(OptimisticLockConflictException.class)
-                    .hasMessageContaining("id=1");
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
 
             verifyNoInteractions(inboundChecker);
             verifyNoInteractions(outboundChecker);

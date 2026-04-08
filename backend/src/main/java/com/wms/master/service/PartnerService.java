@@ -73,10 +73,8 @@ public class PartnerService {
     @Transactional
     public Partner update(UpdatePartnerCommand cmd) {
         Partner partner = findById(cmd.id());
-        if (!partner.getVersion().equals(cmd.version())) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+        if (!Objects.equals(partner.getVersion(), cmd.version())) {
+            throw optimisticLockConflict(cmd.id());
         }
         partner.setPartnerName(cmd.partnerName());
         partner.setPartnerNameKana(cmd.partnerNameKana());
@@ -91,9 +89,9 @@ public class PartnerService {
             log.info("Partner updated: id={}, name={}", cmd.id(), cmd.partnerName());
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+            // version は事前チェック済みだが、load → commit 間の短窓競合に対する二重防御として catch も残置
+            log.info("Partner update OL conflict detected at commit: id={}", cmd.id());
+            throw optimisticLockConflict(cmd.id());
         }
     }
 
@@ -138,20 +136,24 @@ public class PartnerService {
             partner.deactivate();
         }
         // version は事前チェックで一致確認済みのため再代入不要。
-        // load → commit 間の競合は JPA @Version によって save() 側で検知される。
+        // load → commit 間の短窓競合に対する二重防御として、JPA @Version による
+        // save() 側の検知も catch して OptimisticLockConflictException に変換する。
         try {
             Partner saved = partnerRepository.save(partner);
             log.info("Partner toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
+            log.info("Partner toggleActive OL conflict detected at commit: id={}", id);
             throw optimisticLockConflict(id);
         }
     }
 
     private OptimisticLockConflictException optimisticLockConflict(Long id) {
+        // OWASP A09: 例外メッセージには内部 id を含めない (ID 列挙への補助情報を与えない)。
+        // 追跡用の id はログ側 (呼び出し元の log.info/warn) に出力する。
         return new OptimisticLockConflictException(
                 "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました (id=" + id + ")");
+                "他のユーザーによる更新が先行しました");
     }
 
     public boolean existsByCode(String partnerCode) {
