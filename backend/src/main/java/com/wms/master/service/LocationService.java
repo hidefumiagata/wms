@@ -129,8 +129,8 @@ public class LocationService {
         }
         // 無効化時: 棚卸中のロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS)
         // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
-        // 在庫チェックより先に評価することで、棚卸中なら在庫チェックをスキップする
-        if (!isActive && Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
+        // 棚卸中チェックは在庫チェックより先に評価する。棚卸ロック中の不整合を最優先で検出するため (SC-FAC11 / API-02-master-facility.md)
+        if (!isActive && location.getIsStocktakingLocked()) {
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS",
                     "棚卸中のため無効化できません (id=" + id + ")");

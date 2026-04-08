@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -487,6 +488,8 @@ class LocationServiceTest {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             existing.setIsStocktakingLocked(true);
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+            // 在庫が存在しても棚卸中チェックが優先されることを検証するため lenient stub を設定
+            lenient().when(inventoryService.hasInventoryByLocationId(1L)).thenReturn(true);
 
             assertThatThrownBy(() -> locationService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)

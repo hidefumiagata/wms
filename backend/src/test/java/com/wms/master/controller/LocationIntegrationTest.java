@@ -423,6 +423,7 @@ class LocationIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS");
+            assertThat(json.get("message").asText()).contains("棚卸中");
 
             // DB検証: is_active は true のまま
             Boolean isActive = jdbcTemplate.queryForObject(
