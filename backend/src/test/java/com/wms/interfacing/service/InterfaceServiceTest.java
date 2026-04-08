@@ -380,7 +380,7 @@ class InterfaceServiceTest {
 
             when(inboundSlipRepository.saveAll(anyList())).thenReturn(List.of(mockSlip));
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
 
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
@@ -410,7 +410,7 @@ class InterfaceServiceTest {
                     new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
             when(csvParser.parse(any())).thenReturn(parseResult);
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
 
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
@@ -437,7 +437,7 @@ class InterfaceServiceTest {
             when(csvParser.parse(any())).thenThrow(
                     new CsvParser.CsvParseException("WMS-E-IFX-002", "ヘッダ行が存在しません"));
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
 
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
@@ -464,8 +464,8 @@ class InterfaceServiceTest {
         }
 
         @Test
-        @DisplayName("異常系 — Blob移動失敗時はblobMoveFailedがtrueになる")
-        void importFile_blobMoveFailed_flaggedButCompleted() {
+        @DisplayName("異常系 — Blob移動失敗時は悲観デフォルトtrueのまま、catchブロックで追加saveしない (#374)")
+        void importFile_blobMoveFailed_noAdditionalSave() {
             setupTransactionTemplate();
             String fileName = "INB-PLAN-001.csv";
             Long warehouseId = 1L;
@@ -478,7 +478,7 @@ class InterfaceServiceTest {
                     new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
             when(csvParser.parse(any())).thenReturn(parseResult);
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
 
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
@@ -488,7 +488,77 @@ class InterfaceServiceTest {
                     interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
 
             assertThat(result.status()).isEqualTo("DISCARDED");
+            // saveExecution 内の1回のみ。catch ブロックでの追加 save は削除済み（悲観デフォルトと同値のため不要）
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            // 悲観デフォルトのまま残ること
+            assertThat(execution.getBlobMoveFailed()).isTrue();
+        }
+
+        @Test
+        @DisplayName("正常系 — Blob移動成功時は独立txでblobMoveFailedがfalseに更新される (#374)")
+        void importFile_blobMoveSuccess_flagUpdatedToFalseInIndependentTx() {
+            setupTransactionTemplate();
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("inbound-plan", fileName))
+                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
+
+            CsvParser.CsvParseResult parseResult =
+                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
+            when(csvParser.parse(any())).thenReturn(parseResult);
+
+            // saveExecution で悲観デフォルトtrueで保存されたものがここに返る想定
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
+            when(ifExecutionRepository.save(any())).thenReturn(execution);
+
+            when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
+                    .thenReturn("processed/path");
+
+            InterfaceService.InterfaceImportResponse result =
+                    interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
+
+            assertThat(result.status()).isEqualTo("DISCARDED");
+            // saveExecution(1回) + moveBlobSafely内の独立tx(1回) = 計2回
             verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
+            // flag が false に更新されていること
+            assertThat(execution.getBlobMoveFailed()).isFalse();
+            // transactionTemplate が 2回 execute される (tx1: saveExecution, tx2: flag更新)
+            verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
+        }
+
+        @Test
+        @DisplayName("悲観デフォルト — saveExecution経由のIfExecutionはblobMoveFailed=true (#374)")
+        void importFile_saveExecution_usesPessimisticDefaultTrue() {
+            setupTransactionTemplate();
+            String fileName = "INB-PLAN-001.csv";
+            Long warehouseId = 1L;
+
+            when(blobStorageClient.getFileSize("inbound-plan", fileName)).thenReturn(1024L);
+            when(blobStorageClient.downloadFile("inbound-plan", fileName))
+                    .thenReturn(new ByteArrayInputStream("h\nd\n".getBytes()));
+
+            CsvParser.CsvParseResult parseResult =
+                    new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
+            when(csvParser.parse(any())).thenReturn(parseResult);
+
+            IfExecution savedEcho = IfExecution.builder().id(1L).blobMoveFailed(true).build();
+            when(ifExecutionRepository.save(any())).thenReturn(savedEcho);
+            when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
+                    .thenReturn("processed/path");
+
+            org.mockito.ArgumentCaptor<IfExecution> captor =
+                    org.mockito.ArgumentCaptor.forClass(IfExecution.class);
+
+            interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
+
+            verify(ifExecutionRepository, org.mockito.Mockito.atLeastOnce()).save(captor.capture());
+            // 最初の save（saveExecution 内）では悲観デフォルト true で構築されている
+            IfExecution firstArg = captor.getAllValues().get(0);
+            assertThat(firstArg.getBlobMoveFailed())
+                    .as("saveExecution は悲観デフォルト true で IfExecution を作成する")
+                    .isTrue();
         }
     }
 
@@ -533,7 +603,7 @@ class InterfaceServiceTest {
             when(inboundPlanCsvProcessor.buildSlips(any(), any(), any(), any(), any(), any(), any()))
                     .thenReturn(List.of());
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
                     .thenReturn("processed/path");
@@ -827,7 +897,7 @@ class InterfaceServiceTest {
                         return List.of();
                     });
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
             when(blobStorageClient.moveToProcessed("inbound-plan", fileName))
                     .thenReturn("processed/path");
@@ -976,7 +1046,7 @@ class InterfaceServiceTest {
                     .thenReturn(List.of(mockSlip));
             when(outboundSlipRepository.saveAll(anyList())).thenReturn(List.of(mockSlip));
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
             when(blobStorageClient.moveToProcessed("order", fileName))
                     .thenReturn("order/processed/2026/03/20/20260320_120000_ORD-001.csv");
@@ -1006,7 +1076,7 @@ class InterfaceServiceTest {
                     new CsvParser.CsvParseResult(new String[]{"h"}, List.<String[]>of(new String[]{"d"}));
             when(csvParser.parse(any())).thenReturn(parseResult);
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
             when(blobStorageClient.moveToProcessed("order", fileName))
                     .thenReturn("processed/path");
@@ -1060,7 +1130,7 @@ class InterfaceServiceTest {
                         return List.of();
                     });
 
-            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(false).build();
+            IfExecution execution = IfExecution.builder().id(1L).blobMoveFailed(true).build();
             when(ifExecutionRepository.save(any())).thenReturn(execution);
             when(blobStorageClient.moveToProcessed("order", fileName))
                     .thenReturn("processed/path");

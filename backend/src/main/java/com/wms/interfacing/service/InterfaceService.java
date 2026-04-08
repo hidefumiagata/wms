@@ -223,16 +223,35 @@ public class InterfaceService {
         return new InterfaceImportResponse(0, totalCount, "DISCARD", "DISCARDED");
     }
 
+    /**
+     * Blob を pending → processed へ移動し、成功時のみ
+     * 独立トランザクション（{@link TransactionTemplate}）で
+     * {@code blob_move_failed} フラグを false に更新する。
+     *
+     * <p>tx1 コミット時点では悲観デフォルト（true）で書かれており、
+     * 本メソッドが正常完了した場合にのみ false へ更新される。
+     * Blob 移動または flag 更新に失敗した場合はフラグが true のまま残り、
+     * リカバリバッチ（Issue #440: BAT-IF-RECONCILE）の対象となる。
+     *
+     * <p>{@code @Transactional} ではなく {@link TransactionTemplate} を
+     * 利用するのは、同一クラス内自己呼び出しによる AOP プロキシ失効
+     * （Spring AOP の self-invocation 問題）を回避するため。
+     */
     private void moveBlobSafely(String directory, String fileName, IfExecution execution) {
         try {
             String destPath = blobStorageClient.moveToProcessed(directory, fileName);
-            execution.setBlobMoveFailed(false);
-            ifExecutionRepository.save(execution);
+            // 成功時のみ独立トランザクションで flag を false に更新
+            transactionTemplate.execute(status -> {
+                execution.setBlobMoveFailed(false);
+                ifExecutionRepository.save(execution);
+                return null;
+            });
             log.info("Blob moved to processed: {}", destPath);
         } catch (Exception e) {
-            log.error("Blob move failed for file: {}. DB records are already committed.", fileName, e);
-            execution.setBlobMoveFailed(true);
-            ifExecutionRepository.save(execution);
+            // 悲観デフォルト true のままにする。リカバリバッチ（Issue #440）に委ねる。
+            log.error("Blob move or flag update failed for file: {}. "
+                    + "Pessimistic default 'blobMoveFailed=true' remains; "
+                    + "will be retried by reconciliation batch (Issue #440).", fileName, e);
         }
     }
 
@@ -249,7 +268,11 @@ public class InterfaceService {
                 .errorCount(errorCount)
                 .mode(mode)
                 .status(status)
-                .blobMoveFailed(false)
+                // 悲観デフォルト: tx1 コミット時点で未移動扱い（true）にし、
+                // Blob 移動成功後に moveBlobSafely() で false へ更新する。
+                // これによりアプリ再起動・例外等で moveBlobSafely に到達しなかった場合も
+                // リカバリバッチ（Issue #440）で検知可能。
+                .blobMoveFailed(true)
                 .warehouseId(warehouseId)
                 .executedAt(OffsetDateTime.now(JST))
                 .executedBy(currentUserId)
