@@ -25,7 +25,9 @@
             <Package name="~com\.wms\..*\.config"/>
             <Package name="~com\.wms\..*\.service"/>
             <Package name="~com\.wms\..*\.dto"/>
-            <Package name="~com\.wms\..*\.model"/>
+            <!-- record-style 一時集約 DTO (CsvMasterCache 等) は import 処理内でのみ使用され
+                 信頼境界を跨がない。Lombok @Getter 由来の EI_EXPOSE_REP は False positive。 -->
+            <Package name="com.wms.interfacing.model"/>
         </Or>
         <Or>
             <Bug pattern="EI_EXPOSE_REP"/>
@@ -34,8 +36,9 @@
     </Match>
 
     <!-- InterfaceService: NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE は
-         Spring 管理下のリポジトリ呼び出し結果に対する SpotBugs の false positive
-         (実装上は existsBy* で先行チェック済み)。issue #453 のスコープ外として除外。 -->
+         transactionTemplate.execute(...) の戻り値に対する SpotBugs の警告だが、
+         呼び出し元 (handleDiscard / importFile) で Objects.requireNonNull(...) により
+         NPE 不可能であることを保証している。追跡用に follow-up issue を作成済み。 -->
     <Match>
         <Class name="com.wms.interfacing.service.InterfaceService"/>
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>

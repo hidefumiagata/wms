@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -102,10 +103,8 @@ public class PartnerService {
         // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         // (Issue #453) version 先行チェックを行うことで、no-op 時の stale version を 409 で検知し、
         // かつ BR 違反より OL 競合を優先できるようにする
-        if (!partner.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+        if (!Objects.equals(partner.getVersion(), version)) {
+            throw optimisticLockConflict(id);
         }
         if (partner.getIsActive().equals(isActive)) {
             log.info("Partner toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -138,16 +137,21 @@ public class PartnerService {
         } else {
             partner.deactivate();
         }
-        partner.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
+        // load → commit 間の競合は JPA @Version によって save() 側で検知される。
         try {
             Partner saved = partnerRepository.save(partner);
             log.info("Partner toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            throw optimisticLockConflict(id);
         }
+    }
+
+    private OptimisticLockConflictException optimisticLockConflict(Long id) {
+        return new OptimisticLockConflictException(
+                "OPTIMISTIC_LOCK_CONFLICT",
+                "他のユーザーによる更新が先行しました (id=" + id + ")");
     }
 
     public boolean existsByCode(String partnerCode) {
