@@ -9,10 +9,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface InboundSlipRepository extends JpaRepository<InboundSlip, Long> {
+
+    /**
+     * 指定 partner に紐づき、いずれかのステータスである入荷伝票が存在するかを判定する。
+     * 取引先無効化時の業務制約チェック ({@code CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND}) で使用する。
+     */
+    boolean existsByPartnerIdAndStatusIn(Long partnerId, Collection<String> statuses);
 
     @Query("""
             SELECT s FROM InboundSlip s

@@ -11,10 +11,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface OutboundSlipRepository extends JpaRepository<OutboundSlip, Long> {
+
+    /**
+     * 指定 partner に紐づき、いずれかのステータスである出荷伝票が存在するかを判定する。
+     * 取引先無効化時の業務制約チェック ({@code CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND}) で使用する。
+     */
+    boolean existsByPartnerIdAndStatusIn(Long partnerId, Collection<String> statuses);
 
     @Query("""
             SELECT s FROM OutboundSlip s
