@@ -17,7 +17,7 @@ import com.wms.generated.model.InterfaceValidationResult;
 import com.wms.generated.model.InterfaceValidationRow;
 import com.wms.interfacing.blob.BlobStorageClient;
 import com.wms.interfacing.entity.IfExecution;
-import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.CsvRowError;
 import com.wms.interfacing.service.InterfaceService;
 import com.wms.system.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -156,7 +156,7 @@ public class InterfaceController implements InterfaceApi {
         return result;
     }
 
-    private InterfaceValidationRow toValidationRow(RowError rowError) {
+    private InterfaceValidationRow toValidationRow(CsvRowError rowError) {
         return new InterfaceValidationRow()
                 .rowNumber(rowError.rowNumber())
                 .errors(rowError.errors().stream()

@@ -2,11 +2,11 @@ package com.wms.interfacing.service;
 
 import com.wms.inbound.entity.InboundSlip;
 import com.wms.inbound.entity.InboundSlipLine;
-import com.wms.interfacing.model.FieldError;
-import com.wms.interfacing.model.MasterCache;
-import com.wms.interfacing.model.RowError;
+import com.wms.interfacing.model.CsvFieldError;
+import com.wms.interfacing.model.CsvMasterCache;
+import com.wms.interfacing.model.CsvRowError;
+import com.wms.interfacing.model.CsvValidationResult;
 import com.wms.interfacing.model.SlipNumberGenerator;
-import com.wms.interfacing.model.ValidationResult;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.Product;
 import com.wms.master.entity.Warehouse;
@@ -60,51 +60,51 @@ public class InboundPlanCsvProcessor {
      *
      * @return 行単位のバリデーション結果（エラーがある行のみ）
      */
-    public ValidationResult validate(List<String[]> dataRows, MasterCache masterCache,
+    public CsvValidationResult validate(List<String[]> dataRows, CsvMasterCache masterCache,
                                      LocalDate businessDate) {
-        List<RowError> rowErrors = new ArrayList<>();
+        List<CsvRowError> rowErrors = new ArrayList<>();
         int successCount = 0;
 
         // L2〜L4: 行レベルバリデーション
         for (int i = 0; i < dataRows.size(); i++) {
             String[] row = dataRows.get(i);
             int rowNumber = i + 1;
-            List<FieldError> errors = validateRow(row, masterCache, businessDate);
+            List<CsvFieldError> errors = validateRow(row, masterCache, businessDate);
             if (errors.isEmpty()) {
                 successCount++;
             } else {
-                rowErrors.add(new RowError(rowNumber, errors));
+                rowErrors.add(new CsvRowError(rowNumber, errors));
             }
         }
 
         // L5: クロスバリデーション（伝票内の同一商品重複チェック）
-        List<RowError> crossErrors = validateCross(dataRows, rowErrors);
+        List<CsvRowError> crossErrors = validateCross(dataRows, rowErrors);
         // 既存のrowErrorsにクロスバリデーションエラーを統合
-        Map<Integer, RowError> errorMap = new LinkedHashMap<>();
-        for (RowError re : rowErrors) {
+        Map<Integer, CsvRowError> errorMap = new LinkedHashMap<>();
+        for (CsvRowError re : rowErrors) {
             errorMap.put(re.rowNumber(), re);
         }
-        for (RowError ce : crossErrors) {
-            RowError existing = errorMap.get(ce.rowNumber());
+        for (CsvRowError ce : crossErrors) {
+            CsvRowError existing = errorMap.get(ce.rowNumber());
             if (existing != null) {
-                List<FieldError> merged = new ArrayList<>(existing.errors());
+                List<CsvFieldError> merged = new ArrayList<>(existing.errors());
                 merged.addAll(ce.errors());
-                errorMap.put(ce.rowNumber(), new RowError(ce.rowNumber(), merged));
+                errorMap.put(ce.rowNumber(), new CsvRowError(ce.rowNumber(), merged));
             } else {
                 errorMap.put(ce.rowNumber(), ce);
                 successCount--; // previously success, now error
             }
         }
 
-        List<RowError> allErrors = new ArrayList<>(errorMap.values());
+        List<CsvRowError> allErrors = new ArrayList<>(errorMap.values());
         int errorCount = dataRows.size() - successCount;
 
-        return new ValidationResult(dataRows.size(), successCount, errorCount, allErrors);
+        return new CsvValidationResult(dataRows.size(), successCount, errorCount, allErrors);
     }
 
-    private List<FieldError> validateRow(String[] row, MasterCache masterCache,
+    private List<CsvFieldError> validateRow(String[] row, CsvMasterCache masterCache,
                                          LocalDate businessDate) {
-        List<FieldError> errors = new ArrayList<>();
+        List<CsvFieldError> errors = new ArrayList<>();
 
         // カラム数チェック
         String partnerCode = row.length > 0 ? CsvParser.normalizeEmpty(row[0]) : null;
@@ -119,65 +119,65 @@ public class InboundPlanCsvProcessor {
         // L2: 形式チェック
         // partner_code: 必須・50文字以内
         if (partnerCode == null) {
-            errors.add(new FieldError("partner_code", "WMS-E-IFX-101",
+            errors.add(new CsvFieldError("partner_code", "WMS-E-IFX-101",
                     "仕入先コードは必須です"));
         } else if (partnerCode.length() > 50) {
-            errors.add(new FieldError("partner_code", "WMS-E-IFX-101",
+            errors.add(new CsvFieldError("partner_code", "WMS-E-IFX-101",
                     "仕入先コードは50文字以内で入力してください"));
         }
 
         // planned_date: 必須・yyyy-MM-dd形式
         LocalDate plannedDate = null;
         if (plannedDateStr == null) {
-            errors.add(new FieldError("planned_date", "WMS-E-IFX-102",
+            errors.add(new CsvFieldError("planned_date", "WMS-E-IFX-102",
                     "入荷予定日は必須です"));
         } else {
             try {
                 plannedDate = LocalDate.parse(plannedDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
-                errors.add(new FieldError("planned_date", "WMS-E-IFX-102",
+                errors.add(new CsvFieldError("planned_date", "WMS-E-IFX-102",
                         "入荷予定日はyyyy-MM-dd形式で入力してください"));
             }
         }
 
         // product_code: 必須・50文字以内
         if (productCode == null) {
-            errors.add(new FieldError("product_code", "WMS-E-IFX-103",
+            errors.add(new CsvFieldError("product_code", "WMS-E-IFX-103",
                     "商品コードは必須です"));
         } else if (productCode.length() > 50) {
-            errors.add(new FieldError("product_code", "WMS-E-IFX-103",
+            errors.add(new CsvFieldError("product_code", "WMS-E-IFX-103",
                     "商品コードは50文字以内で入力してください"));
         }
 
         // unit_type: 必須・CASE/BALL/PIECE
         if (unitType == null) {
-            errors.add(new FieldError("unit_type", "WMS-E-IFX-104",
+            errors.add(new CsvFieldError("unit_type", "WMS-E-IFX-104",
                     "荷姿は必須です"));
         } else if (!VALID_UNIT_TYPES.contains(unitType)) {
-            errors.add(new FieldError("unit_type", "WMS-E-IFX-104",
+            errors.add(new CsvFieldError("unit_type", "WMS-E-IFX-104",
                     "荷姿はCASE/BALL/PIECEのいずれかで入力してください"));
         }
 
         // planned_qty: 必須・正の整数
         if (plannedQtyStr == null) {
-            errors.add(new FieldError("planned_qty", "WMS-E-IFX-105",
+            errors.add(new CsvFieldError("planned_qty", "WMS-E-IFX-105",
                     "入荷予定数量は必須です"));
         } else {
             try {
                 int qty = Integer.parseInt(plannedQtyStr);
                 if (qty < 1) {
-                    errors.add(new FieldError("planned_qty", "WMS-E-IFX-105",
+                    errors.add(new CsvFieldError("planned_qty", "WMS-E-IFX-105",
                             "入荷予定数量は1以上の正の整数で入力してください"));
                 }
             } catch (NumberFormatException e) {
-                errors.add(new FieldError("planned_qty", "WMS-E-IFX-105",
+                errors.add(new CsvFieldError("planned_qty", "WMS-E-IFX-105",
                         "入荷予定数量は1以上の正の整数で入力してください"));
             }
         }
 
         // lot_number: 100文字以内
         if (lotNumber != null && lotNumber.length() > 100) {
-            errors.add(new FieldError("lot_number", "WMS-E-IFX-106",
+            errors.add(new CsvFieldError("lot_number", "WMS-E-IFX-106",
                     "ロット番号は100文字以内で入力してください"));
         }
 
@@ -187,14 +187,14 @@ public class InboundPlanCsvProcessor {
             try {
                 expiryDate = LocalDate.parse(expiryDateStr, DateTimeFormatter.ISO_LOCAL_DATE);
             } catch (DateTimeParseException e) {
-                errors.add(new FieldError("expiry_date", "WMS-E-IFX-107",
+                errors.add(new CsvFieldError("expiry_date", "WMS-E-IFX-107",
                         "期限日はyyyy-MM-dd形式で入力してください"));
             }
         }
 
         // note: 500文字以内
         if (note != null && note.length() > 500) {
-            errors.add(new FieldError("note", "WMS-E-IFX-108",
+            errors.add(new CsvFieldError("note", "WMS-E-IFX-108",
                     "備考は500文字以内で入力してください"));
         }
 
@@ -202,14 +202,14 @@ public class InboundPlanCsvProcessor {
         if (partnerCode != null && partnerCode.length() <= 50) {
             Partner partner = masterCache.getPartner(partnerCode);
             if (partner == null) {
-                errors.add(new FieldError("partner_code", "WMS-E-IFX-301",
+                errors.add(new CsvFieldError("partner_code", "WMS-E-IFX-301",
                         "取引先コード（" + partnerCode + "）が取引先マスタに存在しません"));
             } else if (!partner.getIsActive()) {
-                errors.add(new FieldError("partner_code", "WMS-E-IFX-302",
+                errors.add(new CsvFieldError("partner_code", "WMS-E-IFX-302",
                         "取引先コード（" + partnerCode + "）は無効化されています"));
             } else if (partner.getPartnerType() != com.wms.master.entity.PartnerType.SUPPLIER
                     && partner.getPartnerType() != com.wms.master.entity.PartnerType.BOTH) {
-                errors.add(new FieldError("partner_code", "WMS-E-IFX-303",
+                errors.add(new CsvFieldError("partner_code", "WMS-E-IFX-303",
                         "取引先コード（" + partnerCode + "）は仕入先ではありません"));
             }
         }
@@ -218,31 +218,31 @@ public class InboundPlanCsvProcessor {
         if (productCode != null && productCode.length() <= 50) {
             product = masterCache.getProduct(productCode);
             if (product == null) {
-                errors.add(new FieldError("product_code", "WMS-E-IFX-304",
+                errors.add(new CsvFieldError("product_code", "WMS-E-IFX-304",
                         "商品コード（" + productCode + "）が商品マスタに存在しません"));
             } else if (!product.getIsActive()) {
-                errors.add(new FieldError("product_code", "WMS-E-IFX-305",
+                errors.add(new CsvFieldError("product_code", "WMS-E-IFX-305",
                         "商品コード（" + productCode + "）は無効化されています"));
             }
         }
 
         // L4: 業務ルールバリデーション
         if (plannedDate != null && plannedDate.isBefore(businessDate)) {
-            errors.add(new FieldError("planned_date", "WMS-E-IFX-401",
+            errors.add(new CsvFieldError("planned_date", "WMS-E-IFX-401",
                     "入荷予定日は現在営業日以降の日付を指定してください"));
         }
 
         if (product != null && product.getIsActive()) {
             if (product.getLotManageFlag() && lotNumber == null) {
-                errors.add(new FieldError("lot_number", "WMS-E-IFX-402",
+                errors.add(new CsvFieldError("lot_number", "WMS-E-IFX-402",
                         "ロット管理対象商品のためロット番号は必須です"));
             }
             if (product.getExpiryManageFlag()) {
                 if (expiryDate == null && expiryDateStr == null) {
-                    errors.add(new FieldError("expiry_date", "WMS-E-IFX-403",
+                    errors.add(new CsvFieldError("expiry_date", "WMS-E-IFX-403",
                             "期限管理対象商品のため期限日は必須です"));
                 } else if (expiryDate != null && !expiryDate.isAfter(businessDate)) {
-                    errors.add(new FieldError("expiry_date", "WMS-E-IFX-404",
+                    errors.add(new CsvFieldError("expiry_date", "WMS-E-IFX-404",
                             "期限日は現在営業日より後の日付を指定してください"));
                 }
             }
@@ -254,10 +254,10 @@ public class InboundPlanCsvProcessor {
     /**
      * L5: クロスバリデーション — 同一伝票内の同一商品重複チェック。
      */
-    private List<RowError> validateCross(List<String[]> dataRows,
-                                         List<RowError> existingErrors) {
+    private List<CsvRowError> validateCross(List<String[]> dataRows,
+                                         List<CsvRowError> existingErrors) {
         Set<Integer> errorRowNumbers = existingErrors.stream()
-                .map(RowError::rowNumber)
+                .map(CsvRowError::rowNumber)
                 .collect(Collectors.toSet());
 
         // グルーピング: partner_code + planned_date → product_code → rowNumbers
@@ -281,15 +281,15 @@ public class InboundPlanCsvProcessor {
                     .add(rowNumber);
         }
 
-        List<RowError> crossErrors = new ArrayList<>();
+        List<CsvRowError> crossErrors = new ArrayList<>();
         for (Map<String, List<Integer>> productRows : slipProductRows.values()) {
             for (Map.Entry<String, List<Integer>> entry : productRows.entrySet()) {
                 if (entry.getValue().size() > 1) {
                     // 2番目以降の重複行にエラーを付与
                     for (int i = 1; i < entry.getValue().size(); i++) {
                         int rowNum = entry.getValue().get(i);
-                        crossErrors.add(new RowError(rowNum, List.of(
-                                new FieldError("product_code", "WMS-E-IFX-501",
+                        crossErrors.add(new CsvRowError(rowNum, List.of(
+                                new CsvFieldError("product_code", "WMS-E-IFX-501",
                                         "同一伝票内に同一商品コード（" + entry.getKey()
                                                 + "）が重複しています"))));
                     }
@@ -302,13 +302,13 @@ public class InboundPlanCsvProcessor {
     /**
      * バリデーション成功行からInboundSlipエンティティ群を構築する。
      */
-    public List<InboundSlip> buildSlips(List<String[]> dataRows, ValidationResult validationResult,
-                                        MasterCache masterCache, Long warehouseId,
+    public List<InboundSlip> buildSlips(List<String[]> dataRows, CsvValidationResult validationResult,
+                                        CsvMasterCache masterCache, Long warehouseId,
                                         SlipNumberGenerator slipNumberGenerator,
                                         LocalDate businessDate, Long currentUserId) {
         // エラー行番号を抽出
         Set<Integer> errorRows = validationResult.rowErrors().stream()
-                .map(RowError::rowNumber)
+                .map(CsvRowError::rowNumber)
                 .collect(Collectors.toSet());
 
         // 成功行のみ抽出（1始まりrowNumber → 0始まりindex）

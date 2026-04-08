@@ -1,9 +1,9 @@
 package com.wms.interfacing.service;
 
-import com.wms.interfacing.model.FieldError;
-import com.wms.interfacing.model.MasterCache;
-import com.wms.interfacing.model.RowError;
-import com.wms.interfacing.model.ValidationResult;
+import com.wms.interfacing.model.CsvFieldError;
+import com.wms.interfacing.model.CsvMasterCache;
+import com.wms.interfacing.model.CsvRowError;
+import com.wms.interfacing.model.CsvValidationResult;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.entity.Product;
@@ -36,7 +36,7 @@ class InboundPlanCsvProcessorTest {
     private Product expiryManagedProduct;
     private Product inactiveProduct;
     private Warehouse warehouse;
-    private MasterCache masterCache;
+    private CsvMasterCache masterCache;
 
     private static void setField(Object obj, String fieldName, Object value) {
         Class<?> clazz = obj.getClass();
@@ -123,7 +123,7 @@ class InboundPlanCsvProcessorTest {
         warehouse.setWarehouseName("Warehouse 1");
         setField(warehouse, "id", 100L);
 
-        masterCache = new MasterCache(
+        masterCache = new CsvMasterCache(
                 Map.of(
                         "SUP-0001", supplier,
                         "CUS-0001", customer,
@@ -185,7 +185,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-002", "PIECE", "50", "", "", "note"}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.totalRows()).isEqualTo(2);
@@ -200,7 +200,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(1);
@@ -215,7 +215,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{longCode, "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -228,7 +228,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -241,7 +241,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "20260325", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -254,7 +254,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -268,7 +268,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", longCode, "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -281,7 +281,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -294,7 +294,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "INVALID", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -307,7 +307,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -320,7 +320,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "0", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -333,7 +333,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "abc", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -347,7 +347,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", longLot, "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -360,7 +360,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "invalid", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -374,7 +374,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", longNote}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -387,7 +387,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-9999", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -400,7 +400,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-INACTIVE", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -413,7 +413,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"CUS-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -426,7 +426,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-NONE", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -439,7 +439,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-INACTIVE", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -452,7 +452,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-19", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -465,7 +465,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-LOT", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -478,7 +478,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -491,7 +491,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "CASE", "100", "", "2026-03-20", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -504,7 +504,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "CASE", "100", "", "2026-03-20", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors())
@@ -518,7 +518,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "PIECE", "50", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(1);
@@ -538,7 +538,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-002", "CASE", "abc", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "PIECE", "50", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             // Row 2 has L2 error, Row 3 has L5 error (duplicate of Row 1)
@@ -554,7 +554,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "PIECE", "50", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "BALL", "30", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(2);
@@ -573,7 +573,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-002", "CASE", "200", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-002", "PIECE", "50", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             // Row 3 has L5 duplicate error
@@ -589,7 +589,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-26", "PRD-001", "CASE", "50", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.successCount()).isEqualTo(2);
@@ -602,7 +602,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"", "", "", "INVALID", "-1", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.rowErrors().get(0).errors()).hasSizeGreaterThanOrEqualTo(4);
@@ -618,7 +618,7 @@ class InboundPlanCsvProcessorTest {
             setField(both, "id", 99L);
             setField(both, "isActive", true);
 
-            MasterCache cacheWithBoth = new MasterCache(
+            CsvMasterCache cacheWithBoth = new CsvMasterCache(
                     Map.of("SUP-BOTH", both),
                     Map.of("PRD-001", product1),
                     warehouse
@@ -627,7 +627,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-BOTH", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, cacheWithBoth, businessDate);
 
             assertThat(result.successCount()).isEqualTo(1);
@@ -643,7 +643,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "CASE", "100", "", "invalid-date", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             // Should have WMS-E-IFX-107 (format error) but NOT WMS-E-IFX-403 (missing)
@@ -659,7 +659,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "CASE", "100", "", "2027-01-01", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.successCount()).isEqualTo(1);
@@ -672,7 +672,7 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-LOT", "CASE", "100", "LOT-001", "", ""},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-EXP", "PIECE", "50", "", "2027-01-01", ""}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.successCount()).isEqualTo(2);
@@ -685,7 +685,7 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"SUP-0001", "2026-03-25"}
             );
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(1);
@@ -695,7 +695,7 @@ class InboundPlanCsvProcessorTest {
         @DisplayName("境界値 — 空配列の行でもNullPointerにならない")
         void validate_emptyRow_handledGracefully() {
             List<String[]> rows = List.<String[]>of(new String[]{});
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(1);
@@ -705,7 +705,7 @@ class InboundPlanCsvProcessorTest {
         @DisplayName("境界値 — カラム数1の行でもNullPointerにならない")
         void validate_singleColumnRow_handledGracefully() {
             List<String[]> rows = List.<String[]>of(new String[]{"SUP-0001"});
-            ValidationResult result =
+            CsvValidationResult result =
                     processor.validate(rows, masterCache, businessDate);
 
             assertThat(result.errorCount()).isEqualTo(1);
@@ -723,8 +723,8 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", "memo"},
                     new String[]{"SUP-0001", "2026-03-25", "PRD-002", "PIECE", "50", "", "", ""}
             );
-            ValidationResult validationResult =
-                    new ValidationResult(2, 2, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(2, 2, 0, List.of());
 
             var slips = processor.buildSlips(rows, validationResult, masterCache, 100L,
                     date -> "INB-20260320-0001", businessDate, 1L);
@@ -745,8 +745,8 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""},
                     new String[]{"SUP-0001", "2026-03-26", "PRD-001", "CASE", "50", "", "", ""}
             );
-            ValidationResult validationResult =
-                    new ValidationResult(2, 2, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(2, 2, 0, List.of());
 
             int[] seq = {0};
             var slips = processor.buildSlips(rows, validationResult, masterCache, 100L,
@@ -764,10 +764,10 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"INVALID", "2026-03-25", "PRD-002", "CASE", "50", "", "", ""}
             );
             // row 2 is error
-            ValidationResult validationResult =
-                    new ValidationResult(2, 1, 1,
-                            List.of(new RowError(2, List.of(
-                                    new FieldError("partner_code",
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(2, 1, 1,
+                            List.of(new CsvRowError(2, List.of(
+                                    new CsvFieldError("partner_code",
                                             "WMS-E-IFX-301", "error")))));
 
             var slips = processor.buildSlips(rows, validationResult, masterCache, 100L,
@@ -783,10 +783,10 @@ class InboundPlanCsvProcessorTest {
             List<String[]> rows = List.<String[]>of(
                     new String[]{"INVALID", "2026-03-25", "PRD-001", "CASE", "100", "", "", ""}
             );
-            ValidationResult validationResult =
-                    new ValidationResult(1, 0, 1,
-                            List.of(new RowError(1, List.of(
-                                    new FieldError("partner_code",
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 0, 1,
+                            List.of(new CsvRowError(1, List.of(
+                                    new CsvFieldError("partner_code",
                                             "WMS-E-IFX-301", "error")))));
 
             var slips = processor.buildSlips(rows, validationResult, masterCache, 100L,
@@ -802,8 +802,8 @@ class InboundPlanCsvProcessorTest {
                     new String[]{"SUP-0001", "2026-03-25", "PRD-001", "CASE", "100",
                             "LOT-001", "2027-06-30", "note1"}
             );
-            ValidationResult validationResult =
-                    new ValidationResult(1, 1, 0, List.of());
+            CsvValidationResult validationResult =
+                    new CsvValidationResult(1, 1, 0, List.of());
 
             var slips = processor.buildSlips(rows, validationResult, masterCache, 100L,
                     date -> "INB-20260320-0001", businessDate, 1L);

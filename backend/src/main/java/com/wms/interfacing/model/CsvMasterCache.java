@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @Getter
 @RequiredArgsConstructor
-public class MasterCache {
+public class CsvMasterCache {
     private final Map<String, Partner> partnerMap;
     private final Map<String, Product> productMap;
     private final Warehouse warehouse;

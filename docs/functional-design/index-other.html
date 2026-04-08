@@ -820,12 +820,12 @@ public record InboundSlipKey(String partnerCode, LocalDate plannedDate) {}</code
 <h3>2.5 コード → ID解決の実装</h3>
 <p>マスタ参照の最適化として、CSV内のユニークなコードを一括検索する（<a href="../architecture-design/09-interface-architecture.md#102-マスタ検索の最適化" target="_blank">09-interface-architecture.md セクション10.2</a> 参照）。</p>
 <pre><code class="lang-java">// InboundPlanCsvProcessor.java — コード→ID解決
-public class MasterCache {
+public class CsvMasterCache {
     private final Map&lt;String, Partner&gt; partnerMap;   // key: partner_code
     private final Map&lt;String, Product&gt; productMap;   // key: product_code
     private final Warehouse warehouse;
 
-    public static MasterCache build(
+    public static CsvMasterCache build(
             List&lt;InboundPlanCsvRow&gt; rows,
             Long warehouseId,
             PartnerRepository partnerRepo,
@@ -857,7 +857,7 @@ public class MasterCache {
             .orElseThrow(() -&gt; new BusinessException(&quot;WMS-E-IFX-901&quot;,
                 &quot;倉庫ID(&quot; + warehouseId + &quot;)が存在しません&quot;));
 
-        return new MasterCache(partnerMap, productMap, warehouse);
+        return new CsvMasterCache(partnerMap, productMap, warehouse);
     }
 }</code></pre>
 <h3>2.6 CSVの空文字列の扱い</h3>
@@ -1066,7 +1066,7 @@ private Long id;</code></pre>
 │  1. Blob Storage から CSV 読み取り                                │
 │  2. 再バリデーション（L1〜L5）                                     │
 │  3. 成功行の抽出とグルーピング                                      │
-│  4. マスタ一括検索（MasterCache構築）                               │
+│  4. マスタ一括検索（CsvMasterCache構築）                            │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │ @Transactional                                          │    │

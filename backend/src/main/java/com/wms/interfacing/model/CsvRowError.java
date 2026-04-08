@@ -5,5 +5,5 @@ import java.util.List;
 /**
  * CSVバリデーションの行単位エラー。
  */
-public record RowError(int rowNumber, List<FieldError> errors) {
+public record CsvRowError(int rowNumber, List<CsvFieldError> errors) {
 }
