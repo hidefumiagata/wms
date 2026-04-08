@@ -204,6 +204,14 @@ resource "azurerm_container_app" "backend" {
         secret_name = "jwt-secret-key"
       }
       env {
+        name  = "JWT_ACCESS_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_access_token_expiration_ms)
+      }
+      env {
+        name  = "JWT_REFRESH_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_refresh_token_expiration_ms)
+      }
+      env {
         name        = "ACS_CONNECTION_STRING"
         secret_name = "acs-connection-string"
       }

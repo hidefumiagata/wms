@@ -1339,10 +1339,10 @@ jwt:
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret-key}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.access-token-expiration}")
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {

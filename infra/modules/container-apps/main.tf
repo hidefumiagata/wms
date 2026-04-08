@@ -79,11 +79,11 @@ resource "azurerm_container_app" "backend" {
       }
       env {
         name  = "JWT_ACCESS_TOKEN_EXPIRATION"
-        value = var.jwt_access_token_expiration_ms
+        value = tostring(var.jwt_access_token_expiration_ms)
       }
       env {
         name  = "JWT_REFRESH_TOKEN_EXPIRATION"
-        value = var.jwt_refresh_token_expiration_ms
+        value = tostring(var.jwt_refresh_token_expiration_ms)
       }
       env {
         name        = "ACS_CONNECTION_STRING"

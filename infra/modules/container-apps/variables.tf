@@ -77,26 +77,38 @@ variable "db_password" {
 }
 
 variable "jwt_secret" {
-  description = "JWT signing secret (HS256 requires 256bit / 32 bytes minimum)"
+  description = "JWT signing secret (HS256 requires 256 bits of entropy; assumes ASCII)"
   type        = string
   sensitive   = true
 
   validation {
+    # Terraform `length()` returns Unicode character count. Assuming ASCII,
+    # 32 characters == 32 bytes == 256 bits, which satisfies HS256.
     condition     = length(var.jwt_secret) >= 32
-    error_message = "jwt_secret must be at least 32 bytes (256 bits) for HS256."
+    error_message = "jwt_secret must be at least 32 ASCII characters (256 bits for HS256)."
   }
 }
 
 variable "jwt_access_token_expiration_ms" {
-  description = "JWT access token expiration in milliseconds"
+  description = "JWT access token expiration in milliseconds (max 24h to limit token replay window)"
   type        = number
   default     = 3600000 # 1 hour
+
+  validation {
+    condition     = var.jwt_access_token_expiration_ms > 0 && var.jwt_access_token_expiration_ms <= 86400000
+    error_message = "jwt_access_token_expiration_ms must be > 0 and <= 86400000 (24h)."
+  }
 }
 
 variable "jwt_refresh_token_expiration_ms" {
-  description = "JWT refresh token expiration in milliseconds (sliding window)"
+  description = "JWT refresh token expiration in milliseconds, sliding window (max 30d)"
   type        = number
   default     = 86400000 # 24 hours
+
+  validation {
+    condition     = var.jwt_refresh_token_expiration_ms > 0 && var.jwt_refresh_token_expiration_ms <= 2592000000
+    error_message = "jwt_refresh_token_expiration_ms must be > 0 and <= 2592000000 (30d)."
+  }
 }
 
 variable "acs_connection_string" {

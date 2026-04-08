@@ -21,12 +21,11 @@ Container Apps に設定する環境変数。バックエンド Spring Boot ア�
 | `AZURE_STORAGE_ACCOUNT_NAME` | Blob Storageアカウント名（Managed Identity） | No | `wms.storage.account-name` | `devstorageaccount` | `stwmsprdeast` |
 | `ACS_CONNECTION_STRING` | Azure Communication Services接続文字列 | Yes | `wms.acs.connection-string` | (環境依存) | (環境依存) |
 | `ACS_SENDER_ADDRESS` | メール送信元アドレス | No | `wms.acs.sender-address` | `DoNotReply@...` | `DoNotReply@...` |
-| `PASSWORD_RESET_BASE_URL` | パスワードリセットリンクのベースURL | No | `wms.email.password-reset-base-url` | `http://localhost:5173` | Front Door URL |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights接続文字列 | No | (自動検出) | (環境依存) | (環境依存) |
 | `AZURE_FRONTDOOR_ID` | Front Door ID（X-Azure-FDIDヘッダー検証用） | No | `wms.frontdoor.id` | (未設定) | (Front Door ID) |
 
 > **※1 `JWT_SECRET_KEY` の dev デフォルト値について**: 上記文字列はローカル開発専用フォールバック値であり、**公開リポジトリにコミットされている**ため秘密鍵としての強度を持たない。dev/demo/loadtest/prd の各デプロイ環境では、必ず GitHub Secrets (`JWT_SECRET_DEV` / `JWT_SECRET_PRD`) 経由で個別生成した 256bit 以上のランダム値を上書きすること。**この値を実環境で使用することは禁止**。
->
+
 > **※2 環境変数とプロパティのバインディング**: 上記「application.yml プロパティ」列はあくまで Spring Boot 上の対応プロパティを示す。Spring Boot は環境変数を自動マッピングするわけではなく、`application-*.yml` 内で明示的に `${ENV_VAR_NAME}` 形式で参照することで初めて該当プロパティにバインドされる。
 
 ## 2. フロントエンド環境変数
