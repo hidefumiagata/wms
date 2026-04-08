@@ -402,6 +402,66 @@ class LocationIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("SC-FAC11: 棚卸中ロケーションの無効化 → 422 CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS")
+        void toggle_deactivate_stocktakeLocked_returns422() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-04-05-01", "棚卸中ロケ");
+
+            // 棚卸中フラグを直接 ON
+            jdbcTemplate.update(
+                    "UPDATE locations SET is_stocktaking_locked = true WHERE id = ?", locationId);
+
+            Integer version = getLocationVersion(locationId);
+            String body = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS");
+            assertThat(json.get("message").asText()).contains("棚卸中");
+
+            // DB検証: is_active は true のまま
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM locations WHERE id = ?", Boolean.class, locationId);
+            assertThat(isActive).isTrue();
+        }
+
+        @Test
+        @DisplayName("SC-FAC11: 棚卸中ロケーションでも有効化(→true)は許可される")
+        void toggle_activate_stocktakeLocked_returns200() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-04-05-02", "棚卸中・無効ロケ");
+
+            // 直接 is_active=false にし、棚卸中フラグも ON
+            jdbcTemplate.update(
+                    "UPDATE locations SET is_active = false, is_stocktaking_locked = true WHERE id = ?",
+                    locationId);
+
+            Integer version = getLocationVersion(locationId);
+            String body = String.format("""
+                    { "isActive": true, "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("isActive").asBoolean()).isTrue();
+
+            // DB検証
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM locations WHERE id = ?", Boolean.class, locationId);
+            assertThat(isActive).isTrue();
+        }
+
+        @Test
         @DisplayName("無効なロケーションを有効化できる")
         void toggle_activate_returns200() throws Exception {
             Long locationId = createLocation(testStockAreaId, "A-01-A01-04-02-01", "有効化テスト");

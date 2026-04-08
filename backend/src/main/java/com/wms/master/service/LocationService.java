@@ -127,14 +127,20 @@ public class LocationService {
             log.info("Location toggleActive no-op: id={}, isActive={}", id, isActive);
             return location;
         }
+        // 無効化時のチェック順序は API-02 BR-003 / mermaid 準拠:
+        // 在庫チェックを先に評価する。在庫なしで初めて棚卸中チェックに進む。
+        // (上の no-op 判定により、状態が実際に変化する場合のみここに到達する)
         // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
-        // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
-        // TODO: stocktake_locations テーブル実装後、棚卸中チェック
-        //       (CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS 422) を追加する
         if (!isActive && inventoryService.hasInventoryByLocationId(id)) {
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
                     "在庫が存在するため無効化できません (id=" + id + ")");
+        }
+        // 無効化時: 棚卸中のロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS)
+        if (!isActive && location.getIsStocktakingLocked()) {
+            throw new BusinessRuleViolationException(
+                    "CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS",
+                    "棚卸中のため無効化できません (id=" + id + ")");
         }
         if (isActive) {
             location.activate();
