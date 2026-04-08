@@ -445,7 +445,7 @@ flowchart TD
 
 | HTTPステータス | エラーコード | 説明 |
 |-------------|------------|------|
-| `400` | `ALREADY_COMPLETED` | 既に完了済みのばらし指示 |
+| `409` | `ALREADY_COMPLETED` | 既に完了済みのばらし指示 |
 | `401` | `UNAUTHORIZED` | 未認証 |
 | `403` | `FORBIDDEN` | 権限不足 |
 | `404` | `BREAKDOWN_INSTRUCTION_NOT_FOUND` | 指定IDのばらし指示が存在しない |
@@ -459,7 +459,7 @@ flowchart TD
     START([開始]) --> FIND[ばらし指示検索\nID指定]
     FIND -->|存在しない| ERR_NF[404 BREAKDOWN_INSTRUCTION_NOT_FOUND]
     FIND -->|存在する| CHECK_STATUS{ステータス確認}
-    CHECK_STATUS -->|COMPLETED| ERR_DONE[400 ALREADY_COMPLETED]
+    CHECK_STATUS -->|COMPLETED| ERR_DONE[409 ALREADY_COMPLETED]
     CHECK_STATUS -->|INSTRUCTED| BEGIN_TX[トランザクション開始\n悲観的ロック取得]
     BEGIN_TX --> STEP1[Step1: ばらし元の仮確保を解放\nばらし元 inventories.allocated_qty -= from_qty]
     STEP1 --> STEP2[Step2: ばらし元の在庫を減算\nばらし元 inventories.quantity -= from_qty]
@@ -706,7 +706,7 @@ flowchart TD
 |------------|-------------|------|
 | `VALIDATION_ERROR` | 400 | リクエストパラメータ不正 |
 | `INVALID_STATUS` | 400 | 引当不可能なステータス |
-| `ALREADY_COMPLETED` | 400 | 既に完了済みのばらし指示 |
+| `ALREADY_COMPLETED` | 409 | 既に完了済みのばらし指示 |
 | `UNAUTHORIZED` | 401 | 未認証 |
 | `FORBIDDEN` | 403 | 権限不足（対象ロール外） |
 | `OUTBOUND_SLIP_NOT_FOUND` | 404 | 出荷伝票が存在しない |

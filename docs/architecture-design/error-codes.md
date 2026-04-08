@@ -178,9 +178,9 @@
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
 | `INVALID_STATUS` | 409 | 引当不可ステータス |
-| `ALREADY_COMPLETED` | 422 | ばらし指示完了済み |
+| `ALREADY_COMPLETED` | 409 | ばらし指示完了済み |
 | `BREAKDOWN_INSTRUCTION_NOT_FOUND` | 404 | ばらし指示が見つからない |
-| `RELEASE_NOT_ALLOWED` | 422 | 引当解除不可（ピッキング指示作成済み） |
+| `RELEASE_NOT_ALLOWED` | 409 | 引当解除不可（ピッキング指示作成済み） |
 
 ---
 
