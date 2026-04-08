@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,8 @@ import java.util.List;
 public class PartnerService {
 
     private final PartnerRepository partnerRepository;
+    // @Order(10) InboundPartnerUsageChecker → @Order(20) OutboundPartnerUsageChecker の順で
+    // Spring DI が List を注入する (API-03 §4 の業務フロー契約)
     private final List<PartnerUsageChecker> partnerUsageCheckers;
 
     public Page<Partner> search(String partnerCode, String partnerName,
@@ -105,11 +108,12 @@ public class PartnerService {
             // 各 PartnerUsageChecker (inbound/outbound 等) に「処理中伝票」があれば
             // BusinessRuleViolationException を 422 で返す
             for (PartnerUsageChecker checker : partnerUsageCheckers) {
-                checker.findBlockingReason(id).ifPresent(errorCode -> {
-                    log.info("Partner deactivation blocked: id={}, code={}", id, errorCode);
-                    throw new BusinessRuleViolationException(errorCode,
+                Optional<String> reason = checker.findBlockingReason(id);
+                if (reason.isPresent()) {
+                    log.warn("Partner deactivation blocked: id={}, code={}", id, reason.get());
+                    throw new BusinessRuleViolationException(reason.get(),
                             "処理中の伝票が存在するため取引先を無効化できません (id=" + id + ")");
-                });
+                }
             }
         }
         if (isActive) {
