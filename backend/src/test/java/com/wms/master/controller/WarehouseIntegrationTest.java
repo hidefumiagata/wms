@@ -716,6 +716,18 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("VIEWERは倉庫コード存在確認不可 → 403")
+        void exists_asViewer_returns403() {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/exists?warehouseCode=WH001", HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
         @DisplayName("認証なしでアクセス → 401")
         void access_unauthenticated_returns401() {
             ResponseEntity<String> response = restTemplate.exchange(

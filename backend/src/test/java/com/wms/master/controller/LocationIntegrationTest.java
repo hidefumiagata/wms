@@ -730,6 +730,20 @@ class LocationIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("VIEWERはロケーション件数取得可能")
+        void count_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/count?warehouseId=" + testWarehouseId,
+                    HttpMethod.GET, new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("count")).isTrue();
+        }
+
+        @Test
         @DisplayName("VIEWERはロケーション有効/無効切替不可 → 403")
         void toggle_asViewer_returns403() throws Exception {
             Long locationId = createLocation(testStockAreaId, "A-01-A01-99-07-01", "ビューワー切替テスト");
