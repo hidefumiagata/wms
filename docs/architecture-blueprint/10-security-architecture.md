@@ -95,6 +95,8 @@ Spring Security で以下のレスポンスヘッダーを全APIに付与する�
 | `X-Content-Type-Options` | `nosniff` | MIMEスニッフィング防止 |
 | `X-Frame-Options` | `DENY` | クリックジャッキング防止 |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | リファラー漏洩防止 |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | 最小権限ポリシー＋クリックジャッキング多層防御。JSON APIにも `frame-ancestors` は有効 |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` | 不要なブラウザ機能を全面無効化（多層防御） |
 
 ## 入力バリデーション
 
