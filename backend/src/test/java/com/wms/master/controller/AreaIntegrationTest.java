@@ -22,6 +22,8 @@ class AreaIntegrationTest extends IntegrationTestBase {
     private static final String ADMIN_PASSWORD = "Admin@1234";
     private static final String STAFF_CODE = "wh_staff01";
     private static final String STAFF_PASSWORD = "Staff@1234";
+    private static final String VIEWER_CODE = "viewer01";
+    private static final String VIEWER_PASSWORD = "Test@1234";
 
     private HttpHeaders adminHeaders;
     private Long testWarehouseId;
@@ -535,6 +537,83 @@ class AreaIntegrationTest extends IntegrationTestBase {
                     HttpMethod.GET, new HttpEntity<>(staffHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはエリア一覧取得可能")
+        void list_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "?warehouseId=" + testWarehouseId + "&page=0&size=20",
+                    HttpMethod.GET, new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはエリア詳細取得可能")
+        void get_asViewer_returns200() throws Exception {
+            Long areaId = createArea(testBuildingId, "V01", "ビューワー詳細テスト", "AMBIENT", "STOCK");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + areaId, HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはエリア作成不可 → 403")
+        void create_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = String.format("""
+                    {
+                        "buildingId": %d,
+                        "areaCode": "V02",
+                        "areaName": "ビューワー作成テスト",
+                        "storageCondition": "AMBIENT",
+                        "areaType": "STOCK"
+                    }
+                    """, testBuildingId);
+
+            ResponseEntity<String> response = postJson(BASE_URL, body, viewerHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERはエリア更新不可 → 403")
+        void update_asViewer_returns403() throws Exception {
+            Long areaId = createArea(testBuildingId, "V03", "ビューワー更新テスト", "AMBIENT", "STOCK");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "areaName": "ビューワー更新", "storageCondition": "AMBIENT", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + areaId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERはエリア有効/無効切替不可 → 403")
+        void toggle_asViewer_returns403() throws Exception {
+            Long areaId = createArea(testBuildingId, "V04", "ビューワー切替テスト", "AMBIENT", "STOCK");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + areaId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }
 
