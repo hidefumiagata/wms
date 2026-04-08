@@ -690,7 +690,7 @@ flowchart TD
 | `404 Not Found` | `PARTNER_NOT_FOUND` | 指定された `id` の取引先が存在しない |
 | `409 Conflict` | `OPTIMISTIC_LOCK_CONFLICT` | 送信された `version` が現在のレコードの `version` と一致しない（他のユーザーが先に更新済み） |
 | `422 Unprocessable Entity` | `CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND` | 無効化しようとした取引先が処理中の入荷予定に紐づいている（ステータスが `PLANNED`、`CONFIRMED`、または `INSPECTING`） |
-| `422 Unprocessable Entity` | `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` | 無効化しようとした取引先が処理中の受注に紐づいている（ステータスが `PENDING`、`ALLOCATED`、`PICKING`、または `INSPECTING`） |
+| `422 Unprocessable Entity` | `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` | 無効化しようとした取引先が処理中の受注に紐づいている（ステータスが `ORDERED`、`PARTIAL_ALLOCATED`、`ALLOCATED`、`PICKING_COMPLETED`、または `INSPECTING`） |
 
 ---
 
@@ -716,7 +716,7 @@ flowchart TD
     CHECK_DEACTIVATE -->|有効化 isActive=true| UPDATE["UPDATE partners<br/>SET is_active = true, version = version + 1,<br/>updated_at = NOW, updated_by = ?<br/>WHERE id = ? AND version = ?"]
     CHECK_DEACTIVATE -->|無効化 isActive=false| CHECK_INBOUND["入荷予定チェック:<br/>SELECT COUNT * FROM inbound_slips<br/>WHERE partner_id = ? AND status IN<br/>PLANNED, CONFIRMED, INSPECTING"]
     CHECK_INBOUND -->|1件以上| ERR_INBOUND[422 CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND]
-    CHECK_INBOUND -->|0件| CHECK_OUTBOUND["受注チェック:<br/>SELECT COUNT * FROM outbound_slips<br/>WHERE partner_id = ? AND status IN<br/>PENDING, ALLOCATED, PICKING, INSPECTING"]
+    CHECK_INBOUND -->|0件| CHECK_OUTBOUND["受注チェック:<br/>SELECT COUNT * FROM outbound_slips<br/>WHERE partner_id = ? AND status IN<br/>ORDERED, PARTIAL_ALLOCATED, ALLOCATED, PICKING_COMPLETED, INSPECTING"]
     CHECK_OUTBOUND -->|1件以上| ERR_OUTBOUND[422 CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND]
     CHECK_OUTBOUND -->|0件| UPDATE["UPDATE partners<br/>SET is_active = false, version = version + 1,<br/>updated_at = NOW, updated_by = ?<br/>WHERE id = ? AND version = ?"]
     UPDATE --> SELECT_AFTER["SELECT * FROM partners WHERE id = ?"]
@@ -729,8 +729,8 @@ flowchart TD
 | # | ルール | エラーコード |
 |---|--------|------------|
 | 1 | 処理中の入荷予定（ステータス: `PLANNED`、`CONFIRMED`、`INSPECTING`）に仕入先として紐づいている取引先は無効化不可 | `CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND` |
-| 2 | 処理中の受注（ステータス: `PENDING`、`ALLOCATED`、`PICKING`、`INSPECTING`）に出荷先として紐づいている取引先は無効化不可 | `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` |
-| 3 | 完了済み・キャンセル済みの伝票（`COMPLETED`、`CANCELLED`）に紐づくのみであれば無効化可能 | — |
+| 2 | 処理中の受注（ステータス: `ORDERED`、`PARTIAL_ALLOCATED`、`ALLOCATED`、`PICKING_COMPLETED`、`INSPECTING`）に出荷先として紐づいている取引先は無効化不可 | `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` |
+| 3 | 完了済み・キャンセル済みの伝票（入荷: `STORED` / `PARTIAL_STORED` / `CANCELLED`、出荷: `SHIPPED` / `CANCELLED`）に紐づくのみであれば無効化可能 | — |
 | 4 | 現在の `is_active` と同じ値が送られた場合は変更せずに `200 OK` を返す（冪等性の確保） | — |
 | 5 | 無効化した取引先は新規の入荷予定・受注のプルダウンに表示されなくなる（`isActive=true` フィルタにより） | — |
 | 6 | 無効化した取引先に紐づく過去の入荷実績・出荷実績は変更されない（履歴データとして保持） | — |
@@ -745,6 +745,7 @@ flowchart TD
 - **有効化時の制約チェック不要**: `isActive: true`（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。
 - **エラーコードの追加**: `CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND` および `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` は本 API 専用のエラーコードとして `08-api-overview.md` のエラーコード一覧に追記が必要。
 - **パス名について**: エンドポイントパスは `/toggle-active` だが、リクエストボディの `isActive` フラグにより無効化・有効化の両方を担う設計としている（将来的に `/activate` を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。
+- **チェック実装の配置**: 業務制約チェックは循環依存を避けるため `master.service.spi.PartnerUsageChecker` SPI インターフェース経由で各モジュールが実装を提供する。入荷側 `InboundPartnerUsageChecker` / 受注側 `OutboundPartnerUsageChecker` がそれぞれ本節のステータス集合に対する `exists` 判定を担う。
 
 ---
 

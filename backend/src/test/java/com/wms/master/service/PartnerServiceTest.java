@@ -3,14 +3,16 @@ package com.wms.master.service;
 import com.wms.master.entity.Partner;
 import com.wms.master.entity.PartnerType;
 import com.wms.master.repository.PartnerRepository;
+import com.wms.master.service.spi.PartnerUsageChecker;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -26,9 +28,12 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import org.mockito.InOrder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PartnerService")
@@ -37,8 +42,27 @@ class PartnerServiceTest {
     @Mock
     private PartnerRepository partnerRepository;
 
-    @InjectMocks
+    @Mock
+    private PartnerUsageChecker inboundChecker;
+
+    @Mock
+    private PartnerUsageChecker outboundChecker;
+
     private PartnerService partnerService;
+
+    /**
+     * NOTE (m-9): 本番コードでは {@code InboundPartnerUsageChecker} に {@code @Order(10)}、
+     * {@code OutboundPartnerUsageChecker} に {@code @Order(20)} が付与されているため、
+     * Spring DI 時の {@code List<PartnerUsageChecker>} 注入順は inbound → outbound で保証される。
+     * 本テストでは同じ並び順 ({@code List.of(inboundChecker, outboundChecker)}) を明示的に
+     * 組み立てて単体検証し、DI 順序は結合テスト
+     * ({@code PartnerIntegrationTest#deactivate_bothActive_inboundTakesPrecedence_returns422})
+     * で end-to-end 検証する。
+     */
+    @BeforeEach
+    void setUpService() {
+        partnerService = new PartnerService(partnerRepository, List.of(inboundChecker, outboundChecker));
+    }
 
     @Nested
     @DisplayName("search")
@@ -243,15 +267,41 @@ class PartnerServiceTest {
     @DisplayName("toggleActive")
     class ToggleActive {
         @Test
-        @DisplayName("取引先を無効化できる")
+        @DisplayName("取引先を無効化できる (両チェッカーOK, inbound→outbound の順で呼ばれる)")
         void toggleActive_deactivate_success() {
             Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
             when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L)).thenReturn(Optional.empty());
+            when(outboundChecker.findBlockingReason(1L)).thenReturn(Optional.empty());
             when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
 
             Partner result = partnerService.toggleActive(1L, false, 0);
 
             assertThat(result.getIsActive()).isFalse();
+
+            // M-5: inbound → outbound の順で呼び出されることを検証
+            InOrder inOrder = inOrder(inboundChecker, outboundChecker);
+            inOrder.verify(inboundChecker).findBlockingReason(1L);
+            inOrder.verify(outboundChecker).findBlockingReason(1L);
+        }
+
+        @Test
+        @DisplayName("[BR-001] 両チェッカーNGの場合はinboundエラーが優先される (outboundは呼ばれない)")
+        void toggleActive_bothBlocking_inboundTakesPrecedence() {
+            Partner existing = createPartner(1L, "BTH-001", "兼用取引先", "BOTH");
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L))
+                    .thenReturn(Optional.of("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND"));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND")
+                    // C-R2-3: 入荷要因のメッセージは「入荷予定」を明示する
+                    .hasMessageContaining("処理中の入荷予定");
+
+            // inboundで即ブロックされ、outbound checker は評価されない
+            verify(outboundChecker, never()).findBlockingReason(any());
+            verify(partnerRepository, never()).save(any());
         }
 
         @Test
@@ -290,6 +340,56 @@ class PartnerServiceTest {
 
             assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
+        }
+
+        // m-6: 処理中入荷のみがあるケースは toggleActive_bothBlocking_inboundTakesPrecedence
+        //      (inbound が必ず outbound に優先して評価される) に集約したため削除
+
+        @Test
+        @DisplayName("[BR-001] 処理中受注伝票がある場合はBusinessRuleViolationException(CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND)")
+        void toggleActive_hasActiveOutbound_throwsBusinessRuleViolation() {
+            Partner existing = createPartner(1L, "CUS-001", "出荷先A", "CUSTOMER");
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(inboundChecker.findBlockingReason(1L)).thenReturn(Optional.empty());
+            when(outboundChecker.findBlockingReason(1L))
+                    .thenReturn(Optional.of("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND"));
+
+            assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND")
+                    // C-R2-3: 受注要因のメッセージは「受注」を明示する
+                    .hasMessageContaining("処理中の受注");
+
+            verify(partnerRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("有効化(isActive=true)の場合はチェッカーは呼ばれない")
+        void toggleActive_activate_skipsCheckers() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+            when(partnerRepository.save(any(Partner.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            partnerService.toggleActive(1L, true, 0);
+
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+        }
+
+        @Test
+        @DisplayName("既に無効状態に対して再度無効化(冪等no-op)の場合はチェッカーもsaveも呼ばれない")
+        void toggleActive_alreadyInactive_idempotentNoOp_skipsCheckers() {
+            Partner existing = createPartner(1L, "SUP-001", "仕入先A", "SUPPLIER");
+            existing.deactivate();
+            when(partnerRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            Partner result = partnerService.toggleActive(1L, false, 0);
+
+            assertThat(result.getIsActive()).isFalse();
+            verifyNoInteractions(inboundChecker);
+            verifyNoInteractions(outboundChecker);
+            verify(partnerRepository, never()).save(any());
         }
     }
 

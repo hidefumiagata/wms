@@ -4705,8 +4705,8 @@ test('SC-009: 5回連続ログイン失敗でアカウントがロックされ�
 <tr><td>SC-PAR01</td><td>種別「仕入先」の取引先が入荷予定の仕入先プルダウンに表示される</td><td>中</td><td>仕入先の取引先が有効</td><td>○</td><td>—</td></tr>
 <tr><td>SC-PAR02</td><td>種別「出荷先」の取引先が受注の出荷先プルダウンに表示される</td><td>中</td><td>出荷先の取引先が有効</td><td>○</td><td>—</td></tr>
 <tr><td>SC-PAR03</td><td>処理中の入荷予定に紐づく取引先を無効化しようとすると422エラー</td><td>高</td><td>取引先がPLANNEDの入荷予定に紐づいている</td><td>○</td><td>○</td></tr>
-<tr><td>SC-PAR04</td><td>処理中の受注に紐づく取引先を無効化しようとすると422エラー</td><td>高</td><td>取引先がPENDINGの受注に紐づいている</td><td>○</td><td>○</td></tr>
-<tr><td>SC-PAR05</td><td>完了済み伝票のみに紐づく取引先は無効化できる</td><td>中</td><td>取引先がCOMPLETED伝票のみに紐づいている</td><td>○</td><td>—</td></tr>
+<tr><td>SC-PAR04</td><td>処理中の受注に紐づく取引先を無効化しようとすると422エラー</td><td>高</td><td>取引先がORDEREDの受注に紐づいている</td><td>○</td><td>○</td></tr>
+<tr><td>SC-PAR05</td><td>完了済み伝票のみに紐づく取引先は無効化できる</td><td>中</td><td>取引先が完了系伝票（入荷:STORED/PARTIAL_STORED/CANCELLED、出荷:SHIPPED/CANCELLED）のみに紐づいている</td><td>○</td><td>—</td></tr>
 <p></tbody><br></table></p>
 <h3>Part D: 倉庫マスタ固有シナリオ</h3>
 <table>
@@ -5192,8 +5192,8 @@ test('SC-009: 5回連続ログイン失敗でアカウントがロックされ�
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td>シナリオID</td><td>SC-PAR04</td></tr>
-<tr><td>シナリオ名</td><td>PENDING/ALLOCATED/PICKING/INSPECTINGステータスの受注に紐づく取引先は無効化不可</td></tr>
-<tr><td>前提条件</td><td>取引先CUS-001がステータスPENDINGの受注に紐づいている</td></tr>
+<tr><td>シナリオ名</td><td>ORDERED/PARTIAL_ALLOCATED/ALLOCATED/PICKING_COMPLETED/INSPECTINGステータスの受注に紐づく取引先は無効化不可</td></tr>
+<tr><td>前提条件</td><td>取引先CUS-001がステータスORDEREDの受注に紐づいている</td></tr>
 <p></tbody><br></table></p>
 <p><strong>テストステップ:</strong></p>
 <table>
@@ -5207,8 +5207,8 @@ test('SC-009: 5回連続ログイン失敗でアカウントがロックされ�
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
 <tr><td>シナリオID</td><td>SC-PAR05</td></tr>
-<tr><td>シナリオ名</td><td>COMPLETED/CANCELLEDの伝票のみに紐づく取引先は無効化可能</td></tr>
-<tr><td>前提条件</td><td>取引先がCOMPLETEDステータスの伝票にのみ紐づいている</td></tr>
+<tr><td>シナリオ名</td><td>完了系伝票のみに紐づく取引先は無効化可能（入荷: STORED/PARTIAL_STORED/CANCELLED、出荷: SHIPPED/CANCELLED）</td></tr>
+<tr><td>前提条件</td><td>取引先が完了系ステータスの伝票にのみ紐づいている</td></tr>
 <p></tbody><br></table></p>
 <p><strong>テストステップ:</strong></p>
 <table>

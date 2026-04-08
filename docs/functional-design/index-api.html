@@ -2907,7 +2907,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404 Not Found</code></td><td><code>PARTNER_NOT_FOUND</code></td><td>指定された <code>id</code> の取引先が存在しない</td></tr>
 <tr><td><code>409 Conflict</code></td><td><code>OPTIMISTIC_LOCK_CONFLICT</code></td><td>送信された <code>version</code> が現在のレコードの <code>version</code> と一致しない（他のユーザーが先に更新済み）</td></tr>
 <tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code></td><td>無効化しようとした取引先が処理中の入荷予定に紐づいている（ステータスが <code>PLANNED</code>、<code>CONFIRMED</code>、または <code>INSPECTING</code>）</td></tr>
-<tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code></td><td>無効化しようとした取引先が処理中の受注に紐づいている（ステータスが <code>PENDING</code>、<code>ALLOCATED</code>、<code>PICKING</code>、または <code>INSPECTING</code>）</td></tr>
+<tr><td><code>422 Unprocessable Entity</code></td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code></td><td>無効化しようとした取引先が処理中の受注に紐づいている（ステータスが <code>ORDERED</code>、<code>PARTIAL_ALLOCATED</code>、<code>ALLOCATED</code>、<code>PICKING_COMPLETED</code>、または <code>INSPECTING</code>）</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>4. 業務ロジック</h3>
@@ -2930,7 +2930,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_DEACTIVATE -->|有効化 isActive=true| UPDATE["UPDATE partners<br/>SET is_active = true, version = version + 1,<br/>updated_at = NOW, updated_by = ?<br/>WHERE id = ? AND version = ?"]
     CHECK_DEACTIVATE -->|無効化 isActive=false| CHECK_INBOUND["入荷予定チェック:<br/>SELECT COUNT * FROM inbound_slips<br/>WHERE partner_id = ? AND status IN<br/>PLANNED, CONFIRMED, INSPECTING"]
     CHECK_INBOUND -->|1件以上| ERR_INBOUND[422 CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND]
-    CHECK_INBOUND -->|0件| CHECK_OUTBOUND["受注チェック:<br/>SELECT COUNT * FROM outbound_slips<br/>WHERE partner_id = ? AND status IN<br/>PENDING, ALLOCATED, PICKING, INSPECTING"]
+    CHECK_INBOUND -->|0件| CHECK_OUTBOUND["受注チェック:<br/>SELECT COUNT * FROM outbound_slips<br/>WHERE partner_id = ? AND status IN<br/>ORDERED, PARTIAL_ALLOCATED, ALLOCATED, PICKING_COMPLETED, INSPECTING"]
     CHECK_OUTBOUND -->|1件以上| ERR_OUTBOUND[422 CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND]
     CHECK_OUTBOUND -->|0件| UPDATE["UPDATE partners<br/>SET is_active = false, version = version + 1,<br/>updated_at = NOW, updated_by = ?<br/>WHERE id = ? AND version = ?"]
     UPDATE --> SELECT_AFTER["SELECT * FROM partners WHERE id = ?"]
@@ -2941,8 +2941,8 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <thead><tr><th>#</th><th>ルール</th><th>エラーコード</th></tr></thead>
 <tbody>
 <tr><td>1</td><td>処理中の入荷予定（ステータス: <code>PLANNED</code>、<code>CONFIRMED</code>、<code>INSPECTING</code>）に仕入先として紐づいている取引先は無効化不可</td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code></td></tr>
-<tr><td>2</td><td>処理中の受注（ステータス: <code>PENDING</code>、<code>ALLOCATED</code>、<code>PICKING</code>、<code>INSPECTING</code>）に出荷先として紐づいている取引先は無効化不可</td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code></td></tr>
-<tr><td>3</td><td>完了済み・キャンセル済みの伝票（<code>COMPLETED</code>、<code>CANCELLED</code>）に紐づくのみであれば無効化可能</td><td>—</td></tr>
+<tr><td>2</td><td>処理中の受注（ステータス: <code>ORDERED</code>、<code>PARTIAL_ALLOCATED</code>、<code>ALLOCATED</code>、<code>PICKING_COMPLETED</code>、<code>INSPECTING</code>）に出荷先として紐づいている取引先は無効化不可</td><td><code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code></td></tr>
+<tr><td>3</td><td>完了済み・キャンセル済みの伝票（入荷: <code>STORED</code> / <code>PARTIAL_STORED</code> / <code>CANCELLED</code>、出荷: <code>SHIPPED</code> / <code>CANCELLED</code>）に紐づくのみであれば無効化可能</td><td>—</td></tr>
 <tr><td>4</td><td>現在の <code>is_active</code> と同じ値が送られた場合は変更せずに <code>200 OK</code> を返す（冪等性の確保）</td><td>—</td></tr>
 <tr><td>5</td><td>無効化した取引先は新規の入荷予定・受注のプルダウンに表示されなくなる（<code>isActive=true</code> フィルタにより）</td><td>—</td></tr>
 <tr><td>6</td><td>無効化した取引先に紐づく過去の入荷実績・出荷実績は変更されない（履歴データとして保持）</td><td>—</td></tr>
@@ -2950,7 +2950,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h3>5. 補足事項</h3>
-<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 業務制約チェック（入荷予定・受注の存在確認）と UPDATE を同一トランザクションで実行する。トランザクション分離レベルはデフォルト（READ COMMITTED）で問題ない。</li><li style="margin-left:0px"><strong>冪等性</strong>: 既に無効化済みの取引先に <code>isActive: false</code> を送った場合、または有効な取引先に <code>isActive: true</code> を送った場合は UPDATE を行わず <code>200 OK</code> を返す（PATCH の冪等性）。</li><li style="margin-left:0px"><strong>有効化時の制約チェック不要</strong>: <code>isActive: true</code>（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。</li><li style="margin-left:0px"><strong>エラーコードの追加</strong>: <code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> および <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> は本 API 専用のエラーコードとして <code>08-api-overview.md</code> のエラーコード一覧に追記が必要。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントパスは <code>/toggle-active</code> だが、リクエストボディの <code>isActive</code> フラグにより無効化・有効化の両方を担う設計としている（将来的に <code>/activate</code> を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。</li></ul>
+<ul><li style="margin-left:0px"><strong>トランザクション</strong>: 業務制約チェック（入荷予定・受注の存在確認）と UPDATE を同一トランザクションで実行する。トランザクション分離レベルはデフォルト（READ COMMITTED）で問題ない。</li><li style="margin-left:0px"><strong>冪等性</strong>: 既に無効化済みの取引先に <code>isActive: false</code> を送った場合、または有効な取引先に <code>isActive: true</code> を送った場合は UPDATE を行わず <code>200 OK</code> を返す（PATCH の冪等性）。</li><li style="margin-left:0px"><strong>有効化時の制約チェック不要</strong>: <code>isActive: true</code>（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。</li><li style="margin-left:0px"><strong>エラーコードの追加</strong>: <code>CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND</code> および <code>CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND</code> は本 API 専用のエラーコードとして <code>08-api-overview.md</code> のエラーコード一覧に追記が必要。</li><li style="margin-left:0px"><strong>パス名について</strong>: エンドポイントパスは <code>/toggle-active</code> だが、リクエストボディの <code>isActive</code> フラグにより無効化・有効化の両方を担う設計としている（将来的に <code>/activate</code> を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。</li><li style="margin-left:0px"><strong>チェック実装の配置</strong>: 業務制約チェックは循環依存を避けるため <code>master.service.spi.PartnerUsageChecker</code> SPI インターフェース経由で各モジュールが実装を提供する。入荷側 <code>InboundPartnerUsageChecker</code> / 受注側 <code>OutboundPartnerUsageChecker</code> がそれぞれ本節のステータス集合に対する <code>exists</code> 判定を担う。</li></ul>
 <hr>
 <hr>
 <h2>API-MST-PAR-006 取引先コード存在確認</h2>
