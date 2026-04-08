@@ -336,9 +336,9 @@ jobs:
       - name: Run tests
         run: ./gradlew test
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/wms_test
-          SPRING_DATASOURCE_USERNAME: wms
-          SPRING_DATASOURCE_PASSWORD: wms
+          DATABASE_URL: jdbc:postgresql://localhost:5432/wms_test
+          DATABASE_USERNAME: wms
+          DATABASE_PASSWORD: wms
 
       - name: Build
         run: ./gradlew bootJar
