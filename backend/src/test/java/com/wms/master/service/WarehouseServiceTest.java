@@ -241,7 +241,7 @@ class WarehouseServiceTest {
         }
 
         @Test
-        @DisplayName("SC-WH01: 在庫が存在する倉庫の無効化はCANNOT_DEACTIVATE_HAS_INVENTORY(422)をスロー")
+        @DisplayName("SC-WH01: 在庫が存在する倉庫の無効化はCANNOT_DEACTIVATE_HAS_INVENTORYをスロー (Controller層で422にマップ)")
         void toggleActive_deactivate_hasInventory_throwsBusinessRuleViolation() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -268,7 +268,7 @@ class WarehouseServiceTest {
         }
 
         @Test
-        @DisplayName("既に同じ状態の場合はUPDATEなし・在庫チェックも呼ばれない（冪等性）")
+        @DisplayName("既に同じ状態の場合はUPDATEなし・在庫チェックも呼ばれない（冪等性: 有効→有効）")
         void toggleActive_alreadySameState_noUpdate() {
             Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -276,6 +276,20 @@ class WarehouseServiceTest {
             Warehouse result = warehouseService.toggleActive(1L, true, 0);
 
             assertThat(result.getIsActive()).isTrue();
+            verify(warehouseRepository, never()).save(any());
+            verify(inventoryService, never()).hasInventoryInWarehouse(any());
+        }
+
+        @Test
+        @DisplayName("既に無効状態で isActive=false 要求 → no-op が先で在庫チェックスキップ（冪等性: 無効→無効）")
+        void toggleActive_alreadyInactive_requestInactive_noOpAndSkipsInventoryCheck() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            existing.deactivate();
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            Warehouse result = warehouseService.toggleActive(1L, false, 0);
+
+            assertThat(result.getIsActive()).isFalse();
             verify(warehouseRepository, never()).save(any());
             verify(inventoryService, never()).hasInventoryInWarehouse(any());
         }

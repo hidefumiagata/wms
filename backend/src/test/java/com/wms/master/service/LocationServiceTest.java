@@ -384,7 +384,7 @@ class LocationServiceTest {
         }
 
         @Test
-        @DisplayName("SC-FAC10: 在庫が存在するロケーションの無効化はCANNOT_DEACTIVATE_HAS_INVENTORY(422)をスロー")
+        @DisplayName("SC-FAC10: 在庫が存在するロケーションの無効化はCANNOT_DEACTIVATE_HAS_INVENTORYをスロー (Controller層で422にマップ)")
         void toggleActive_deactivate_hasInventory_throwsBusinessRuleViolation() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -411,7 +411,7 @@ class LocationServiceTest {
         }
 
         @Test
-        @DisplayName("既に同じ状態の場合はUPDATEなし・在庫チェックも呼ばれない（冪等性）")
+        @DisplayName("既に同じ状態の場合はUPDATEなし・在庫チェックも呼ばれない（冪等性: 有効→有効）")
         void toggleActive_alreadySameState_noUpdate() {
             Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
             when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -419,6 +419,20 @@ class LocationServiceTest {
             Location result = locationService.toggleActive(1L, true, 0);
 
             assertThat(result.getIsActive()).isTrue();
+            verify(locationRepository, never()).save(any());
+            verify(inventoryService, never()).hasInventoryInLocation(any());
+        }
+
+        @Test
+        @DisplayName("既に無効状態で isActive=false 要求 → no-op が先で在庫チェックスキップ（冪等性: 無効→無効）")
+        void toggleActive_alreadyInactive_requestInactive_noOpAndSkipsInventoryCheck() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.deactivate();
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            Location result = locationService.toggleActive(1L, false, 0);
+
+            assertThat(result.getIsActive()).isFalse();
             verify(locationRepository, never()).save(any());
             verify(inventoryService, never()).hasInventoryInLocation(any());
         }

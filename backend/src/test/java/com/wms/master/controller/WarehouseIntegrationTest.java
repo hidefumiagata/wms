@@ -374,6 +374,45 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("BR-001境界値: 在庫レコードはあるが quantity=0 の倉庫は無効化成功 (200)")
+        void toggle_deactivate_withZeroQtyInventory_returns200() throws Exception {
+            // 倉庫/棟/エリア/ロケーション を作成
+            Long whId = createTestWarehouse("ITWZ", "ゼロ在庫無効化テスト");
+            Long buildingId = createTestBuilding(whId, "Z", "Z棟");
+            Long areaId = createTestArea(buildingId, "Z01", "ゼロ在庫エリア", "AMBIENT", "STOCK");
+            Long locationId = createTestLocation(areaId, "Z-01-Z01-01-01-01", "ゼロ在庫ロケ");
+
+            // quantity=0 の在庫レコードを INSERT（レコードは存在するが数量0）
+            Long productId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM products ORDER BY id LIMIT 1", Long.class);
+            jdbcTemplate.update(
+                    "INSERT INTO inventories (warehouse_id, location_id, product_id, unit_type, " +
+                            "quantity, allocated_qty, updated_at) " +
+                            "VALUES (?, ?, ?, 'PIECE', 0, 0, now())",
+                    whId, locationId, productId);
+
+            // toggle-active で無効化リクエスト
+            Integer version = getWarehouseVersion(whId);
+            String body = String.format("""
+                    { "isActive": false, "version": %d }
+                    """, version);
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            // 200 + is_active=false（quantity=0 は在庫なしと判定される）
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("isActive").asBoolean()).isFalse();
+
+            // DB検証
+            Boolean isActive = jdbcTemplate.queryForObject(
+                    "SELECT is_active FROM warehouses WHERE id = ?", Boolean.class, whId);
+            assertThat(isActive).isFalse();
+        }
+
+        @Test
         @DisplayName("楽観ロック競合 → 409")
         void toggle_versionMismatch_returns409() throws Exception {
             Long whId = createTestWarehouse("ITTC", "ロック競合テスト");
