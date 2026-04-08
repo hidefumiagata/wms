@@ -632,25 +632,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             insertInboundSlip("IT-PAR05A-S", partnerId, "STORED");
             insertInboundSlip("IT-PAR05A-C", partnerId, "CANCELLED");
 
-            // M-3: 実 version を取得してハードコードを排除
-            Integer version = getVersion(partnerId);
-            String body = String.format("""
-                    { "isActive": false, "version": %d }
-                    """, version);
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("isActive").asBoolean()).isFalse();
-            // M-3: version が +1 されていること
-            assertThat(json.get("version").asInt()).isEqualTo(version + 1);
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isFalse();
+            // C-R2-6: 対称な共通ヘルパ経由で 200 OK / version+1 / DB を検証
+            assertDeactivationAccepted(partnerId);
         }
 
         @Test
@@ -660,25 +643,8 @@ class PartnerIntegrationTest extends IntegrationTestBase {
             insertOutboundSlip("IT-PAR05B-S", partnerId, "SHIPPED");
             insertOutboundSlip("IT-PAR05B-C", partnerId, "CANCELLED");
 
-            // M-3: 実 version を取得してハードコードを排除
-            Integer version = getVersion(partnerId);
-            String body = String.format("""
-                    { "isActive": false, "version": %d }
-                    """, version);
-            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
-            ResponseEntity<String> response = restTemplate.exchange(
-                    BASE_URL + "/" + partnerId + "/toggle-active",
-                    HttpMethod.PATCH, request, String.class);
-
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-            JsonNode json = parseJson(response.getBody());
-            assertThat(json.get("isActive").asBoolean()).isFalse();
-            // M-3: version が +1 されていること
-            assertThat(json.get("version").asInt()).isEqualTo(version + 1);
-
-            Boolean isActive = jdbcTemplate.queryForObject(
-                    "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
-            assertThat(isActive).isFalse();
+            // C-R2-6: 対称な共通ヘルパ経由で 200 OK / version+1 / DB を検証
+            assertDeactivationAccepted(partnerId);
         }
 
         @Test
@@ -755,9 +721,9 @@ class PartnerIntegrationTest extends IntegrationTestBase {
      * N+1 を避けている (M-2)。</p>
      *
      * <p>created_at / updated_at は DB スキーマ
-     * (V10__create_outbound_slips_table.sql) の DEFAULT now() に依存しており、
+     * (V13__create_outbound_tables.sql) の DEFAULT now() に依存しており、
      * ここでは明示的に指定していない。テスト側で時刻ロジックを扱わないための
-     * 意図的な単純化である (M-3)。</p>
+     * 意図的な単純化である (M-3 / D-R2-2)。</p>
      */
     private void insertOutboundSlip(String slipNumber, Long partnerId, String status) {
         jdbcTemplate.update("""
@@ -794,6 +760,31 @@ class PartnerIntegrationTest extends IntegrationTestBase {
         assertThat(isActive).isTrue();
     }
 
+    /**
+     * 取引先の無効化リクエストが正常に受理されることを検証する共通ヘルパ (C-R2-6)。
+     * {@link #assertDeactivationRejected} と対称な成功系。
+     * 現行 version を取得してリクエストを組み立て、200 OK / response の isActive=false /
+     * version+1 / DB 上の is_active=false を一括検証する。
+     */
+    private void assertDeactivationAccepted(Long partnerId) throws Exception {
+        Integer version = getVersion(partnerId);
+        String body = String.format("""
+                { "isActive": false, "version": %d }
+                """, version);
+        HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+        ResponseEntity<String> response = restTemplate.exchange(
+                BASE_URL + "/" + partnerId + "/toggle-active",
+                HttpMethod.PATCH, request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode json = parseJson(response.getBody());
+        assertThat(json.get("isActive").asBoolean()).isFalse();
+        assertThat(json.get("version").asInt()).isEqualTo(version + 1);
+
+        Boolean isActive = jdbcTemplate.queryForObject(
+                "SELECT is_active FROM partners WHERE id = ?", Boolean.class, partnerId);
+        assertThat(isActive).isFalse();
+    }
 
     private Long createTestPartner(String code, String name, String type) throws Exception {
         String body = String.format("""

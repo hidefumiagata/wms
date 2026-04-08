@@ -40,28 +40,16 @@ class InboundPartnerUsageCheckerTest {
     }
 
     @Test
-    @DisplayName("処理中入荷伝票が存在しない場合 empty を返す")
+    @DisplayName("処理中入荷伝票が存在しない場合 empty を返す (ステータス集合は ACTIVE_STATUSES と一致)")
     void findBlockingReason_noActiveSlip_returnsEmpty() {
+        // m-1 / m-8 / C-R2-5: argThat で集合を厳密検証することで、ステータス集合の一致確認
+        // を兼ねる。重複していた passesExpectedStatuses テストは削除済み。
         when(inboundSlipRepository.existsByPartnerIdAndStatusIn(
                 eq(2L),
                 argThat(s -> InboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
                 .thenReturn(false);
 
         Optional<String> result = checker.findBlockingReason(2L);
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("チェック対象ステータスは ACTIVE_STATUSES と一致する (PLANNED/CONFIRMED/INSPECTING)")
-    void findBlockingReason_passesExpectedStatuses() {
-        // m-1: 生文字列を複製せず本番定数を参照。m-8: argThat で集合を厳密検証
-        when(inboundSlipRepository.existsByPartnerIdAndStatusIn(
-                eq(3L),
-                argThat(s -> InboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
-                .thenReturn(false);
-
-        Optional<String> result = checker.findBlockingReason(3L);
 
         assertThat(result).isEmpty();
     }

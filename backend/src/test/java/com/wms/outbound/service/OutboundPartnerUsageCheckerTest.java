@@ -40,30 +40,16 @@ class OutboundPartnerUsageCheckerTest {
     }
 
     @Test
-    @DisplayName("処理中受注伝票が存在しない場合 empty を返す")
+    @DisplayName("処理中受注伝票が存在しない場合 empty を返す (ステータス集合は ACTIVE_STATUSES と一致)")
     void findBlockingReason_noActiveSlip_returnsEmpty() {
+        // m-1 / m-8 / C-R2-5: argThat で集合を厳密検証することで、ステータス集合の一致確認
+        // を兼ねる。重複していた passesExpectedStatuses テストは削除済み。
         when(outboundSlipRepository.existsByPartnerIdAndStatusIn(
                 eq(2L),
                 argThat(s -> OutboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
                 .thenReturn(false);
 
         Optional<String> result = checker.findBlockingReason(2L);
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("チェック対象ステータスは ACTIVE_STATUSES と一致する (ORDERED/PARTIAL_ALLOCATED/ALLOCATED/PICKING_COMPLETED/INSPECTING)")
-    void findBlockingReason_passesExpectedStatuses() {
-        // m-1: 生文字列を複製せず本番定数を参照。m-8: argThat で集合を厳密検証
-        // NOTE: 設計書上の "PENDING" / "PICKING" は実装/DB制約に存在しないため、
-        //       それぞれ ORDERED / PICKING_COMPLETED が対応する
-        when(outboundSlipRepository.existsByPartnerIdAndStatusIn(
-                eq(3L),
-                argThat(s -> OutboundPartnerUsageChecker.ACTIVE_STATUSES.equals(s))))
-                .thenReturn(false);
-
-        Optional<String> result = checker.findBlockingReason(3L);
 
         assertThat(result).isEmpty();
     }
