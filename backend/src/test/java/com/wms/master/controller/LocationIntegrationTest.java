@@ -22,6 +22,8 @@ class LocationIntegrationTest extends IntegrationTestBase {
     private static final String ADMIN_PASSWORD = "Admin@1234";
     private static final String STAFF_CODE = "wh_staff01";
     private static final String STAFF_PASSWORD = "Staff@1234";
+    private static final String VIEWER_CODE = "viewer01";
+    private static final String VIEWER_PASSWORD = "Test@1234";
 
     private HttpHeaders adminHeaders;
     private Long testWarehouseId;
@@ -668,6 +670,94 @@ class LocationIntegrationTest extends IntegrationTestBase {
                     HttpMethod.GET, new HttpEntity<>(staffHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション一覧取得可能")
+        void list_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "?warehouseId=" + testWarehouseId + "&page=0&size=20",
+                    HttpMethod.GET, new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション詳細取得可能")
+        void get_asViewer_returns200() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-99-04-01", "ビューワー詳細テスト");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId, HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション作成不可 → 403")
+        void create_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = String.format("""
+                    {
+                        "areaId": %d,
+                        "locationCode": "A-01-A01-99-05-01"
+                    }
+                    """, testStockAreaId);
+
+            ResponseEntity<String> response = postJson(BASE_URL, body, viewerHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション更新不可 → 403")
+        void update_asViewer_returns403() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-99-06-01", "ビューワー更新テスト");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "locationName": "ビューワー更新", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション件数取得可能")
+        void count_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/count?warehouseId=" + testWarehouseId,
+                    HttpMethod.GET, new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.has("count")).isTrue();
+        }
+
+        @Test
+        @DisplayName("VIEWERはロケーション有効/無効切替不可 → 403")
+        void toggle_asViewer_returns403() throws Exception {
+            Long locationId = createLocation(testStockAreaId, "A-01-A01-99-07-01", "ビューワー切替テスト");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + locationId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }
 

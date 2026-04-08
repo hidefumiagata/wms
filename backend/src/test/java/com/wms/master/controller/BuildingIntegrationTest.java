@@ -23,6 +23,8 @@ class BuildingIntegrationTest extends IntegrationTestBase {
     private static final String ADMIN_PASSWORD = "Admin@1234";
     private static final String STAFF_CODE = "wh_staff01";
     private static final String STAFF_PASSWORD = "Staff@1234";
+    private static final String VIEWER_CODE = "viewer01";
+    private static final String VIEWER_PASSWORD = "Test@1234";
 
     private HttpHeaders adminHeaders;
     private Long testWarehouseId;
@@ -428,6 +430,81 @@ class BuildingIntegrationTest extends IntegrationTestBase {
                     HttpMethod.GET, new HttpEntity<>(staffHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERは棟一覧取得可能")
+        void list_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "?warehouseId=" + testWarehouseId + "&page=0&size=20",
+                    HttpMethod.GET, new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERは棟詳細取得可能")
+        void get_asViewer_returns200() throws Exception {
+            Long buildingId = createBuilding(testWarehouseId, "V", "V棟");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + buildingId, HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERは棟作成不可 → 403")
+        void create_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = String.format("""
+                    {
+                        "warehouseId": %d,
+                        "buildingCode": "W",
+                        "buildingName": "W棟"
+                    }
+                    """, testWarehouseId);
+
+            ResponseEntity<String> response = postJson(BASE_URL, body, viewerHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは棟更新不可 → 403")
+        void update_asViewer_returns403() throws Exception {
+            Long buildingId = createBuilding(testWarehouseId, "X", "X棟");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "buildingName": "ビューワー更新", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + buildingId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは棟有効/無効切替不可 → 403")
+        void toggle_asViewer_returns403() throws Exception {
+            Long buildingId = createBuilding(testWarehouseId, "Y", "Y棟");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + buildingId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }
 

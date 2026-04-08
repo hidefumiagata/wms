@@ -24,6 +24,8 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
     private static final String MANAGER_PASSWORD = "Manager@1234";
     private static final String STAFF_CODE = "wh_staff01";
     private static final String STAFF_PASSWORD = "Staff@1234";
+    private static final String VIEWER_CODE = "viewer01";
+    private static final String VIEWER_PASSWORD = "Test@1234";
 
     private HttpHeaders adminHeaders;
 
@@ -634,6 +636,93 @@ class WarehouseIntegrationTest extends IntegrationTestBase {
             ResponseEntity<String> response = restTemplate.exchange(
                     BASE_URL + "/" + whId + "/toggle-active",
                     HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは一覧取得可能")
+        void list_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "?page=0&size=20", HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERは詳細取得可能")
+        void get_asViewer_returns200() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            Long warehouseId = jdbcTemplate.queryForObject(
+                    "SELECT id FROM warehouses WHERE warehouse_code = 'WH001'", Long.class);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + warehouseId, HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        }
+
+        @Test
+        @DisplayName("VIEWERは作成不可 → 403")
+        void create_asViewer_returns403() throws Exception {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    {
+                        "warehouseCode": "ITVW",
+                        "warehouseName": "ビューワー作成テスト"
+                    }
+                    """;
+
+            ResponseEntity<String> response = postJson(BASE_URL, body, viewerHeaders);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは更新不可 → 403")
+        void update_asViewer_returns403() throws Exception {
+            Long whId = createTestWarehouse("ITVU", "ビューワー更新テスト");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "warehouseName": "ビューワー更新", "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId, HttpMethod.PUT, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは有効/無効切替不可 → 403")
+        void toggle_asViewer_returns403() throws Exception {
+            Long whId = createTestWarehouse("ITVT", "ビューワー切替テスト");
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+            String body = """
+                    { "isActive": false, "version": 0 }
+                    """;
+
+            HttpEntity<String> request = new HttpEntity<>(body, viewerHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/" + whId + "/toggle-active",
+                    HttpMethod.PATCH, request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+
+        @Test
+        @DisplayName("VIEWERは倉庫コード存在確認不可 → 403")
+        void exists_asViewer_returns403() {
+            HttpHeaders viewerHeaders = loginAndGetHeaders(VIEWER_CODE, VIEWER_PASSWORD);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/exists?warehouseCode=WH001", HttpMethod.GET,
+                    new HttpEntity<>(viewerHeaders), String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
