@@ -517,7 +517,7 @@ flowchart TD
 - `if_executions.blob_move_failed` はカラムレベルで `DEFAULT TRUE`、アプリ層の `IfExecution` ビルダーでも `true` を明示設定する。
 - tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間でアプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で残ることが保証される。
 - Blob 移動が成功した場合のみ、独立トランザクション（`TransactionTemplate`）で `blob_move_failed=false` に更新する。`@Transactional` を使わず `TransactionTemplate` を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。
-- tx2 は `@Modifying` クエリで `blob_move_failed` カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。
+- tx2 は `@Modifying` クエリで `blob_move_failed` カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。BAT-IF-RECONCILE 側も `blob_move_failed` および関連カラムのみを UPDATE する想定であり、tx2 と並行動作しても他のカラム（`status`、`error_message` 等）を相互上書きしない。
 - 悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となり、Blob の移動状態を突き合わせて自動復旧する。
 
 **設計判断: DB登録とBlob移動の順序**
@@ -609,6 +609,17 @@ wms:
 | DB登録中のエラー | トランザクションロールバック。ファイルはpendingに残留 | 原因調査後にユーザーが再度取り込み操作 |
 | Blob移動失敗（DB登録成功後） | DB登録は完了。ファイルがpendingに残留。`blob_move_failed` は悲観デフォルト `true` のまま残留 | リカバリバッチ（BAT-IF-RECONCILE, Issue #440）が `blob_move_failed=true` の履歴を走査し、Blob 実体状態と突き合わせて自動復旧する。手動対応する場合は取り込み履歴を確認し二重取り込みでないことを確認のうえでファイルを processed へ移動、フラグを false に更新 |
 | 取り込み中のアプリケーション再起動 | トランザクション未コミットの場合はロールバック。ファイルはpendingに残留 | ユーザーが再度取り込み操作 |
+
+#### リカバリバッチ救済条件マトリクス（Issue #374 / #440）
+
+tx1 確定後の Blob 移動フェーズにおいて残留する可能性のある状態と、BAT-IF-RECONCILE による救済動作を以下に整理する。
+
+| パターン | Blob 状態 | DB 状態 | リカバリバッチ動作 |
+|---|---|---|---|
+| tx1 確定後、Blob 移動失敗 | pending 残留 | `blob_move_failed=true` | 再 move |
+| tx1 確定後、Blob 移動成功、tx2 失敗 | processed 移動済み | `blob_move_failed=true` | dest 既存検知で flag 更新 |
+
+※ リカバリバッチ自体の実装は Issue #440。本表は救済対象パターンの予約宣言。
 
 ---
 

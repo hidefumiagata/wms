@@ -364,12 +364,17 @@ outboundSlipRepository.flush();  // バッチINSERT即時実行
 [トランザクション外] Blob Storage読み取り
 [トランザクション外] 再バリデーション（L1〜L5）
 [トランザクション外] マスタ一括検索・Map構築
-------- @Transactional 開始 -------
-[トランザクション内] outbound_slips / outbound_slip_lines INSERT
-[トランザクション内] if_executions INSERT（取り込み履歴）
-------- @Transactional コミット -------
+------- tx1: TransactionTemplate.execute() 開始 -------
+[tx1内] outbound_slips / outbound_slip_lines INSERT
+[tx1内] if_executions INSERT（取り込み履歴, blob_move_failed=true）
+------- tx1 コミット -------
 [トランザクション外] Blobファイル移動（pending → processed）
+------- tx2: markBlobMoveSucceeded() 開始 -------
+[tx2内] if_executions.blob_move_failed を false へ UPDATE（単一カラム）
+------- tx2 コミット -------
 ```
+
+> Issue #374 補足: `if_executions.blob_move_failed` は tx1 で悲観デフォルト `true` として確定し、Blob 移動成功後に tx2（独立トランザクション、単一カラム UPDATE）で `false` に更新する。Blob 移動失敗時は悲観デフォルトのまま残留し、リカバリバッチ BAT-IF-RECONCILE（Issue #440）で救済する。詳細は [09-interface-architecture.md セクション7.4](../architecture-design/09-interface-architecture.md) を参照。
 
 ### 4.2 1ファイル = 1トランザクション
 

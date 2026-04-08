@@ -413,11 +413,11 @@ private Long id;
 │  4. マスタ一括検索（CsvMasterCache構築）                            │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ @Transactional                                          │    │
+│  │ tx1: TransactionTemplate.execute()                      │    │
 │  │                                                         │    │
 │  │  5. inbound_slips INSERT（N件）                          │    │
 │  │  6. inbound_slip_lines INSERT（M件）                     │    │
-│  │  7. if_executions INSERT（1件）                          │    │
+│  │  7. if_executions INSERT（1件, blob_move_failed=true）    │    │
 │  │                                                         │    │
 │  │  → 全て成功: COMMIT                                      │    │
 │  │  → いずれか失敗: ROLLBACK（5〜7全てロールバック）           │    │
@@ -425,8 +425,11 @@ private Long id;
 │                                                                 │
 │  [トランザクション外]                                              │
 │  8. Blob ファイルを pending → processed へ移動                   │
-│     → 成功時: 独立トランザクション（TransactionTemplate）で        │
-│       if_executions.blob_move_failed を false へ UPDATE             │
+│     → 成功時: 独立トランザクション tx2 を開始                       │
+│       ┌───────────────────────────────────────────────────┐     │
+│       │ tx2: markBlobMoveSucceeded()                      │     │
+│       │   if_executions.blob_move_failed を false へ UPDATE│     │
+│       └───────────────────────────────────────────────────┘     │
 │     → 失敗時: 悲観デフォルト true のまま残留 + ERROR ログ出力        │
 │       リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済           │
 │     ※ Issue #374: tx1 コミット時は blob_move_failed=true で確定     │
@@ -434,14 +437,17 @@ private Long id;
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 1ファイル = 1トランザクション
+### 4.2 tx1/tx2 の2段トランザクション構成
 
-1回の取り込み操作（1 CSVファイル）は1トランザクションで処理する。
+1回の取り込み操作（1 CSVファイル）は、DB登録用 tx1 と Blob 移動成功後のフラグ更新用 tx2 の2つの独立トランザクションで処理する。
 
 | 方針 | 説明 |
 |------|------|
-| **トランザクション粒度** | 1ファイル内で生成される全伝票（複数のinbound_slips + 各inbound_slip_lines）を1トランザクションで一括コミット |
-| **根拠** | ファイル単位の整合性を担保する。部分的な伝票登録による不整合を防止 |
+| **tx1（DB登録）** | DB 登録（伝票・履歴 INSERT）は 1 ファイル = 1 トランザクション（tx1）として一括コミットする。`if_executions.blob_move_failed` は悲観デフォルト `true` で確定する |
+| **tx2（Blobフラグ更新）** | Blob 移動成功後の `blob_move_failed=false` 更新は別の独立トランザクション（tx2）として実行する |
+| **根拠** | ファイル単位の整合性を担保しつつ、Blob 移動の成否をトランザクション外で扱うことで Lost Update を排除する |
+
+詳細は [architecture-design/09-interface-architecture.md](../architecture-design/09-interface-architecture.md) セクション 7.4 を参照。
 
 ### 4.3 SUCCESS_ONLY モードの部分成功
 

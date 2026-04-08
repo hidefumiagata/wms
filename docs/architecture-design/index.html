@@ -11577,7 +11577,7 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
     DB_INSERT -->|例外| ROLLBACK
     HISTORY -->|例外| ROLLBACK</div>
 <p><strong>悲観デフォルト方針（Issue #374）</strong>:</p>
-<ul><li style="margin-left:0px"><code>if_executions.blob_move_failed</code> はカラムレベルで <code>DEFAULT TRUE</code>、アプリ層の <code>IfExecution</code> ビルダーでも <code>true</code> を明示設定する。</li><li style="margin-left:0px">tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間でアプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で残ることが保証される。</li><li style="margin-left:0px">Blob 移動が成功した場合のみ、独立トランザクション（<code>TransactionTemplate</code>）で <code>blob_move_failed=false</code> に更新する。<code>@Transactional</code> を使わず <code>TransactionTemplate</code> を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。</li><li style="margin-left:0px">tx2 は <code>@Modifying</code> クエリで <code>blob_move_failed</code> カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。</li><li style="margin-left:0px">悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となり、Blob の移動状態を突き合わせて自動復旧する。</li></ul>
+<ul><li style="margin-left:0px"><code>if_executions.blob_move_failed</code> はカラムレベルで <code>DEFAULT TRUE</code>、アプリ層の <code>IfExecution</code> ビルダーでも <code>true</code> を明示設定する。</li><li style="margin-left:0px">tx1 コミット時点で「Blob 未移動扱い」として行が確定するため、tx1 と tx2 の間でアプリ再起動・プロセスkill・想定外例外が発生しても、レコードが「未移動状態」で残ることが保証される。</li><li style="margin-left:0px">Blob 移動が成功した場合のみ、独立トランザクション（<code>TransactionTemplate</code>）で <code>blob_move_failed=false</code> に更新する。<code>@Transactional</code> を使わず <code>TransactionTemplate</code> を用いるのは、同一クラス内自己呼び出しで AOP プロキシが失効する問題を避けるため。</li><li style="margin-left:0px">tx2 は <code>@Modifying</code> クエリで <code>blob_move_failed</code> カラムのみを UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update リスクを排除する。BAT-IF-RECONCILE 側も <code>blob_move_failed</code> および関連カラムのみを UPDATE する想定であり、tx2 と並行動作しても他のカラム（<code>status</code>、<code>error_message</code> 等）を相互上書きしない。</li><li style="margin-left:0px">悲観デフォルトのまま残ったレコードはリカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となり、Blob の移動状態を突き合わせて自動復旧する。</li></ul>
 <p><strong>設計判断: DB登録とBlob移動の順序</strong></p>
 <table>
 <thead><tr><th>順序</th><th>方式</th><th>採用</th><th>理由</th></tr></thead>
@@ -11656,6 +11656,15 @@ wms:
 <tr><td>Blob移動失敗（DB登録成功後）</td><td>DB登録は完了。ファイルがpendingに残留。<code>blob_move_failed</code> は悲観デフォルト <code>true</code> のまま残留</td><td>リカバリバッチ（BAT-IF-RECONCILE, Issue #440）が <code>blob_move_failed=true</code> の履歴を走査し、Blob 実体状態と突き合わせて自動復旧する。手動対応する場合は取り込み履歴を確認し二重取り込みでないことを確認のうえでファイルを processed へ移動、フラグを false に更新</td></tr>
 <tr><td>取り込み中のアプリケーション再起動</td><td>トランザクション未コミットの場合はロールバック。ファイルはpendingに残留</td><td>ユーザーが再度取り込み操作</td></tr>
 <p></tbody><br></table></p>
+<h4>リカバリバッチ救済条件マトリクス（Issue #374 / #440）</h4>
+<p>tx1 確定後の Blob 移動フェーズにおいて残留する可能性のある状態と、BAT-IF-RECONCILE による救済動作を以下に整理する。</p>
+<table>
+<thead><tr><th>パターン</th><th>Blob 状態</th><th>DB 状態</th><th>リカバリバッチ動作</th></tr></thead>
+<tbody>
+<tr><td>tx1 確定後、Blob 移動失敗</td><td>pending 残留</td><td><code>blob_move_failed=true</code></td><td>再 move</td></tr>
+<tr><td>tx1 確定後、Blob 移動成功、tx2 失敗</td><td>processed 移動済み</td><td><code>blob_move_failed=true</code></td><td>dest 既存検知で flag 更新</td></tr>
+<p></tbody><br></table></p>
+<p>※ リカバリバッチ自体の実装は Issue #440。本表は救済対象パターンの予約宣言。</p>
 <hr>
 <h2>9. バッチ連携設計</h2>
 <h3>9.1 外部連携I/Fとバッチ処理の関係</h3>

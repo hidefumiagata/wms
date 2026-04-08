@@ -31,13 +31,19 @@ public interface IfExecutionRepository extends JpaRepository<IfExecution, Long> 
             Pageable pageable);
 
     /**
-     * Blob 移動成功後に呼ばれる独立トランザクション（tx2）用のカラム単位 UPDATE。
+     * {@code blob_move_failed} カラムを false に更新する単一カラム UPDATE。
      *
-     * <p>{@code blob_move_failed} カラムのみを UPDATE することで、
-     * BAT-IF-RECONCILE（Issue #440）との並行更新による Lost Update リスクを排除する。
+     * <p>本メソッドは {@code @Modifying} クエリを発行するため、
+     * 呼び出し側で必ずトランザクションを張ること
+     * （例: {@link org.springframework.transaction.support.TransactionTemplate#execute}
+     * または {@code @Transactional}）。非トランザクション文脈で呼ばれた場合は
+     * {@code TransactionRequiredException} が発生する。
      *
-     * @param id 対象 IfExecution.id
-     * @return 更新行数（0 の場合は既にリカバリバッチ等で処理済みの可能性）
+     * <p>BAT-IF-RECONCILE (Issue #440) との並行更新による Lost Update を回避するため、
+     * 全カラム merge ではなく単一カラム UPDATE を採用している。
+     *
+     * @param id 対象 IfExecution の id
+     * @return 更新行数（通常 1。0 の場合はリカバリバッチ等により既に更新済みの可能性）
      */
     @Modifying
     @Query("update IfExecution e set e.blobMoveFailed = false where e.id = :id")

@@ -1069,11 +1069,11 @@ private Long id;</code></pre>
 │  4. マスタ一括検索（CsvMasterCache構築）                            │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │ @Transactional                                          │    │
+│  │ tx1: TransactionTemplate.execute()                      │    │
 │  │                                                         │    │
 │  │  5. inbound_slips INSERT（N件）                          │    │
 │  │  6. inbound_slip_lines INSERT（M件）                     │    │
-│  │  7. if_executions INSERT（1件）                          │    │
+│  │  7. if_executions INSERT（1件, blob_move_failed=true）    │    │
 │  │                                                         │    │
 │  │  → 全て成功: COMMIT                                      │    │
 │  │  → いずれか失敗: ROLLBACK（5〜7全てロールバック）           │    │
@@ -1081,21 +1081,26 @@ private Long id;</code></pre>
 │                                                                 │
 │  [トランザクション外]                                              │
 │  8. Blob ファイルを pending → processed へ移動                   │
-│     → 成功時: 独立トランザクション（TransactionTemplate）で        │
-│       if_executions.blob_move_failed を false へ UPDATE             │
+│     → 成功時: 独立トランザクション tx2 を開始                       │
+│       ┌───────────────────────────────────────────────────┐     │
+│       │ tx2: markBlobMoveSucceeded()                      │     │
+│       │   if_executions.blob_move_failed を false へ UPDATE│     │
+│       └───────────────────────────────────────────────────┘     │
 │     → 失敗時: 悲観デフォルト true のまま残留 + ERROR ログ出力        │
 │       リカバリバッチ（BAT-IF-RECONCILE, Issue #440）で救済           │
 │     ※ Issue #374: tx1 コミット時は blob_move_failed=true で確定     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘</code></pre>
-<h3>4.2 1ファイル = 1トランザクション</h3>
-<p>1回の取り込み操作（1 CSVファイル）は1トランザクションで処理する。</p>
+<h3>4.2 tx1/tx2 の2段トランザクション構成</h3>
+<p>1回の取り込み操作（1 CSVファイル）は、DB登録用 tx1 と Blob 移動成功後のフラグ更新用 tx2 の2つの独立トランザクションで処理する。</p>
 <table>
 <thead><tr><th>方針</th><th>説明</th></tr></thead>
 <tbody>
-<tr><td><strong>トランザクション粒度</strong></td><td>1ファイル内で生成される全伝票（複数のinbound_slips + 各inbound_slip_lines）を1トランザクションで一括コミット</td></tr>
-<tr><td><strong>根拠</strong></td><td>ファイル単位の整合性を担保する。部分的な伝票登録による不整合を防止</td></tr>
+<tr><td><strong>tx1（DB登録）</strong></td><td>DB 登録（伝票・履歴 INSERT）は 1 ファイル = 1 トランザクション（tx1）として一括コミットする。<code>if_executions.blob_move_failed</code> は悲観デフォルト <code>true</code> で確定する</td></tr>
+<tr><td><strong>tx2（Blobフラグ更新）</strong></td><td>Blob 移動成功後の <code>blob_move_failed=false</code> 更新は別の独立トランザクション（tx2）として実行する</td></tr>
+<tr><td><strong>根拠</strong></td><td>ファイル単位の整合性を担保しつつ、Blob 移動の成否をトランザクション外で扱うことで Lost Update を排除する</td></tr>
 <p></tbody><br></table></p>
+<p>詳細は <a href="../architecture-design/09-interface-architecture.md" target="_blank">architecture-design/09-interface-architecture.md</a> セクション 7.4 を参照。</p>
 <h3>4.3 SUCCESS_ONLY モードの部分成功</h3>
 <code>mode = SUCCESS_ONLY</code> の場合、バリデーション成功行のみを取り込む。
 <pre><code class="lang-">CSV 100行
@@ -1597,11 +1602,15 @@ outboundSlipRepository.flush();  // バッチINSERT即時実行</code></pre>
 <pre><code class="lang-">[トランザクション外] Blob Storage読み取り
 [トランザクション外] 再バリデーション（L1〜L5）
 [トランザクション外] マスタ一括検索・Map構築
-------- @Transactional 開始 -------
-[トランザクション内] outbound_slips / outbound_slip_lines INSERT
-[トランザクション内] if_executions INSERT（取り込み履歴）
-------- @Transactional コミット -------
-[トランザクション外] Blobファイル移動（pending → processed）</code></pre>
+------- tx1: TransactionTemplate.execute() 開始 -------
+[tx1内] outbound_slips / outbound_slip_lines INSERT
+[tx1内] if_executions INSERT（取り込み履歴, blob_move_failed=true）
+------- tx1 コミット -------
+[トランザクション外] Blobファイル移動（pending → processed）
+------- tx2: markBlobMoveSucceeded() 開始 -------
+[tx2内] if_executions.blob_move_failed を false へ UPDATE（単一カラム）
+------- tx2 コミット -------</code></pre>
+<blockquote>Issue #374 補足: <code>if_executions.blob_move_failed</code> は tx1 で悲観デフォルト <code>true</code> として確定し、Blob 移動成功後に tx2（独立トランザクション、単一カラム UPDATE）で <code>false</code> に更新する。Blob 移動失敗時は悲観デフォルトのまま残留し、リカバリバッチ BAT-IF-RECONCILE（Issue #440）で救済する。詳細は <a href="../architecture-design/09-interface-architecture.md" target="_blank">09-interface-architecture.md セクション7.4</a> を参照。</blockquote>
 <h3>4.2 1ファイル = 1トランザクション</h3>
 <p>1つのCSVファイルの取り込みは1つのDBトランザクションとして実行する。ファイル内のいずれかの伝票の登録に失敗した場合は、そのファイルの全伝票がロールバックされる。</p>
 <h3>4.3 SUCCESS_ONLYモード時の部分成功</h3>
