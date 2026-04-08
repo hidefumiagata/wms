@@ -745,6 +745,11 @@ flowchart TD
 - **有効化時の制約チェック不要**: `isActive: true`（有効化）では業務制約チェックは行わない。無効化されていた間に入荷予定・受注を作成することはできないため、有効化時に矛盾が生じることはない。
 - **エラーコードの追加**: `CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND` および `CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND` は本 API 専用のエラーコードとして `08-api-overview.md` のエラーコード一覧に追記が必要。
 - **パス名について**: エンドポイントパスは `/toggle-active` だが、リクエストボディの `isActive` フラグにより無効化・有効化の両方を担う設計としている（将来的に `/activate` を別途追加することも可だが、クライアントの実装を単純化するためこの設計を採用）。
+- **実装ステータスとの対応**: 本ドキュメントの「処理中受注」ステータス名 (`PENDING`, `PICKING`) は設計上の概念名で、実装/DB 制約 (`outbound_slips.status`) における対応は次の通り:
+  - 設計上の「処理中」= 実装の `ORDERED`, `PARTIAL_ALLOCATED`, `ALLOCATED`, `PICKING_COMPLETED`, `INSPECTING` (`SHIPPED`/`CANCELLED` を除く全ステータス)
+  - チェック対象は `OutboundPartnerUsageChecker` で定義 (`backend/src/main/java/com/wms/outbound/service/OutboundPartnerUsageChecker.java`)
+  - 入荷側も同様に `InboundPartnerUsageChecker` (`backend/src/main/java/com/wms/inbound/service/InboundPartnerUsageChecker.java`) が `PLANNED`, `CONFIRMED`, `INSPECTING` の3種をチェックする
+  - 循環依存を避けるため、`master.service.spi.PartnerUsageChecker` SPI インターフェース経由で各モジュールが実装を提供する
 
 ---
 
