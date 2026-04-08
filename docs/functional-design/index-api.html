@@ -5121,7 +5121,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>LOCATION_NOT_FOUND</code></td><td>指定のロケーションが存在しない</td></tr>
 <tr><td><code>409</code></td><td><code>INBOUND_INVALID_STATUS</code></td><td>ヘッダーステータスが <code>INSPECTING</code> / <code>PARTIAL_STORED</code> でない</td></tr>
 <tr><td><code>409</code></td><td><code>INBOUND_LINE_NOT_INSPECTED</code></td><td>対象明細の <code>line_status</code> が <code>INSPECTED</code> でない（<code>PENDING</code> または <code>STORED</code>）</td></tr>
-<tr><td><code>409</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>指定ロケーションが棚卸中のためロック中</td></tr>
+<tr><td><code>422</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>指定ロケーションが棚卸中のためロック中</td></tr>
 <tr><td><code>422</code></td><td><code>LOCATION_PRODUCT_MISMATCH</code></td><td>入庫先ロケーションに既に別商品の在庫が存在する</td></tr>
 <tr><td><code>422</code></td><td><code>INBOUND_LOCATION_AREA_MISMATCH</code></td><td>指定ロケーションが入荷エリアに属さない</td></tr>
 <p></tbody><br></table></p>
@@ -5143,7 +5143,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_LOC -->|OK| CHECK_AREA[入荷エリアチェック\nロケーションの所属エリアの\narea_type = INBOUND?]
     CHECK_AREA -->|NG| ERR_AREA[422 INBOUND_LOCATION_AREA_MISMATCH]
     CHECK_AREA -->|OK| CHECK_STOCKTAKE[棚卸ロックチェック\nstocktake_headers WHERE\nlocation_id = ? AND status = STARTED]
-    CHECK_STOCKTAKE -->|ロック中| ERR_STOCKTAKE[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_STOCKTAKE -->|ロック中| ERR_STOCKTAKE[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_STOCKTAKE -->|OK| CHECK_LOC_PRODUCT{ロケーション単一商品チェック\nSELECT product_id FROM inventories\nWHERE location_id = :locationId\nAND product_id != :productId\nLIMIT 1}
     CHECK_LOC_PRODUCT -->|別商品あり| ERR_LOC_PRODUCT[422 LOCATION_PRODUCT_MISMATCH]
     CHECK_LOC_PRODUCT -->|OK| UPSERT_INV
@@ -5356,7 +5356,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <p></tbody><br></table></p>
 <hr>
 <h2>棚卸ロック（locations.is_stocktaking_locked）</h2>
-<p>棚卸開始時、対象ロケーションに <code>is_stocktaking_locked = true</code> をセットする。<br>棚卸ロック中のロケーションに対する在庫移動・ばらし・在庫訂正は <code>409 INVENTORY_STOCKTAKE_IN_PROGRESS</code> を返す。<br>棚卸確定後に <code>is_stocktaking_locked = false</code> へ戻す。</p>
+<p>棚卸開始時、対象ロケーションに <code>is_stocktaking_locked = true</code> をセットする。<br>棚卸ロック中のロケーションに対する在庫移動・ばらし・在庫訂正は <code>422 INVENTORY_STOCKTAKE_IN_PROGRESS</code> を返す。<br>棚卸確定後に <code>is_stocktaking_locked = false</code> へ戻す。</p>
 <hr>
 <hr>
 <h2>API-INV-001: 在庫一覧照会</h2>
@@ -5600,7 +5600,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>PRODUCT_NOT_FOUND</code></td><td>指定商品が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>INVENTORY_NOT_FOUND</code></td><td>移動元に対象在庫が存在しない</td></tr>
 <tr><td><code>422</code></td><td><code>INVENTORY_INSUFFICIENT</code></td><td>移動元在庫数 < <code>moveQty</code></td></tr>
-<tr><td><code>409</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>移動元または移動先ロケーションが棚卸ロック中</td></tr>
+<tr><td><code>422</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>移動元または移動先ロケーションが棚卸ロック中</td></tr>
 <tr><td><code>422</code></td><td><code>INVENTORY_CAPACITY_EXCEEDED</code></td><td>移動先ロケーションの収容数を超過</td></tr>
 <tr><td><code>422</code></td><td><code>LOCATION_PRODUCT_MISMATCH</code></td><td>移動先ロケーションに既に別商品の在庫が存在する</td></tr>
 <p></tbody><br></table></p>
@@ -5614,7 +5614,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_SAME -->|異なる| CHECK_LOC[移動元・移動先ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック\n移動元 or 移動先}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|ロックなし| LOCK_FROM[移動元在庫を\nSELECT FOR UPDATE]
     LOCK_FROM -->|存在しない| ERR_INV[404 INVENTORY_NOT_FOUND]
     LOCK_FROM -->|OK| CHECK_QTY{移動元有効在庫数\nquantity - allocated_qty\n>= moveQty?}
@@ -5746,7 +5746,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>PRODUCT_NOT_FOUND</code></td><td>指定商品が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>INVENTORY_NOT_FOUND</code></td><td>ばらし元に対象在庫が存在しない</td></tr>
 <tr><td><code>422</code></td><td><code>INVENTORY_INSUFFICIENT</code></td><td>ばらし元在庫数 < <code>breakdownQty</code></td></tr>
-<tr><td><code>409</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>ばらし元または先ロケーションが棚卸ロック中</td></tr>
+<tr><td><code>422</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>ばらし元または先ロケーションが棚卸ロック中</td></tr>
 <tr><td><code>422</code></td><td><code>INVENTORY_CAPACITY_EXCEEDED</code></td><td>ばらし先ロケーションの収容数超過</td></tr>
 <tr><td><code>422</code></td><td><code>BREAKDOWN_CONVERSION_FRACTION</code></td><td>変換後数量に端数が発生（割り切れない）</td></tr>
 <p></tbody><br></table></p>
@@ -5760,7 +5760,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_UNIT -->|OK| CHECK_LOC[ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| GET_PRODUCT[商品マスタ取得\ncase_quantity / ball_quantity]
     GET_PRODUCT -->|存在しない| ERR_PRD[404 PRODUCT_NOT_FOUND]
     GET_PRODUCT -->|OK| CALC_RATE[変換レート計算\nCASE→BALL: case_quantity\nCASE→PIECE: case_quantity × ball_quantity\nBALL→PIECE: ball_quantity]
@@ -5888,7 +5888,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>LOCATION_NOT_FOUND</code></td><td>指定ロケーションが存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>PRODUCT_NOT_FOUND</code></td><td>指定商品が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>INVENTORY_NOT_FOUND</code></td><td>対象在庫レコードが存在しない</td></tr>
-<tr><td><code>409</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>ロケーションが棚卸ロック中</td></tr>
+<tr><td><code>422</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>ロケーションが棚卸ロック中</td></tr>
 <tr><td><code>422</code></td><td><code>CORRECTION_BELOW_ALLOCATED</code></td><td>訂正後の数量が引当数（<code>allocated_qty</code>）を下回っている</td></tr>
 <p></tbody><br></table></p>
 <hr>
@@ -5901,7 +5901,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_ROLE -->|OK| CHECK_LOC[ロケーション存在チェック]
     CHECK_LOC -->|存在しない| ERR_LOC[404 LOCATION_NOT_FOUND]
     CHECK_LOC -->|OK| CHECK_LOCK{棚卸ロックチェック}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| LOCK_INV[在庫レコードを\nSELECT FOR UPDATE]
     LOCK_INV -->|存在しない| ERR_INV[404 INVENTORY_NOT_FOUND]
     LOCK_INV -->|OK| CHECK_ALLOC{newQty >= allocated_qty?}
@@ -6104,7 +6104,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tr><td><code>404</code></td><td><code>WAREHOUSE_NOT_FOUND</code></td><td>指定倉庫が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>BUILDING_NOT_FOUND</code></td><td>指定棟が存在しない</td></tr>
 <tr><td><code>404</code></td><td><code>AREA_NOT_FOUND</code></td><td>指定エリアが存在しない</td></tr>
-<tr><td><code>409</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>同一ロケーション範囲に実施中棚卸が存在する</td></tr>
+<tr><td><code>422</code></td><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>同一ロケーション範囲に実施中棚卸が存在する</td></tr>
 <p></tbody><br></table></p>
 <hr>
 <h3>4. 業務ロジック</h3>
@@ -6117,7 +6117,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
     CHECK_MASTER -->|存在しない| ERR_MASTER[404 NOT_FOUND]
     CHECK_MASTER -->|OK| GET_LOCS[対象ロケーション一覧取得\nbuildingId/areaIdで絞り込み]
     GET_LOCS --> CHECK_LOCK{対象ロケーションのいずれかが\n既に棚卸ロック中か?}
-    CHECK_LOCK -->|ロック中| ERR_LOCK[409 INVENTORY_STOCKTAKE_IN_PROGRESS]
+    CHECK_LOCK -->|ロック中| ERR_LOCK[422 INVENTORY_STOCKTAKE_IN_PROGRESS]
     CHECK_LOCK -->|OK| SNAP[対象ロケーションの\n現在在庫スナップショット取得\nSELECT FROM inventories]
     SNAP --> CREATE_HEADER[stocktake_headersにINSERT\nstocktake_number採番\nstatus=STARTED]
     CREATE_HEADER --> CREATE_LINES[stocktake_linesにBULK INSERT\n各在庫レコードをコピー\nquantity_before=現在quantity\nquantity_counted=NULL\nis_counted=false]
@@ -6500,7 +6500,7 @@ GET /api/v1/master/partners?partnerType=CUSTOMER&amp;isActive=true&amp;all=true<
 <tbody>
 <tr><td><code>INVENTORY_NOT_FOUND</code></td><td>404</td><td>在庫レコードが存在しない</td><td>INV-002, INV-003, INV-004</td></tr>
 <tr><td><code>INVENTORY_INSUFFICIENT</code></td><td>422</td><td>有効在庫数（quantity - allocated_qty）不足</td><td>INV-002, INV-003</td></tr>
-<tr><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>409</td><td>棚卸ロック中のため操作不可</td><td>INV-002, INV-003, INV-004, INV-012</td></tr>
+<tr><td><code>INVENTORY_STOCKTAKE_IN_PROGRESS</code></td><td>422</td><td>棚卸ロック中のため操作不可</td><td>INV-002, INV-003, INV-004, INV-012</td></tr>
 <tr><td><code>INVENTORY_CAPACITY_EXCEEDED</code></td><td>422</td><td>ロケーション収容数上限超過</td><td>INV-002, INV-003</td></tr>
 <tr><td><code>LOCATION_PRODUCT_MISMATCH</code></td><td>422</td><td>ロケーションに既に別商品の在庫が存在する（同一ロケーション単一商品制約）</td><td>INV-002</td></tr>
 <tr><td><code>BREAKDOWN_CONVERSION_FRACTION</code></td><td>422</td><td>ばらし変換に端数が発生</td><td>INV-003</td></tr>
