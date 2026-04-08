@@ -74,7 +74,9 @@ public class PartnerService {
     public Partner update(UpdatePartnerCommand cmd) {
         Partner partner = findById(cmd.id());
         if (!Objects.equals(partner.getVersion(), cmd.version())) {
-            throw optimisticLockConflict(cmd.id());
+            log.info("Partner update version mismatch: id={}, expected={}, actual={}",
+                    cmd.id(), cmd.version(), partner.getVersion());
+            throw optimisticLockConflict();
         }
         partner.setPartnerName(cmd.partnerName());
         partner.setPartnerNameKana(cmd.partnerNameKana());
@@ -83,7 +85,7 @@ public class PartnerService {
         partner.setPhone(cmd.phone());
         partner.setContactPerson(cmd.contactPerson());
         partner.setEmail(cmd.email());
-        partner.setVersion(cmd.version());
+        // version は事前チェックで一致確認済みのため再代入不要 (toggleActive と対称)。
         try {
             Partner saved = partnerRepository.save(partner);
             log.info("Partner updated: id={}, name={}", cmd.id(), cmd.partnerName());
@@ -91,7 +93,7 @@ public class PartnerService {
         } catch (ObjectOptimisticLockingFailureException e) {
             // version は事前チェック済みだが、load → commit 間の短窓競合に対する二重防御として catch も残置
             log.info("Partner update OL conflict detected at commit: id={}", cmd.id());
-            throw optimisticLockConflict(cmd.id());
+            throw optimisticLockConflict();
         }
     }
 
@@ -102,9 +104,11 @@ public class PartnerService {
         // (Issue #453) version 先行チェックを行うことで、no-op 時の stale version を 409 で検知し、
         // かつ BR 違反より OL 競合を優先できるようにする
         if (!Objects.equals(partner.getVersion(), version)) {
-            throw optimisticLockConflict(id);
+            log.info("Partner toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, partner.getVersion());
+            throw optimisticLockConflict();
         }
-        if (partner.getIsActive().equals(isActive)) {
+        if (Objects.equals(partner.getIsActive(), isActive)) {
             log.info("Partner toggleActive no-op: id={}, isActive={}", id, isActive);
             return partner;
         }
@@ -117,14 +121,16 @@ public class PartnerService {
                 if (reason.isPresent()) {
                     log.warn("Partner deactivation blocked: id={}, code={}", id, reason.get());
                     // C-R2-3: ブロック要因 (入荷/受注) をメッセージで区別し、運用調査を容易にする
+                    // SEC-R2-Min-1 (OWASP A09): クライアント向けメッセージからは内部 id を除去。
+                    //                           追跡用 id は直前の log.warn で出力済み。
                     String errorCode = reason.get();
                     String message;
                     if ("CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND".equals(errorCode)) {
-                        message = "処理中の入荷予定が存在するため取引先を無効化できません (id=" + id + ")";
+                        message = "処理中の入荷予定が存在するため取引先を無効化できません";
                     } else if ("CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND".equals(errorCode)) {
-                        message = "処理中の受注が存在するため取引先を無効化できません (id=" + id + ")";
+                        message = "処理中の受注が存在するため取引先を無効化できません";
                     } else {
-                        message = "処理中の伝票が存在するため取引先を無効化できません (id=" + id + ")";
+                        message = "処理中の伝票が存在するため取引先を無効化できません";
                     }
                     throw new BusinessRuleViolationException(errorCode, message);
                 }
@@ -144,11 +150,11 @@ public class PartnerService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Partner toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict(id);
+            throw optimisticLockConflict();
         }
     }
 
-    private OptimisticLockConflictException optimisticLockConflict(Long id) {
+    private OptimisticLockConflictException optimisticLockConflict() {
         // OWASP A09: 例外メッセージには内部 id を含めない (ID 列挙への補助情報を与えない)。
         // 追跡用の id はログ側 (呼び出し元の log.info/warn) に出力する。
         return new OptimisticLockConflictException(

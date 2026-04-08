@@ -299,7 +299,9 @@ class PartnerServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND")
                     // C-R2-3: 入荷要因のメッセージは「入荷予定」を明示する
-                    .hasMessageContaining("処理中の入荷予定");
+                    .hasMessageContaining("処理中の入荷予定")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
 
             // inboundで即ブロックされ、outbound checker は評価されない
             verify(outboundChecker, never()).findBlockingReason(any());
@@ -360,7 +362,9 @@ class PartnerServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND")
                     // C-R2-3: 受注要因のメッセージは「受注」を明示する
-                    .hasMessageContaining("処理中の受注");
+                    .hasMessageContaining("処理中の受注")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
 
             verify(partnerRepository, never()).save(any());
         }
@@ -404,7 +408,9 @@ class PartnerServiceTest {
             assertThatThrownBy(() -> partnerService.toggleActive(1L, false, 0))
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .hasFieldOrPropertyWithValue("errorCode", "UNKNOWN_REASON")
-                    .hasMessageContaining("処理中の伝票");
+                    .hasMessageContaining("処理中の伝票")
+                    // SEC-R2-Min-1 (OWASP A09): BR 違反メッセージにも内部 id を含めない
+                    .hasMessageNotContaining("id=");
 
             verify(partnerRepository, never()).save(any());
         }
