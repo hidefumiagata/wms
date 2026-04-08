@@ -336,6 +336,8 @@ jobs:
       - name: Run tests
         run: ./gradlew test
         env:
+          # ※テスト用ローカル PostgreSQL に対する固定値。
+          # 本番/staging デプロイ時は必ず ${{ secrets.* }} に置換すること。
           DATABASE_URL: jdbc:postgresql://localhost:5432/wms_test
           DATABASE_USERNAME: wms
           DATABASE_PASSWORD: wms

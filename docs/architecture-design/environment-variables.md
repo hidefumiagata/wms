@@ -14,15 +14,20 @@ Container Apps に設定する環境変数。バックエンド Spring Boot ア�
 | `DATABASE_URL` | DB接続文字列 | Yes | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/wms` | (環境依存) |
 | `DATABASE_USERNAME` | DBユーザー名 | Yes | `spring.datasource.username` | `wms` | `wmsadmin` |
 | `DATABASE_PASSWORD` | DBパスワード | Yes | `spring.datasource.password` | `wms` | (Secrets) |
-| `JWT_SECRET_KEY` | JWTトークン署名鍵 | Yes | `jwt.secret-key` | `dev-secret-key-must-be-at-least-256-bits-long-for-hs256` | (Secrets) |
+| `JWT_SECRET_KEY` | JWTトークン署名鍵（HS256要件: 256bit以上） | Yes | `jwt.secret-key` | `dev-secret-key-must-be-at-least-256-bits-long-for-hs256` ※1 | (Secrets) |
 | `JWT_ACCESS_TOKEN_EXPIRATION` | アクセストークン有効期限（ミリ秒） | No | `jwt.access-token-expiration` | `3600000`（1時間） | `3600000`（1時間） |
 | `JWT_REFRESH_TOKEN_EXPIRATION` | リフレッシュトークン有効期限（ミリ秒） | No | `jwt.refresh-token-expiration` | `86400000`（24時間） | `86400000`（24時間） |
 | `CORS_ALLOWED_ORIGINS` | CORS許可オリジン | No | `cors.allowed-origins` | `http://localhost:5173` | Front Door URL |
 | `AZURE_STORAGE_ACCOUNT_NAME` | Blob Storageアカウント名（Managed Identity） | No | `wms.storage.account-name` | `devstorageaccount` | `stwmsprdeast` |
 | `ACS_CONNECTION_STRING` | Azure Communication Services接続文字列 | Yes | `wms.acs.connection-string` | (環境依存) | (環境依存) |
 | `ACS_SENDER_ADDRESS` | メール送信元アドレス | No | `wms.acs.sender-address` | `DoNotReply@...` | `DoNotReply@...` |
+| `PASSWORD_RESET_BASE_URL` | パスワードリセットリンクのベースURL | No | `wms.email.password-reset-base-url` | `http://localhost:5173` | Front Door URL |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights接続文字列 | No | (自動検出) | (環境依存) | (環境依存) |
 | `AZURE_FRONTDOOR_ID` | Front Door ID（X-Azure-FDIDヘッダー検証用） | No | `wms.frontdoor.id` | (未設定) | (Front Door ID) |
+
+> **※1 `JWT_SECRET_KEY` の dev デフォルト値について**: 上記文字列はローカル開発専用フォールバック値であり、**公開リポジトリにコミットされている**ため秘密鍵としての強度を持たない。dev/demo/loadtest/prd の各デプロイ環境では、必ず GitHub Secrets (`JWT_SECRET_DEV` / `JWT_SECRET_PRD`) 経由で個別生成した 256bit 以上のランダム値を上書きすること。**この値を実環境で使用することは禁止**。
+>
+> **※2 環境変数とプロパティのバインディング**: 上記「application.yml プロパティ」列はあくまで Spring Boot 上の対応プロパティを示す。Spring Boot は環境変数を自動マッピングするわけではなく、`application-*.yml` 内で明示的に `${ENV_VAR_NAME}` 形式で参照することで初めて該当プロパティにバインドされる。
 
 ## 2. フロントエンド環境変数
 

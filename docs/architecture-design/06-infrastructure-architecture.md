@@ -153,6 +153,10 @@ resource "azurerm_container_app" "backend" {
     value = var.db_connection_string
   }
   secret {
+    name  = "database-username"
+    value = var.db_username
+  }
+  secret {
     name  = "database-password"
     value = var.db_password
   }
@@ -186,6 +190,10 @@ resource "azurerm_container_app" "backend" {
       env {
         name        = "DATABASE_URL"
         secret_name = "database-url"
+      }
+      env {
+        name        = "DATABASE_USERNAME"
+        secret_name = "database-username"
       }
       env {
         name        = "DATABASE_PASSWORD"

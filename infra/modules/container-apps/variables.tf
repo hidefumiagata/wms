@@ -77,9 +77,26 @@ variable "db_password" {
 }
 
 variable "jwt_secret" {
-  description = "JWT signing secret"
+  description = "JWT signing secret (HS256 requires 256bit / 32 bytes minimum)"
   type        = string
   sensitive   = true
+
+  validation {
+    condition     = length(var.jwt_secret) >= 32
+    error_message = "jwt_secret must be at least 32 bytes (256 bits) for HS256."
+  }
+}
+
+variable "jwt_access_token_expiration_ms" {
+  description = "JWT access token expiration in milliseconds"
+  type        = number
+  default     = 3600000 # 1 hour
+}
+
+variable "jwt_refresh_token_expiration_ms" {
+  description = "JWT refresh token expiration in milliseconds (sliding window)"
+  type        = number
+  default     = 86400000 # 24 hours
 }
 
 variable "acs_connection_string" {

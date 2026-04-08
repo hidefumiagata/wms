@@ -2029,7 +2029,8 @@ springdoc:
 
 jwt:
   secret-key: ${JWT_SECRET_KEY}
-  access-token-expiration: 3600000  # 1時間（ミリ秒）
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}    # 1時間（ミリ秒）
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000} # 24時間（ミリ秒）
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}
