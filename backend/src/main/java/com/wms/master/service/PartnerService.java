@@ -3,6 +3,8 @@ package com.wms.master.service;
 import com.wms.master.entity.Partner;
 import static com.wms.shared.util.LikeEscapeUtil.escape;
 import com.wms.master.repository.PartnerRepository;
+import com.wms.master.service.spi.PartnerUsageChecker;
+import com.wms.shared.exception.BusinessRuleViolationException;
 import com.wms.shared.exception.DuplicateResourceException;
 import com.wms.shared.exception.OptimisticLockConflictException;
 import com.wms.shared.exception.ResourceNotFoundException;
@@ -24,6 +26,7 @@ import java.util.List;
 public class PartnerService {
 
     private final PartnerRepository partnerRepository;
+    private final List<PartnerUsageChecker> partnerUsageCheckers;
 
     public Page<Partner> search(String partnerCode, String partnerName,
                                 String partnerType, Boolean isActive, Pageable pageable) {
@@ -93,15 +96,21 @@ public class PartnerService {
     @Transactional
     public Partner toggleActive(Long id, boolean isActive, Integer version) {
         Partner partner = findById(id);
-        if (!isActive) {
-            // TODO: 入荷予定テーブル実装後に処理中入荷予定の存在チェックを追加
-            //       ステータス: PLANNED, CONFIRMED, INSPECTING → CANNOT_DEACTIVATE_HAS_ACTIVE_INBOUND (422)
-            // TODO: 受注テーブル実装後に処理中受注の存在チェックを追加
-            //       ステータス: PENDING, ALLOCATED, PICKING, INSPECTING → CANNOT_DEACTIVATE_HAS_ACTIVE_OUTBOUND (422)
-        }
         if (partner.getIsActive().equals(isActive)) {
             log.info("Partner toggleActive no-op: id={}, isActive={}", id, isActive);
             return partner;
+        }
+        if (!isActive) {
+            // 無効化前の業務制約チェック (API-03 BR-001)
+            // 各 PartnerUsageChecker (inbound/outbound 等) に「処理中伝票」があれば
+            // BusinessRuleViolationException を 422 で返す
+            for (PartnerUsageChecker checker : partnerUsageCheckers) {
+                checker.findBlockingReason(id).ifPresent(errorCode -> {
+                    log.info("Partner deactivation blocked: id={}, code={}", id, errorCode);
+                    throw new BusinessRuleViolationException(errorCode,
+                            "処理中の伝票が存在するため取引先を無効化できません (id=" + id + ")");
+                });
+            }
         }
         if (isActive) {
             partner.activate();
