@@ -189,6 +189,7 @@ public class InterfaceService {
                     validationResult.errorCount(), mode, "COMPLETED",
                     warehouseId, currentUserId);
         });
+        Objects.requireNonNull(execution, "tx1 must return execution");
 
         // Blob移動はトランザクション外（DB確定後）
         moveBlobSafely(directory, fileName, execution);
@@ -218,6 +219,7 @@ public class InterfaceService {
                 saveExecution(ifId, fileName, null,
                         count, 0, count, "DISCARD", "DISCARDED",
                         warehouseId, currentUserId));
+        Objects.requireNonNull(execution, "tx1 must return execution");
 
         // Blob移動はトランザクション外
         moveBlobSafely(directory, fileName, execution);
@@ -234,9 +236,9 @@ public class InterfaceService {
      * Blob 移動または tx2 のいずれかが失敗した場合はフラグが true のまま残り、
      * リカバリバッチ（Issue #440: BAT-IF-RECONCILE）の対象となる。
      *
-     * <p>tx2 に渡る {@code execution} は tx1 コミット後の detached entity であり、
-     * {@code JpaRepository#save} は merge 経路で全カラム UPDATE を発行する。
-     * 将来 {@code @Version} を追加する場合は merge の挙動に注意。
+     * <p>tx2 は {@code @Modifying} クエリで {@code blob_move_failed} カラムのみを
+     * UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による
+     * Lost Update リスクを排除する。
      *
      * <p>{@code @Transactional} ではなく {@link TransactionTemplate} を利用するのは、
      * 同一クラス内自己呼び出しによる Spring AOP プロキシ失効（self-invocation 問題）を
@@ -255,10 +257,14 @@ public class InterfaceService {
             return;
         }
         try {
-            // tx2: 独立トランザクションで flag を false に更新
+            // tx2: 独立トランザクションで flag を false に単一カラム UPDATE
             transactionTemplate.execute(status -> {
-                execution.setBlobMoveFailed(false);
-                ifExecutionRepository.save(execution);
+                int updated = ifExecutionRepository.markBlobMoveSucceeded(execution.getId());
+                if (updated == 0) {
+                    // 既にバッチが処理済みの可能性。リカバリバッチで整合確認される
+                    log.warn("markBlobMoveSucceeded affected 0 rows for ifExecutionId={}. "
+                            + "May have been processed by reconciliation batch.", execution.getId());
+                }
                 return null;
             });
             log.info("Blob moved to processed: {}", destPath);

@@ -393,8 +393,10 @@ class InterfaceServiceTest {
             assertThat(result.successCount()).isEqualTo(1);
             assertThat(result.mode()).isEqualTo("SUCCESS_ONLY");
             verify(inboundSlipRepository).saveAll(anyList());
-            // Regression guard (#374): tx1(saveExecution) + tx2(flag更新) = 2回
-            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
+            // Regression guard (#374): tx1(saveExecution) の save は1回、
+            // tx2 は markBlobMoveSucceeded による単一カラム UPDATE に変更された
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).markBlobMoveSucceeded(eq(1L));
         }
 
         @Test
@@ -524,13 +526,13 @@ class InterfaceServiceTest {
                     interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
 
             assertThat(result.status()).isEqualTo("DISCARDED");
-            // tx1 の saveExecution のみ。tx2 は中で例外を投げるので save 到達しない
+            // tx1 の saveExecution のみ。tx2 のスタブが throw するため、
+            // markBlobMoveSucceeded への到達前に例外が発生する
             verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
             // execute は 2回（tx1 成功 / tx2 throw）
             verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
-            // flag は true のまま（moveBlobSafely 内で execution.setBlobMoveFailed(false) まで
-            // 到達せずに execute が例外を投げるため）
-            assertThat(execution.getBlobMoveFailed()).isTrue();
+            // tx2 の SQL UPDATE は呼ばれていない（execute 自体が throw するため）
+            verify(ifExecutionRepository, never()).markBlobMoveSucceeded(any());
         }
 
         private void stubDiscardBasics(String fileName) {
@@ -569,10 +571,9 @@ class InterfaceServiceTest {
                     interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
 
             assertThat(result.status()).isEqualTo("DISCARDED");
-            // saveExecution(1回) + moveBlobSafely内の独立tx(1回) = 計2回
-            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
-            // flag が false に更新されていること
-            assertThat(execution.getBlobMoveFailed()).isFalse();
+            // saveExecution(1回)。tx2 は markBlobMoveSucceeded による単一カラム UPDATE
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).markBlobMoveSucceeded(eq(1L));
             // transactionTemplate が 2回 execute される (tx1: saveExecution, tx2: flag更新)
             verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
         }
@@ -602,21 +603,18 @@ class InterfaceServiceTest {
 
             interfaceService.importFile("IFX-001", fileName, warehouseId, "DISCARD");
 
-            // tx1(saveExecution) + tx2(moveBlobSafely内のflag更新) = 2回
-            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(captor.capture());
-            IfExecution firstArg = captor.getAllValues().get(0);
-            IfExecution secondArg = captor.getAllValues().get(1);
+            // tx1(saveExecution) は 1回。tx2 は markBlobMoveSucceeded による単一カラム UPDATE
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(captor.capture());
+            IfExecution firstArg = captor.getValue();
 
             assertThat(firstArg.getBlobMoveFailed())
-                    .as("1回目(saveExecution) は悲観デフォルト true")
+                    .as("saveExecution は悲観デフォルト true で呼ばれる")
                     .isTrue();
-            assertThat(firstArg)
-                    .as("tx1 と tx2 で渡される IfExecution は別インスタンスでも同一参照でもどちらでも構わないが、"
-                            + "少なくとも tx2 は mock の返却した savedEcho でなければならない")
-                    .isNotSameAs(secondArg);
             assertThat(firstArg.getBlobPath())
-                    .as("saveExecution の1回目引数は Blob 移動前なので blobPath は null")
+                    .as("saveExecution の引数は Blob 移動前なので blobPath は null")
                     .isNull();
+            // tx2 は savedEcho.id (=1L) を引数に markBlobMoveSucceeded を呼ぶ
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).markBlobMoveSucceeded(eq(1L));
         }
 
         @Test
@@ -662,11 +660,12 @@ class InterfaceServiceTest {
                     interfaceService.importFile("IFX-001", fileName, warehouseId, "SUCCESS_ONLY");
 
             assertThat(result.status()).isEqualTo("COMPLETED");
-            // tx1(saveExecution) + tx2(flag更新) = 2回（slips の saveAll はカウント外）
-            verify(ifExecutionRepository, org.mockito.Mockito.times(2)).save(any());
+            // tx1(saveExecution) 1回（slips の saveAll はカウント外）
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).save(any());
+            // tx2 は markBlobMoveSucceeded による単一カラム UPDATE
+            verify(ifExecutionRepository, org.mockito.Mockito.times(1)).markBlobMoveSucceeded(eq(1L));
             // tx1(handleImport) と tx2(moveBlobSafely) の 2回
             verify(transactionTemplate, org.mockito.Mockito.times(2)).execute(any());
-            assertThat(execution.getBlobMoveFailed()).isFalse();
         }
 
         /**

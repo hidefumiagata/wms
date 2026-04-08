@@ -24,3 +24,7 @@ ALTER TABLE if_executions
 
 COMMENT ON COLUMN if_executions.blob_move_failed IS
     'Blob移動失敗フラグ。tx1コミット時に悲観デフォルトtrueで初期化し、Blob移動成功後にfalseへ更新。リカバリバッチ（BAT-IF-RECONCILE）の対象選択に使用。';
+
+-- ロールバック手順:
+-- ALTER TABLE if_executions ALTER COLUMN blob_move_failed SET DEFAULT FALSE;
+-- ※既存行は影響を受けないため、ロールバック後の挙動は V27 適用前と同等になる
