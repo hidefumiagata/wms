@@ -8968,7 +8968,7 @@ wms:
   email:
     connection-string: ${ACS_CONNECTION_STRING}
     sender-address: DoNotReply@{ACSドメイン}
-    password-reset-base-url: ${PASSWORD_RESET_BASE_URL:http://localhost:5173}</code></pre>
+    password-reset-base-url: http://localhost:5173  # TODO: 環境変数バインドは未配線。対応は別Issue</code></pre>
 <h3>11.3 EmailService 実装</h3>
 <pre><code class="lang-java">@Service
 @RequiredArgsConstructor
@@ -9201,7 +9201,6 @@ export function useSessionTimeout() {
 <h2>15. 設定パラメータ一覧</h2>
 <h3>15.1 環境変数</h3>
 <blockquote><strong>SSOT</strong>: 認証関連の環境変数（<code>JWT_SECRET_KEY</code>, <code>JWT_ACCESS_TOKEN_EXPIRATION</code>, <code>JWT_REFRESH_TOKEN_EXPIRATION</code>, <code>CORS_ALLOWED_ORIGINS</code>, <code>SPRING_PROFILES_ACTIVE</code>, <code>ACS_CONNECTION_STRING</code> 等）の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。</blockquote>
-<p>></p>
 <blockquote><strong>未配線</strong>: パスワードリセットリンクのベースURL（旧 <code>PASSWORD_RESET_BASE_URL</code>）はバックエンド未実装のため、本リリースでは Spring Boot プロパティ <code>wms.email.password-reset-base-url</code> のデフォルト値（<code>http://localhost:5173</code>）が使われる。実装は別 Issue で対応。</blockquote>
 <h3>15.2 application.yml パラメータ</h3>
 <table>
