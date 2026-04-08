@@ -4998,8 +4998,9 @@ springdoc:
     operations-sorter: alpha
 
 jwt:
-  secret: ${JWT_SECRET}
-  expiration: 3600000  # 1時間（ミリ秒）
+  secret-key: ${JWT_SECRET_KEY}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}    # 1時間（ミリ秒）
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:86400000} # 24時間（ミリ秒）
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS}</code></pre>
@@ -6046,15 +6047,19 @@ resource &quot;azurerm_container_app&quot; &quot;backend&quot; {
   }
 
   secret {
-    name  = &quot;spring-datasource-url&quot;
+    name  = &quot;database-url&quot;
     value = var.db_connection_string
   }
   secret {
-    name  = &quot;spring-datasource-password&quot;
+    name  = &quot;database-username&quot;
+    value = var.db_username
+  }
+  secret {
+    name  = &quot;database-password&quot;
     value = var.db_password
   }
   secret {
-    name  = &quot;jwt-secret&quot;
+    name  = &quot;jwt-secret-key&quot;
     value = var.jwt_secret
   }
   secret {
@@ -6081,16 +6086,28 @@ resource &quot;azurerm_container_app&quot; &quot;backend&quot; {
         value = var.log_level  # dev: DEBUG, prd: INFO
       }
       env {
-        name        = &quot;SPRING_DATASOURCE_URL&quot;
-        secret_name = &quot;spring-datasource-url&quot;
+        name        = &quot;DATABASE_URL&quot;
+        secret_name = &quot;database-url&quot;
       }
       env {
-        name        = &quot;SPRING_DATASOURCE_PASSWORD&quot;
-        secret_name = &quot;spring-datasource-password&quot;
+        name        = &quot;DATABASE_USERNAME&quot;
+        secret_name = &quot;database-username&quot;
       }
       env {
-        name        = &quot;JWT_SECRET&quot;
-        secret_name = &quot;jwt-secret&quot;
+        name        = &quot;DATABASE_PASSWORD&quot;
+        secret_name = &quot;database-password&quot;
+      }
+      env {
+        name        = &quot;JWT_SECRET_KEY&quot;
+        secret_name = &quot;jwt-secret-key&quot;
+      }
+      env {
+        name  = &quot;JWT_ACCESS_TOKEN_EXPIRATION&quot;
+        value = tostring(var.jwt_access_token_expiration_ms)
+      }
+      env {
+        name  = &quot;JWT_REFRESH_TOKEN_EXPIRATION&quot;
+        value = tostring(var.jwt_refresh_token_expiration_ms)
       }
       env {
         name        = &quot;ACS_CONNECTION_STRING&quot;
@@ -7244,7 +7261,7 @@ az postgres flexible-server geo-restore \
 az containerapp update \
   --name ca-wms-backend-prd-west \
   --resource-group rg-wms-prd-west \
-  --set-env-vars &quot;SPRING_DATASOURCE_URL=jdbc:postgresql://pg-wms-prd-west.postgres.database.azure.com:5432/wms&quot;
+  --set-env-vars &quot;DATABASE_URL=jdbc:postgresql://pg-wms-prd-west.postgres.database.azure.com:5432/wms&quot;
 
 # 3. 復旧確認
 curl https://ca-wms-backend-prd-west.*.japanwest.azurecontainerapps.io/actuator/health</code></pre>
@@ -7941,7 +7958,7 @@ public class SecurityConfig {
 <tbody>
 <tr><td><strong>アルゴリズム</strong></td><td>HS256（HMAC-SHA256）</td></tr>
 <tr><td><strong>鍵</strong></td><td>256bit以上のランダム文字列</td></tr>
-<tr><td><strong>鍵の保管</strong></td><td>環境変数 <code>JWT_SECRET</code></td></tr>
+<tr><td><strong>鍵の保管</strong></td><td>環境変数 <code>JWT_SECRET_KEY</code></td></tr>
 <tr><td><strong>鍵のローテーション</strong></td><td>運用時に環境変数を更新し、Container Apps を再デプロイ</td></tr>
 <p></tbody><br></table></p>
 <blockquote><strong>HS256を選択した理由</strong>: 本システムは単一のバックエンドサービスがトークンの発行と検証の両方を行うため、共有鍵方式（HS256）で十分である。マイクロサービス構成（複数サービスでの検証）が必要になった場合は RS256（公開鍵方式）への移行を検討する。</blockquote>
@@ -8049,7 +8066,7 @@ public class JwtTokenProvider {
 }</code></pre>
 <h3>3.4 application.yml 設定</h3>
 <pre><code class="lang-yaml">jwt:
-  secret-key: ${JWT_SECRET}                     # 環境変数から取得（256bit以上）
+  secret-key: ${JWT_SECRET_KEY}                # 環境変数から取得（256bit以上）
   access-token-expiration: 3600000             # 1時間（ミリ秒）
   refresh-token-expiration: 86400000           # 24時間（ミリ秒）= スライディング方式</code></pre>
 <hr>
@@ -8951,7 +8968,7 @@ wms:
   email:
     connection-string: ${ACS_CONNECTION_STRING}
     sender-address: DoNotReply@{ACSドメイン}
-    password-reset-base-url: ${PASSWORD_RESET_BASE_URL:http://localhost:5173}</code></pre>
+    password-reset-base-url: http://localhost:5173  # TODO: 環境変数バインドは未配線。対応は別Issue</code></pre>
 <h3>11.3 EmailService 実装</h3>
 <pre><code class="lang-java">@Service
 @RequiredArgsConstructor
@@ -9183,15 +9200,8 @@ export function useSessionTimeout() {
 <hr>
 <h2>15. 設定パラメータ一覧</h2>
 <h3>15.1 環境変数</h3>
-<table>
-<thead><tr><th>環境変数名</th><th>説明</th><th>必須</th><th>例</th></tr></thead>
-<tbody>
-<tr><td><code>JWT_SECRET</code></td><td>JWT署名用の秘密鍵（256bit以上）</td><td>必須</td><td><code>your-256-bit-secret-key-here-must-be-long-enough</code></td></tr>
-<tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン（カンマ区切りで複数指定可）</td><td>必須</td><td><code>https://wms-frontend.z13.web.core.windows.net</code></td></tr>
-<tr><td><code>SPRING_PROFILES_ACTIVE</code></td><td>Spring プロファイル</td><td>必須</td><td><code>dev</code> / <code>prd</code></td></tr>
-<tr><td><code>ACS_CONNECTION_STRING</code></td><td>Azure Communication Services 接続文字列</td><td>必須</td><td><code>endpoint=https://xxx.communication.azure.com/;accesskey=...</code></td></tr>
-<tr><td><code>PASSWORD_RESET_BASE_URL</code></td><td>パスワードリセットリンクのベースURL</td><td>任意</td><td><code>https://wms-frontend.z13.web.core.windows.net</code>（デフォルト: <code>http://localhost:5173</code>）</td></tr>
-<p></tbody><br></table></p>
+<blockquote><strong>SSOT</strong>: 認証関連の環境変数（<code>JWT_SECRET_KEY</code>, <code>JWT_ACCESS_TOKEN_EXPIRATION</code>, <code>JWT_REFRESH_TOKEN_EXPIRATION</code>, <code>CORS_ALLOWED_ORIGINS</code>, <code>SPRING_PROFILES_ACTIVE</code>, <code>ACS_CONNECTION_STRING</code> 等）の完全な一覧は <a href="./environment-variables.md" target="_blank">environment-variables.md</a> を参照。</blockquote>
+<blockquote><strong>未配線</strong>: パスワードリセットリンクのベースURL（旧 <code>PASSWORD_RESET_BASE_URL</code>）はバックエンド未実装のため、本リリースでは Spring Boot プロパティ <code>wms.email.password-reset-base-url</code> のデフォルト値（<code>http://localhost:5173</code>）が使われる。実装は別 Issue で対応。</blockquote>
 <h3>15.2 application.yml パラメータ</h3>
 <table>
 <thead><tr><th>パラメータ</th><th>デフォルト</th><th>説明</th></tr></thead>
@@ -12827,15 +12837,15 @@ public CorsConfigurationSource corsConfigurationSource() {
 <h3>JWT署名鍵の管理</h3>
 <pre><code class="lang-yaml"># application.yml
 jwt:
-  secret: ${JWT_SECRET}  # 環境変数から注入。256ビット以上のランダム文字列
-  expiration-ms: 3600000  # 1時間（ミリ秒）</code></pre>
+  secret-key: ${JWT_SECRET_KEY}  # 環境変数から注入。256ビット以上のランダム文字列
+  access-token-expiration: 3600000  # 1時間（ミリ秒）</code></pre>
 <pre><code class="lang-java">@Component
 public class JwtTokenProvider {
 
-    @Value(&quot;${jwt.secret}&quot;)
+    @Value(&quot;${jwt.secret-key}&quot;)
     private String jwtSecret;
 
-    @Value(&quot;${jwt.expiration-ms}&quot;)
+    @Value(&quot;${jwt.access-token-expiration}&quot;)
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
@@ -12874,13 +12884,13 @@ public class JwtTokenProvider {
 }</code></pre>
 <h3>JWT署名鍵のローテーションと緊急対応</h3>
 <h4>設計方針</h4>
-<ul><li style="margin-left:0px">鍵はアプリケーション設定（環境変数 <code>JWT_SECRET</code>）で外部注入し、鍵変更時はアプリケーション再デプロイで反映する</li><li style="margin-left:0px">JWT署名鍵のローテーション手順は実装フェーズで運用手順書に策定する。鍵漏洩時の緊急対応手順（全トークン無効化、新鍵への切替）を含む</li></ul>
+<ul><li style="margin-left:0px">鍵はアプリケーション設定（環境変数 <code>JWT_SECRET_KEY</code>）で外部注入し、鍵変更時はアプリケーション再デプロイで反映する</li><li style="margin-left:0px">JWT署名鍵のローテーション手順は実装フェーズで運用手順書に策定する。鍵漏洩時の緊急対応手順（全トークン無効化、新鍵への切替）を含む</li></ul>
 <h4>鍵変更時の影響と対応</h4>
 <table>
 <thead><tr><th>項目</th><th>内容</th></tr></thead>
 <tbody>
-<tr><td><strong>通常ローテーション</strong></td><td>新しい <code>JWT_SECRET</code> を環境変数に設定し、アプリケーションを再デプロイする。再デプロイ後、旧鍵で発行されたアクセストークンは検証失敗となり、ユーザーは再ログインが必要になる</td></tr>
-<tr><td><strong>鍵漏洩時の緊急対応</strong></td><td>1. 新しい <code>JWT_SECRET</code> を生成し環境変数を更新、2. アプリケーションを即時再デプロイ（旧鍵の全トークンが無効化される）、3. 必要に応じてリフレッシュトークンのDB全レコードを削除（全ユーザー強制再ログイン）。詳細手順は運用手順書に策定する</td></tr>
+<tr><td><strong>通常ローテーション</strong></td><td>新しい <code>JWT_SECRET_KEY</code> を環境変数に設定し、アプリケーションを再デプロイする。再デプロイ後、旧鍵で発行されたアクセストークンは検証失敗となり、ユーザーは再ログインが必要になる。<strong>注意</strong>: 環境変数の「値」を変更する場合は revision 切替で完結するが、Container Apps の secret 名（例: <code>jwt-secret-key</code>）や env 名そのものを変更する場合は、Azure 側で secret 削除＋再作成として扱われ、<code>min_replicas=0</code> 環境では一時的に Pod 起動失敗が発生し得る。name 変更を伴うリネームは <code>terraform plan</code> で影響を事前確認すること</td></tr>
+<tr><td><strong>鍵漏洩時の緊急対応</strong></td><td>1. 新しい <code>JWT_SECRET_KEY</code> を生成し環境変数を更新、2. アプリケーションを即時再デプロイ（旧鍵の全トークンが無効化される）、3. 必要に応じてリフレッシュトークンのDB全レコードを削除（全ユーザー強制再ログイン）。詳細手順は運用手順書に策定する</td></tr>
 <tr><td><strong>リフレッシュトークン</strong></td><td>リフレッシュトークンはDB保存（BCryptハッシュ）であり、JWT署名鍵とは独立している。鍵変更のみではリフレッシュトークンは無効化されないため、完全な無効化にはDBレコード削除が必要</td></tr>
 <p></tbody><br></table></p>
 <h3>JwtAuthenticationFilter</h3>
@@ -14072,9 +14082,11 @@ jobs:
       - name: Run tests
         run: ./gradlew test
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/wms_test
-          SPRING_DATASOURCE_USERNAME: wms
-          SPRING_DATASOURCE_PASSWORD: wms
+          # ※テスト用ローカル PostgreSQL に対する固定値。
+          # 本番/staging デプロイ時は必ず ${{ secrets.* }} に置換すること。
+          DATABASE_URL: jdbc:postgresql://localhost:5432/wms_test
+          DATABASE_USERNAME: wms
+          DATABASE_PASSWORD: wms
 
       - name: Build
         run: ./gradlew bootJar
@@ -15306,10 +15318,12 @@ az acr credential show --name acrwms
 <tbody>
 <tr><td><code>SPRING_PROFILES_ACTIVE</code></td><td>Spring プロファイル</td><td>No</td><td><code>spring.profiles.active</code></td><td><code>dev</code></td><td><code>prd</code></td></tr>
 <tr><td><code>LOG_LEVEL</code></td><td>ログレベル</td><td>No</td><td><code>logging.level.root</code></td><td><code>DEBUG</code></td><td><code>INFO</code></td></tr>
-<tr><td><code>SPRING_DATASOURCE_URL</code></td><td>DB接続文字列</td><td>Yes</td><td><code>spring.datasource.url</code></td><td><code>jdbc:postgresql://localhost:5432/wms</code></td><td>(環境依存)</td></tr>
-<tr><td><code>SPRING_DATASOURCE_USERNAME</code></td><td>DBユーザー名</td><td>Yes</td><td><code>spring.datasource.username</code></td><td><code>wms</code></td><td><code>wmsadmin</code></td></tr>
-<tr><td><code>SPRING_DATASOURCE_PASSWORD</code></td><td>DBパスワード</td><td>Yes</td><td><code>spring.datasource.password</code></td><td><code>wms</code></td><td>(Secrets)</td></tr>
-<tr><td><code>JWT_SECRET</code></td><td>JWTトークン署名鍵</td><td>Yes</td><td><code>jwt.secret-key</code></td><td><code>local-dev-secret-key-minimum-32-characters-long</code></td><td>(Secrets)</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>DB接続文字列</td><td>Yes</td><td><code>spring.datasource.url</code></td><td><code>jdbc:postgresql://localhost:5432/wms</code></td><td>(環境依存)</td></tr>
+<tr><td><code>DATABASE_USERNAME</code></td><td>DBユーザー名</td><td>Yes</td><td><code>spring.datasource.username</code></td><td><code>wms</code></td><td><code>wmsadmin</code></td></tr>
+<tr><td><code>DATABASE_PASSWORD</code></td><td>DBパスワード</td><td>Yes</td><td><code>spring.datasource.password</code></td><td><code>wms</code></td><td>(Secrets)</td></tr>
+<tr><td><code>JWT_SECRET_KEY</code></td><td>JWTトークン署名鍵（HS256要件: 256bit以上）</td><td>Yes</td><td><code>jwt.secret-key</code></td><td><code>dev-secret-key-must-be-at-least-256-bits-long-for-hs256</code> ※1</td><td>(Secrets)</td></tr>
+<tr><td><code>JWT_ACCESS_TOKEN_EXPIRATION</code></td><td>アクセストークン有効期限（ミリ秒）</td><td>No</td><td><code>jwt.access-token-expiration</code></td><td><code>3600000</code>（1時間）</td><td><code>3600000</code>（1時間）</td></tr>
+<tr><td><code>JWT_REFRESH_TOKEN_EXPIRATION</code></td><td>リフレッシュトークン有効期限（ミリ秒）</td><td>No</td><td><code>jwt.refresh-token-expiration</code></td><td><code>86400000</code>（24時間）</td><td><code>86400000</code>（24時間）</td></tr>
 <tr><td><code>CORS_ALLOWED_ORIGINS</code></td><td>CORS許可オリジン</td><td>No</td><td><code>cors.allowed-origins</code></td><td><code>http://localhost:5173</code></td><td>Front Door URL</td></tr>
 <tr><td><code>AZURE_STORAGE_ACCOUNT_NAME</code></td><td>Blob Storageアカウント名（Managed Identity）</td><td>No</td><td><code>wms.storage.account-name</code></td><td><code>devstorageaccount</code></td><td><code>stwmsprdeast</code></td></tr>
 <tr><td><code>ACS_CONNECTION_STRING</code></td><td>Azure Communication Services接続文字列</td><td>Yes</td><td><code>wms.acs.connection-string</code></td><td>(環境依存)</td><td>(環境依存)</td></tr>
@@ -15317,6 +15331,8 @@ az acr credential show --name acrwms
 <tr><td><code>APPLICATIONINSIGHTS_CONNECTION_STRING</code></td><td>Application Insights接続文字列</td><td>No</td><td>(自動検出)</td><td>(環境依存)</td><td>(環境依存)</td></tr>
 <tr><td><code>AZURE_FRONTDOOR_ID</code></td><td>Front Door ID（X-Azure-FDIDヘッダー検証用）</td><td>No</td><td><code>wms.frontdoor.id</code></td><td>(未設定)</td><td>(Front Door ID)</td></tr>
 <p></tbody><br></table></p>
+<blockquote><strong>※1 <code>JWT_SECRET_KEY</code> の dev デフォルト値について</strong>: 上記文字列はローカル開発専用フォールバック値であり、<strong>公開リポジトリにコミットされている</strong>ため秘密鍵としての強度を持たない。dev/demo/loadtest/prd の各デプロイ環境では、必ず GitHub Secrets (<code>JWT_SECRET_DEV</code> / <code>JWT_SECRET_PRD</code>) 経由で個別生成した 256bit 以上のランダム値を上書きすること。<strong>この値を実環境で使用することは禁止</strong>。</blockquote>
+<blockquote><strong>※2 環境変数とプロパティのバインディング</strong>: 上記「application.yml プロパティ」列はあくまで Spring Boot 上の対応プロパティを示す。Spring Boot は環境変数を自動マッピングするわけではなく、<code>application-*.yml</code> 内で明示的に <code>${ENV_VAR_NAME}</code> 形式で参照することで初めて該当プロパティにバインドされる。</blockquote>
 <h2>2. フロントエンド環境変数</h2>
 <p>Vite ビルド時に埋め込まれる環境変数。</p>
 <table>

@@ -149,15 +149,19 @@ resource "azurerm_container_app" "backend" {
   }
 
   secret {
-    name  = "spring-datasource-url"
+    name  = "database-url"
     value = var.db_connection_string
   }
   secret {
-    name  = "spring-datasource-password"
+    name  = "database-username"
+    value = var.db_username
+  }
+  secret {
+    name  = "database-password"
     value = var.db_password
   }
   secret {
-    name  = "jwt-secret"
+    name  = "jwt-secret-key"
     value = var.jwt_secret
   }
   secret {
@@ -184,16 +188,28 @@ resource "azurerm_container_app" "backend" {
         value = var.log_level  # dev: DEBUG, prd: INFO
       }
       env {
-        name        = "SPRING_DATASOURCE_URL"
-        secret_name = "spring-datasource-url"
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
       env {
-        name        = "SPRING_DATASOURCE_PASSWORD"
-        secret_name = "spring-datasource-password"
+        name        = "DATABASE_USERNAME"
+        secret_name = "database-username"
       }
       env {
-        name        = "JWT_SECRET"
-        secret_name = "jwt-secret"
+        name        = "DATABASE_PASSWORD"
+        secret_name = "database-password"
+      }
+      env {
+        name        = "JWT_SECRET_KEY"
+        secret_name = "jwt-secret-key"
+      }
+      env {
+        name  = "JWT_ACCESS_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_access_token_expiration_ms)
+      }
+      env {
+        name  = "JWT_REFRESH_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_refresh_token_expiration_ms)
       }
       env {
         name        = "ACS_CONNECTION_STRING"
@@ -1457,7 +1473,7 @@ az postgres flexible-server geo-restore \
 az containerapp update \
   --name ca-wms-backend-prd-west \
   --resource-group rg-wms-prd-west \
-  --set-env-vars "SPRING_DATASOURCE_URL=jdbc:postgresql://pg-wms-prd-west.postgres.database.azure.com:5432/wms"
+  --set-env-vars "DATABASE_URL=jdbc:postgresql://pg-wms-prd-west.postgres.database.azure.com:5432/wms"
 
 # 3. 復旧確認
 curl https://ca-wms-backend-prd-west.*.japanwest.azurecontainerapps.io/actuator/health

@@ -23,19 +23,19 @@ resource "azurerm_container_app" "backend" {
   }
 
   secret {
-    name  = "spring-datasource-username"
+    name  = "database-username"
     value = var.db_username
   }
   secret {
-    name  = "spring-datasource-url"
+    name  = "database-url"
     value = var.db_connection_string
   }
   secret {
-    name  = "spring-datasource-password"
+    name  = "database-password"
     value = var.db_password
   }
   secret {
-    name  = "jwt-secret"
+    name  = "jwt-secret-key"
     value = var.jwt_secret
   }
   secret {
@@ -62,20 +62,28 @@ resource "azurerm_container_app" "backend" {
         value = var.log_level
       }
       env {
-        name        = "SPRING_DATASOURCE_URL"
-        secret_name = "spring-datasource-url"
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
       env {
-        name        = "SPRING_DATASOURCE_USERNAME"
-        secret_name = "spring-datasource-username"
+        name        = "DATABASE_USERNAME"
+        secret_name = "database-username"
       }
       env {
-        name        = "SPRING_DATASOURCE_PASSWORD"
-        secret_name = "spring-datasource-password"
+        name        = "DATABASE_PASSWORD"
+        secret_name = "database-password"
       }
       env {
-        name        = "JWT_SECRET"
-        secret_name = "jwt-secret"
+        name        = "JWT_SECRET_KEY"
+        secret_name = "jwt-secret-key"
+      }
+      env {
+        name  = "JWT_ACCESS_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_access_token_expiration_ms)
+      }
+      env {
+        name  = "JWT_REFRESH_TOKEN_EXPIRATION"
+        value = tostring(var.jwt_refresh_token_expiration_ms)
       }
       env {
         name        = "ACS_CONNECTION_STRING"

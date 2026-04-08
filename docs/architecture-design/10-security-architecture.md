@@ -1331,18 +1331,18 @@ public CorsConfigurationSource corsConfigurationSource() {
 ```yaml
 # application.yml
 jwt:
-  secret: ${JWT_SECRET}  # 環境変数から注入。256ビット以上のランダム文字列
-  expiration-ms: 3600000  # 1時間（ミリ秒）
+  secret-key: ${JWT_SECRET_KEY}  # 環境変数から注入。256ビット以上のランダム文字列
+  access-token-expiration: 3600000  # 1時間（ミリ秒）
 ```
 
 ```java
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret-key}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.access-token-expiration}")
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
@@ -1385,15 +1385,15 @@ public class JwtTokenProvider {
 
 #### 設計方針
 
-- 鍵はアプリケーション設定（環境変数 `JWT_SECRET`）で外部注入し、鍵変更時はアプリケーション再デプロイで反映する
+- 鍵はアプリケーション設定（環境変数 `JWT_SECRET_KEY`）で外部注入し、鍵変更時はアプリケーション再デプロイで反映する
 - JWT署名鍵のローテーション手順は実装フェーズで運用手順書に策定する。鍵漏洩時の緊急対応手順（全トークン無効化、新鍵への切替）を含む
 
 #### 鍵変更時の影響と対応
 
 | 項目 | 内容 |
 |------|------|
-| **通常ローテーション** | 新しい `JWT_SECRET` を環境変数に設定し、アプリケーションを再デプロイする。再デプロイ後、旧鍵で発行されたアクセストークンは検証失敗となり、ユーザーは再ログインが必要になる |
-| **鍵漏洩時の緊急対応** | 1. 新しい `JWT_SECRET` を生成し環境変数を更新、2. アプリケーションを即時再デプロイ（旧鍵の全トークンが無効化される）、3. 必要に応じてリフレッシュトークンのDB全レコードを削除（全ユーザー強制再ログイン）。詳細手順は運用手順書に策定する |
+| **通常ローテーション** | 新しい `JWT_SECRET_KEY` を環境変数に設定し、アプリケーションを再デプロイする。再デプロイ後、旧鍵で発行されたアクセストークンは検証失敗となり、ユーザーは再ログインが必要になる。**注意**: 環境変数の「値」を変更する場合は revision 切替で完結するが、Container Apps の secret 名（例: `jwt-secret-key`）や env 名そのものを変更する場合は、Azure 側で secret 削除＋再作成として扱われ、`min_replicas=0` 環境では一時的に Pod 起動失敗が発生し得る。name 変更を伴うリネームは `terraform plan` で影響を事前確認すること |
+| **鍵漏洩時の緊急対応** | 1. 新しい `JWT_SECRET_KEY` を生成し環境変数を更新、2. アプリケーションを即時再デプロイ（旧鍵の全トークンが無効化される）、3. 必要に応じてリフレッシュトークンのDB全レコードを削除（全ユーザー強制再ログイン）。詳細手順は運用手順書に策定する |
 | **リフレッシュトークン** | リフレッシュトークンはDB保存（BCryptハッシュ）であり、JWT署名鍵とは独立している。鍵変更のみではリフレッシュトークンは無効化されないため、完全な無効化にはDBレコード削除が必要 |
 
 ### JwtAuthenticationFilter

@@ -197,7 +197,7 @@ JWTは Header / Payload / Signature の3パートで構成される。
 |------|------|
 | **アルゴリズム** | HS256（HMAC-SHA256） |
 | **鍵** | 256bit以上のランダム文字列 |
-| **鍵の保管** | 環境変数 `JWT_SECRET` |
+| **鍵の保管** | 環境変数 `JWT_SECRET_KEY` |
 | **鍵のローテーション** | 運用時に環境変数を更新し、Container Apps を再デプロイ |
 
 > **HS256を選択した理由**: 本システムは単一のバックエンドサービスがトークンの発行と検証の両方を行うため、共有鍵方式（HS256）で十分である。マイクロサービス構成（複数サービスでの検証）が必要になった場合は RS256（公開鍵方式）への移行を検討する。
@@ -312,7 +312,7 @@ public class JwtTokenProvider {
 
 ```yaml
 jwt:
-  secret-key: ${JWT_SECRET}                     # 環境変数から取得（256bit以上）
+  secret-key: ${JWT_SECRET_KEY}                # 環境変数から取得（256bit以上）
   access-token-expiration: 3600000             # 1時間（ミリ秒）
   refresh-token-expiration: 86400000           # 24時間（ミリ秒）= スライディング方式
 ```
@@ -1342,7 +1342,7 @@ wms:
   email:
     connection-string: ${ACS_CONNECTION_STRING}
     sender-address: DoNotReply@{ACSドメイン}
-    password-reset-base-url: ${PASSWORD_RESET_BASE_URL:http://localhost:5173}
+    password-reset-base-url: http://localhost:5173  # TODO: 環境変数バインドは未配線。対応は別Issue
 ```
 
 ### 11.3 EmailService 実装
@@ -1626,13 +1626,9 @@ backend/src/main/java/com/wms/
 
 ### 15.1 環境変数
 
-| 環境変数名 | 説明 | 必須 | 例 |
-|-----------|------|:----:|-----|
-| `JWT_SECRET` | JWT署名用の秘密鍵（256bit以上） | 必須 | `your-256-bit-secret-key-here-must-be-long-enough` |
-| `CORS_ALLOWED_ORIGINS` | CORS許可オリジン（カンマ区切りで複数指定可） | 必須 | `https://wms-frontend.z13.web.core.windows.net` |
-| `SPRING_PROFILES_ACTIVE` | Spring プロファイル | 必須 | `dev` / `prd` |
-| `ACS_CONNECTION_STRING` | Azure Communication Services 接続文字列 | 必須 | `endpoint=https://xxx.communication.azure.com/;accesskey=...` |
-| `PASSWORD_RESET_BASE_URL` | パスワードリセットリンクのベースURL | 任意 | `https://wms-frontend.z13.web.core.windows.net`（デフォルト: `http://localhost:5173`） |
+> **SSOT**: 認証関連の環境変数（`JWT_SECRET_KEY`, `JWT_ACCESS_TOKEN_EXPIRATION`, `JWT_REFRESH_TOKEN_EXPIRATION`, `CORS_ALLOWED_ORIGINS`, `SPRING_PROFILES_ACTIVE`, `ACS_CONNECTION_STRING` 等）の完全な一覧は [environment-variables.md](./environment-variables.md) を参照。
+
+> **未配線**: パスワードリセットリンクのベースURL（旧 `PASSWORD_RESET_BASE_URL`）はバックエンド未実装のため、本リリースでは Spring Boot プロパティ `wms.email.password-reset-base-url` のデフォルト値（`http://localhost:5173`）が使われる。実装は別 Issue で対応。
 
 ### 15.2 application.yml パラメータ
 
