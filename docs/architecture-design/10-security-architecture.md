@@ -447,6 +447,12 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 .maxAgeInSeconds(31536000))
             // Cache-Control: no-cache, no-store, max-age=0, must-revalidate（API レスポンス）
             .cacheControl(Customizer.withDefaults())
+            // Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+            .contentSecurityPolicy(csp -> csp
+                .policyDirectives("default-src 'none'; frame-ancestors 'none'"))
+            // Permissions-Policy: 不要なブラウザ機能を全面無効化
+            .permissionsPolicy(permissions -> permissions
+                .policy("camera=(), microphone=(), geolocation=(), payment=()"))
         )
         // ... 他の設定
     ;
@@ -463,6 +469,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | 同一オリジンではフル URL、クロスオリジンではオリジンのみ送信。URL パラメータの漏洩を防止 |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | HTTPS 接続を強制。ダウングレード攻撃を防止 |
 | `Cache-Control` | `no-cache, no-store, max-age=0, must-revalidate` | API レスポンスのキャッシュを防止。機密データの残存を防止 |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | 最小権限ポリシー。`frame-ancestors 'none'` はクリックジャッキング対策の多層防御として JSON API にも適用 |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` | 不要なブラウザ機能（カメラ・マイク・位置情報・決済）を全面無効化。多層防御としてバックエンド API にも付与 |
 
 ### Content-Security-Policy（CSP）について
 
@@ -470,7 +478,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 | コンポーネント | CSP の適用 | 理由 |
 |-------------|----------|------|
-| バックエンド API | 不要 | JSON レスポンスのみ。HTML を返さないため CSP は無関係 |
+| バックエンド API | `default-src 'none'; frame-ancestors 'none'` を適用 | JSON レスポンスでも `frame-ancestors` はクリックジャッキング対策（`X-Frame-Options` の後継）として有効。`default-src 'none'` は最小権限ポリシーとして多層防御に寄与 |
 | フロントエンド（Blob Storage） | Azure Blob Storage のレスポンスヘッダー設定で適用（将来対応） | 静的 HTML/JS/CSS のため有効。初期リリースでは未設定とし、安定稼働後に追加 |
 
 ---

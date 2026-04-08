@@ -12080,6 +12080,12 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 .maxAgeInSeconds(31536000))
             // Cache-Control: no-cache, no-store, max-age=0, must-revalidate（API レスポンス）
             .cacheControl(Customizer.withDefaults())
+            // Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+            .contentSecurityPolicy(csp -&gt; csp
+                .policyDirectives(&quot;default-src 'none'; frame-ancestors 'none'&quot;))
+            // Permissions-Policy: 不要なブラウザ機能を全面無効化
+            .permissionsPolicy(permissions -&gt; permissions
+                .policy(&quot;camera=(), microphone=(), geolocation=(), payment=()&quot;))
         )
         // ... 他の設定
     ;
@@ -12094,13 +12100,15 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 <tr><td><code>Referrer-Policy</code></td><td><code>strict-origin-when-cross-origin</code></td><td>同一オリジンではフル URL、クロスオリジンではオリジンのみ送信。URL パラメータの漏洩を防止</td></tr>
 <tr><td><code>Strict-Transport-Security</code></td><td><code>max-age=31536000; includeSubDomains</code></td><td>HTTPS 接続を強制。ダウングレード攻撃を防止</td></tr>
 <tr><td><code>Cache-Control</code></td><td><code>no-cache, no-store, max-age=0, must-revalidate</code></td><td>API レスポンスのキャッシュを防止。機密データの残存を防止</td></tr>
+<tr><td><code>Content-Security-Policy</code></td><td><code>default-src 'none'; frame-ancestors 'none'</code></td><td>最小権限ポリシー。<code>frame-ancestors 'none'</code> はクリックジャッキング対策の多層防御として JSON API にも適用</td></tr>
+<tr><td><code>Permissions-Policy</code></td><td><code>camera=(), microphone=(), geolocation=(), payment=()</code></td><td>不要なブラウザ機能（カメラ・マイク・位置情報・決済）を全面無効化。多層防御としてバックエンド API にも付与</td></tr>
 <p></tbody><br></table></p>
 <h3>Content-Security-Policy（CSP）について</h3>
 <p>本システムのフロントエンドは Azure Blob Storage 静的ホスティングであり、バックエンド API は JSON のみを返却する。CSP ヘッダーの設定は以下の方針とする。</p>
 <table>
 <thead><tr><th>コンポーネント</th><th>CSP の適用</th><th>理由</th></tr></thead>
 <tbody>
-<tr><td>バックエンド API</td><td>不要</td><td>JSON レスポンスのみ。HTML を返さないため CSP は無関係</td></tr>
+<tr><td>バックエンド API</td><td><code>default-src 'none'; frame-ancestors 'none'</code> を適用</td><td>JSON レスポンスでも <code>frame-ancestors</code> はクリックジャッキング対策（<code>X-Frame-Options</code> の後継）として有効。<code>default-src 'none'</code> は最小権限ポリシーとして多層防御に寄与</td></tr>
 <tr><td>フロントエンド（Blob Storage）</td><td>Azure Blob Storage のレスポンスヘッダー設定で適用（将来対応）</td><td>静的 HTML/JS/CSS のため有効。初期リリースでは未設定とし、安定稼働後に追加</td></tr>
 <p></tbody><br></table></p>
 <hr>
