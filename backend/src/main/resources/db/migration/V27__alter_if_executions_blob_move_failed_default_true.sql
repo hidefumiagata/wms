@@ -15,6 +15,10 @@
 --   トランザクションで false に更新する。失敗/中断時は true のまま残り、
 --   リカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象となる。
 
+-- 既存行（V27 適用前に INSERT されたレコード）は過去の成功履歴として
+-- blob_move_failed=false のまま維持する。本マイグレーションは新規 INSERT の
+-- デフォルト値のみ変更し、既存データには影響を与えない。
+-- 詳細は Issue #374 / アーキテクチャ設計書 09-interface-architecture.md セクション 7.4 参照。
 ALTER TABLE if_executions
     ALTER COLUMN blob_move_failed SET DEFAULT TRUE;
 

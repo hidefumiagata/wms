@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class InterfaceService {
 
     private static final long MAX_FILE_SIZE = 50L * 1024 * 1024; // 50MB
@@ -81,6 +80,7 @@ public class InterfaceService {
     /**
      * 取り込み履歴一覧を取得する。
      */
+    @Transactional(readOnly = true)
     public Page<IfExecution> listExecutions(String ifType, OffsetDateTime dateFrom,
                                              OffsetDateTime dateTo, String status,
                                              Long warehouseId, String fileName,
@@ -92,6 +92,7 @@ public class InterfaceService {
     /**
      * pendingフォルダのファイル一覧を取得する。
      */
+    @Transactional(readOnly = true)
     public List<BlobStorageClient.BlobFileInfo> listFiles(String ifId) {
         String directory = resolveDirectory(ifId);
         return blobStorageClient.listPendingFiles(directory);
@@ -100,6 +101,7 @@ public class InterfaceService {
     /**
      * CSVファイルのバリデーションを実行する（DB書き込みなし）。
      */
+    @Transactional(readOnly = true)
     public InterfaceValidationResponse validate(String ifId, String fileName, Long warehouseId) {
         String directory = resolveDirectory(ifId);
         validateFileName(fileName);
@@ -224,23 +226,36 @@ public class InterfaceService {
     }
 
     /**
-     * Blob を pending → processed へ移動し、成功時のみ
-     * 独立トランザクション（{@link TransactionTemplate}）で
+     * Blob を pending → processed へ移動し、成功時のみ tx2 として独立トランザクションで
      * {@code blob_move_failed} フラグを false に更新する。
      *
-     * <p>tx1 コミット時点では悲観デフォルト（true）で書かれており、
-     * 本メソッドが正常完了した場合にのみ false へ更新される。
-     * Blob 移動または flag 更新に失敗した場合はフラグが true のまま残り、
+     * <p>tx1（呼び出し元の {@code transactionTemplate.execute}）でコミット済みの
+     * 悲観デフォルト（true）を、本メソッドが正常完了した場合にのみ false へ更新する。
+     * Blob 移動または tx2 のいずれかが失敗した場合はフラグが true のまま残り、
      * リカバリバッチ（Issue #440: BAT-IF-RECONCILE）の対象となる。
      *
-     * <p>{@code @Transactional} ではなく {@link TransactionTemplate} を
-     * 利用するのは、同一クラス内自己呼び出しによる AOP プロキシ失効
-     * （Spring AOP の self-invocation 問題）を回避するため。
+     * <p>tx2 に渡る {@code execution} は tx1 コミット後の detached entity であり、
+     * {@code JpaRepository#save} は merge 経路で全カラム UPDATE を発行する。
+     * 将来 {@code @Version} を追加する場合は merge の挙動に注意。
+     *
+     * <p>{@code @Transactional} ではなく {@link TransactionTemplate} を利用するのは、
+     * 同一クラス内自己呼び出しによる Spring AOP プロキシ失効（self-invocation 問題）を
+     * 回避するため。クラスレベルの {@code @Transactional} を持たない構造により、
+     * tx1/tx2 ともに真の独立トランザクションとして動作する。
      */
     private void moveBlobSafely(String directory, String fileName, IfExecution execution) {
+        String destPath;
         try {
-            String destPath = blobStorageClient.moveToProcessed(directory, fileName);
-            // 成功時のみ独立トランザクションで flag を false に更新
+            destPath = blobStorageClient.moveToProcessed(directory, fileName);
+        } catch (Exception e) {
+            // Blob 移動自体が失敗。悲観デフォルト true のままリカバリバッチ #440 に委譲
+            log.error("Blob move failed for file: {}. "
+                    + "Pessimistic default 'blobMoveFailed=true' remains; "
+                    + "will be retried by reconciliation batch (Issue #440).", fileName, e);
+            return;
+        }
+        try {
+            // tx2: 独立トランザクションで flag を false に更新
             transactionTemplate.execute(status -> {
                 execution.setBlobMoveFailed(false);
                 ifExecutionRepository.save(execution);
@@ -248,10 +263,10 @@ public class InterfaceService {
             });
             log.info("Blob moved to processed: {}", destPath);
         } catch (Exception e) {
-            // 悲観デフォルト true のままにする。リカバリバッチ（Issue #440）に委ねる。
-            log.error("Blob move or flag update failed for file: {}. "
+            // Blob は移動済みだが tx2 が失敗。リカバリバッチが「dest 既存」を検知して flag を更新
+            log.error("Flag update tx (tx2) failed for file: {} after successful blob move to {}. "
                     + "Pessimistic default 'blobMoveFailed=true' remains; "
-                    + "will be retried by reconciliation batch (Issue #440).", fileName, e);
+                    + "will be retried by reconciliation batch (Issue #440).", fileName, destPath, e);
         }
     }
 
