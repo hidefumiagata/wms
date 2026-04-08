@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class InterfaceService {
 
     private static final long MAX_FILE_SIZE = 50L * 1024 * 1024; // 50MB
@@ -81,6 +80,7 @@ public class InterfaceService {
     /**
      * 取り込み履歴一覧を取得する。
      */
+    @Transactional(readOnly = true)
     public Page<IfExecution> listExecutions(String ifType, OffsetDateTime dateFrom,
                                              OffsetDateTime dateTo, String status,
                                              Long warehouseId, String fileName,
@@ -92,6 +92,7 @@ public class InterfaceService {
     /**
      * pendingフォルダのファイル一覧を取得する。
      */
+    @Transactional(readOnly = true)
     public List<BlobStorageClient.BlobFileInfo> listFiles(String ifId) {
         String directory = resolveDirectory(ifId);
         return blobStorageClient.listPendingFiles(directory);
@@ -100,6 +101,7 @@ public class InterfaceService {
     /**
      * CSVファイルのバリデーションを実行する（DB書き込みなし）。
      */
+    @Transactional(readOnly = true)
     public InterfaceValidationResponse validate(String ifId, String fileName, Long warehouseId) {
         String directory = resolveDirectory(ifId);
         validateFileName(fileName);
@@ -187,6 +189,7 @@ public class InterfaceService {
                     validationResult.errorCount(), mode, "COMPLETED",
                     warehouseId, currentUserId);
         });
+        Objects.requireNonNull(execution, "tx1 must return execution");
 
         // Blob移動はトランザクション外（DB確定後）
         moveBlobSafely(directory, fileName, execution);
@@ -216,6 +219,7 @@ public class InterfaceService {
                 saveExecution(ifId, fileName, null,
                         count, 0, count, "DISCARD", "DISCARDED",
                         warehouseId, currentUserId));
+        Objects.requireNonNull(execution, "tx1 must return execution");
 
         // Blob移動はトランザクション外
         moveBlobSafely(directory, fileName, execution);
@@ -223,16 +227,52 @@ public class InterfaceService {
         return new InterfaceImportResponse(0, totalCount, "DISCARD", "DISCARDED");
     }
 
+    /**
+     * Blob を pending → processed へ移動し、成功時のみ tx2 として独立トランザクションで
+     * {@code blob_move_failed} フラグを false に更新する。
+     *
+     * <p>tx1（呼び出し元の {@code transactionTemplate.execute}）でコミット済みの
+     * 悲観デフォルト（true）を、本メソッドが正常完了した場合にのみ false へ更新する。
+     * Blob 移動または tx2 のいずれかが失敗した場合はフラグが true のまま残り、
+     * リカバリバッチ（Issue #440: BAT-IF-RECONCILE）の対象となる。
+     *
+     * <p>tx2 は {@code @Modifying} クエリで {@code blob_move_failed} カラムのみを
+     * UPDATE する。これにより BAT-IF-RECONCILE (Issue #440) との並行更新による
+     * Lost Update リスクを排除する。
+     *
+     * <p>{@code @Transactional} ではなく {@link TransactionTemplate} を利用するのは、
+     * 同一クラス内自己呼び出しによる Spring AOP プロキシ失効（self-invocation 問題）を
+     * 回避するため。クラスレベルの {@code @Transactional} を持たない構造により、
+     * tx1/tx2 ともに真の独立トランザクションとして動作する。
+     */
     private void moveBlobSafely(String directory, String fileName, IfExecution execution) {
+        String destPath;
         try {
-            String destPath = blobStorageClient.moveToProcessed(directory, fileName);
-            execution.setBlobMoveFailed(false);
-            ifExecutionRepository.save(execution);
+            destPath = blobStorageClient.moveToProcessed(directory, fileName);
+        } catch (Exception e) {
+            // Blob 移動自体が失敗。悲観デフォルト true のままリカバリバッチ #440 に委譲
+            log.error("Blob move failed for file: {}. "
+                    + "Pessimistic default 'blobMoveFailed=true' remains; "
+                    + "will be retried by reconciliation batch (Issue #440).", fileName, e);
+            return;
+        }
+        try {
+            // tx2: 独立トランザクションで flag を false に単一カラム UPDATE
+            transactionTemplate.execute(status -> {
+                int updated = ifExecutionRepository.markBlobMoveSucceeded(execution.getId());
+                if (updated == 0) {
+                    // 既にバッチが処理済みの可能性。リカバリバッチで整合確認される
+                    log.warn("markBlobMoveSucceeded affected 0 rows for ifExecutionId={}. "
+                            + "May have been processed by reconciliation batch.", execution.getId());
+                }
+                return null;
+            });
             log.info("Blob moved to processed: {}", destPath);
         } catch (Exception e) {
-            log.error("Blob move failed for file: {}. DB records are already committed.", fileName, e);
-            execution.setBlobMoveFailed(true);
-            ifExecutionRepository.save(execution);
+            // Blob は移動済みだが tx2 が失敗。リカバリバッチが「dest 既存」を検知して flag を更新
+            log.error("Flag update tx (tx2) failed for file: {} after successful blob move to {}. "
+                    + "Pessimistic default 'blobMoveFailed=true' remains; "
+                    + "will be retried by reconciliation batch (Issue #440).", fileName, destPath, e);
         }
     }
 
@@ -249,7 +289,11 @@ public class InterfaceService {
                 .errorCount(errorCount)
                 .mode(mode)
                 .status(status)
-                .blobMoveFailed(false)
+                // 悲観デフォルト: tx1 コミット時点で未移動扱い（true）にし、
+                // Blob 移動成功後に moveBlobSafely() で false へ更新する。
+                // これによりアプリ再起動・例外等で moveBlobSafely に到達しなかった場合も
+                // リカバリバッチ（Issue #440）で検知可能。
+                .blobMoveFailed(true)
                 .warehouseId(warehouseId)
                 .executedAt(OffsetDateTime.now(JST))
                 .executedBy(currentUserId)

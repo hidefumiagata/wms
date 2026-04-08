@@ -12,6 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -61,6 +62,7 @@ public class IfExecution {
     private String errorMessage;
 
     @Setter
+    @ColumnDefault("true")
     @Column(name = "blob_move_failed", nullable = false)
     private Boolean blobMoveFailed;
 

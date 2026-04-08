@@ -429,7 +429,7 @@
 | `mode` | varchar(20) | NOT NULL | — | 実行モード: `SUCCESS_ONLY`(成功行のみ取り込み) / `DISCARD`(全件破棄) |
 | `status` | varchar(20) | NOT NULL | — | 実行状態: `COMPLETED`(取り込み成功) / `DISCARDED`(全件破棄) / `FAILED`(取り込み失敗) |
 | `error_message` | text | NULL | — | エラー発生時のメッセージ（FAILED時のみ） |
-| `blob_move_failed` | boolean | NOT NULL | false | Blob移動失敗フラグ |
+| `blob_move_failed` | boolean | NOT NULL | **true** | Blob移動失敗フラグ。悲観デフォルト `true` で初期化し、Blob移動成功時に `false` へ更新。リカバリバッチ（BAT-IF-RECONCILE, Issue #440）の対象選択に使用 |
 | `warehouse_id` | bigint | NOT NULL | — | FK → warehouses.id（取り込み対象倉庫） |
 | `executed_at` | timestamptz | NOT NULL | now() | 実行日時 |
 | `executed_by` | bigint | NOT NULL | — | 実行ユーザー（FK → users.id） |
