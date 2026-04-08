@@ -4636,7 +4636,7 @@ Content-Type: application/json
 │          │ │  有効在庫数    [  8 ケース]（読み取り専用）     │ │
 │          │ └───────────────────────────────────────────────┘ │
 │          │ ┌─────────────── 取引先・理由 ──────────────────┐ │
-│          │ │  仕入先        [__________] [検索]             │ │
+│          │ │  仕入先        [__________] [検索]（※1）      │ │
 │          │ │  返品理由*     [品質不良 ▼]                    │ │
 │          │ │  返品理由備考  [                            ]  │ │
 │          │ │               [                            ]  │ │
@@ -4648,6 +4648,7 @@ Content-Type: application/json
 │          │ └───────────────────────────────────────────────┘ │
 │          │                   [キャンセル] [登録]              │
 └──────────┴──────────────────────────────────────────────────┘</code></pre>
+<p><strong>※1 仕入先の表示制御</strong>: 入荷返品時は関連伝票番号から自動セット（読み取り専用、検索ボタン非表示）。在庫返品時は検索ボタンで手動選択。出荷返品時は仕入先行ごと非表示。</p>
 <p><strong>コンテンツエリア詳細</strong></p>
 <h4>基本情報セクション</h4>
 <table>
@@ -4690,7 +4691,7 @@ Content-Type: application/json
 <thead><tr><th>項目ID</th><th>項目名</th><th>種別</th><th>必須</th><th>初期値</th><th>バリデーション</th><th>備考</th></tr></thead>
 <tbody>
 <tr><td>RTN-TYPE</td><td>返品種別</td><td>セレクト</td><td>○</td><td>空（クエリパラメータ <code>returnType</code> がある場合はプリセット）</td><td>入荷返品 / 在庫返品 / 出荷返品</td><td>選択変更時に条件付き表示項目を切替</td></tr>
-<tr><td>RTN-PROD-CODE</td><td>商品コード</td><td>テキスト</td><td>○</td><td>空</td><td>存在する商品コード</td><td>検索ボタンまたはEnterで商品検索ダイアログ表示</td></tr>
+<tr><td>RTN-PROD-CODE</td><td>商品コード</td><td>テキスト</td><td>○</td><td>空</td><td>存在する商品コード</td><td>検索ボタンまたはEnterで商品検索ダイアログ表示。完全一致、または候補1件ヒット時は直接選択</td></tr>
 <tr><td>BTN-PROD-SEARCH</td><td>商品検索</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>商品検索ダイアログを開く</td></tr>
 <tr><td>RTN-PROD-NAME</td><td>商品名</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>商品選択時に自動表示</td></tr>
 <tr><td>RTN-QTY</td><td>数量</td><td>数値</td><td>○</td><td>空</td><td>1以上の整数。在庫返品時: 有効在庫数（<code>quantity - allocated_qty</code>）以下</td><td></td></tr>
@@ -4698,8 +4699,8 @@ Content-Type: application/json
 <tr><td>RTN-LOC</td><td>ロケーション</td><td>セレクト</td><td>○（在庫返品時）</td><td>空</td><td>在庫返品時のみ表示・必須。選択した商品・荷姿の在庫があるロケーション</td><td>商品・荷姿選択後に候補を動的生成</td></tr>
 <tr><td>RTN-LOC-CURRENT-QTY</td><td>現在在庫数</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>ロケーション選択後に表示。在庫返品時のみ</td></tr>
 <tr><td>RTN-LOC-AVAIL-QTY</td><td>有効在庫数</td><td>表示</td><td>—</td><td>—</td><td>—</td><td>在庫数 − 引当数。在庫返品時のみ。引当数 > 0 の場合は警告色で強調</td></tr>
-<tr><td>RTN-SUPPLIER</td><td>仕入先</td><td>テキスト</td><td>—</td><td>空</td><td>—</td><td>商品選択時に紐づく仕入先を自動候補表示。検索ボタンで取引先検索ダイアログ表示</td></tr>
-<tr><td>BTN-SUPPLIER-SEARCH</td><td>仕入先検索</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>取引先検索ダイアログを開く</td></tr>
+<tr><td>RTN-SUPPLIER</td><td>仕入先</td><td>テキスト</td><td>—</td><td>空</td><td>—</td><td>入荷返品: 関連伝票番号入力時に入荷伝票の仕入先を自動セット（読み取り専用）。在庫返品: 検索ボタンで取引先検索ダイアログから手動選択。出荷返品: 非表示（顧客側のため不要）</td></tr>
+<tr><td>BTN-SUPPLIER-SEARCH</td><td>仕入先検索</td><td>ボタン</td><td>—</td><td>—</td><td>—</td><td>取引先検索ダイアログを開く。在庫返品時のみ表示。入荷返品時は非表示（伝票から自動セット）、出荷返品時は非表示（仕入先自体が非表示）</td></tr>
 <tr><td>RTN-REASON</td><td>返品理由</td><td>セレクト</td><td>○</td><td>空</td><td>品質不良 / 数量過剰 / 誤配送 / 期限切れ / 破損 / その他</td><td></td></tr>
 <tr><td>RTN-REASON-REMARK</td><td>返品理由備考</td><td>テキストエリア</td><td>○（「その他」選択時）</td><td>空</td><td>最大500文字。「その他」選択時は1文字以上必須</td><td></td></tr>
 <tr><td>RTN-RELATED-SLIP</td><td>関連伝票番号</td><td>テキスト</td><td>—</td><td>空（クエリパラメータ <code>relatedSlipNumber</code> がある場合はプリセット）</td><td>—</td><td>入荷返品・出荷返品時のみ表示。任意入力</td></tr>
@@ -4714,9 +4715,10 @@ Content-Type: application/json
 <thead><tr><th>イベントID</th><th>トリガー</th><th>処理概要</th><th>遷移先 / 結果</th><th>実行可能ロール</th></tr></thead>
 <tbody>
 <tr><td><code>EVT-RTN001-001</code></td><td>画面初期表示</td><td>クエリパラメータを確認し、<code>returnType</code> があれば返品種別をプリセット、<code>relatedSlipNumber</code> があれば関連伝票番号をプリセット（入荷検品画面からの遷移時）</td><td>同画面（初期値設定）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><code>EVT-RTN001-002</code></td><td>商品検索ボタンクリック / 商品コード入力後Enter</td><td>API <code>GET /api/v1/master/products?keyword={keyword}</code> で商品を検索し、検索結果ダイアログを表示。1件の場合は直接選択</td><td>同画面（検索ダイアログ表示）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><code>EVT-RTN001-003</code></td><td>商品選択（検索結果から選択）</td><td>商品名を自動表示。商品マスタの <code>lot_manage_flag</code>・<code>expiry_manage_flag</code> を判定してロット番号・賞味期限フィールドの表示を制御。商品に紐づく仕入先を自動候補表示。在庫返品時はロケーション候補をリセット</td><td>同画面（フィールド表示制御・仕入先候補表示）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
-<tr><td><code>EVT-RTN001-004</code></td><td>返品種別変更</td><td>返品種別に応じた条件付き表示を制御。「在庫返品」→ロケーション選択を表示。「入荷返品」「出荷返品」→関連伝票番号を表示。他の種別固有項目は非表示に戻す</td><td>同画面（フィールド表示切替）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-RTN001-002</code></td><td>商品検索ボタンクリック / 商品コード入力後Enter</td><td>API <code>GET /api/v1/master/products?keyword={keyword}&amp;size=10</code> で商品を検索（最大10件取得）。完全一致する商品コードが存在する場合は、ダイアログを出さずに直接選択する。存在しない場合は: 検索結果が1件→直接選択、複数件→検索結果ダイアログを表示。ヒット総件数が表示件数を超える場合、ダイアログ下部に「全{total}件中{count}件を表示しています」のヒントを表示</td><td>同画面（検索ダイアログ表示）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-RTN001-003</code></td><td>商品選択（検索結果から選択）</td><td>商品名を自動表示。商品マスタの <code>lot_manage_flag</code>・<code>expiry_manage_flag</code> を判定してロット番号・賞味期限フィールドの表示を制御。在庫返品時はロケーション候補をリセット</td><td>同画面（フィールド表示制御）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-RTN001-004</code></td><td>返品種別変更</td><td>返品種別に応じた条件付き表示を制御。「在庫返品」→ロケーション選択を表示、仕入先は手動選択（編集可能）。「入荷返品」→関連伝票番号を表示、仕入先は伝票から自動セット。「出荷返品」→関連伝票番号を表示、仕入先は非表示。種別変更時は仕入先の自動セット値をクリアし読み取り専用を解除する。他の種別固有項目は非表示に戻す</td><td>同画面（フィールド表示切替）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
+<tr><td><code>EVT-RTN001-004a</code></td><td>入荷返品時: 関連伝票番号入力後Enter / フォーカスアウト</td><td>入力された伝票番号で入荷伝票を検索（API <code>GET /api/v1/inbound/slips?slipNumber={slipNumber}</code>）。該当伝票が1件の場合、仕入先（<code>partner_code</code> / <code>partner_name</code>）を自動セットし読み取り専用にする。該当なし又は複数件の場合はエラーメッセージ（<code>MSG-E-RTN001-014</code>）を表示し仕入先をクリア</td><td>同画面（仕入先自動セット）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <tr><td><code>EVT-RTN001-005</code></td><td>在庫返品時: 商品・荷姿選択確定後</td><td>API <code>GET /api/v1/inventory?productId={productId}&amp;warehouseId={warehouseId}</code> で在庫のあるロケーション候補を取得し、ロケーションセレクトの選択肢を動的更新</td><td>同画面（ロケーションセレクト更新）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <tr><td><code>EVT-RTN001-006</code></td><td>在庫返品時: ロケーション選択変更</td><td>選択されたロケーション×商品×荷姿の現在在庫数・有効在庫数を表示</td><td>同画面（在庫数表示更新）</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
 <tr><td><code>EVT-RTN001-007</code></td><td>[登録] ボタンクリック</td><td>フォームバリデーション実行（必須チェック・数量チェック・在庫返品固有チェック）→ 確認ダイアログ表示（「{商品名} を {数量}{荷姿} 返品登録しますか？」）</td><td>確認ダイアログ表示</td><td>WAREHOUSE_MANAGER, WAREHOUSE_STAFF</td></tr>
@@ -4743,11 +4745,12 @@ Content-Type: application/json
 <tr><td><code>MSG-E-RTN001-011</code></td><td>エラー</td><td>「その他」理由選択時に備考が未入力</td><td>返品理由が「その他」の場合、備考は必須です。</td></tr>
 <tr><td><code>MSG-E-RTN001-012</code></td><td>エラー</td><td>返品理由備考が500文字超過</td><td>返品理由備考は500文字以内で入力してください。</td></tr>
 <tr><td><code>MSG-E-RTN001-013</code></td><td>エラー</td><td>登録API呼び出し失敗</td><td>返品伝票の登録に失敗しました。時間をおいて再試行してください。</td></tr>
+<tr><td><code>MSG-E-RTN001-014</code></td><td>エラー</td><td>入荷返品時に入力した伝票番号に該当する入荷伝票が存在しない、又は一意に特定できない</td><td>指定された伝票番号の入荷伝票が見つかりません。伝票番号を確認してください。</td></tr>
 <tr><td><code>MSG-I-RTN001-001</code></td><td>情報</td><td>商品検索結果が0件</td><td>検索条件に一致する商品がありません。</td></tr>
 <tr><td><code>MSG-I-RTN001-002</code></td><td>情報</td><td>在庫返品時にロケーション候補が0件</td><td>選択した商品・荷姿の在庫があるロケーションが見つかりません。</td></tr>
 <p></tbody><br></table></p>
 <p><strong>表示方法の補足</strong>:</p>
-<ul><li style="margin-left:0px"><code>MSG-E-RTN001-001</code> 〜 <code>MSG-E-RTN001-006</code>, <code>MSG-E-RTN001-010</code> 〜 <code>MSG-E-RTN001-012</code>: フォーム項目直下にインラインエラーとして表示</li><li style="margin-left:0px"><code>MSG-E-RTN001-007</code> 〜 <code>MSG-E-RTN001-009</code>, <code>MSG-E-RTN001-013</code>: フォーム上部にエラーバナー（<code>alert-error</code> スタイル）として表示</li><li style="margin-left:0px"><code>MSG-W-RTN001-001</code>: <code>el-message-box</code>（confirm ダイアログ）として表示</li><li style="margin-left:0px"><code>MSG-S-RTN001-001</code>: <code>el-message</code>（type: success）でトースト通知</li><li style="margin-left:0px"><code>MSG-I-RTN001-001</code>, <code>MSG-I-RTN001-002</code>: <code>el-message</code>（type: info）でトースト通知</li></ul>
+<ul><li style="margin-left:0px"><code>MSG-E-RTN001-001</code> 〜 <code>MSG-E-RTN001-006</code>, <code>MSG-E-RTN001-010</code> 〜 <code>MSG-E-RTN001-012</code>: フォーム項目直下にインラインエラーとして表示</li><li style="margin-left:0px"><code>MSG-E-RTN001-007</code> 〜 <code>MSG-E-RTN001-009</code>, <code>MSG-E-RTN001-013</code>, <code>MSG-E-RTN001-014</code>: フォーム上部にエラーバナー（<code>alert-error</code> スタイル）として表示</li><li style="margin-left:0px"><code>MSG-W-RTN001-001</code>: <code>el-message-box</code>（confirm ダイアログ）として表示</li><li style="margin-left:0px"><code>MSG-S-RTN001-001</code>: <code>el-message</code>（type: success）でトースト通知</li><li style="margin-left:0px"><code>MSG-I-RTN001-001</code>, <code>MSG-I-RTN001-002</code>: <code>el-message</code>（type: info）でトースト通知</li></ul>
 </div>
 
 <hr class="doc-separator">
@@ -4951,7 +4954,7 @@ Content-Type: application/json
 <table>
 <thead><tr><th>イベントID</th><th>トリガー</th><th>処理概要</th><th>遷移先 / 結果</th><th>実行可能ロール</th></tr></thead>
 <tbody>
-<tr><td><code>EVT-IF002-001</code></td><td>ダイアログ表示</td><td>EVT-IF001-004から呼び出される。バリデーション結果（ValidationResult）をサマリーとエラー詳細テーブルに表示する。エラー0件の場合はエラー詳細テーブルを非表示にする。L1エラーの場合はファイルエラーアラートを表示する</td><td>同ダイアログ（結果表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
+<tr><td><code>EVT-IF002-001</code></td><td>ダイアログ表示</td><td>EVT-IF001-004から呼び出される。バリデーション結果をサマリーとエラー詳細テーブルに表示する。エラー0件の場合はエラー詳細テーブルを非表示にする。L1エラーの場合はファイルエラーアラートを表示する</td><td>同ダイアログ（結果表示）</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-IF002-002</code></td><td>「成功行のみ取り込む」ボタンクリック</td><td>確認ダイアログ（MSG-W-IF002-001）を表示する</td><td>確認ダイアログ</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-IF002-003</code></td><td>確認ダイアログ「実行」クリック（SUCCESS_ONLY）</td><td><code>POST /api/v1/interface/{ifId}/import</code> を呼び出し（リクエスト: <code>{fileName, warehouseId, mode: &quot;SUCCESS_ONLY&quot;}</code>）、取り込みを実行する。完了後にMSG-S-IF001-001を表示し、ダイアログを閉じ、IF-001のファイル一覧を再取得する</td><td>ダイアログ閉じ → IF-001一覧更新</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>
 <tr><td><code>EVT-IF002-004</code></td><td>「全件破棄」ボタンクリック</td><td>確認ダイアログ（MSG-W-IF002-002）を表示する</td><td>確認ダイアログ</td><td>SYSTEM_ADMIN, WAREHOUSE_MANAGER</td></tr>

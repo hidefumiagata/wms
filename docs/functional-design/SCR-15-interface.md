@@ -222,7 +222,7 @@
 
 | イベントID | トリガー | 処理概要 | 遷移先 / 結果 | 実行可能ロール |
 |----------|---------|---------|-------------|-------------|
-| `EVT-IF002-001` | ダイアログ表示 | EVT-IF001-004から呼び出される。バリデーション結果（ValidationResult）をサマリーとエラー詳細テーブルに表示する。エラー0件の場合はエラー詳細テーブルを非表示にする。L1エラーの場合はファイルエラーアラートを表示する | 同ダイアログ（結果表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
+| `EVT-IF002-001` | ダイアログ表示 | EVT-IF001-004から呼び出される。バリデーション結果をサマリーとエラー詳細テーブルに表示する。エラー0件の場合はエラー詳細テーブルを非表示にする。L1エラーの場合はファイルエラーアラートを表示する | 同ダイアログ（結果表示） | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-IF002-002` | 「成功行のみ取り込む」ボタンクリック | 確認ダイアログ（MSG-W-IF002-001）を表示する | 確認ダイアログ | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-IF002-003` | 確認ダイアログ「実行」クリック（SUCCESS_ONLY） | `POST /api/v1/interface/{ifId}/import` を呼び出し（リクエスト: `{fileName, warehouseId, mode: "SUCCESS_ONLY"}`）、取り込みを実行する。完了後にMSG-S-IF001-001を表示し、ダイアログを閉じ、IF-001のファイル一覧を再取得する | ダイアログ閉じ → IF-001一覧更新 | SYSTEM_ADMIN, WAREHOUSE_MANAGER |
 | `EVT-IF002-004` | 「全件破棄」ボタンクリック | 確認ダイアログ（MSG-W-IF002-002）を表示する | 確認ダイアログ | SYSTEM_ADMIN, WAREHOUSE_MANAGER |

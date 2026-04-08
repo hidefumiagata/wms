@@ -330,8 +330,7 @@ public class InterfaceService {
         return String.format("OUT-%s-%04d", dateStr, nextSeq);
     }
 
-    CsvMasterCache buildMasterCache(List<String[]> dataRows,
-                                                          Long warehouseId) {
+    CsvMasterCache buildMasterCache(List<String[]> dataRows, Long warehouseId) {
         Set<String> partnerCodes = dataRows.stream()
                 .map(row -> row.length > 0 ? CsvParser.normalizeEmpty(row[0]) : null)
                 .filter(Objects::nonNull)

@@ -124,12 +124,12 @@ CSVフォーマット（[09-interface-architecture.md セクション4.2](../arc
 
 ```java
 // InboundPlanCsvProcessor.java — コード→ID解決
-public class MasterCache {
+public class CsvMasterCache {
     private final Map<String, Partner> partnerMap;   // key: partner_code
     private final Map<String, Product> productMap;   // key: product_code
     private final Warehouse warehouse;
 
-    public static MasterCache build(
+    public static CsvMasterCache build(
             List<InboundPlanCsvRow> rows,
             Long warehouseId,
             PartnerRepository partnerRepo,
@@ -161,7 +161,7 @@ public class MasterCache {
             .orElseThrow(() -> new BusinessException("WMS-E-IFX-901",
                 "倉庫ID(" + warehouseId + ")が存在しません"));
 
-        return new MasterCache(partnerMap, productMap, warehouse);
+        return new CsvMasterCache(partnerMap, productMap, warehouse);
     }
 }
 ```

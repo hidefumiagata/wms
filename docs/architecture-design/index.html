@@ -11512,7 +11512,7 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
 
     Note over S: L5: クロスバリデーション<br/>伝票内重複チェック
 
-    S-->>B: ValidationResult
+    S-->>B: CsvValidationResult
     B-->>F: 200 OK {fileName, totalRows, successCount, errorCount, rows}
     F-->>U: バリデーション結果表示<br/>成功行数・エラー行数・エラー詳細</div>
 <h3>7.3 取り込み実行フロー</h3>
@@ -11590,18 +11590,19 @@ Map&lt;String, List&lt;CsvRow&gt;&gt; grouped = csvRows.stream()
 │   ├── CsvParser.java                    ← CSVパース共通処理
 │   ├── InboundPlanCsvProcessor.java      ← IFX-001固有の変換・バリデーション
 │   └── OrderCsvProcessor.java            ← IFX-002固有の変換・バリデーション
-├── dto/
-│   ├── ValidateRequest.java              ← バリデーションリクエスト
-│   ├── ImportRequest.java                ← 取り込みリクエスト
-│   ├── ValidationResult.java             ← バリデーション結果
-│   ├── ImportResult.java                 ← 取り込み結果
-│   ├── ValidationRowResult.java          ← 行単位バリデーション結果
-│   ├── FileInfoResponse.java             ← ファイル一覧レスポンス
-│   └── ImportHistoryResponse.java        ← 取り込み履歴レスポンス
+├── model/
+│   ├── CsvFieldError.java                ← フィールド単位エラー (record)
+│   ├── CsvRowError.java                  ← 行単位エラー集約 (record)
+│   ├── CsvValidationResult.java          ← バリデーション結果集約 (record)
+│   ├── CsvMasterCache.java               ← マスタデータキャッシュ
+│   └── SlipNumberGenerator.java          ← 伝票番号採番関数インターフェース
+├── entity/
+│   └── IfExecution.java                  ← 取り込み履歴エンティティ
 ├── repository/
 │   └── IfExecutionRepository.java        ← 取り込み履歴リポジトリ
 └── blob/
     └── BlobStorageClient.java            ← Azure Blob Storage操作</code></pre>
+<blockquote><strong>補記</strong>: <code>model/</code> 配下は IFX-001（入荷予定）/ IFX-002（受注）共通の内部バリュー型。両 CSV プロセッサが共有することで、IFX-001 内部変更時の IFX-002 への波及リスクを排除する。Issue #370 で抽出。API の DTO は OpenAPI から自動生成される型を直接利用するため、<code>dto/</code> パッケージは存在しない。</blockquote>
 <hr>
 <h2>8. エラーハンドリング設計</h2>
 <h3>8.1 エラー分類と対応方針</h3>
