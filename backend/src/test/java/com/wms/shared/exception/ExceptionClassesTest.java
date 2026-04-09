@@ -104,16 +104,8 @@ class ExceptionClassesTest {
     class OptimisticLockConflictExceptionTest {
 
         @Test
-        @DisplayName("デフォルトコンストラクタ: デフォルトのcodeとmessageが設定される")
-        void constructor_default_setsDefaultCodeAndMessage() {
-            OptimisticLockConflictException ex = new OptimisticLockConflictException();
-
-            assertThat(ex.getErrorCode()).isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
-            assertThat(ex.getMessage()).isEqualTo("他のユーザーが更新済みです。画面を再読み込みしてください");
-        }
-
-        @Test
-        @DisplayName("パラメータ付きコンストラクタ: カスタムのcodeとmessageが設定される")
+        @DisplayName("パラメータ付きコンストラクタ (@Deprecated): カスタムのcodeとmessageが設定される")
+        @SuppressWarnings("deprecation")
         void constructor_withCustomValues_setsFields() {
             OptimisticLockConflictException ex =
                     new OptimisticLockConflictException("CUSTOM_LOCK", "カスタムメッセージ");

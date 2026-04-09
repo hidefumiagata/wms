@@ -97,7 +97,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("OptimisticLockConflictException -> 409 CONFLICT")
     void handleOptimisticLock_optimisticLockConflict_returns409() {
-        var ex = new OptimisticLockConflictException();
+        var ex = OptimisticLockConflictException.standard();
 
         ResponseEntity<ErrorResponse> response = handler.handleOptimisticLock(ex);
 

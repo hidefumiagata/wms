@@ -339,7 +339,7 @@ class UserControllerTest {
         @DisplayName("楽観的ロック競合で409を返す")
         void update_conflict_returns409() throws Exception {
             when(userService.update(any(UserService.UpdateUserCommand.class)))
-                    .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
+                    .thenThrow(OptimisticLockConflictException.standard());
 
             UpdateUserRequest request = new UpdateUserRequest()
                     .fullName("名前")
@@ -437,7 +437,7 @@ class UserControllerTest {
         @DisplayName("楽観的ロック競合で409を返す")
         void toggle_conflict_returns409() throws Exception {
             when(userService.toggleActive(eq(1L), eq(false), eq(0), any()))
-                    .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
+                    .thenThrow(OptimisticLockConflictException.standard());
 
             ToggleActiveRequest request = new ToggleActiveRequest()
                     .isActive(false)
