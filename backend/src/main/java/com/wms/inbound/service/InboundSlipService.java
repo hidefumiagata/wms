@@ -110,16 +110,24 @@ public class InboundSlipService {
 
     public InboundSlip findById(Long id) {
         return inboundSlipRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "INBOUND_SLIP_NOT_FOUND",
-                        "入荷伝票が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    // SEC-R2-Min-1 (OWASP A09): 例外メッセージには内部 id を含めない。
+                    // 追跡用の id はログ側に出力する。
+                    log.info("InboundSlip not found: id={}", id);
+                    return new ResourceNotFoundException(
+                            "INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません");
+                });
     }
 
     public InboundSlip findByIdWithLines(Long id) {
         return inboundSlipRepository.findByIdWithLines(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "INBOUND_SLIP_NOT_FOUND",
-                        "入荷伝票が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("InboundSlip not found (withLines): id={}", id);
+                    return new ResourceNotFoundException(
+                            "INBOUND_SLIP_NOT_FOUND",
+                            "入荷伝票が見つかりません");
+                });
     }
 
     public long countLinesBySlipId(Long slipId) {
@@ -334,11 +342,13 @@ public class InboundSlipService {
         }
 
         // Duplicate lineId check
+        // SEC-R2-Min-1 (OWASP A09): 例外メッセージからは内部 lineId を除去し、log 側に出力する。
         Set<Long> inspectLineIds = new HashSet<>();
         for (InspectLineRequest lineReq : request.getLines()) {
             if (!inspectLineIds.add(lineReq.getLineId())) {
+                log.warn("InboundSlip inspect duplicate lineId: slipId={}, lineId={}", id, lineReq.getLineId());
                 throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
-                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+                        "リクエスト内に同じ明細が重複しています");
             }
         }
 
@@ -349,18 +359,24 @@ public class InboundSlipService {
             InboundSlipLine line = slip.getLines().stream()
                     .filter(l -> l.getId().equals(lineReq.getLineId()))
                     .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
-                            "入荷伝票明細が見つかりません (lineId=" + lineReq.getLineId() + ")"));
+                    .orElseThrow(() -> {
+                        log.info("InboundSlip inspect line not found: slipId={}, lineId={}", id, lineReq.getLineId());
+                        return new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
+                                "入荷伝票明細が見つかりません");
+                    });
 
             if (InboundLineStatus.STORED.getValue().equals(line.getLineStatus())) {
+                log.info("InboundSlip inspect already stored: slipId={}, lineId={}", id, line.getId());
                 throw new InvalidStateTransitionException("INBOUND_LINE_ALREADY_STORED",
-                        "格納済みの明細は検品できません (lineId=" + line.getId() + ")");
+                        "格納済みの明細は検品できません");
             }
 
             if (lineReq.getInspectedQty() < 0) {
+                log.info("InboundSlip inspect negative qty: slipId={}, lineId={}, inspectedQty={}",
+                        id, line.getId(), lineReq.getInspectedQty());
                 throw new BusinessRuleViolationException("INBOUND_INSPECTED_QTY_NEGATIVE",
-                        "検品数は0以上である必要があります (lineId=" + line.getId()
-                                + ", inspectedQty=" + lineReq.getInspectedQty() + ")");
+                        "検品数は0以上である必要があります (inspectedQty="
+                                + lineReq.getInspectedQty() + ")");
             }
 
             line.setInspectedQty(lineReq.getInspectedQty());
@@ -391,11 +407,13 @@ public class InboundSlipService {
         }
 
         // Duplicate lineId check
+        // SEC-R2-Min-1 (OWASP A09): 例外メッセージからは内部 lineId を除去し、log 側に出力する。
         Set<Long> storeLineIds = new HashSet<>();
         for (StoreLineRequest lineReq : request.getLines()) {
             if (!storeLineIds.add(lineReq.getLineId())) {
+                log.warn("InboundSlip store duplicate lineId: slipId={}, lineId={}", id, lineReq.getLineId());
                 throw new BusinessRuleViolationException("DUPLICATE_LINE_IN_REQUEST",
-                        "リクエスト内に同じ明細IDが重複しています (lineId=" + lineReq.getLineId() + ")");
+                        "リクエスト内に同じ明細が重複しています");
             }
         }
 
@@ -406,8 +424,11 @@ public class InboundSlipService {
             InboundSlipLine line = slip.getLines().stream()
                     .filter(l -> l.getId().equals(lineReq.getLineId()))
                     .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
-                            "入荷伝票明細が見つかりません (lineId=" + lineReq.getLineId() + ")"));
+                    .orElseThrow(() -> {
+                        log.info("InboundSlip store line not found: slipId={}, lineId={}", id, lineReq.getLineId());
+                        return new ResourceNotFoundException("INBOUND_LINE_NOT_FOUND",
+                                "入荷伝票明細が見つかりません");
+                    });
 
             if (!InboundLineStatus.INSPECTED.getValue().equals(line.getLineStatus())) {
                 throw new InvalidStateTransitionException("INBOUND_LINE_NOT_INSPECTED",

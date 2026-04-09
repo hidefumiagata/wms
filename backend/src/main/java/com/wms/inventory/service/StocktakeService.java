@@ -174,9 +174,13 @@ public class StocktakeService {
             throw new BusinessRuleViolationException("STOCKTAKE_LINES_REQUIRED", "明細を1件以上指定してください");
         }
 
+        // SEC-R2-Min-1 (OWASP A09): 例外メッセージには内部 id を含めない。追跡用 id は log 側に出力する。
         StocktakeHeader header = stocktakeHeaderRepository.findById(headerId)
-                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
-                        "棚卸が見つかりません (id=" + headerId + ")"));
+                .orElseThrow(() -> {
+                    log.info("Stocktake header not found: id={}", headerId);
+                    return new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                            "棚卸が見つかりません");
+                });
 
         if (!"STARTED".equals(header.getStatus())) {
             throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
@@ -194,12 +198,17 @@ public class StocktakeService {
             }
 
             com.wms.inventory.entity.StocktakeLine line = stocktakeLineRepository.findById(input.lineId())
-                    .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
-                            "棚卸明細が見つかりません (lineId=" + input.lineId() + ")"));
+                    .orElseThrow(() -> {
+                        log.info("Stocktake line not found: headerId={}, lineId={}", headerId, input.lineId());
+                        return new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
+                                "棚卸明細が見つかりません");
+                    });
 
             if (!line.getStocktakeHeader().getId().equals(headerId)) {
+                log.warn("Stocktake line belongs to different header: headerId={}, lineId={}, actualHeaderId={}",
+                        headerId, input.lineId(), line.getStocktakeHeader().getId());
                 throw new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
-                        "棚卸明細が指定棚卸に属していません (lineId=" + input.lineId() + ")");
+                        "棚卸明細が指定棚卸に属していません");
             }
 
             line.setQuantityCounted(input.actualQty());
@@ -229,8 +238,11 @@ public class StocktakeService {
     @Transactional
     public ConfirmResult confirmStocktake(Long headerId) {
         StocktakeHeader header = stocktakeHeaderRepository.findByIdWithLines(headerId)
-                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
-                        "棚卸が見つかりません (id=" + headerId + ")"));
+                .orElseThrow(() -> {
+                    log.info("Stocktake header not found (withLines): id={}", headerId);
+                    return new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
+                            "棚卸が見つかりません");
+                });
 
         if (!"STARTED".equals(header.getStatus())) {
             throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",

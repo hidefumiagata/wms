@@ -130,7 +130,9 @@ class StocktakeQueryServiceTest {
     void findByIdWithLines_notFound() {
         when(headerRepository.findByIdWithLines(999L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.findByIdWithLines(999L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("棚卸が見つかりません")
+                .hasMessageNotContaining("id=");
     }
 
     @Test
@@ -156,7 +158,8 @@ class StocktakeQueryServiceTest {
         when(headerRepository.findById(999L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.findById(999L))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("棚卸が見つかりません");
+                .hasMessageContaining("棚卸が見つかりません")
+                .hasMessageNotContaining("id=");
     }
 
     @Test
