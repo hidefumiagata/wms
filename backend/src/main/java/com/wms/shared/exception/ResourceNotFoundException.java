@@ -29,6 +29,16 @@ public final class ResourceNotFoundException extends WmsException {
      * <p>Pure factory (副作用なし) が必要になった場合は、本ファクトリではなく
      * コンストラクタ {@link #ResourceNotFoundException(String, String)} を直接使用すること。</p>
      *
+     * <p><strong>ロガー名に関する注意:</strong> 本ファクトリから出力されるログは
+     * {@code com.wms.shared.exception.ResourceNotFoundException} ロガーで発行される
+     * (呼び出し元 Service クラスのロガーではない)。運用ログ検索時に発生源 Service を
+     * ロガー名で特定したい場合は、本ファクトリを使わず、呼び出し元 Service 層で
+     * 先に {@code log.info(...)} を明示的に出力してから 2 引数コンストラクタ
+     * {@link #ResourceNotFoundException(String, String)} を直接使用すること。
+     * メッセージ本文 ({@code "{resourceName} not found: id=..., errorCode=..."}) と
+     * resourceName はロガー名に依らず一意に grep 可能なため、通常運用では本ファクトリの
+     * 利用で差し支えない (MDC の traceId も併用される)。</p>
+     *
      * @param id 内部 PK — メッセージには埋め込まれず、ログ出力専用。
      */
     public static ResourceNotFoundException of(String errorCode, String resourceName, Object id) {
