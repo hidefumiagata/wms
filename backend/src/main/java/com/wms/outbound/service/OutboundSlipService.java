@@ -73,9 +73,14 @@ public class OutboundSlipService {
 
     public OutboundSlip findByIdWithLines(Long id) {
         return outboundSlipRepository.findByIdWithLines(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "OUTBOUND_SLIP_NOT_FOUND",
-                        "出荷伝票が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    // SEC-R2-Min-1 (OWASP A09): クライアント向けメッセージから内部 id を除去し、
+                    // 追跡用 id はログ側に出力する
+                    log.info("OutboundSlip not found: id={}", id);
+                    return new ResourceNotFoundException(
+                            "OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません");
+                });
     }
 
     public long countLinesBySlipId(Long slipId) {
@@ -84,9 +89,13 @@ public class OutboundSlipService {
 
     public OutboundSlip findBySlipLineId(Long slipLineId) {
         return outboundSlipRepository.findBySlipLineId(slipLineId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "OUTBOUND_SLIP_NOT_FOUND",
-                        "出荷伝票が見つかりません (slipLineId=" + slipLineId + ")"));
+                .orElseThrow(() -> {
+                    // SEC-R2-Min-1 (OWASP A09): 追跡用 slipLineId はログへ
+                    log.info("OutboundSlip not found by slipLineId: slipLineId={}", slipLineId);
+                    return new ResourceNotFoundException(
+                            "OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません");
+                });
     }
 
     @Transactional
@@ -199,11 +208,15 @@ public class OutboundSlipService {
     @Transactional
     public void delete(Long id) {
         OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "OUTBOUND_SLIP_NOT_FOUND",
-                        "出荷伝票が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("OutboundSlip not found on delete: id={}", id);
+                    return new ResourceNotFoundException(
+                            "OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません");
+                });
 
         if (!OutboundSlipStatus.ORDERED.getValue().equals(slip.getStatus())) {
+            log.info("OutboundSlip delete rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
                     "ORDERED以外のステータスの出荷伝票は削除できません (status=" + slip.getStatus() + ")");
         }
@@ -215,11 +228,15 @@ public class OutboundSlipService {
     @Transactional
     public OutboundSlip cancel(Long id, CancelOutboundRequest request) {
         OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "OUTBOUND_SLIP_NOT_FOUND",
-                        "出荷伝票が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("OutboundSlip not found on cancel: id={}", id);
+                    return new ResourceNotFoundException(
+                            "OUTBOUND_SLIP_NOT_FOUND",
+                            "出荷伝票が見つかりません");
+                });
 
         if (!CANCELLABLE_STATUSES.contains(slip.getStatus())) {
+            log.info("OutboundSlip cancel rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
                     "キャンセル可能なステータスではありません (status=" + slip.getStatus() + ")");
         }

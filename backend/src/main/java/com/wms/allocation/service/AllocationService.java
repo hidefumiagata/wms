@@ -121,14 +121,20 @@ public class AllocationService {
         List<UnallocatedLineInfo> unallocatedLines = new ArrayList<>();
 
         for (Long slipId : slipIds) {
+            final Long currentSlipId = slipId;
             OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(slipId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "OUTBOUND_SLIP_NOT_FOUND",
-                            "出荷伝票が見つかりません (id=" + slipId + ")"));
+                    .orElseThrow(() -> {
+                        // SEC-R2-Min-1 (OWASP A09): 追跡用 id はログへ、メッセージからは除去
+                        log.info("OutboundSlip not found on allocation execute: slipId={}", currentSlipId);
+                        return new ResourceNotFoundException(
+                                "OUTBOUND_SLIP_NOT_FOUND",
+                                "出荷伝票が見つかりません");
+                    });
 
             if (!ALLOCATABLE_STATUSES.contains(slip.getStatus())) {
+                log.info("OutboundSlip not allocatable: slipId={}, status={}", currentSlipId, slip.getStatus());
                 throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                        "引当可能なステータスではありません (id=" + slipId + ", status=" + slip.getStatus() + ")");
+                        "引当可能なステータスではありません (status=" + slip.getStatus() + ")");
             }
 
             List<AllocatedLineInfo> allocatedLines = new ArrayList<>();
@@ -242,9 +248,13 @@ public class AllocationService {
                 continue;
             }
 
-            Inventory locked = inventoryRepository.findByIdForUpdate(stock.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                            "在庫が見つかりません (id=" + stock.getId() + ")"));
+            final Long stockId = stock.getId();
+            Inventory locked = inventoryRepository.findByIdForUpdate(stockId)
+                    .orElseThrow(() -> {
+                        log.info("Inventory not found during allocation: inventoryId={}", stockId);
+                        return new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                                "在庫が見つかりません");
+                    });
 
             // 再計算（ロック後に在庫が変わっている可能性）
             available = locked.getQuantity() - locked.getAllocatedQty();
@@ -312,9 +322,13 @@ public class AllocationService {
             int toQty = fromQty * conversionRate;
             int allocateQty = Math.min(toQty, remaining);
 
-            Inventory locked = inventoryRepository.findByIdForUpdate(stock.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                            "在庫が見つかりません (id=" + stock.getId() + ")"));
+            final Long stockId = stock.getId();
+            Inventory locked = inventoryRepository.findByIdForUpdate(stockId)
+                    .orElseThrow(() -> {
+                        log.info("Inventory not found during allocation: inventoryId={}", stockId);
+                        return new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                                "在庫が見つかりません");
+                    });
 
             available = locked.getQuantity() - locked.getAllocatedQty();
             fromQty = Math.min(available, neededFromQty);
@@ -396,31 +410,42 @@ public class AllocationService {
     @Transactional
     public UnpackCompletionInfo completeUnpackInstruction(Long id) {
         UnpackInstruction unpack = unpackInstructionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "BREAKDOWN_INSTRUCTION_NOT_FOUND",
-                        "ばらし指示が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("UnpackInstruction not found on complete: id={}", id);
+                    return new ResourceNotFoundException(
+                            "BREAKDOWN_INSTRUCTION_NOT_FOUND",
+                            "ばらし指示が見つかりません");
+                });
 
         if (!"INSTRUCTED".equals(unpack.getStatus())) {
+            log.info("UnpackInstruction already completed: id={}, status={}", id, unpack.getStatus());
             throw new InvalidStateTransitionException("ALREADY_COMPLETED",
-                    "既に完了済みのばらし指示です (id=" + id + ", status=" + unpack.getStatus() + ")");
+                    "既に完了済みのばらし指示です (status=" + unpack.getStatus() + ")");
         }
 
         Product product = productService.findById(unpack.getProductId());
         Location location = locationRepository.findById(unpack.getLocationId())
-                .orElseThrow(() -> new ResourceNotFoundException("LOCATION_NOT_FOUND",
-                        "ロケーションが見つかりません (id=" + unpack.getLocationId() + ")"));
+                .orElseThrow(() -> {
+                    log.info("Location not found on unpack complete: locationId={}", unpack.getLocationId());
+                    return new ResourceNotFoundException("LOCATION_NOT_FOUND",
+                            "ロケーションが見つかりません");
+                });
 
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
 
         // Step1-2: ばらし元在庫のallocated_qtyとquantityを減算
         if (unpack.getSourceInventoryId() == null) {
+            log.info("Unpack source inventory id missing: unpackId={}", unpack.getId());
             throw new BusinessRuleViolationException("SOURCE_INVENTORY_ID_MISSING",
-                    "ばらし指示に元在庫IDが設定されていません (unpackId=" + unpack.getId() + ")");
+                    "ばらし指示に元在庫IDが設定されていません");
         }
         Inventory lockedSource = inventoryRepository.findByIdForUpdate(unpack.getSourceInventoryId())
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "ばらし元在庫が見つかりません (id=" + unpack.getSourceInventoryId() + ")"));
+                .orElseThrow(() -> {
+                    log.info("Unpack source inventory not found: sourceInventoryId={}", unpack.getSourceInventoryId());
+                    return new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                            "ばらし元在庫が見つかりません");
+                });
 
         lockedSource.setAllocatedQty(lockedSource.getAllocatedQty() - unpack.getFromQty());
         lockedSource.setQuantity(lockedSource.getQuantity() - unpack.getFromQty());
@@ -555,14 +580,19 @@ public class AllocationService {
         List<ReleasedSlipInfo> releasedSlips = new ArrayList<>();
 
         for (Long slipId : slipIds) {
+            final Long currentSlipId = slipId;
             OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(slipId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "OUTBOUND_SLIP_NOT_FOUND",
-                            "出荷伝票が見つかりません (id=" + slipId + ")"));
+                    .orElseThrow(() -> {
+                        log.info("OutboundSlip not found on release: slipId={}", currentSlipId);
+                        return new ResourceNotFoundException(
+                                "OUTBOUND_SLIP_NOT_FOUND",
+                                "出荷伝票が見つかりません");
+                    });
 
             if (!RELEASABLE_STATUSES.contains(slip.getStatus())) {
+                log.info("OutboundSlip not releasable: slipId={}, status={}", currentSlipId, slip.getStatus());
                 throw new InvalidStateTransitionException("RELEASE_NOT_ALLOWED",
-                        "引当解放可能なステータスではありません (id=" + slipId + ", status=" + slip.getStatus() + ")");
+                        "引当解放可能なステータスではありません (status=" + slip.getStatus() + ")");
             }
 
             String previousStatus = slip.getStatus();

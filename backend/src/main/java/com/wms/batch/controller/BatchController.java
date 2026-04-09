@@ -65,9 +65,13 @@ public class BatchController implements BatchApi {
     @Override
     public ResponseEntity<BatchExecutionDetail> getBatchExecution(Long id) {
         BatchExecutionLog logEntry = logRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "BATCH_EXECUTION_NOT_FOUND",
-                        "指定されたバッチ実行履歴が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    // SEC-R2-Min-1 (OWASP A09): 追跡用 id はログへ、クライアント向けメッセージから除去
+                    log.info("BatchExecutionLog not found: id={}", id);
+                    return new ResourceNotFoundException(
+                            "BATCH_EXECUTION_NOT_FOUND",
+                            "指定されたバッチ実行履歴が見つかりません");
+                });
         return ResponseEntity.ok(toDetail(logEntry));
     }
 
