@@ -66,8 +66,9 @@ public class BuildingService {
     public Building update(Long id, String buildingName, Integer version) {
         Building building = findById(id);
         if (!building.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Building update version mismatch: id={}, expected={}, actual={}",
+                    id, version, building.getVersion());
+            throw optimisticLockConflict();
         }
         building.setBuildingName(buildingName);
         building.setVersion(version);
@@ -76,8 +77,8 @@ public class BuildingService {
             log.info("Building updated: id={}, name={}", id, buildingName);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Building update OL conflict detected at commit: id={}", id);
+            throw optimisticLockConflict();
         }
     }
 
@@ -85,12 +86,15 @@ public class BuildingService {
     public Building toggleActive(Long id, boolean isActive, Integer version) {
         Building building = findById(id);
         if (!building.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Building toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, building.getVersion());
+            throw optimisticLockConflict();
         }
         if (!isActive && areaRepository.countByBuildingId(id) > 0) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+            log.info("Building deactivate blocked by children areas: id={}", id);
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
-                    "配下にエリアが存在するため無効化できません (id=" + id + ")");
+                    "配下にエリアが存在するため無効化できません");
         }
         if (building.getIsActive().equals(isActive)) {
             log.info("Building toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -107,9 +111,16 @@ public class BuildingService {
             log.info("Building toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Building toggleActive OL conflict detected at commit: id={}", id);
+            throw optimisticLockConflict();
         }
+    }
+
+    private OptimisticLockConflictException optimisticLockConflict() {
+        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
+        return new OptimisticLockConflictException(
+                "OPTIMISTIC_LOCK_CONFLICT",
+                "他のユーザーによる更新が先行しました");
     }
 
     public boolean existsByWarehouseIdAndCode(Long warehouseId, String code) {

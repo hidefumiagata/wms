@@ -72,8 +72,9 @@ public class AreaService {
     public Area update(Long id, String areaName, String storageCondition, Integer version) {
         Area area = findById(id);
         if (!area.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Area update version mismatch: id={}, expected={}, actual={}",
+                    id, version, area.getVersion());
+            throw optimisticLockConflict();
         }
         area.setAreaName(areaName);
         area.setStorageCondition(storageCondition);
@@ -83,8 +84,8 @@ public class AreaService {
             log.info("Area updated: id={}, name={}", id, areaName);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Area update OL conflict detected at commit: id={}", id);
+            throw optimisticLockConflict();
         }
     }
 
@@ -92,12 +93,15 @@ public class AreaService {
     public Area toggleActive(Long id, boolean isActive, Integer version) {
         Area area = findById(id);
         if (!area.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Area toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, area.getVersion());
+            throw optimisticLockConflict();
         }
         if (!isActive && locationRepository.countByAreaIdAndIsActiveTrue(id) > 0) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+            log.info("Area deactivate blocked by active children locations: id={}", id);
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
-                    "配下に有効なロケーションが存在するため無効化できません (id=" + id + ")");
+                    "配下に有効なロケーションが存在するため無効化できません");
         }
         if (area.getIsActive().equals(isActive)) {
             log.info("Area toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -114,8 +118,15 @@ public class AreaService {
             log.info("Area toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Area toggleActive OL conflict detected at commit: id={}", id);
+            throw optimisticLockConflict();
         }
+    }
+
+    private OptimisticLockConflictException optimisticLockConflict() {
+        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
+        return new OptimisticLockConflictException(
+                "OPTIMISTIC_LOCK_CONFLICT",
+                "他のユーザーによる更新が先行しました");
     }
 }

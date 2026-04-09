@@ -89,20 +89,23 @@ public class ProductService {
         Product product = findById(cmd.id());
 
         if (!product.getVersion().equals(cmd.version())) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+            log.info("Product update version mismatch: id={}, expected={}, actual={}",
+                    cmd.id(), cmd.version(), product.getVersion());
+            throw optimisticLockConflict();
         }
 
         boolean lotFlagChanged = !product.getLotManageFlag().equals(cmd.lotManageFlag());
         boolean expiryFlagChanged = !product.getExpiryManageFlag().equals(cmd.expiryManageFlag());
         if ((lotFlagChanged || expiryFlagChanged) && inventoryService.hasInventoryByProductId(cmd.id())) {
             if (lotFlagChanged) {
+                // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+                log.info("Product lot manage flag change blocked by inventory: id={}", cmd.id());
                 throw new BusinessRuleViolationException("CANNOT_CHANGE_LOT_MANAGE_FLAG",
-                        "在庫が存在するためロット管理フラグを変更できません (id=" + cmd.id() + ")");
+                        "在庫が存在するためロット管理フラグを変更できません");
             }
+            log.info("Product expiry manage flag change blocked by inventory: id={}", cmd.id());
             throw new BusinessRuleViolationException("CANNOT_CHANGE_EXPIRY_MANAGE_FLAG",
-                    "在庫が存在するため期限管理フラグを変更できません (id=" + cmd.id() + ")");
+                    "在庫が存在するため期限管理フラグを変更できません");
         }
 
         product.setProductName(cmd.productName());
@@ -126,9 +129,8 @@ public class ProductService {
             log.info("Product updated: id={}, name={}", cmd.id(), cmd.productName());
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+            log.info("Product update OL conflict detected at commit: id={}", cmd.id());
+            throw optimisticLockConflict();
         }
     }
 
@@ -137,14 +139,16 @@ public class ProductService {
         Product product = findById(id);
 
         if (!product.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Product toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, product.getVersion());
+            throw optimisticLockConflict();
         }
 
         if (!isActive && inventoryService.hasInventoryByProductId(id)) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+            log.info("Product deactivate blocked by inventory: id={}", id);
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_INVENTORY",
-                    "在庫が存在するため商品を無効化できません (id=" + id + ")");
+                    "在庫が存在するため商品を無効化できません");
         }
         if (product.getIsActive().equals(isActive)) {
             log.info("Product toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -161,10 +165,16 @@ public class ProductService {
             log.info("Product toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Product toggleActive OL conflict detected at commit: id={}", id);
+            throw optimisticLockConflict();
         }
+    }
+
+    private OptimisticLockConflictException optimisticLockConflict() {
+        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
+        return new OptimisticLockConflictException(
+                "OPTIMISTIC_LOCK_CONFLICT",
+                "他のユーザーによる更新が先行しました");
     }
 
     public boolean hasInventory(Long productId) {
