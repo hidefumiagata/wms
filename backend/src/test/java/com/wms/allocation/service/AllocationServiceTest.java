@@ -411,7 +411,7 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("引当可能なステータスではありません")
+                    .hasMessageContaining("現在のステータスでは引当できません")
                     .hasMessageNotContaining("id=");
         }
 
@@ -1394,7 +1394,7 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.releaseAllocation(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("引当解放可能なステータスではありません")
+                    .hasMessageContaining("現在のステータスでは引当を解放できません")
                     .hasMessageNotContaining("id=");
         }
 
