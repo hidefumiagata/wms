@@ -152,8 +152,9 @@ public class InboundSlipService {
         Set<Long> productIds = new HashSet<>();
         for (CreateInboundLineRequest line : request.getLines()) {
             if (!productIds.add(line.getProductId())) {
+                log.info("InboundSlip create duplicate product in lines: productId={}", line.getProductId());
                 throw new DuplicateResourceException("DUPLICATE_PRODUCT_IN_LINES",
-                        "同一伝票内に同じ商品が複数指定されています (productId=" + line.getProductId() + ")");
+                        "同一伝票内に同じ商品が複数指定されています");
             }
         }
 
@@ -182,19 +183,22 @@ public class InboundSlipService {
             Product product = productService.findById(lineReq.getProductId());
 
             if (!Boolean.TRUE.equals(product.getIsActive())) {
+                log.info("InboundSlip create product inactive: productId={}", product.getId());
                 throw new BusinessRuleViolationException("PRODUCT_INACTIVE",
-                        "無効な商品が指定されています (productId=" + product.getId() + ")");
+                        "無効な商品が指定されています");
             }
 
             if (Boolean.TRUE.equals(product.getLotManageFlag())
                     && (lineReq.getLotNumber() == null || lineReq.getLotNumber().isBlank())) {
+                log.info("InboundSlip create lot number required: productId={}", product.getId());
                 throw new BusinessRuleViolationException("LOT_NUMBER_REQUIRED",
-                        "ロット管理対象商品にはロット番号が必須です (productId=" + product.getId() + ")");
+                        "ロット管理対象商品にはロット番号が必須です");
             }
 
             if (Boolean.TRUE.equals(product.getExpiryManageFlag()) && lineReq.getExpiryDate() == null) {
+                log.info("InboundSlip create expiry date required: productId={}", product.getId());
                 throw new BusinessRuleViolationException("EXPIRY_DATE_REQUIRED",
-                        "期限管理対象商品には賞味/使用期限日が必須です (productId=" + product.getId() + ")");
+                        "期限管理対象商品には賞味/使用期限日が必須です");
             }
 
             return new ProductLineInfo(product, lineReq);
@@ -284,8 +288,9 @@ public class InboundSlipService {
         InboundSlip slip = findByIdWithLines(id);
 
         if (!InboundSlipStatus.PLANNED.getValue().equals(slip.getStatus())) {
+            log.info("InboundSlip confirm rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
-                    "PLANNED以外のステータスの入荷伝票は確定できません (status=" + slip.getStatus() + ")");
+                    "現在のステータスでは入荷伝票を確定できません");
         }
 
         slip.setStatus(InboundSlipStatus.CONFIRMED.getValue());
@@ -300,8 +305,9 @@ public class InboundSlipService {
 
         if (InboundSlipStatus.STORED.getValue().equals(slip.getStatus())
                 || InboundSlipStatus.CANCELLED.getValue().equals(slip.getStatus())) {
+            log.info("InboundSlip cancel rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
-                    "STOREDまたはCANCELLEDステータスの入荷伝票はキャンセルできません (status=" + slip.getStatus() + ")");
+                    "現在のステータスでは入荷伝票をキャンセルできません");
         }
 
         Long currentUserId = getCurrentUserId();
@@ -337,8 +343,9 @@ public class InboundSlipService {
         if (!InboundSlipStatus.CONFIRMED.getValue().equals(status)
                 && !InboundSlipStatus.INSPECTING.getValue().equals(status)
                 && !InboundSlipStatus.PARTIAL_STORED.getValue().equals(status)) {
+            log.info("InboundSlip inspect rejected due to status: id={}, status={}", id, status);
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
-                    "検品可能なステータスではありません (status=" + status + ")");
+                    "現在のステータスでは検品できません");
         }
 
         // Duplicate lineId check
@@ -375,8 +382,7 @@ public class InboundSlipService {
                 log.info("InboundSlip inspect negative qty: slipId={}, lineId={}, inspectedQty={}",
                         id, line.getId(), lineReq.getInspectedQty());
                 throw new BusinessRuleViolationException("INBOUND_INSPECTED_QTY_NEGATIVE",
-                        "検品数は0以上である必要があります (inspectedQty="
-                                + lineReq.getInspectedQty() + ")");
+                        "検品数は0以上である必要があります");
             }
 
             line.setInspectedQty(lineReq.getInspectedQty());
@@ -402,8 +408,9 @@ public class InboundSlipService {
         String status = slip.getStatus();
         if (!InboundSlipStatus.INSPECTING.getValue().equals(status)
                 && !InboundSlipStatus.PARTIAL_STORED.getValue().equals(status)) {
+            log.info("InboundSlip store rejected due to status: id={}, status={}", id, status);
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
-                    "格納可能なステータスではありません (status=" + status + ")");
+                    "現在のステータスでは格納できません");
         }
 
         // Duplicate lineId check
@@ -431,44 +438,54 @@ public class InboundSlipService {
                     });
 
             if (!InboundLineStatus.INSPECTED.getValue().equals(line.getLineStatus())) {
+                log.info("InboundSlip store line not inspected: slipId={}, lineId={}, lineStatus={}",
+                        id, line.getId(), line.getLineStatus());
                 throw new InvalidStateTransitionException("INBOUND_LINE_NOT_INSPECTED",
-                        "検品済みでない明細は格納できません (lineId=" + line.getId() + ", lineStatus=" + line.getLineStatus() + ")");
+                        "検品済みでない明細は格納できません");
             }
 
             if (line.getInspectedQty() == null || line.getInspectedQty() <= 0) {
+                log.info("InboundSlip store inspected qty zero: slipId={}, lineId={}", id, line.getId());
                 throw new BusinessRuleViolationException("INSPECTED_QTY_ZERO",
-                        "検品数が0の明細は格納できません (lineId=" + line.getId() + ")");
+                        "検品数が0の明細は格納できません");
             }
 
             Location location = locationService.findById(lineReq.getLocationId());
 
             if (!location.getWarehouseId().equals(slip.getWarehouseId())) {
+                log.info("InboundSlip store location warehouse mismatch: slipId={}, locationId={}, locationWarehouseId={}, slipWarehouseId={}",
+                        id, location.getId(), location.getWarehouseId(), slip.getWarehouseId());
                 throw new BusinessRuleViolationException("LOCATION_WAREHOUSE_MISMATCH",
-                        "ロケーションが入荷伝票の倉庫に属していません (locationId=" + location.getId()
-                                + ", locationWarehouseId=" + location.getWarehouseId()
-                                + ", slipWarehouseId=" + slip.getWarehouseId() + ")");
+                        "ロケーションが入荷伝票の倉庫に属していません");
             }
 
             if (!Boolean.TRUE.equals(location.getIsActive())) {
+                log.info("InboundSlip store location inactive: slipId={}, locationId={}", id, location.getId());
                 throw new BusinessRuleViolationException("LOCATION_INACTIVE",
-                        "無効なロケーションです (locationId=" + location.getId() + ")");
+                        "無効なロケーションです");
             }
 
             Area area = areaService.findById(location.getAreaId());
 
             if (!"INBOUND".equals(area.getAreaType())) {
+                log.info("InboundSlip store area not inbound: slipId={}, locationId={}, areaType={}",
+                        id, location.getId(), area.getAreaType());
                 throw new BusinessRuleViolationException("AREA_NOT_INBOUND",
-                        "入荷エリア以外のロケーションには格納できません (areaType=" + area.getAreaType() + ")");
+                        "入荷エリア以外のロケーションには格納できません");
             }
 
             if (Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
+                log.info("InboundSlip store location stocktake locked: slipId={}, locationId={}",
+                        id, location.getId());
                 throw new BusinessRuleViolationException("LOCATION_STOCKTAKE_LOCKED",
-                        "棚卸中のロケーションには格納できません (locationId=" + location.getId() + ")");
+                        "棚卸中のロケーションには格納できません");
             }
 
             if (inventoryService.existsDifferentProductAtLocation(location.getId(), line.getProductId())) {
+                log.info("InboundSlip store different product at location: slipId={}, locationId={}, productId={}",
+                        id, location.getId(), line.getProductId());
                 throw new BusinessRuleViolationException("DIFFERENT_PRODUCT_AT_LOCATION",
-                        "同一ロケーションに異なる商品の在庫が存在します (locationId=" + location.getId() + ")");
+                        "同一ロケーションに異なる商品の在庫が存在します");
             }
 
             inventoryService.storeInboundStock(new InventoryService.StoreInboundCommand(
@@ -518,8 +535,9 @@ public class InboundSlipService {
         InboundSlip slip = findByIdWithLines(id);
 
         if (!InboundSlipStatus.PLANNED.getValue().equals(slip.getStatus())) {
+            log.info("InboundSlip delete rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("INBOUND_INVALID_STATUS",
-                    "PLANNED以外のステータスの入荷伝票は削除できません (status=" + slip.getStatus() + ")");
+                    "現在のステータスでは入荷伝票を削除できません");
         }
 
         // CascadeType.ALL + orphanRemoval handles line deletion

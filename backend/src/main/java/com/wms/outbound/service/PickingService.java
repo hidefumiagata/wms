@@ -139,10 +139,9 @@ public class PickingService {
         Long warehouseId = null;
         List<OutboundSlip> slips = new ArrayList<>();
         for (Long slipId : slipIds) {
-            final Long currentSlipId = slipId;
             OutboundSlip slip = outboundSlipRepository.findByIdWithLines(slipId)
                     .orElseThrow(() -> {
-                        log.info("OutboundSlip not found during picking create: slipId={}", currentSlipId);
+                        log.info("OutboundSlip not found during picking create: slipId={}", slipId);
                         return new ResourceNotFoundException(
                                 "OUTBOUND_SLIP_NOT_FOUND",
                                 "出荷伝票が見つかりません");
@@ -150,9 +149,9 @@ public class PickingService {
 
             if (!OutboundSlipStatus.ALLOCATED.getValue().equals(slip.getStatus())) {
                 log.info("OutboundSlip not ALLOCATED during picking create: slipId={}, status={}",
-                        currentSlipId, slip.getStatus());
+                        slipId, slip.getStatus());
                 throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                        "ALLOCATED以外のステータスの伝票が含まれています (status=" + slip.getStatus() + ")");
+                        "現在のステータスではピッキング指示を作成できません");
             }
 
             if (warehouseId == null) {
@@ -297,11 +296,10 @@ public class PickingService {
             }
 
             if (lineReq.getQtyPicked() > line.getQtyToPick()) {
-                log.info("Picking qty exceeded: instructionId={}, lineId={}, qtyPicked={}, qtyToPick={}",
+                log.warn("Picking qty exceeded: instructionId={}, lineId={}, qtyPicked={}, qtyToPick={}",
                         id, lineReq.getLineId(), lineReq.getQtyPicked(), line.getQtyToPick());
                 throw new BusinessRuleViolationException("PICKING_QTY_EXCEEDED",
-                        "ピッキング完了数量がピッキング予定数量を超えています (qtyPicked=" + lineReq.getQtyPicked()
-                                + ", qtyToPick=" + line.getQtyToPick() + ")");
+                        "ピッキング完了数量がピッキング予定数量を超えています");
             }
 
             line.setQtyPicked(lineReq.getQtyPicked());

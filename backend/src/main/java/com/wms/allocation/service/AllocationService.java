@@ -121,20 +121,19 @@ public class AllocationService {
         List<UnallocatedLineInfo> unallocatedLines = new ArrayList<>();
 
         for (Long slipId : slipIds) {
-            final Long currentSlipId = slipId;
             OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(slipId)
                     .orElseThrow(() -> {
                         // SEC-R2-Min-1 (OWASP A09): 追跡用 id はログへ、メッセージからは除去
-                        log.info("OutboundSlip not found on allocation execute: slipId={}", currentSlipId);
+                        log.info("OutboundSlip not found on allocation execute: slipId={}", slipId);
                         return new ResourceNotFoundException(
                                 "OUTBOUND_SLIP_NOT_FOUND",
                                 "出荷伝票が見つかりません");
                     });
 
             if (!ALLOCATABLE_STATUSES.contains(slip.getStatus())) {
-                log.info("OutboundSlip not allocatable: slipId={}, status={}", currentSlipId, slip.getStatus());
+                log.info("OutboundSlip not allocatable: slipId={}, status={}", slipId, slip.getStatus());
                 throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                        "引当可能なステータスではありません (status=" + slip.getStatus() + ")");
+                        "現在のステータスでは引当できません");
             }
 
             List<AllocatedLineInfo> allocatedLines = new ArrayList<>();
@@ -420,7 +419,7 @@ public class AllocationService {
         if (!"INSTRUCTED".equals(unpack.getStatus())) {
             log.info("UnpackInstruction already completed: id={}, status={}", id, unpack.getStatus());
             throw new InvalidStateTransitionException("ALREADY_COMPLETED",
-                    "既に完了済みのばらし指示です (status=" + unpack.getStatus() + ")");
+                    "既に完了済みのばらし指示です");
         }
 
         Product product = productService.findById(unpack.getProductId());
@@ -580,19 +579,18 @@ public class AllocationService {
         List<ReleasedSlipInfo> releasedSlips = new ArrayList<>();
 
         for (Long slipId : slipIds) {
-            final Long currentSlipId = slipId;
             OutboundSlip slip = outboundSlipRepository.findByIdForUpdate(slipId)
                     .orElseThrow(() -> {
-                        log.info("OutboundSlip not found on release: slipId={}", currentSlipId);
+                        log.info("OutboundSlip not found on release: slipId={}", slipId);
                         return new ResourceNotFoundException(
                                 "OUTBOUND_SLIP_NOT_FOUND",
                                 "出荷伝票が見つかりません");
                     });
 
             if (!RELEASABLE_STATUSES.contains(slip.getStatus())) {
-                log.info("OutboundSlip not releasable: slipId={}, status={}", currentSlipId, slip.getStatus());
+                log.info("OutboundSlip not releasable: slipId={}, status={}", slipId, slip.getStatus());
                 throw new InvalidStateTransitionException("RELEASE_NOT_ALLOWED",
-                        "引当解放可能なステータスではありません (status=" + slip.getStatus() + ")");
+                        "現在のステータスでは引当を解放できません");
             }
 
             String previousStatus = slip.getStatus();

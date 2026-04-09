@@ -112,8 +112,9 @@ public class OutboundSlipService {
         Set<Long> productIds = new HashSet<>();
         for (CreateOutboundLineRequest line : request.getLines()) {
             if (!productIds.add(line.getProductId())) {
+                log.info("OutboundSlip create duplicate product in lines: productId={}", line.getProductId());
                 throw new DuplicateResourceException("DUPLICATE_PRODUCT_IN_LINES",
-                        "同一伝票内に同じ商品が複数指定されています (productId=" + line.getProductId() + ")");
+                        "同一伝票内に同じ商品が複数指定されています");
             }
         }
 
@@ -142,13 +143,15 @@ public class OutboundSlipService {
             Product product = productService.findById(lineReq.getProductId());
 
             if (!Boolean.TRUE.equals(product.getIsActive())) {
+                log.info("OutboundSlip create product inactive: productId={}", product.getId());
                 throw new BusinessRuleViolationException("PRODUCT_INACTIVE",
-                        "無効な商品が指定されています (productId=" + product.getId() + ")");
+                        "無効な商品が指定されています");
             }
 
             if (Boolean.TRUE.equals(product.getShipmentStopFlag())) {
+                log.info("OutboundSlip create product shipment stopped: productId={}", product.getId());
                 throw new BusinessRuleViolationException("OUTBOUND_PRODUCT_SHIPMENT_STOPPED",
-                        "出荷禁止フラグが設定されている商品です (productId=" + product.getId() + ")");
+                        "出荷禁止フラグが設定されている商品です");
             }
 
             return new ProductLineInfo(product, lineReq);
@@ -218,7 +221,7 @@ public class OutboundSlipService {
         if (!OutboundSlipStatus.ORDERED.getValue().equals(slip.getStatus())) {
             log.info("OutboundSlip delete rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                    "ORDERED以外のステータスの出荷伝票は削除できません (status=" + slip.getStatus() + ")");
+                    "現在のステータスでは出荷伝票を削除できません");
         }
 
         outboundSlipRepository.delete(slip);
@@ -238,7 +241,7 @@ public class OutboundSlipService {
         if (!CANCELLABLE_STATUSES.contains(slip.getStatus())) {
             log.info("OutboundSlip cancel rejected due to status: id={}, status={}", id, slip.getStatus());
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                    "キャンセル可能なステータスではありません (status=" + slip.getStatus() + ")");
+                    "現在のステータスでは出荷伝票をキャンセルできません");
         }
 
         Long currentUserId = getCurrentUserId();

@@ -89,8 +89,9 @@ public class ReturnSlipService {
         // Validate product
         Product product = productService.findById(request.getProductId());
         if (!Boolean.TRUE.equals(product.getIsActive())) {
+            log.info("ReturnSlip create product inactive: productId={}", product.getId());
             throw new BusinessRuleViolationException("VALIDATION_ERROR",
-                    "無効な商品が指定されています (productId=" + product.getId() + ")");
+                    "無効な商品が指定されています");
         }
 
         // Validate partner (optional)
@@ -110,13 +111,16 @@ public class ReturnSlipService {
             location = locationService.findById(request.getLocationId());
 
             if (!location.getWarehouseId().equals(warehouse.getId())) {
+                log.info("ReturnSlip create location warehouse mismatch: locationId={}, warehouseId={}",
+                        location.getId(), warehouse.getId());
                 throw new BusinessRuleViolationException("RETURN_LOCATION_WAREHOUSE_MISMATCH",
-                        "指定のロケーションはこの倉庫に属していません (locationId=" + location.getId() + ")");
+                        "指定のロケーションはこの倉庫に属していません");
             }
 
             if (Boolean.TRUE.equals(location.getIsStocktakingLocked())) {
+                log.info("ReturnSlip create location stocktake locked: locationId={}", location.getId());
                 throw new BusinessRuleViolationException("RETURN_STOCKTAKE_LOCKED",
-                        "棚卸ロック中のロケーションからは返品できません (locationId=" + location.getId() + ")");
+                        "棚卸ロック中のロケーションからは返品できません");
             }
         }
 

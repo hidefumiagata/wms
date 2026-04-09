@@ -183,8 +183,9 @@ public class StocktakeService {
                 });
 
         if (!"STARTED".equals(header.getStatus())) {
+            log.info("Stocktake rejected due to status: headerId={}, status={}", headerId, header.getStatus());
             throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
-                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+                    "棚卸が実施中ではありません");
         }
 
         Long userId = getCurrentUserId();
@@ -208,7 +209,7 @@ public class StocktakeService {
                 log.warn("Stocktake line belongs to different header: headerId={}, lineId={}, actualHeaderId={}",
                         headerId, input.lineId(), line.getStocktakeHeader().getId());
                 throw new ResourceNotFoundException("STOCKTAKE_LINE_NOT_FOUND",
-                        "棚卸明細が指定棚卸に属していません");
+                        "棚卸明細が見つかりません");
             }
 
             line.setQuantityCounted(input.actualQty());
@@ -245,8 +246,9 @@ public class StocktakeService {
                 });
 
         if (!"STARTED".equals(header.getStatus())) {
+            log.info("Stocktake rejected due to status: headerId={}, status={}", headerId, header.getStatus());
             throw new com.wms.shared.exception.InvalidStateTransitionException("STOCKTAKE_INVALID_STATUS",
-                    "棚卸が実施中ではありません (status=" + header.getStatus() + ")");
+                    "棚卸が実施中ではありません");
         }
 
         // 全明細入力済みチェック
