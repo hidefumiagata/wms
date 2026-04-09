@@ -51,20 +51,24 @@ class ExceptionClassesTest {
         }
 
         @Test
-        @DisplayName("of(): リソース名とIDでメッセージが生成される")
-        void of_withResourceNameAndLongId_createsFormattedMessage() {
+        @DisplayName("of(): リソース名のみのメッセージが生成される (内部IDは埋め込まない: OWASP A09)")
+        void of_withResourceNameAndLongId_createsFormattedMessageWithoutId() {
             ResourceNotFoundException ex = ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", 42L);
 
             assertThat(ex.getErrorCode()).isEqualTo("WAREHOUSE_NOT_FOUND");
-            assertThat(ex.getMessage()).isEqualTo("倉庫 が見つかりません (id=42)");
+            assertThat(ex.getMessage()).isEqualTo("倉庫 が見つかりません");
+            assertThat(ex.getMessage()).doesNotContain("id=");
+            assertThat(ex.getMessage()).doesNotContain("42");
         }
 
         @Test
-        @DisplayName("of(): 文字列IDでも正しくフォーマットされる")
-        void of_withStringId_createsFormattedMessage() {
+        @DisplayName("of(): 文字列IDでもメッセージに埋め込まれない (OWASP A09)")
+        void of_withStringId_createsFormattedMessageWithoutId() {
             ResourceNotFoundException ex = ResourceNotFoundException.of("USER_NOT_FOUND", "ユーザー", "admin");
 
-            assertThat(ex.getMessage()).isEqualTo("ユーザー が見つかりません (id=admin)");
+            assertThat(ex.getMessage()).isEqualTo("ユーザー が見つかりません");
+            assertThat(ex.getMessage()).doesNotContain("admin");
+            assertThat(ex.getMessage()).doesNotContain("id=");
         }
     }
 
