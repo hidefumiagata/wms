@@ -310,7 +310,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.findByIdWithLines(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ピッキング指示が見つかりません");
+                    .hasMessageContaining("ピッキング指示が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
     }
 
@@ -394,7 +395,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("ステータス");
+                    .hasMessageContaining("ステータス")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -406,7 +408,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("出荷伝票が見つかりません");
+                    .hasMessageContaining("出荷伝票が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -426,7 +429,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("未完了のばらし指示が存在する");
+                    .hasMessageContaining("未完了のばらし指示が存在する")
+                    .hasMessageNotContaining("slipId=");
         }
 
         @Test
@@ -628,7 +632,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.createPickingInstruction(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ロケーションが見つかりません");
+                    .hasMessageContaining("ロケーションが見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -827,7 +832,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.completePickingInstruction(50L, request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("完了済み");
+                    .hasMessageContaining("完了済み")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -849,7 +855,8 @@ class PickingServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
                             .isEqualTo("PICKING_LINE_NOT_FOUND"))
-                    .hasMessageContaining("lineIdが当該ピッキング指示に存在しません");
+                    .hasMessageContaining("lineIdが当該ピッキング指示に存在しません")
+                    .hasMessageNotContaining("lineId=");
         }
 
         @Test
@@ -871,7 +878,8 @@ class PickingServiceTest {
                     .isInstanceOf(BusinessRuleViolationException.class)
                     .satisfies(ex -> assertThat(((BusinessRuleViolationException) ex).getErrorCode())
                             .isEqualTo("PICKING_QTY_EXCEEDED"))
-                    .hasMessageContaining("ピッキング完了数量がピッキング予定数量を超えています");
+                    .hasMessageContaining("ピッキング完了数量がピッキング予定数量を超えています")
+                    .hasMessageNotContaining("lineId=");
         }
 
         @Test
@@ -884,7 +892,8 @@ class PickingServiceTest {
 
             assertThatThrownBy(() -> pickingService.completePickingInstruction(999L, request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ピッキング指示が見つかりません");
+                    .hasMessageContaining("ピッキング指示が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
     }
 

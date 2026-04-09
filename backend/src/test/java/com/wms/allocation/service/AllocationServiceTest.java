@@ -411,7 +411,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("引当可能なステータスではありません");
+                    .hasMessageContaining("現在のステータスでは引当できません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -511,7 +512,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("出荷伝票が見つかりません");
+                    .hasMessageContaining("出荷伝票が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -651,7 +653,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("在庫が見つかりません");
+                    .hasMessageContaining("在庫が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -676,7 +679,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.executeAllocation(request))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("在庫が見つかりません");
+                    .hasMessageContaining("在庫が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -969,7 +973,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("既に完了済みのばらし指示です");
+                    .hasMessageContaining("既に完了済みのばらし指示です")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -992,7 +997,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ロケーションが見つかりません");
+                    .hasMessageContaining("ロケーションが見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -1019,7 +1025,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ばらし元在庫が見つかりません");
+                    .hasMessageContaining("ばらし元在庫が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -1088,7 +1095,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ばらし元在庫が見つかりません");
+                    .hasMessageContaining("ばらし元在庫が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test
@@ -1122,7 +1130,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(500L))
                     .isInstanceOf(BusinessRuleViolationException.class)
-                    .hasMessageContaining("ばらし指示に元在庫IDが設定されていません");
+                    .hasMessageContaining("ばらし指示に元在庫IDが設定されていません")
+                    .hasMessageNotContaining("unpackId=");
         }
 
         @Test
@@ -1279,7 +1288,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.completeUnpackInstruction(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("ばらし指示が見つかりません");
+                    .hasMessageContaining("ばらし指示が見つかりません")
+                    .hasMessageNotContaining("id=");
         }
     }
 
@@ -1384,7 +1394,8 @@ class AllocationServiceTest {
 
             assertThatThrownBy(() -> allocationService.releaseAllocation(request))
                     .isInstanceOf(InvalidStateTransitionException.class)
-                    .hasMessageContaining("引当解放可能なステータスではありません");
+                    .hasMessageContaining("現在のステータスでは引当を解放できません")
+                    .hasMessageNotContaining("id=");
         }
 
         @Test

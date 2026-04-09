@@ -336,7 +336,7 @@ class PartnerControllerTest {
         @DisplayName("楽観的ロック競合で409を返す")
         void update_conflict_returns409() throws Exception {
             when(partnerService.update(any(com.wms.master.service.UpdatePartnerCommand.class)))
-                    .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
+                    .thenThrow(OptimisticLockConflictException.standard());
 
             UpdatePartnerRequest request = new UpdatePartnerRequest()
                     .partnerName("名前")
@@ -425,7 +425,7 @@ class PartnerControllerTest {
         @DisplayName("楽観的ロック競合で409を返す")
         void toggle_conflict_returns409() throws Exception {
             when(partnerService.toggleActive(eq(1L), eq(false), eq(0)))
-                    .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
+                    .thenThrow(OptimisticLockConflictException.standard());
 
             ToggleActiveRequest request = new ToggleActiveRequest()
                     .isActive(false)

@@ -294,7 +294,7 @@ class WarehouseControllerTest {
         @DisplayName("楽観的ロック競合で409を返す")
         void update_conflict_returns409() throws Exception {
             when(warehouseService.update(eq(1L), any(), any(), any(), any()))
-                    .thenThrow(new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT", "競合"));
+                    .thenThrow(OptimisticLockConflictException.standard());
 
             UpdateWarehouseRequest request = new UpdateWarehouseRequest()
                     .warehouseName("名前")

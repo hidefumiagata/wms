@@ -94,9 +94,13 @@ public class PickingService {
      */
     public PickingInstruction findByIdWithLines(Long id) {
         return pickingInstructionRepository.findByIdWithLines(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PICKING_NOT_FOUND",
-                        "ピッキング指示が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    // SEC-R2-Min-1 (OWASP A09): 追跡用 id はログへ
+                    log.info("PickingInstruction not found: id={}", id);
+                    return new ResourceNotFoundException(
+                            "PICKING_NOT_FOUND",
+                            "ピッキング指示が見つかりません");
+                });
     }
 
     /**
@@ -136,13 +140,18 @@ public class PickingService {
         List<OutboundSlip> slips = new ArrayList<>();
         for (Long slipId : slipIds) {
             OutboundSlip slip = outboundSlipRepository.findByIdWithLines(slipId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "OUTBOUND_SLIP_NOT_FOUND",
-                            "出荷伝票が見つかりません (id=" + slipId + ")"));
+                    .orElseThrow(() -> {
+                        log.info("OutboundSlip not found during picking create: slipId={}", slipId);
+                        return new ResourceNotFoundException(
+                                "OUTBOUND_SLIP_NOT_FOUND",
+                                "出荷伝票が見つかりません");
+                    });
 
             if (!OutboundSlipStatus.ALLOCATED.getValue().equals(slip.getStatus())) {
+                log.info("OutboundSlip not ALLOCATED during picking create: slipId={}, status={}",
+                        slipId, slip.getStatus());
                 throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                        "ALLOCATED以外のステータスの伝票が含まれています (id=" + slipId + ", status=" + slip.getStatus() + ")");
+                        "現在のステータスではピッキング指示を作成できません");
             }
 
             if (warehouseId == null) {
@@ -156,8 +165,9 @@ public class PickingService {
             List<UnpackInstruction> instructed = unpackInstructionRepository
                     .findByOutboundSlipIdAndStatus(slip.getId(), "INSTRUCTED");
             if (!instructed.isEmpty()) {
+                log.info("Picking creation blocked: pending unpack instructions exist: slipId={}", slip.getId());
                 throw new InvalidStateTransitionException("UNPACK_NOT_COMPLETED",
-                        "未完了のばらし指示が存在するため、ピッキング指示を作成できません (slipId=" + slip.getId() + ")");
+                        "未完了のばらし指示が存在するため、ピッキング指示を作成できません");
             }
         }
 
@@ -176,9 +186,12 @@ public class PickingService {
                 }
 
                 Location location = locationRepository.findById(alloc.getLocationId())
-                        .orElseThrow(() -> new ResourceNotFoundException(
-                                "LOCATION_NOT_FOUND",
-                                "ロケーションが見つかりません (id=" + alloc.getLocationId() + ")"));
+                        .orElseThrow(() -> {
+                            log.info("Location not found during picking create: locationId={}", alloc.getLocationId());
+                            return new ResourceNotFoundException(
+                                    "LOCATION_NOT_FOUND",
+                                    "ロケーションが見つかりません");
+                        });
 
                 // 出荷明細からproduct_code/name取得
                 OutboundSlipLine slipLine = slip.getLines().stream()
@@ -253,13 +266,17 @@ public class PickingService {
     @Transactional
     public PickingInstruction completePickingInstruction(Long id, CompletePickingRequest request) {
         PickingInstruction instruction = pickingInstructionRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PICKING_NOT_FOUND",
-                        "ピッキング指示が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("PickingInstruction not found on complete: id={}", id);
+                    return new ResourceNotFoundException(
+                            "PICKING_NOT_FOUND",
+                            "ピッキング指示が見つかりません");
+                });
 
         if (PickingInstructionStatus.COMPLETED.getValue().equals(instruction.getStatus())) {
+            log.info("PickingInstruction already completed: id={}", id);
             throw new InvalidStateTransitionException("OUTBOUND_INVALID_STATUS",
-                    "既に完了済みのピッキング指示です (id=" + id + ")");
+                    "既に完了済みのピッキング指示です");
         }
 
         // 明細IDのマップを作成
@@ -273,15 +290,16 @@ public class PickingService {
         for (CompletePickingLineRequest lineReq : request.getLines()) {
             PickingInstructionLine line = lineMap.get(lineReq.getLineId());
             if (line == null) {
+                log.info("Picking line not found: instructionId={}, lineId={}", id, lineReq.getLineId());
                 throw new BusinessRuleViolationException("PICKING_LINE_NOT_FOUND",
-                        "指定されたlineIdが当該ピッキング指示に存在しません (lineId=" + lineReq.getLineId() + ")");
+                        "指定されたlineIdが当該ピッキング指示に存在しません");
             }
 
             if (lineReq.getQtyPicked() > line.getQtyToPick()) {
+                log.warn("Picking qty exceeded: instructionId={}, lineId={}, qtyPicked={}, qtyToPick={}",
+                        id, lineReq.getLineId(), lineReq.getQtyPicked(), line.getQtyToPick());
                 throw new BusinessRuleViolationException("PICKING_QTY_EXCEEDED",
-                        "ピッキング完了数量がピッキング予定数量を超えています (lineId=" + lineReq.getLineId()
-                                + ", qtyPicked=" + lineReq.getQtyPicked()
-                                + ", qtyToPick=" + line.getQtyToPick() + ")");
+                        "ピッキング完了数量がピッキング予定数量を超えています");
             }
 
             line.setQtyPicked(lineReq.getQtyPicked());

@@ -77,8 +77,11 @@ public class LocationService {
         // INBOUND/OUTBOUND/RETURN エリアはロケーション 1 件限定
         if (!area.getAreaType().equals("STOCK")
                 && locationRepository.countByAreaId(area.getId()) >= SINGLE_LOCATION_AREA_LIMIT) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。追跡用の areaId は log 側に出力。
+            log.info("Location create blocked by area limit: areaId={}, areaType={}",
+                    area.getId(), area.getAreaType());
             throw new BusinessRuleViolationException("AREA_LOCATION_LIMIT_EXCEEDED",
-                    area.getAreaType() + " エリアにはロケーションを1件のみ登録できます (areaId=" + area.getId() + ")");
+                    area.getAreaType() + " エリアにはロケーションを1件のみ登録できます");
         }
 
         if (locationRepository.existsByWarehouseIdAndLocationCode(
@@ -100,8 +103,9 @@ public class LocationService {
     public Location update(Long id, String locationName, Integer version) {
         Location location = findById(id);
         if (!location.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Location update version mismatch: id={}, expected={}, actual={}",
+                    id, version, location.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         location.setLocationName(locationName);
         location.setVersion(version);
@@ -110,8 +114,8 @@ public class LocationService {
             log.info("Location updated: id={}, name={}", id, locationName);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Location update OL conflict detected at commit: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -119,8 +123,9 @@ public class LocationService {
     public Location toggleActive(Long id, boolean isActive, Integer version) {
         Location location = findById(id);
         if (!location.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Location toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, location.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (location.getIsActive().equals(isActive)) {
@@ -132,15 +137,18 @@ public class LocationService {
         // (上の no-op 判定により、状態が実際に変化する場合のみここに到達する)
         // 無効化時: 在庫が存在するロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
         if (!isActive && inventoryService.hasInventoryByLocationId(id)) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+            log.info("Location deactivate blocked by inventory: id={}", id);
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
-                    "在庫が存在するため無効化できません (id=" + id + ")");
+                    "在庫が存在するため無効化できません");
         }
         // 無効化時: 棚卸中のロケーションは無効化不可 (BR: CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS)
         if (!isActive && location.getIsStocktakingLocked()) {
+            log.info("Location deactivate blocked by stocktake lock: id={}", id);
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_STOCKTAKE_IN_PROGRESS",
-                    "棚卸中のため無効化できません (id=" + id + ")");
+                    "棚卸中のため無効化できません");
         }
         if (isActive) {
             location.activate();
@@ -153,8 +161,8 @@ public class LocationService {
             log.info("Location toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Location toggleActive OL conflict detected at commit: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 }

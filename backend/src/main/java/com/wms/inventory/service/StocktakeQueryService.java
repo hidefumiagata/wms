@@ -54,15 +54,22 @@ public class StocktakeQueryService {
     }
 
     public StocktakeHeader findById(Long id) {
+        // SEC-R2-Min-1 (OWASP A09): 例外メッセージには内部 id を含めない。追跡用 id は log 側に出力する。
         return stocktakeHeaderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "STOCKTAKE_NOT_FOUND", "棚卸が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("Stocktake not found: id={}", id);
+                    return new ResourceNotFoundException(
+                            "STOCKTAKE_NOT_FOUND", "棚卸が見つかりません");
+                });
     }
 
     public StocktakeHeader findByIdWithLines(Long id) {
         return stocktakeHeaderRepository.findByIdWithLines(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "STOCKTAKE_NOT_FOUND", "棚卸が見つかりません (id=" + id + ")"));
+                .orElseThrow(() -> {
+                    log.info("Stocktake not found (withLines): id={}", id);
+                    return new ResourceNotFoundException(
+                            "STOCKTAKE_NOT_FOUND", "棚卸が見つかりません");
+                });
     }
 
     public long countTotalLines(Long headerId) {

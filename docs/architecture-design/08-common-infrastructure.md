@@ -1797,7 +1797,9 @@ public WarehouseResponse update(
 
     // クライアントが送信した version と DB の version を比較
     if (!warehouse.getVersion().equals(request.version())) {
-        throw new OptimisticLockConflictException();
+        // log は Lombok @Slf4j により注入 (Service クラスに @Slf4j を付与)
+        log.info("Warehouse optimistic lock conflict: id={}", id);
+        throw OptimisticLockConflictException.standard();
     }
 
     // 更新処理

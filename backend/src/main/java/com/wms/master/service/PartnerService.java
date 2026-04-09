@@ -76,7 +76,7 @@ public class PartnerService {
         if (!Objects.equals(partner.getVersion(), cmd.version())) {
             log.info("Partner update version mismatch: id={}, expected={}, actual={}",
                     cmd.id(), cmd.version(), partner.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         partner.setPartnerName(cmd.partnerName());
         partner.setPartnerNameKana(cmd.partnerNameKana());
@@ -93,7 +93,7 @@ public class PartnerService {
         } catch (ObjectOptimisticLockingFailureException e) {
             // version は事前チェック済みだが、load → commit 間の短窓競合に対する二重防御として catch も残置
             log.info("Partner update OL conflict detected at commit: id={}", cmd.id());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -106,7 +106,7 @@ public class PartnerService {
         if (!Objects.equals(partner.getVersion(), version)) {
             log.info("Partner toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, partner.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         if (Objects.equals(partner.getIsActive(), isActive)) {
             log.info("Partner toggleActive no-op: id={}, isActive={}", id, isActive);
@@ -150,16 +150,8 @@ public class PartnerService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Partner toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
-    }
-
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない (ID 列挙への補助情報を与えない)。
-        // 追跡用の id はログ側 (呼び出し元の log.info/warn) に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
     }
 
     public boolean existsByCode(String partnerCode) {

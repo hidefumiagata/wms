@@ -257,6 +257,7 @@ class InboundSlipServiceTest {
             assertThatThrownBy(() -> inboundSlipService.findById(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("入荷伝票")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
         }
     }
@@ -286,6 +287,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.findByIdWithLines(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("入荷伝票")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_SLIP_NOT_FOUND");
         }
     }
@@ -1331,6 +1334,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
                     .isInstanceOf(InvalidStateTransitionException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_LINE_ALREADY_STORED");
         }
 
@@ -1348,6 +1353,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_FOUND");
         }
 
@@ -1427,6 +1434,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("DUPLICATE_LINE_IN_REQUEST");
         }
 
@@ -1443,6 +1452,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_INSPECTED_QTY_NEGATIVE");
         }
 
@@ -1855,6 +1866,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.store(1L, request))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_LINE_NOT_FOUND");
         }
 
@@ -1928,6 +1941,8 @@ class InboundSlipServiceTest {
 
             assertThatThrownBy(() -> inboundSlipService.store(1L, request))
                     .isInstanceOf(BusinessRuleViolationException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("DUPLICATE_LINE_IN_REQUEST");
         }
 

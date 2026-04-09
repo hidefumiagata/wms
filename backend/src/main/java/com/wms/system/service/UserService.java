@@ -65,9 +65,9 @@ public class UserService {
     public User update(UpdateUserCommand cmd) {
         User user = findById(cmd.id());
         if (!user.getVersion().equals(cmd.version())) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+            log.info("User update version mismatch: id={}, expected={}, actual={}",
+                    cmd.id(), cmd.version(), user.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         // 自己ロール変更禁止
         if (cmd.currentUserId().equals(cmd.id())
@@ -91,9 +91,8 @@ public class UserService {
             log.info("User updated: id={}, fullName={}", cmd.id(), cmd.fullName());
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + cmd.id() + ")");
+            log.info("User update OL conflict detected at commit: id={}", cmd.id());
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -106,9 +105,9 @@ public class UserService {
                     "自分自身を無効化することはできません");
         }
         if (!user.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("User toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, user.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性: 既に同じ状態なら更新しない
         if (user.getIsActive().equals(isActive)) {
@@ -122,9 +121,8 @@ public class UserService {
             log.info("User toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("User toggleActive OL conflict detected at commit: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 

@@ -106,16 +106,21 @@ public class InventoryService {
                     inventory = inventoryRepository
                             .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                                     cmd.locationId(), cmd.productId(), cmd.unitType(), cmd.lotNumber(), cmd.expiryDate())
-                            .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                                    "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")"));
+                            .orElseThrow(() -> {
+                                log.info("Inventory not found after collision retry: locationId={}, productId={}",
+                                        cmd.locationId(), cmd.productId());
+                                return new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                                        "在庫が見つかりません");
+                            });
                     newQty = inventory.getQuantity() + cmd.quantity();
                     inventory.setQuantity(newQty);
                     inventoryRepository.save(inventory);
                 }
             }
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+            log.warn("Inventory optimistic lock conflict on storeInbound: locationId={}, productId={}",
+                    cmd.locationId(), cmd.productId());
+            throw OptimisticLockConflictException.standard();
         }
 
         InventoryMovement movement = InventoryMovement.builder()
@@ -151,28 +156,33 @@ public class InventoryService {
         Inventory inventory = inventoryRepository
                 .findByLocationIdAndProductIdAndUnitTypeAndLotNumberAndExpiryDate(
                         cmd.locationId(), cmd.productId(), cmd.unitType(), cmd.lotNumber(), cmd.expiryDate())
-                .orElseThrow(() -> new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                        "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")"));
+                .orElseThrow(() -> {
+                    log.info("Inventory not found on rollback: locationId={}, productId={}",
+                            cmd.locationId(), cmd.productId());
+                    return new ResourceNotFoundException("INVENTORY_NOT_FOUND",
+                            "在庫が見つかりません");
+                });
 
         int newQty = inventory.getQuantity() - cmd.quantity();
         if (newQty < 0) {
+            log.warn("Inventory rollback would make quantity negative: inventoryId={}, quantity={}, rollback={}",
+                    inventory.getId(), inventory.getQuantity(), cmd.quantity());
             throw new BusinessRuleViolationException("INVENTORY_INSUFFICIENT",
-                    "在庫ロールバックで在庫数が負になります (inventoryId=" + inventory.getId()
-                            + ", quantity=" + inventory.getQuantity()
-                            + ", rollback=" + cmd.quantity() + ")");
+                    "在庫ロールバックで在庫数が負になります");
         }
         if (newQty < inventory.getAllocatedQty()) {
+            log.warn("Inventory rollback would exceed allocated: inventoryId={}, allocatedQty={}, newQuantity={}",
+                    inventory.getId(), inventory.getAllocatedQty(), newQty);
             throw new BusinessRuleViolationException("INVENTORY_ALLOCATED",
-                    "引当済み数量が在庫ロールバック後の数量を超えます (inventoryId=" + inventory.getId()
-                            + ", allocatedQty=" + inventory.getAllocatedQty()
-                            + ", newQuantity=" + newQty + ")");
+                    "引当済み数量が在庫ロールバック後の数量を超えます");
         }
         inventory.setQuantity(newQty);
         try {
             inventoryRepository.save(inventory);
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                    "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+            log.warn("Inventory optimistic lock conflict on rollback: locationId={}, productId={}",
+                    cmd.locationId(), cmd.productId());
+            throw OptimisticLockConflictException.standard();
         }
 
         InventoryMovement movement = InventoryMovement.builder()
@@ -216,8 +226,10 @@ public class InventoryService {
                         cmd.locationId(), cmd.productId(), cmd.unitType());
 
         if (inventories.isEmpty()) {
+            log.info("Inventory not found on return deduction: locationId={}, productId={}",
+                    cmd.locationId(), cmd.productId());
             throw new ResourceNotFoundException("INVENTORY_NOT_FOUND",
-                    "在庫が見つかりません (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+                    "在庫が見つかりません");
         }
 
         boolean hasAllocated = inventories.stream().anyMatch(i -> i.getAllocatedQty() > 0);
@@ -229,8 +241,10 @@ public class InventoryService {
         int totalAvailable = inventories.stream()
                 .mapToInt(i -> i.getQuantity() - i.getAllocatedQty()).sum();
         if (cmd.quantity() > totalAvailable) {
+            log.warn("Return quantity exceeds available stock: locationId={}, productId={}, available={}, requested={}",
+                    cmd.locationId(), cmd.productId(), totalAvailable, cmd.quantity());
             throw new BusinessRuleViolationException("RETURN_INSUFFICIENT_QUANTITY",
-                    "返品数量が在庫数を超えています (available=" + totalAvailable + ", requested=" + cmd.quantity() + ")");
+                    "返品数量が在庫数を超えています");
         }
 
         // 複数在庫レコード（ロット違い等）に対してID順に分散減算する
@@ -248,8 +262,9 @@ public class InventoryService {
             try {
                 inventoryRepository.save(inventory);
             } catch (ObjectOptimisticLockingFailureException e) {
-                throw new OptimisticLockConflictException("OPTIMISTIC_LOCK_CONFLICT",
-                        "在庫の並行更新が検出されました (locationId=" + cmd.locationId() + ", productId=" + cmd.productId() + ")");
+                log.warn("Inventory optimistic lock conflict on return deduction: locationId={}, productId={}, inventoryId={}",
+                        cmd.locationId(), cmd.productId(), inventory.getId());
+                throw OptimisticLockConflictException.standard();
             }
 
             InventoryMovement movement = InventoryMovement.builder()

@@ -336,6 +336,8 @@ class StocktakeServiceTest {
             var inputs = List.of(new StocktakeService.LineInput(10L, 5));
             assertThatThrownBy(() -> service.saveStocktakeLines(999L, inputs))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棚卸が見つかりません")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("STOCKTAKE_NOT_FOUND");
         }
 
@@ -384,6 +386,9 @@ class StocktakeServiceTest {
             var inputs = List.of(new StocktakeService.LineInput(999L, 5));
             assertThatThrownBy(() -> service.saveStocktakeLines(1L, inputs))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棚卸明細が見つかりません")
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("STOCKTAKE_LINE_NOT_FOUND");
         }
 
@@ -412,6 +417,8 @@ class StocktakeServiceTest {
             var inputs = List.of(new StocktakeService.LineInput(10L, 5));
             assertThatThrownBy(() -> service.saveStocktakeLines(1L, inputs))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("lineId=")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("STOCKTAKE_LINE_NOT_FOUND");
         }
     }
@@ -482,6 +489,8 @@ class StocktakeServiceTest {
 
             assertThatThrownBy(() -> service.confirmStocktake(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棚卸が見つかりません")
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("STOCKTAKE_NOT_FOUND");
         }
 

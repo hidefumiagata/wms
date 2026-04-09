@@ -190,6 +190,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.findByIdWithLines(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
         }
     }
@@ -510,6 +511,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.delete(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
         }
 
@@ -615,6 +617,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.cancel(999L, new CancelOutboundRequest()))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
         }
 
@@ -664,6 +667,7 @@ class OutboundSlipServiceTest {
 
             assertThatThrownBy(() -> outboundSlipService.findBySlipLineId(999L))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageNotContaining("slipLineId=")
                     .extracting("errorCode").isEqualTo("OUTBOUND_SLIP_NOT_FOUND");
         }
     }

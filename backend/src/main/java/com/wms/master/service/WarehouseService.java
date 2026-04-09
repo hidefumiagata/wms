@@ -79,9 +79,9 @@ public class WarehouseService {
                             String address, Integer version) {
         Warehouse warehouse = findById(id);
         if (!warehouse.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Warehouse update version mismatch: id={}, expected={}, actual={}",
+                    id, version, warehouse.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         warehouse.setWarehouseName(warehouseName);
         warehouse.setWarehouseNameKana(warehouseNameKana);
@@ -92,9 +92,8 @@ public class WarehouseService {
             log.info("Warehouse updated: id={}, name={}", id, warehouseName);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Warehouse update OL conflict detected at commit: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -102,9 +101,9 @@ public class WarehouseService {
     public Warehouse toggleActive(Long id, boolean isActive, Integer version) {
         Warehouse warehouse = findById(id);
         if (!warehouse.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Warehouse toggleActive version mismatch: id={}, expected={}, actual={}",
+                    id, version, warehouse.getVersion());
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (warehouse.getIsActive().equals(isActive)) {
@@ -114,9 +113,11 @@ public class WarehouseService {
         // 無効化時: 在庫が存在する倉庫は無効化不可 (BR: CANNOT_DEACTIVATE_HAS_INVENTORY)
         // 上の no-op 判定により、状態が実際に変化する場合のみここに到達する
         if (!isActive && inventoryService.hasInventoryByWarehouseId(id)) {
+            // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
+            log.info("Warehouse deactivate blocked by inventory: id={}", id);
             throw new BusinessRuleViolationException(
                     "CANNOT_DEACTIVATE_HAS_INVENTORY",
-                    "在庫が存在するため無効化できません (id=" + id + ")");
+                    "在庫が存在するため無効化できません");
         }
         if (isActive) {
             warehouse.activate();
@@ -129,9 +130,8 @@ public class WarehouseService {
             log.info("Warehouse toggled: id={}, isActive={}", id, isActive);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (id=" + id + ")");
+            log.info("Warehouse toggleActive OL conflict detected at commit: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 
