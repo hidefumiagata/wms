@@ -165,5 +165,4 @@ public class LocationService {
             throw OptimisticLockConflictException.standard();
         }
     }
-
 }
