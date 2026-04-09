@@ -432,6 +432,7 @@ public class WarehouseController {
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j  // log は Lombok @Slf4j により注入
 public class WarehouseService {
 
     private final WarehouseRepository warehouseRepository;
@@ -1280,6 +1281,7 @@ public Warehouse update(Long id, UpdateWarehouseRequest request) {
 
     // フロントエンドから送られたversionとEntityのversionを事前チェック
     if (!warehouse.getVersion().equals(request.version())) {
+        // log は Lombok @Slf4j により注入 (Service クラスに @Slf4j を付与)
         log.info("Warehouse optimistic lock conflict: id={}", id);
         throw OptimisticLockConflictException.standard();
     }
