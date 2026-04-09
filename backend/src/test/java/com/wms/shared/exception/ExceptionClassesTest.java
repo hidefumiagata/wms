@@ -121,6 +121,16 @@ class ExceptionClassesTest {
             assertThat(ex.getErrorCode()).isEqualTo("CUSTOM_LOCK");
             assertThat(ex.getMessage()).isEqualTo("カスタムメッセージ");
         }
+
+        @Test
+        @DisplayName("standard(): 全Service共通のcode/messageが設定される (内部IDは含まない: OWASP A09)")
+        void standard_createsUnifiedException() {
+            OptimisticLockConflictException ex = OptimisticLockConflictException.standard();
+
+            assertThat(ex.getErrorCode()).isEqualTo("OPTIMISTIC_LOCK_CONFLICT");
+            assertThat(ex.getMessage()).isEqualTo("他のユーザーによる更新が先行しました");
+            assertThat(ex.getMessage()).doesNotContain("id=");
+        }
     }
 
     @Nested
