@@ -40,9 +40,8 @@ public class SystemParameterService {
     public SystemParameter updateValue(String paramKey, String paramValue, Integer version) {
         SystemParameter param = findByKey(paramKey);
         if (!param.getVersion().equals(version)) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+            log.info("SystemParameter optimistic lock conflict: key={}", paramKey);
+            throw OptimisticLockConflictException.standard();
         }
         validateParamValue(param, paramValue);
         // BOOLEAN型は小文字に正規化（大文字小文字の揺れを防止）
@@ -55,9 +54,8 @@ public class SystemParameterService {
             log.info("SystemParameter updated: key={}", paramKey);
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによる更新が先行しました (key=" + paramKey + ")");
+            log.info("SystemParameter optimistic lock conflict: key={}", paramKey);
+            throw OptimisticLockConflictException.standard();
         }
     }
 

@@ -107,7 +107,9 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("KEY1", "V2", 3))
                 .isInstanceOf(OptimisticLockConflictException.class)
-                .hasMessageContaining("KEY1");
+                .hasMessage("他のユーザーによる更新が先行しました")
+                .hasMessageNotContaining("key=")
+                .hasMessageNotContaining("KEY1");
     }
 
     @Test
