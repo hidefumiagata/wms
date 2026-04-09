@@ -14,8 +14,12 @@ public final class OptimisticLockConflictException extends WmsException {
      *     Failures) に該当するため、全 Service で共通メッセージを用いる {@code standard()}
      *     に統一している。追跡用の識別子は呼び出し元 Service で throw 直前に
      *     {@code log.info} へ出力する運用とする。
+     *
+     *     <p><strong>削除予定はない:</strong> 本コンストラクタは {@code standard()} の
+     *     内部実装および既存テスト互換のため残置する方針。{@code forRemoval = false} を
+     *     明示する。</p>
      */
-    @Deprecated
+    @Deprecated(since = "2026-04-10", forRemoval = false)
     public OptimisticLockConflictException(String errorCode, String message) {
         super(errorCode, message);
     }
