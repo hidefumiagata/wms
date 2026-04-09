@@ -1797,7 +1797,8 @@ public WarehouseResponse update(
 
     // クライアントが送信した version と DB の version を比較
     if (!warehouse.getVersion().equals(request.version())) {
-        throw new OptimisticLockConflictException();
+        log.info("Warehouse optimistic lock conflict: id={}", id);
+        throw OptimisticLockConflictException.standard();
     }
 
     // 更新処理

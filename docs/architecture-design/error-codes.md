@@ -22,7 +22,7 @@
 | `VALIDATION_ERROR` | 400 | 入力バリデーションエラー | 全モジュール |
 | `UNAUTHORIZED` | 401 | 認証エラー | 全モジュール |
 | `FORBIDDEN` | 403 | 権限不足 | 全モジュール |
-| `OPTIMISTIC_LOCK_CONFLICT` | 409 | 楽観的ロック競合 | マスタ管理系 |
+| `OPTIMISTIC_LOCK_CONFLICT` | 409 | 楽観的ロック競合 | 全モジュール (master / system / inbound / inventory / outbound / allocation / returns / batch) |
 | `DUPLICATE_CODE` | 409 | コード重複 | マスタ管理系 |
 | `INVALID_SORT_FIELD` | 400 | 不正なソートフィールド | 一覧取得API |
 | `INTERNAL_SERVER_ERROR` | 500 | サーバー内部エラー | 全モジュール |

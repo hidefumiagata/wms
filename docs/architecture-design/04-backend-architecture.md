@@ -467,9 +467,8 @@ public class WarehouseService {
         try {
             return warehouseRepository.save(warehouse);
         } catch (OptimisticLockingFailureException e) {
-            throw new OptimisticLockConflictException(
-                    "OPTIMISTIC_LOCK_CONFLICT",
-                    "他のユーザーによって更新されています。画面を再読み込みしてください");
+            log.info("Warehouse optimistic lock conflict: id={}", id);
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -1281,9 +1280,8 @@ public Warehouse update(Long id, UpdateWarehouseRequest request) {
 
     // フロントエンドから送られたversionとEntityのversionを事前チェック
     if (!warehouse.getVersion().equals(request.version())) {
-        throw new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによって更新されています。画面を再読み込みしてください");
+        log.info("Warehouse optimistic lock conflict: id={}", id);
+        throw OptimisticLockConflictException.standard();
     }
 
     warehouse.updateFrom(request);
