@@ -68,7 +68,7 @@ public class BuildingService {
         if (!building.getVersion().equals(version)) {
             log.info("Building update version mismatch: id={}, expected={}, actual={}",
                     id, version, building.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         building.setBuildingName(buildingName);
         building.setVersion(version);
@@ -78,7 +78,7 @@ public class BuildingService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Building update OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -88,7 +88,7 @@ public class BuildingService {
         if (!building.getVersion().equals(version)) {
             log.info("Building toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, building.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         if (!isActive && areaRepository.countByBuildingId(id) > 0) {
             // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
@@ -112,15 +112,8 @@ public class BuildingService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Building toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
-    }
-
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
     }
 
     public boolean existsByWarehouseIdAndCode(Long warehouseId, String code) {

@@ -67,7 +67,7 @@ public class UserService {
         if (!user.getVersion().equals(cmd.version())) {
             log.info("User update version mismatch: id={}, expected={}, actual={}",
                     cmd.id(), cmd.version(), user.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         // 自己ロール変更禁止
         if (cmd.currentUserId().equals(cmd.id())
@@ -92,7 +92,7 @@ public class UserService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("User update OL conflict detected at commit: id={}", cmd.id());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -107,7 +107,7 @@ public class UserService {
         if (!user.getVersion().equals(version)) {
             log.info("User toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, user.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性: 既に同じ状態なら更新しない
         if (user.getIsActive().equals(isActive)) {
@@ -122,15 +122,8 @@ public class UserService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("User toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
-    }
-
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
     }
 
     @Transactional

@@ -74,7 +74,7 @@ public class AreaService {
         if (!area.getVersion().equals(version)) {
             log.info("Area update version mismatch: id={}, expected={}, actual={}",
                     id, version, area.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         area.setAreaName(areaName);
         area.setStorageCondition(storageCondition);
@@ -85,7 +85,7 @@ public class AreaService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Area update OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -95,7 +95,7 @@ public class AreaService {
         if (!area.getVersion().equals(version)) {
             log.info("Area toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, area.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         if (!isActive && locationRepository.countByAreaIdAndIsActiveTrue(id) > 0) {
             // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
@@ -119,14 +119,8 @@ public class AreaService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Area toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
-    }
 }

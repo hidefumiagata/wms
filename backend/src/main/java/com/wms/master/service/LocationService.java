@@ -105,7 +105,7 @@ public class LocationService {
         if (!location.getVersion().equals(version)) {
             log.info("Location update version mismatch: id={}, expected={}, actual={}",
                     id, version, location.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         location.setLocationName(locationName);
         location.setVersion(version);
@@ -115,7 +115,7 @@ public class LocationService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Location update OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -125,7 +125,7 @@ public class LocationService {
         if (!location.getVersion().equals(version)) {
             log.info("Location toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, location.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (location.getIsActive().equals(isActive)) {
@@ -162,15 +162,8 @@ public class LocationService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Location toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない (ID 列挙への補助情報を与えない)。
-        // 追跡用の id はログ側 (呼び出し元の log.info) に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
-    }
 }

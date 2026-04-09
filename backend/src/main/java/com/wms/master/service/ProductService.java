@@ -91,7 +91,7 @@ public class ProductService {
         if (!product.getVersion().equals(cmd.version())) {
             log.info("Product update version mismatch: id={}, expected={}, actual={}",
                     cmd.id(), cmd.version(), product.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
 
         boolean lotFlagChanged = !product.getLotManageFlag().equals(cmd.lotManageFlag());
@@ -130,7 +130,7 @@ public class ProductService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Product update OL conflict detected at commit: id={}", cmd.id());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -141,7 +141,7 @@ public class ProductService {
         if (!product.getVersion().equals(version)) {
             log.info("Product toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, product.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
 
         if (!isActive && inventoryService.hasInventoryByProductId(id)) {
@@ -166,15 +166,8 @@ public class ProductService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Product toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
-    }
-
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
     }
 
     public boolean hasInventory(Long productId) {

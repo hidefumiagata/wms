@@ -81,7 +81,7 @@ public class WarehouseService {
         if (!warehouse.getVersion().equals(version)) {
             log.info("Warehouse update version mismatch: id={}, expected={}, actual={}",
                     id, version, warehouse.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         warehouse.setWarehouseName(warehouseName);
         warehouse.setWarehouseNameKana(warehouseNameKana);
@@ -93,7 +93,7 @@ public class WarehouseService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Warehouse update OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
     }
 
@@ -103,7 +103,7 @@ public class WarehouseService {
         if (!warehouse.getVersion().equals(version)) {
             log.info("Warehouse toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, warehouse.getVersion());
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
         if (warehouse.getIsActive().equals(isActive)) {
@@ -131,15 +131,8 @@ public class WarehouseService {
             return saved;
         } catch (ObjectOptimisticLockingFailureException e) {
             log.info("Warehouse toggleActive OL conflict detected at commit: id={}", id);
-            throw optimisticLockConflict();
+            throw OptimisticLockConflictException.standard();
         }
-    }
-
-    private OptimisticLockConflictException optimisticLockConflict() {
-        // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力する。
-        return new OptimisticLockConflictException(
-                "OPTIMISTIC_LOCK_CONFLICT",
-                "他のユーザーによる更新が先行しました");
     }
 
     public boolean existsByCode(String warehouseCode) {
