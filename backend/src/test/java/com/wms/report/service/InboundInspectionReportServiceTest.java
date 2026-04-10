@@ -7,7 +7,6 @@ import com.wms.inbound.entity.InboundSlipLine;
 import com.wms.master.entity.Product;
 import com.wms.master.repository.ProductRepository;
 import com.wms.report.repository.InboundReportRepository;
-import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,8 +22,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -298,13 +299,8 @@ class InboundInspectionReportServiceTest {
         void generate_slipNotFound_throwsResourceNotFoundException() {
             when(inboundReportRepository.findInspectionReportData(999L)).thenReturn(List.of());
 
-            assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("入荷伝票 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("INBOUND_SLIP_NOT_FOUND"));
+            Throwable thrown = catchThrowable(() -> service.generate(999L, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "INBOUND_SLIP_NOT_FOUND", "入荷伝票");
         }
     }
 }

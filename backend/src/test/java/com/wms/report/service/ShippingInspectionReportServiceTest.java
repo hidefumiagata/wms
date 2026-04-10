@@ -8,7 +8,6 @@ import com.wms.outbound.entity.OutboundSlip;
 import com.wms.outbound.repository.OutboundSlipRepository;
 import com.wms.report.repository.OutboundReportRepository;
 import com.wms.report.repository.projection.ShippingInspectionRow;
-import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,7 +26,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -294,17 +294,12 @@ class ShippingInspectionReportServiceTest {
         void generate_slipNotFound_throwsException() {
             when(outboundSlipRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("出荷伝票 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("OUTBOUND_SLIP_NOT_FOUND"));
+            Throwable thrown = catchThrowable(() -> service.generate(999L, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "OUTBOUND_SLIP_NOT_FOUND", "出荷伝票");
         }
 
         @Test
-        @DisplayName("倉庫が存在しない場合はResourceNotFoundException")
+        @DisplayName("倉庫が存在しない場合はResourceNotFoundException (連鎖 lookup: 出荷伝票 1L 成功 → 倉庫 999L 失敗)")
         void generate_warehouseNotFound_throwsException() {
             OutboundSlip slip = OutboundSlip.builder()
                     .id(1L)
@@ -315,13 +310,8 @@ class ShippingInspectionReportServiceTest {
             when(outboundSlipRepository.findById(1L)).thenReturn(Optional.of(slip));
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(1L, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("倉庫 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("WAREHOUSE_NOT_FOUND"));
+            Throwable thrown = catchThrowable(() -> service.generate(1L, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "WAREHOUSE_NOT_FOUND", "倉庫");
         }
     }
 }

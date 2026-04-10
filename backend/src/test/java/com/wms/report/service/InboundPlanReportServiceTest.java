@@ -9,7 +9,6 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.ProductRepository;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.InboundReportRepository;
-import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,8 +26,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
@@ -338,13 +338,9 @@ class InboundPlanReportServiceTest {
         void generate_warehouseNotFound_throwsException() {
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(999L, null, null, null, null, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("倉庫 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("WAREHOUSE_NOT_FOUND"));
+            Throwable thrown = catchThrowable(
+                    () -> service.generate(999L, null, null, null, null, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "WAREHOUSE_NOT_FOUND", "倉庫");
         }
     }
 }

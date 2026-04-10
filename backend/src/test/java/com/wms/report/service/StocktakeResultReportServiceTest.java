@@ -8,7 +8,6 @@ import com.wms.master.entity.Warehouse;
 import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
 import com.wms.report.repository.projection.StocktakeResultRow;
-import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,7 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -384,29 +384,19 @@ class StocktakeResultReportServiceTest {
         void generate_stocktakeNotFound_throwsException() {
             when(stocktakeHeaderRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("棚卸 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("STOCKTAKE_NOT_FOUND"));
+            Throwable stocktakeThrown = catchThrowable(() -> service.generate(999L, ReportFormat.JSON));
+            assertResourceNotFound(stocktakeThrown, "STOCKTAKE_NOT_FOUND", "棚卸");
         }
 
         @Test
-        @DisplayName("倉庫が存在しない場合はResourceNotFoundException")
+        @DisplayName("倉庫が存在しない場合はResourceNotFoundException (連鎖 lookup: 棚卸 10L 成功 → 倉庫 999L 失敗)")
         void generate_warehouseNotFound_throwsException() {
             stocktakeHeader.setWarehouseId(999L);
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(10L, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("倉庫 が見つかりません")
-                    .hasMessageNotContaining("id=")
-                    .hasMessageNotContaining("999")
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("WAREHOUSE_NOT_FOUND"));
+            Throwable thrown = catchThrowable(() -> service.generate(10L, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "WAREHOUSE_NOT_FOUND", "倉庫");
         }
     }
 
