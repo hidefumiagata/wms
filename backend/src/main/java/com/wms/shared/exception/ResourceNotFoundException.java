@@ -44,6 +44,11 @@ public final class ResourceNotFoundException extends WmsException {
      * (CRLF ログインジェクション) リスクがある。文字列 ID をログ出力する場合は呼び出し元で
      * 改行文字をサニタイズしてから渡すこと。</p>
      *
+     * @param errorCode エラーコード文字列 (例: {@code "WAREHOUSE_NOT_FOUND"})。
+     *                  error-codes.md に定義されたリテラルを直接指定すること。
+     * @param resourceName リソース種別名 (例: {@code "倉庫"}, {@code "棚卸"})。
+     *                     コードリテラルのみ許容。ユーザー入力由来の値を渡してはならない
+     *                     (ログインジェクション・メッセージ汚染の防止)。
      * @param id 内部 PK — メッセージには埋め込まれず、ログ出力専用。
      */
     public static ResourceNotFoundException of(String errorCode, String resourceName, Object id) {
