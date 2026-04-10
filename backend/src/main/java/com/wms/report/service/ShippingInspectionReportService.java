@@ -51,12 +51,10 @@ public class ShippingInspectionReportService {
         log.info("RPT-13 出荷検品レポート生成開始: slipId={}, format={}", slipId, format);
 
         OutboundSlip slip = outboundSlipRepository.findById(slipId)
-                .orElseThrow(() -> new ResourceNotFoundException("OUTBOUND_SLIP_NOT_FOUND",
-                        "出荷伝票が見つかりません: slipId=" + slipId));
+                .orElseThrow(() -> ResourceNotFoundException.of("OUTBOUND_SLIP_NOT_FOUND", "出荷伝票", slipId));
 
         Warehouse warehouse = warehouseRepository.findById(slip.getWarehouseId())
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + slip.getWarehouseId()));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", slip.getWarehouseId()));
 
         String warehouseName = formatWarehouseName(warehouse);
 

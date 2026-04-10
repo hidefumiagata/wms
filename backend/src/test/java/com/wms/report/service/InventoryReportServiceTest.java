@@ -252,6 +252,9 @@ class InventoryReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, null, null, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

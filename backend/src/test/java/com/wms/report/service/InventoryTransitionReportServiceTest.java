@@ -255,6 +255,9 @@ class InventoryTransitionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, 100L, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }
@@ -267,6 +270,9 @@ class InventoryTransitionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(1L, 999L, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("商品 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("PRODUCT_NOT_FOUND"));
         }

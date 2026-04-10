@@ -386,6 +386,9 @@ class StocktakeResultReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棚卸 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("STOCKTAKE_NOT_FOUND"));
         }
@@ -399,6 +402,9 @@ class StocktakeResultReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(10L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

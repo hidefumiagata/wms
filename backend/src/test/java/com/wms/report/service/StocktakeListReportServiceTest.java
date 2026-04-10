@@ -290,6 +290,9 @@ class StocktakeListReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, null, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棚卸 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("STOCKTAKE_NOT_FOUND"));
         }
@@ -301,6 +304,9 @@ class StocktakeListReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(null, 999L, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("棟 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("BUILDING_NOT_FOUND"));
         }
@@ -314,6 +320,9 @@ class StocktakeListReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(10L, null, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }
@@ -327,6 +336,9 @@ class StocktakeListReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(null, 5L, null, null, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

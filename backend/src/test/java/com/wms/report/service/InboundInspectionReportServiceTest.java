@@ -300,6 +300,9 @@ class InboundInspectionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("入荷伝票 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("INBOUND_SLIP_NOT_FOUND"));
         }

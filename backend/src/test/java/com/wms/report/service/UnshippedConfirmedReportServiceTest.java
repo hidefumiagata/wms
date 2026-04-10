@@ -305,6 +305,9 @@ class UnshippedConfirmedReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, LocalDate.of(2026, 3, 14), ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

@@ -292,6 +292,9 @@ class PickingInstructionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("ピッキング指示 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("PICKING_NOT_FOUND"));
         }
@@ -310,6 +313,9 @@ class PickingInstructionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(1L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

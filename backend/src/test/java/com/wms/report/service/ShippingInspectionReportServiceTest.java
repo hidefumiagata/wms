@@ -296,6 +296,9 @@ class ShippingInspectionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(999L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("出荷伝票 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("OUTBOUND_SLIP_NOT_FOUND"));
         }
@@ -314,6 +317,9 @@ class ShippingInspectionReportServiceTest {
 
             assertThatThrownBy(() -> service.generate(1L, ReportFormat.JSON))
                     .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("倉庫 が見つかりません")
+                    .hasMessageNotContaining("id=")
+                    .hasMessageNotContaining("999")
                     .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
                             .isEqualTo("WAREHOUSE_NOT_FOUND"));
         }

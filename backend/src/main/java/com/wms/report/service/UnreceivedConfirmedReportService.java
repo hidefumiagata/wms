@@ -49,8 +49,7 @@ public class UnreceivedConfirmedReportService {
         log.info("RPT-06 未入荷リスト（確定）生成開始: warehouseId={}, batchBusinessDate={}, format={}",
                 warehouseId, batchBusinessDate, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         List<UnreceivedListRecord> records = unreceivedListRecordRepository
                 .findByBatchBusinessDateAndWarehouseCode(batchBusinessDate, warehouse.getWarehouseCode());

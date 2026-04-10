@@ -66,11 +66,9 @@ public class StocktakeListReportService {
 
         if (stocktakeId != null) {
             StocktakeHeader header = stocktakeHeaderRepository.findById(stocktakeId)
-                    .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
-                            "棚卸が見つかりません: stocktakeId=" + stocktakeId));
+                    .orElseThrow(() -> ResourceNotFoundException.of("STOCKTAKE_NOT_FOUND", "棚卸", stocktakeId));
             Warehouse warehouse = warehouseRepository.findById(header.getWarehouseId())
-                    .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                            "倉庫が見つかりません: warehouseId=" + header.getWarehouseId()));
+                    .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", header.getWarehouseId()));
             warehouseName = formatWarehouseName(warehouse);
             conditionsSummary = "棚卸番号: " + header.getStocktakeNumber();
             if (header.getTargetDescription() != null) {
@@ -79,11 +77,9 @@ public class StocktakeListReportService {
             rows = stocktakeReportRepository.findStocktakeListByStocktakeId(stocktakeId);
         } else {
             Building building = buildingRepository.findById(buildingId)
-                    .orElseThrow(() -> new ResourceNotFoundException("BUILDING_NOT_FOUND",
-                            "棟が見つかりません: buildingId=" + buildingId));
+                    .orElseThrow(() -> ResourceNotFoundException.of("BUILDING_NOT_FOUND", "棟", buildingId));
             Warehouse warehouse = warehouseRepository.findById(building.getWarehouseId())
-                    .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                            "倉庫が見つかりません: warehouseId=" + building.getWarehouseId()));
+                    .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", building.getWarehouseId()));
             warehouseName = formatWarehouseName(warehouse);
             conditionsSummary = "棟: " + building.getBuildingName() + " (" + building.getBuildingCode() + ") [プレビュー]";
             rows = stocktakeReportRepository.findStocktakeListByBuildingId(buildingId, areaId);

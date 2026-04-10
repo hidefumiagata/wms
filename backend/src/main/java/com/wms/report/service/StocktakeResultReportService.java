@@ -58,12 +58,10 @@ public class StocktakeResultReportService {
         log.info("RPT-11 棚卸結果レポート生成開始: stocktakeId={}, format={}", stocktakeId, format);
 
         StocktakeHeader header = stocktakeHeaderRepository.findById(stocktakeId)
-                .orElseThrow(() -> new ResourceNotFoundException("STOCKTAKE_NOT_FOUND",
-                        "棚卸が見つかりません: stocktakeId=" + stocktakeId));
+                .orElseThrow(() -> ResourceNotFoundException.of("STOCKTAKE_NOT_FOUND", "棚卸", stocktakeId));
 
         Warehouse warehouse = warehouseRepository.findById(header.getWarehouseId())
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + header.getWarehouseId()));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", header.getWarehouseId()));
 
         String warehouseName = formatWarehouseName(warehouse);
 
