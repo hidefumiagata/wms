@@ -521,6 +521,35 @@ class LocationServiceTest {
             assertThatThrownBy(() -> locationService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> locationService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+            verify(locationRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Location existing = createLocation(1L, 10L, 100L, "A-01-A-01-01-01");
+            existing.setVersion(5);
+            when(locationRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> locationService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByLocationId(any());
+            verify(locationRepository, never()).save(any());
+        }
     }
 
     // --- Helpers ---

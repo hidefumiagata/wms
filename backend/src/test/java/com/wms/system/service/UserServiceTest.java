@@ -346,6 +346,34 @@ class UserServiceTest {
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 0, 99L))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setIsActive(false);
+            existing.setVersion(5);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> userService.toggleActive(1L, false, 3, 99L))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反(自己無効化)かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            User existing = createUser(1L, "USR001", "山田太郎");
+            existing.setVersion(5);
+            when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            // currentUserId=1L (自分自身) + isActive=false (自己無効化=BR違反) + version=3 (stale)
+            assertThatThrownBy(() -> userService.toggleActive(1L, false, 3, 1L))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(userRepository, never()).save(any());
+        }
     }
 
     @Nested

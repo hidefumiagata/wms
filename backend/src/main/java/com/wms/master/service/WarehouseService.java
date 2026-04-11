@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,7 +79,7 @@ public class WarehouseService {
     public Warehouse update(Long id, String warehouseName, String warehouseNameKana,
                             String address, Integer version) {
         Warehouse warehouse = findById(id);
-        if (!warehouse.getVersion().equals(version)) {
+        if (!Objects.equals(warehouse.getVersion(), version)) {
             log.info("Warehouse update version mismatch: id={}, expected={}, actual={}",
                     id, version, warehouse.getVersion());
             throw OptimisticLockConflictException.standard();
@@ -86,7 +87,7 @@ public class WarehouseService {
         warehouse.setWarehouseName(warehouseName);
         warehouse.setWarehouseNameKana(warehouseNameKana);
         warehouse.setAddress(address);
-        warehouse.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Warehouse saved = warehouseRepository.save(warehouse);
             log.info("Warehouse updated: id={}, name={}", id, warehouseName);
@@ -100,13 +101,14 @@ public class WarehouseService {
     @Transactional
     public Warehouse toggleActive(Long id, boolean isActive, Integer version) {
         Warehouse warehouse = findById(id);
-        if (!warehouse.getVersion().equals(version)) {
+        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(warehouse.getVersion(), version)) {
             log.info("Warehouse toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, warehouse.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
-        if (warehouse.getIsActive().equals(isActive)) {
+        if (Objects.equals(warehouse.getIsActive(), isActive)) {
             log.info("Warehouse toggleActive no-op: id={}, isActive={}", id, isActive);
             return warehouse;
         }
@@ -124,7 +126,7 @@ public class WarehouseService {
         } else {
             warehouse.deactivate();
         }
-        warehouse.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Warehouse saved = warehouseRepository.save(warehouse);
             log.info("Warehouse toggled: id={}, isActive={}", id, isActive);

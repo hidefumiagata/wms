@@ -461,6 +461,35 @@ class ProductServiceTest {
             assertThatThrownBy(() -> productService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> productService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByProductId(any());
+            verify(productRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Product existing = createProduct(1L, "P-001", "商品A", "AMBIENT");
+            existing.setVersion(5);
+            when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> productService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByProductId(any());
+            verify(productRepository, never()).save(any());
+        }
     }
 
     @Nested

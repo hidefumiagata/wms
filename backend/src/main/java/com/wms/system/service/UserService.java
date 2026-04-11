@@ -10,6 +10,7 @@ import com.wms.system.entity.User;
 import com.wms.system.repository.UserRepository;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +65,7 @@ public class UserService {
     @Transactional
     public User update(UpdateUserCommand cmd) {
         User user = findById(cmd.id());
-        if (!user.getVersion().equals(cmd.version())) {
+        if (!Objects.equals(user.getVersion(), cmd.version())) {
             log.info("User update version mismatch: id={}, expected={}, actual={}",
                     cmd.id(), cmd.version(), user.getVersion());
             throw OptimisticLockConflictException.standard();
@@ -85,7 +86,7 @@ public class UserService {
         user.setEmail(cmd.email());
         user.setRole(cmd.role());
         user.setIsActive(cmd.isActive());
-        user.setVersion(cmd.version());
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             User saved = userRepository.save(user);
             log.info("User updated: id={}, fullName={}", cmd.id(), cmd.fullName());
@@ -99,23 +100,24 @@ public class UserService {
     @Transactional
     public User toggleActive(Long id, boolean isActive, Integer version, Long currentUserId) {
         User user = findById(id);
-        // 自己無効化禁止
-        if (currentUserId.equals(id) && !isActive) {
-            throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_SELF",
-                    "自分自身を無効化することはできません");
-        }
-        if (!user.getVersion().equals(version)) {
+        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(user.getVersion(), version)) {
             log.info("User toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, user.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         // 冪等性: 既に同じ状態なら更新しない
-        if (user.getIsActive().equals(isActive)) {
+        if (Objects.equals(user.getIsActive(), isActive)) {
             log.info("User toggleActive no-op: id={}, isActive={}", id, isActive);
             return user;
         }
+        // 自己無効化禁止
+        if (currentUserId.equals(id) && !isActive) {
+            throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_SELF",
+                    "自分自身を無効化することはできません");
+        }
         user.setIsActive(isActive);
-        user.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             User saved = userRepository.save(user);
             log.info("User toggled: id={}, isActive={}", id, isActive);

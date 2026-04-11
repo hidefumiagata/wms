@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -65,13 +66,13 @@ public class BuildingService {
     @Transactional
     public Building update(Long id, String buildingName, Integer version) {
         Building building = findById(id);
-        if (!building.getVersion().equals(version)) {
+        if (!Objects.equals(building.getVersion(), version)) {
             log.info("Building update version mismatch: id={}, expected={}, actual={}",
                     id, version, building.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         building.setBuildingName(buildingName);
-        building.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Building saved = buildingRepository.save(building);
             log.info("Building updated: id={}, name={}", id, buildingName);
@@ -85,10 +86,15 @@ public class BuildingService {
     @Transactional
     public Building toggleActive(Long id, boolean isActive, Integer version) {
         Building building = findById(id);
-        if (!building.getVersion().equals(version)) {
+        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(building.getVersion(), version)) {
             log.info("Building toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, building.getVersion());
             throw OptimisticLockConflictException.standard();
+        }
+        if (Objects.equals(building.getIsActive(), isActive)) {
+            log.info("Building toggleActive no-op: id={}, isActive={}", id, isActive);
+            return building;
         }
         if (!isActive && areaRepository.countByBuildingId(id) > 0) {
             // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
@@ -96,16 +102,12 @@ public class BuildingService {
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
                     "配下にエリアが存在するため無効化できません");
         }
-        if (building.getIsActive().equals(isActive)) {
-            log.info("Building toggleActive no-op: id={}, isActive={}", id, isActive);
-            return building;
-        }
         if (isActive) {
             building.activate();
         } else {
             building.deactivate();
         }
-        building.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Building saved = buildingRepository.save(building);
             log.info("Building toggled: id={}, isActive={}", id, isActive);

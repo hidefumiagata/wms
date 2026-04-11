@@ -316,6 +316,35 @@ class WarehouseServiceTest {
             assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByWarehouseId(any());
+            verify(warehouseRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Warehouse existing = createWarehouse(1L, "WARA", "東京DC");
+            existing.setVersion(5);
+            when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(inventoryService, never()).hasInventoryByWarehouseId(any());
+            verify(warehouseRepository, never()).save(any());
+        }
     }
 
     @Nested
