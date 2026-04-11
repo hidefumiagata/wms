@@ -310,20 +310,39 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-1", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("-1");
+                .hasMessageContaining("-1")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
     }
 
     @Test
-    @DisplayName("updateValue: INTEGER型 — 負値(-100)でBusinessRuleViolationException")
-    void updateValue_integerType_largeNegativeValue_throwsBusinessRuleViolation() {
+    @DisplayName("updateValue: INTEGER型 — Integer.MIN_VALUE境界でBusinessRuleViolationException")
+    void updateValue_integerType_minIntValue_throwsBusinessRuleViolation() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
         when(systemParameterRepository.findByParamKey("TIMEOUT"))
                 .thenReturn(Optional.of(param));
 
-        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-100", 0))
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-2147483648", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("-100");
+                .hasMessageContaining("-2147483648")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 小数値(1.5)でBusinessRuleViolationException")
+    void updateValue_integerType_decimalValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "1.5", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("1.5")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
     }
 
     @Test
