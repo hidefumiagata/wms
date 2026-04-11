@@ -161,6 +161,23 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("無効商品を含む伝票作成 → 422")
+        void create_inactiveProduct_returns422() throws Exception {
+            try {
+                jdbcTemplate.update("UPDATE products SET is_active = false WHERE id = ?", productId);
+                String body = createSlipBody(productId, "PIECE", 100, null, null);
+
+                ResponseEntity<String> response = postJson(BASE_URL, body, adminHeaders);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                JsonNode json = parseJson(response.getBody());
+                assertThat(json.get("code").asText()).isEqualTo("PRODUCT_INACTIVE");
+            } finally {
+                jdbcTemplate.update("UPDATE products SET is_active = true WHERE id = ?", productId);
+            }
+        }
+
+        @Test
         @DisplayName("SC-INB-005: 必須フィールド未入力 → 400")
         void create_missingRequiredFields_returns400() throws Exception {
             String body = """
@@ -919,6 +936,31 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
             JsonNode json = parseJson(response.getBody());
             assertThat(json.get("code").asText()).isEqualTo("AREA_NOT_INBOUND");
+        }
+
+        @Test
+        @DisplayName("棚卸中ロケーションへの入庫 → 422")
+        void store_stocktakeLockedLocation_returns422() throws Exception {
+            Long slipId = createTestSlip();
+            confirmSlip(slipId);
+            Long lineId = getFirstLineId(slipId);
+            inspectLine(slipId, lineId, 100);
+
+            try {
+                jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = true WHERE id = ?", inboundLocationId);
+
+                String body = String.format("""
+                        { "lines": [{ "lineId": %d, "locationId": %d }] }
+                        """, lineId, inboundLocationId);
+
+                ResponseEntity<String> response = postJson(BASE_URL + "/" + slipId + "/store", body, adminHeaders);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                JsonNode json = parseJson(response.getBody());
+                assertThat(json.get("code").asText()).isEqualTo("LOCATION_STOCKTAKE_LOCKED");
+            } finally {
+                jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false WHERE id = ?", inboundLocationId);
+            }
         }
 
         @Test
