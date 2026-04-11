@@ -61,6 +61,11 @@ public class SystemParameterService {
         }
     }
 
+    /** ログインジェクション防止のため改行・タブ文字を除去する */
+    private String sanitize(String value) {
+        return value.replaceAll("[\r\n\t]", "_");
+    }
+
     private void validateParamValue(SystemParameter param, String newValue) {
         if (newValue == null) {
             throw new BusinessRuleViolationException(
@@ -73,12 +78,12 @@ public class SystemParameterService {
                 if (parsed < 0) {
                     throw new BusinessRuleViolationException(
                             "INVALID_PARAM_VALUE",
-                            "INTEGER型パラメータに負の値は設定できません: " + newValue);
+                            "INTEGER型パラメータに負の値は設定できません: " + sanitize(newValue));
                 }
             } catch (NumberFormatException e) {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "INTEGER型パラメータに不正な値: " + newValue);
+                        "INTEGER型パラメータに不正な値: " + sanitize(newValue));
             }
         } else if ("STRING".equals(param.getValueType())) {
             if (newValue.isBlank()) {
@@ -95,7 +100,7 @@ public class SystemParameterService {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "BOOLEAN型パラメータに不正な値: " + newValue);
+                        "BOOLEAN型パラメータに不正な値: " + sanitize(newValue));
             }
         }
     }
