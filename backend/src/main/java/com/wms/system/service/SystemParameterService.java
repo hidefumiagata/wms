@@ -74,6 +74,11 @@ public class SystemParameterService {
                         "INVALID_PARAM_VALUE",
                         "STRING型パラメータに空の値は設定できません");
             }
+            if (newValue.length() > 500) {
+                throw new BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "STRING型パラメータは500文字以内で入力してください");
+            }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
                 throw new BusinessRuleViolationException(

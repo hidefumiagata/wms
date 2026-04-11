@@ -247,6 +247,34 @@ class SystemParameterServiceTest {
     }
 
     @Test
+    @DisplayName("updateValue: STRING型 — 501文字でBusinessRuleViolationException")
+    void updateValue_stringType_over500chars_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+
+        String longValue = "a".repeat(501);
+        assertThatThrownBy(() -> systemParameterService.updateValue("NAME", longValue, 0))
+                .isInstanceOf(BusinessRuleViolationException.class);
+    }
+
+    @Test
+    @DisplayName("updateValue: STRING型 — 500文字ちょうどは成功")
+    void updateValue_stringType_exactly500chars_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        String exactValue = "a".repeat(500);
+        SystemParameter result = systemParameterService.updateValue("NAME", exactValue, 0);
+        assertThat(result.getParamValue()).isEqualTo(exactValue);
+    }
+
+    @Test
     void updateValue_optimisticLockConflict_throwsException() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("KEY1").paramValue("V1").build();
