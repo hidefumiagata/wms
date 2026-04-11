@@ -221,6 +221,86 @@ class SystemParameterServiceTest {
     }
 
     @Test
+    @DisplayName("updateValue: STRING型 — 空文字でBusinessRuleViolationException")
+    void updateValue_stringType_emptyValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("NAME", "", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("STRING");
+    }
+
+    @Test
+    @DisplayName("updateValue: STRING型 — nullでBusinessRuleViolationException")
+    void updateValue_stringType_nullValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("NAME", null, 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("null");
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — nullでBusinessRuleViolationException")
+    void updateValue_integerType_nullValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", null, 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("null");
+    }
+
+    @Test
+    @DisplayName("updateValue: BOOLEAN型 — nullでBusinessRuleViolationException")
+    void updateValue_booleanType_nullValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("FEATURE_FLAG").paramValue("true").valueType("BOOLEAN").build();
+        when(systemParameterRepository.findByParamKey("FEATURE_FLAG"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("FEATURE_FLAG", null, 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("null");
+    }
+
+    @Test
+    @DisplayName("updateValue: STRING型 — 501文字でBusinessRuleViolationException")
+    void updateValue_stringType_over500chars_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+
+        String longValue = "a".repeat(501);
+        assertThatThrownBy(() -> systemParameterService.updateValue("NAME", longValue, 0))
+                .isInstanceOf(BusinessRuleViolationException.class);
+    }
+
+    @Test
+    @DisplayName("updateValue: STRING型 — 500文字ちょうどは成功")
+    void updateValue_stringType_exactly500chars_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        String exactValue = "a".repeat(500);
+        SystemParameter result = systemParameterService.updateValue("NAME", exactValue, 0);
+        assertThat(result.getParamValue()).isEqualTo(exactValue);
+    }
+
+    @Test
     void updateValue_optimisticLockConflict_throwsException() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("KEY1").paramValue("V1").build();

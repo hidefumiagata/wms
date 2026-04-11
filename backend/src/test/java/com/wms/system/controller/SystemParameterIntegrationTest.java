@@ -34,7 +34,7 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
     void setUp() {
         // テストで変更したパラメータ値・バージョンを初期値に戻す
         jdbcTemplate.update(
-                "UPDATE system_parameters SET param_value = default_value, version = 0 WHERE param_key IN ('LOCATION_CAPACITY_CASE', 'SESSION_TIMEOUT_MINUTES')");
+                "UPDATE system_parameters SET param_value = default_value, version = 0 WHERE param_key IN ('LOCATION_CAPACITY_CASE', 'SESSION_TIMEOUT_MINUTES', 'DEFAULT_WAREHOUSE_CODE', 'AUTO_ALLOCATE_ON_OUTBOUND')");
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
     }
 
@@ -409,6 +409,158 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
                     request, String.class);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("SC-003: STRING型パラメータの値を正常に更新できる")
+        void update_stringParam_returns200() throws Exception {
+            Integer version = getVersion("DEFAULT_WAREHOUSE_CODE");
+            String body = String.format("""
+                    { "paramValue": "updated-string-value", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/DEFAULT_WAREHOUSE_CODE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("paramKey").asText()).isEqualTo("DEFAULT_WAREHOUSE_CODE");
+            assertThat(json.get("paramValue").asText()).isEqualTo("updated-string-value");
+            assertThat(json.get("valueType").asText()).isEqualTo("STRING");
+
+            // DB検証
+            var dbRow = jdbcTemplate.queryForMap(
+                    "SELECT param_value, updated_by FROM system_parameters WHERE param_key = 'DEFAULT_WAREHOUSE_CODE'");
+            assertThat(dbRow.get("param_value")).isEqualTo("updated-string-value");
+            assertThat(dbRow.get("updated_by")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("SC-004: BOOLEAN型パラメータの値を正常に更新できる")
+        void update_booleanParam_returns200() throws Exception {
+            Integer version = getVersion("AUTO_ALLOCATE_ON_OUTBOUND");
+            String body = String.format("""
+                    { "paramValue": "false", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/AUTO_ALLOCATE_ON_OUTBOUND", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("paramKey").asText()).isEqualTo("AUTO_ALLOCATE_ON_OUTBOUND");
+            assertThat(json.get("paramValue").asText()).isEqualTo("false");
+            assertThat(json.get("valueType").asText()).isEqualTo("BOOLEAN");
+
+            // DB検証
+            var dbRow = jdbcTemplate.queryForMap(
+                    "SELECT param_value, updated_by FROM system_parameters WHERE param_key = 'AUTO_ALLOCATE_ON_OUTBOUND'");
+            assertThat(dbRow.get("param_value")).isEqualTo("false");
+            assertThat(dbRow.get("updated_by")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("SC-004: BOOLEAN型パラメータ — 大文字FALSEが小文字正規化される")
+        void update_booleanParam_uppercaseNormalized() throws Exception {
+            Integer version = getVersion("AUTO_ALLOCATE_ON_OUTBOUND");
+            String body = String.format("""
+                    { "paramValue": "FALSE", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/AUTO_ALLOCATE_ON_OUTBOUND", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("paramValue").asText()).isEqualTo("false"); // 小文字正規化
+
+            // DB検証
+            String dbValue = jdbcTemplate.queryForObject(
+                    "SELECT param_value FROM system_parameters WHERE param_key = 'AUTO_ALLOCATE_ON_OUTBOUND'",
+                    String.class);
+            assertThat(dbValue).isEqualTo("false");
+        }
+
+        @Test
+        @DisplayName("SC-010: STRING型に501文字 → 422")
+        void update_stringOver500chars_returns422() throws Exception {
+            Integer version = getVersion("DEFAULT_WAREHOUSE_CODE");
+            String longValue = "a".repeat(501);
+            String body = String.format("""
+                    { "paramValue": "%s", "version": %d }
+                    """, longValue, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/DEFAULT_WAREHOUSE_CODE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVALID_PARAM_VALUE");
+
+            // DB検証: 値が変わっていない
+            String dbValue = jdbcTemplate.queryForObject(
+                    "SELECT param_value FROM system_parameters WHERE param_key = 'DEFAULT_WAREHOUSE_CODE'",
+                    String.class);
+            assertThat(dbValue).isEqualTo("WH001");
+        }
+
+        @Test
+        @DisplayName("BOOLEAN型に不正値 → 422")
+        void update_booleanInvalidValue_returns422() throws Exception {
+            Integer version = getVersion("AUTO_ALLOCATE_ON_OUTBOUND");
+            String body = String.format("""
+                    { "paramValue": "yes", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/AUTO_ALLOCATE_ON_OUTBOUND", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVALID_PARAM_VALUE");
+
+            // DB検証: 値が変わっていない
+            String dbValue = jdbcTemplate.queryForObject(
+                    "SELECT param_value FROM system_parameters WHERE param_key = 'AUTO_ALLOCATE_ON_OUTBOUND'",
+                    String.class);
+            assertThat(dbValue).isEqualTo("true");
+        }
+
+        @Test
+        @DisplayName("SC-010: STRING型に空文字 → 422")
+        void update_stringEmptyValue_returns422() throws Exception {
+            Integer version = getVersion("DEFAULT_WAREHOUSE_CODE");
+            String body = String.format("""
+                    { "paramValue": "", "version": %d }
+                    """, version);
+
+            HttpEntity<String> request = new HttpEntity<>(body, adminHeaders);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    BASE_URL + "/DEFAULT_WAREHOUSE_CODE", HttpMethod.PUT,
+                    request, String.class);
+
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+            JsonNode json = parseJson(response.getBody());
+            assertThat(json.get("code").asText()).isEqualTo("INVALID_PARAM_VALUE");
+
+            // DB検証: 値が変わっていない
+            String dbValue = jdbcTemplate.queryForObject(
+                    "SELECT param_value FROM system_parameters WHERE param_key = 'DEFAULT_WAREHOUSE_CODE'",
+                    String.class);
+            assertThat(dbValue).isEqualTo("WH001");
         }
     }
 

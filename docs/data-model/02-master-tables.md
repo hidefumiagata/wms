@@ -205,7 +205,7 @@
 | `default_value` | varchar(500) | NOT NULL | — | デフォルト値（画面表示用） |
 | `display_name` | varchar(200) | NOT NULL | — | 画面表示名 |
 | `category` | varchar(50) | NOT NULL | — | カテゴリ（画面グルーピング用） |
-| `value_type` | varchar(20) | NOT NULL | — | 値の型: `INTEGER` / `STRING` |
+| `value_type` | varchar(20) | NOT NULL | — | 値の型: `INTEGER` / `STRING` / `BOOLEAN` |
 | `description` | varchar(500) | NULL | — | 説明 |
 | `display_order` | int | NOT NULL | 0 | 画面表示順 |
 | `version` | integer | NOT NULL | 0 | 楽観的ロック用バージョン番号（JPA `@Version`） |
@@ -225,6 +225,8 @@
 | `LOGIN_FAILURE_LOCK_COUNT` | `5` | `5` | ログイン失敗ロック回数 | `SECURITY` | `INTEGER` | 連続ログイン失敗でアカウントをロックする回数 |
 | `SESSION_TIMEOUT_MINUTES` | `60` | `60` | セッションタイムアウト（分） | `SECURITY` | `INTEGER` | 最終操作からセッションが失効するまでの時間（分） |
 | `PASSWORD_RESET_EXPIRY_MINUTES` | `30` | `30` | パスワードリセットリンク有効期限（分） | `SECURITY` | `INTEGER` | パスワードリセットリンクの有効期限（分） |
+| `DEFAULT_WAREHOUSE_CODE` | `WH001` | `WH001` | デフォルト倉庫コード | `SYSTEM` | `STRING` | システム全体のデフォルト倉庫コード |
+| `AUTO_ALLOCATE_ON_OUTBOUND` | `true` | `true` | 出庫時自動引当 | `OUTBOUND` | `BOOLEAN` | 出庫指示登録時に在庫自動引当を行うかどうか |
 
 ---
 

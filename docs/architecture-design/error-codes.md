@@ -170,6 +170,7 @@
 | エラーコード | HTTPステータス | 説明 |
 |---|---|---|
 | `SYSTEM_PARAMETER_NOT_FOUND` | 404 | システムパラメータが見つからない |
+| `INVALID_PARAM_VALUE` | 422 | パラメータ値がnull、または`valueType`に対して不正（INTEGER: 非整数、STRING: 空文字/500文字超過、BOOLEAN: true/false以外） |
 
 ---
 

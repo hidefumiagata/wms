@@ -19,6 +19,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class SystemParameterService {
 
+    private static final int STRING_MAX_LENGTH = 500;
+
     private final SystemParameterRepository systemParameterRepository;
 
     public List<SystemParameter> findAll() {
@@ -60,6 +62,11 @@ public class SystemParameterService {
     }
 
     private void validateParamValue(SystemParameter param, String newValue) {
+        if (newValue == null) {
+            throw new BusinessRuleViolationException(
+                    "INVALID_PARAM_VALUE",
+                    "パラメータ値にnullは設定できません");
+        }
         if ("INTEGER".equals(param.getValueType())) {
             try {
                 Integer.parseInt(newValue);
@@ -67,6 +74,17 @@ public class SystemParameterService {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "INTEGER型パラメータに不正な値: " + newValue);
+            }
+        } else if ("STRING".equals(param.getValueType())) {
+            if (newValue.isBlank()) {
+                throw new BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "STRING型パラメータに空の値は設定できません");
+            }
+            if (newValue.length() > STRING_MAX_LENGTH) {
+                throw new BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "STRING型パラメータは" + STRING_MAX_LENGTH + "文字以内で入力してください");
             }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
