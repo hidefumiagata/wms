@@ -595,7 +595,7 @@ GET /api/v1/master/warehouses/exists?warehouseCode=WH-001
 |-------------|-----------|--------|
 | `400 Bad Request` | `VALIDATION_ERROR` | `warehouseCode` が未指定 |
 | `401 Unauthorized` | `UNAUTHORIZED` | 未認証 |
-| `403 Forbidden` | `FORBIDDEN` | SYSTEM_ADMIN / WAREHOUSE_MANAGER 以外のロールでのアクセス |
+| `403 Forbidden` | `FORBIDDEN` | 権限不足（対象ロール以外でのアクセス） |
 
 ### 4. 業務ロジック
 

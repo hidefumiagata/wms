@@ -90,7 +90,7 @@ public class WarehouseController implements MasterWarehouseApi {
         return ResponseEntity.created(location).body(toDetail(created));
     }
 
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     @Override
     public ResponseEntity<WarehouseDetail> getWarehouse(Long id) {
         Warehouse warehouse = warehouseService.findById(id);
