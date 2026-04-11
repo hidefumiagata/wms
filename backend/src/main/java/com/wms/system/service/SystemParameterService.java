@@ -68,6 +68,12 @@ public class SystemParameterService {
                         "INVALID_PARAM_VALUE",
                         "INTEGER型パラメータに不正な値: " + newValue);
             }
+        } else if ("STRING".equals(param.getValueType())) {
+            if (newValue == null || newValue.isBlank()) {
+                throw new BusinessRuleViolationException(
+                        "INVALID_PARAM_VALUE",
+                        "STRING型パラメータに空の値は設定できません");
+            }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
                 throw new BusinessRuleViolationException(

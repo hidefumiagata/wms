@@ -221,6 +221,19 @@ class SystemParameterServiceTest {
     }
 
     @Test
+    @DisplayName("updateValue: STRING型 — 空文字でBusinessRuleViolationException")
+    void updateValue_stringType_emptyValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("NAME").paramValue("old").valueType("STRING").build();
+        when(systemParameterRepository.findByParamKey("NAME"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("NAME", "", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("STRING");
+    }
+
+    @Test
     void updateValue_optimisticLockConflict_throwsException() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("KEY1").paramValue("V1").build();
