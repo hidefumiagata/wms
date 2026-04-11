@@ -1210,6 +1210,8 @@ class InboundSlipServiceTest {
     @DisplayName("inspect")
     class InspectTests {
 
+        private static final LocalDate TODAY = LocalDate.of(2026, 3, 22);
+
         @AfterEach
         void clearSecurityContext() {
             SecurityContextHolder.clearContext();
@@ -1455,6 +1457,86 @@ class InboundSlipServiceTest {
                     .hasMessageNotContaining("lineId=")
                     .hasMessageNotContaining("id=")
                     .extracting("errorCode").isEqualTo("INBOUND_INSPECTED_QTY_NEGATIVE");
+        }
+
+        @Test
+        @DisplayName("期限切れ商品は検品できない（SC-INB-042）")
+        void inspect_expiredExpiryDate_throws() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(50)
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
+                    .expiryDate(TODAY) // 営業日当日 → 期限切れ
+                    .build();
+            setField(line, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(line);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.CONFIRMED.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(businessDateProvider.today()).thenReturn(TODAY);
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            assertThatThrownBy(() -> inboundSlipService.inspect(1L, request))
+                    .isInstanceOf(BusinessRuleViolationException.class)
+                    .extracting("errorCode").isEqualTo("EXPIRY_DATE_EXPIRED");
+        }
+
+        @Test
+        @DisplayName("期限切れでない商品（翌日以降）は検品できる")
+        void inspect_validExpiryDate_success() {
+            setUpSecurityContext(10L);
+
+            InboundSlipLine line = InboundSlipLine.builder()
+                    .lineNo(1)
+                    .productId(100L)
+                    .productCode("PRD-0001")
+                    .productName("商品A")
+                    .unitType("CASE")
+                    .plannedQty(50)
+                    .lineStatus(InboundLineStatus.PENDING.getValue())
+                    .expiryDate(TODAY.plusDays(1)) // 営業日翌日 → OK
+                    .build();
+            setField(line, "id", 11L);
+
+            List<InboundSlipLine> lines = new ArrayList<>();
+            lines.add(line);
+
+            InboundSlip slip = InboundSlip.builder()
+                    .slipNumber("INB-20260322-0001")
+                    .status(InboundSlipStatus.CONFIRMED.getValue())
+                    .warehouseId(1L)
+                    .lines(lines)
+                    .build();
+            setField(slip, "id", 1L);
+
+            when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
+            when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(businessDateProvider.today()).thenReturn(TODAY);
+
+            InspectInboundRequest request = new InspectInboundRequest()
+                    .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
+
+            InboundSlip result = inboundSlipService.inspect(1L, request);
+
+            assertThat(result.getStatus()).isEqualTo(InboundSlipStatus.INSPECTING.getValue());
+            assertThat(result.getLines().get(0).getInspectedQty()).isEqualTo(48);
         }
 
     }

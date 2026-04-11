@@ -385,6 +385,14 @@ public class InboundSlipService {
                         "検品数は0以上である必要があります");
             }
 
+            // 期限切れチェック（SC-INB-042）
+            if (line.getExpiryDate() != null && !line.getExpiryDate().isAfter(businessDateProvider.today())) {
+                log.info("InboundSlip inspect expiry date expired: slipId={}, lineId={}, expiryDate={}, businessDate={}",
+                        id, line.getId(), line.getExpiryDate(), businessDateProvider.today());
+                throw new BusinessRuleViolationException("EXPIRY_DATE_EXPIRED",
+                        "賞味期限が営業日以前のため入荷できません");
+            }
+
             line.setInspectedQty(lineReq.getInspectedQty());
             line.setLineStatus(InboundLineStatus.INSPECTED.getValue());
             line.setInspectedAt(now);
