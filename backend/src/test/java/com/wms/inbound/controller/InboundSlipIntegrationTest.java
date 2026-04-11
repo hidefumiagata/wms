@@ -63,6 +63,10 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
         jdbcTemplate.update("DELETE FROM inbound_slip_lines");
         jdbcTemplate.update("DELETE FROM inbound_slips");
 
+        // テスト汚染防止: is_active / is_stocktaking_locked を必ず初期値に戻す（try/finally の二重安全網）
+        jdbcTemplate.update("UPDATE products SET is_active = true WHERE id = ?", productId);
+        jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false WHERE id = ?", inboundLocationId);
+
         adminHeaders = loginAndGetHeaders(ADMIN_CODE, ADMIN_PASSWORD);
         plannedDate = LocalDate.now().plusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE);
     }
@@ -172,6 +176,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                 JsonNode json = parseJson(response.getBody());
                 assertThat(json.get("code").asText()).isEqualTo("PRODUCT_INACTIVE");
+                assertThat(json.has("traceId")).isTrue();
             } finally {
                 jdbcTemplate.update("UPDATE products SET is_active = true WHERE id = ?", productId);
             }
@@ -958,6 +963,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
                 JsonNode json = parseJson(response.getBody());
                 assertThat(json.get("code").asText()).isEqualTo("LOCATION_STOCKTAKE_LOCKED");
+                assertThat(json.has("traceId")).isTrue();
             } finally {
                 jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false WHERE id = ?", inboundLocationId);
             }
