@@ -177,6 +177,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                 JsonNode json = parseJson(response.getBody());
                 assertThat(json.get("code").asText()).isEqualTo("PRODUCT_INACTIVE");
                 assertThat(json.has("traceId")).isTrue();
+                assertThat(json.get("message").asText()).doesNotContain("at com.wms");
             } finally {
                 jdbcTemplate.update("UPDATE products SET is_active = true WHERE id = ?", productId);
             }
@@ -964,6 +965,7 @@ class InboundSlipIntegrationTest extends IntegrationTestBase {
                 JsonNode json = parseJson(response.getBody());
                 assertThat(json.get("code").asText()).isEqualTo("LOCATION_STOCKTAKE_LOCKED");
                 assertThat(json.has("traceId")).isTrue();
+                assertThat(json.get("message").asText()).doesNotContain("at com.wms");
             } finally {
                 jdbcTemplate.update("UPDATE locations SET is_stocktaking_locked = false WHERE id = ?", inboundLocationId);
             }
