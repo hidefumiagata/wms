@@ -242,20 +242,26 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_STAFF")
-    @DisplayName("WAREHOUSE_STAFFがGET一覧すると403を返す")
-    void list_warehouseStaff_returns403() throws Exception {
+    @DisplayName("WAREHOUSE_STAFFがGET一覧すると200を返す")
+    void list_warehouseStaff_returns200() throws Exception {
+        when(warehouseService.search(any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
         mockMvc.perform(get(BASE_URL)
                         .header("X-Requested-With", "XMLHttpRequest"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "VIEWER")
-    @DisplayName("VIEWERがGET一覧すると403を返す")
-    void list_viewer_returns403() throws Exception {
+    @DisplayName("VIEWERがGET一覧すると200を返す")
+    void list_viewer_returns200() throws Exception {
+        when(warehouseService.search(any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
         mockMvc.perform(get(BASE_URL)
                         .header("X-Requested-With", "XMLHttpRequest"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -318,6 +324,16 @@ class WarehouseControllerAuthTest {
     @WithMockUser(roles = "WAREHOUSE_STAFF")
     @DisplayName("WAREHOUSE_STAFFがGET存在確認すると403を返す")
     void exists_warehouseStaff_returns403() throws Exception {
+        mockMvc.perform(get(BASE_URL + "/exists")
+                        .header("X-Requested-With", "XMLHttpRequest")
+                        .param("warehouseCode", "TKYO"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "VIEWER")
+    @DisplayName("VIEWERがGET存在確認すると403を返す")
+    void exists_viewer_returns403() throws Exception {
         mockMvc.perform(get(BASE_URL + "/exists")
                         .header("X-Requested-With", "XMLHttpRequest")
                         .param("warehouseCode", "TKYO"))

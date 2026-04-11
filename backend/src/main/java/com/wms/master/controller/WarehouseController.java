@@ -43,7 +43,7 @@ public class WarehouseController implements MasterWarehouseApi {
      * 倉庫一覧取得。all=true の場合はプルダウン用の全件リスト（WarehousePageResponseでラップ）、
      * それ以外はページング形式で返却する。
      */
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN', 'WAREHOUSE_MANAGER')")
+    @PreAuthorize("isAuthenticated()")
     @Override
     public ResponseEntity<ListWarehouses200Response> listWarehouses(
             String warehouseCode,
