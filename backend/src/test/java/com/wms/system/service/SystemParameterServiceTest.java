@@ -303,7 +303,7 @@ class SystemParameterServiceTest {
     }
 
     @Test
-    @DisplayName("updateValue: INTEGER型 — 負値(-1)でBusinessRuleViolationException")
+    @DisplayName("updateValue: INTEGER型 — 負値(-1)でBusinessRuleViolationException（先頭ゼロ禁止正規表現で拒否）")
     void updateValue_integerType_negativeValue_throwsBusinessRuleViolation() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
@@ -312,14 +312,14 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-1", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("INTEGER型パラメータに負の値は設定できません")
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
                 .hasMessageNotContaining("-1")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
     }
 
     @Test
-    @DisplayName("updateValue: INTEGER型 — Integer.MIN_VALUE境界でBusinessRuleViolationException")
+    @DisplayName("updateValue: INTEGER型 — Integer.MIN_VALUE境界でBusinessRuleViolationException（先頭ゼロ禁止正規表現で拒否）")
     void updateValue_integerType_minIntValue_throwsBusinessRuleViolation() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
@@ -328,7 +328,7 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-2147483648", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("INTEGER型パラメータに負の値は設定できません")
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
                 .hasMessageNotContaining("-2147483648")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
@@ -346,6 +346,36 @@ class SystemParameterServiceTest {
                 .isInstanceOf(BusinessRuleViolationException.class)
                 .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
                 .hasMessageNotContaining("1.5")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 先頭ゼロ付き'00'でBusinessRuleViolationException")
+    void updateValue_integerType_leadingZero_00_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "00", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 先頭ゼロ付き'01'でBusinessRuleViolationException")
+    void updateValue_integerType_leadingZero_01_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "01", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
     }
