@@ -68,30 +68,41 @@ public class SystemParameterService {
                     "パラメータ値にnullは設定できません");
         }
         if ("INTEGER".equals(param.getValueType())) {
-            try {
-                Integer.parseInt(newValue);
-            } catch (NumberFormatException e) {
+            // 設計書: ^[1-9][0-9]*$ または 0（先頭ゼロ禁止、負値禁止）
+            if (!newValue.matches("^(0|[1-9][0-9]*)$")) {
+                log.warn("INVALID_PARAM_VALUE: INTEGER type invalid value rejected: key={}, value={}",
+                        param.getParamKey(), sanitize(newValue));
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "INTEGER型パラメータに不正な値: " + newValue);
+                        "INTEGER型パラメータに不正な値が指定されました");
             }
         } else if ("STRING".equals(param.getValueType())) {
             if (newValue.isBlank()) {
+                log.warn("INVALID_PARAM_VALUE: STRING type blank value rejected: key={}", param.getParamKey());
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "STRING型パラメータに空の値は設定できません");
             }
             if (newValue.length() > STRING_MAX_LENGTH) {
+                log.warn("INVALID_PARAM_VALUE: STRING type value too long rejected: key={}, length={}",
+                        param.getParamKey(), newValue.length());
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "STRING型パラメータは" + STRING_MAX_LENGTH + "文字以内で入力してください");
             }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
+                log.warn("INVALID_PARAM_VALUE: BOOLEAN type invalid value rejected: key={}, value={}",
+                        param.getParamKey(), sanitize(newValue));
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "BOOLEAN型パラメータに不正な値: " + newValue);
+                        "BOOLEAN型パラメータに不正な値が指定されました");
             }
         }
+    }
+
+    /** ログインジェクション防止のため改行・タブ文字を除去する */
+    private String sanitize(String value) {
+        return value.replaceAll("[\r\n\t]", "_");
     }
 }

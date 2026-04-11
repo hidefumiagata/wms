@@ -189,7 +189,7 @@ flowchart TD
 
 | HTTPステータス | エラーコード | 発生条件 |
 |-------------|-----------|---------|
-| `400 Bad Request` | `VALIDATION_ERROR` | `paramValue` が未指定、または `valueType` に対して不正な値 |
+| `422 Unprocessable Entity` | `INVALID_PARAM_VALUE` | `paramValue` が未指定（null）、または `valueType` に対して不正な値 |
 | `401 Unauthorized` | `UNAUTHORIZED` | 未認証 |
 | `403 Forbidden` | `FORBIDDEN` | SYSTEM_ADMIN 以外のロールでアクセス |
 | `404 Not Found` | `SYSTEM_PARAMETER_NOT_FOUND` | 指定した `paramKey` が存在しない |
@@ -198,14 +198,8 @@ flowchart TD
 
 ```json
 {
-  "errorCode": "VALIDATION_ERROR",
-  "message": "入力内容に誤りがあります",
-  "details": [
-    {
-      "field": "paramValue",
-      "message": "正の整数を入力してください"
-    }
-  ]
+  "errorCode": "INVALID_PARAM_VALUE",
+  "message": "パラメータ値が不正です"
 }
 ```
 
@@ -223,7 +217,7 @@ flowchart TD
     FETCH -->|存在しない| ERR_404[404 SYSTEM_PARAMETER_NOT_FOUND]
     FETCH -->|存在する| VALIDATE[paramValue バリデーション\nvalueTypeに応じた型チェック]
 
-    VALIDATE -->|NG| ERR_400[400 VALIDATION_ERROR\n詳細エラーを返す]
+    VALIDATE -->|NG| ERR_422[422 INVALID_PARAM_VALUE\nエラーを返す]
     VALIDATE -->|OK| UPDATE["UPDATE system_parameters SET<br/>- param_value = :paramValue<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE param_key = :paramKey"]
 
     UPDATE --> END([200 OK + 更新後パラメータオブジェクト])
@@ -234,9 +228,9 @@ flowchart TD
 | # | ルール | エラーコード |
 |---|--------|------------|
 | 1 | 指定された `paramKey` に一致するパラメータが存在しない場合は404を返す | `SYSTEM_PARAMETER_NOT_FOUND` |
-| 2 | `valueType = INTEGER` の場合、`paramValue` は正の整数（0以上の整数）であること | `VALIDATION_ERROR` |
-| 3 | `valueType = STRING` の場合、`paramValue` は1文字以上500文字以内であること | `VALIDATION_ERROR` |
-| 3a | `valueType = BOOLEAN` の場合、`paramValue` は `true` または `false`（大文字小文字を区別しない）であること | `VALIDATION_ERROR` |
+| 2 | `valueType = INTEGER` の場合、`paramValue` は正の整数（0以上の整数）であること | `INVALID_PARAM_VALUE` |
+| 3 | `valueType = STRING` の場合、`paramValue` は1文字以上500文字以内であること | `INVALID_PARAM_VALUE` |
+| 3a | `valueType = BOOLEAN` の場合、`paramValue` は `true` または `false`（大文字小文字を区別しない）であること | `INVALID_PARAM_VALUE` |
 | 4 | `paramKey`・`defaultValue`・`displayName`・`category`・`valueType`・`description` は更新不可（`paramValue` のみ更新対象） | — |
 
 ---
@@ -258,7 +252,7 @@ flowchart TD
 |-----------|-------------|--------|------|
 | `UNAUTHORIZED` | 401 | 全API | 未認証（Cookieなし・JWT期限切れ） |
 | `FORBIDDEN` | 403 | 全API | SYSTEM_ADMIN 以外のロールによるアクセス |
-| `VALIDATION_ERROR` | 400 | 002 | 入力バリデーションエラー（valueTypeに対する不正な値） |
+| `INVALID_PARAM_VALUE` | 422 | 002 | パラメータ値がnull、またはvalueTypeに対して不正な値 |
 | `SYSTEM_PARAMETER_NOT_FOUND` | 404 | 002 | 指定したパラメータキーが存在しない |
 
 ---

@@ -146,7 +146,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "not_a_number", 0))
                 .isInstanceOf(com.wms.shared.exception.BusinessRuleViolationException.class)
-                .hasMessageContaining("not_a_number");
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("not_a_number");
     }
 
     @Test
@@ -217,7 +218,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("FEATURE_FLAG", "yes", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("yes");
+                .hasMessageContaining("BOOLEAN型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("yes");
     }
 
     @Test
@@ -298,6 +300,99 @@ class SystemParameterServiceTest {
         String exactValue = "a".repeat(500);
         SystemParameter result = systemParameterService.updateValue("NAME", exactValue, 0);
         assertThat(result.getParamValue()).isEqualTo(exactValue);
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 負値(-1)でBusinessRuleViolationException（先頭ゼロ禁止正規表現で拒否）")
+    void updateValue_integerType_negativeValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-1", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("-1")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — Integer.MIN_VALUE境界でBusinessRuleViolationException（先頭ゼロ禁止正規表現で拒否）")
+    void updateValue_integerType_minIntValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-2147483648", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("-2147483648")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 小数値(1.5)でBusinessRuleViolationException")
+    void updateValue_integerType_decimalValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "1.5", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("1.5")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 先頭ゼロ付き'00'でBusinessRuleViolationException")
+    void updateValue_integerType_leadingZero_00_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "00", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 先頭ゼロ付き'01'でBusinessRuleViolationException")
+    void updateValue_integerType_leadingZero_01_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "01", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
+                        .isEqualTo("INVALID_PARAM_VALUE"));
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 0は正常に通る(境界値)")
+    void updateValue_integerType_zeroValue_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("TIMEOUT", "0", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("0");
     }
 
     @Test

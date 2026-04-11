@@ -4895,8 +4895,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SystemParameterDetail'
-        '400':
-          $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4914,6 +4912,17 @@ paths:
                     message: 指定されたパラメータキーが見つかりません
         '409':
           $ref: '#/components/responses/OptimisticLockConflict'
+        '422':
+          description: パラメータ値が業務ルール違反
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidParamValue:
+                  value:
+                    errorCode: INVALID_PARAM_VALUE
+                    message: パラメータ値が不正です
 
   # ============================================================
   # ALLOCATION - 在庫引当
