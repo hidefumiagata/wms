@@ -61,11 +61,6 @@ public class SystemParameterService {
         }
     }
 
-    /** ログインジェクション防止のため改行・タブ文字を除去する */
-    private String sanitize(String value) {
-        return value.replaceAll("[\r\n\t]", "_");
-    }
-
     private void validateParamValue(SystemParameter param, String newValue) {
         if (newValue == null) {
             throw new BusinessRuleViolationException(
@@ -76,14 +71,18 @@ public class SystemParameterService {
             try {
                 int parsed = Integer.parseInt(newValue);
                 if (parsed < 0) {
+                    log.warn("INVALID_PARAM_VALUE: INTEGER type negative value rejected: key={}, value={}",
+                            param.getParamKey(), sanitize(newValue));
                     throw new BusinessRuleViolationException(
                             "INVALID_PARAM_VALUE",
-                            "INTEGER型パラメータに負の値は設定できません: " + sanitize(newValue));
+                            "INTEGER型パラメータに負の値は設定できません");
                 }
             } catch (NumberFormatException e) {
+                log.warn("INVALID_PARAM_VALUE: INTEGER type invalid value rejected: key={}, value={}",
+                        param.getParamKey(), sanitize(newValue));
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "INTEGER型パラメータに不正な値: " + sanitize(newValue));
+                        "INTEGER型パラメータに不正な値が指定されました");
             }
         } else if ("STRING".equals(param.getValueType())) {
             if (newValue.isBlank()) {
@@ -98,10 +97,17 @@ public class SystemParameterService {
             }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
+                log.warn("INVALID_PARAM_VALUE: BOOLEAN type invalid value rejected: key={}, value={}",
+                        param.getParamKey(), sanitize(newValue));
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "BOOLEAN型パラメータに不正な値: " + sanitize(newValue));
+                        "BOOLEAN型パラメータに不正な値が指定されました");
             }
         }
+    }
+
+    /** ログインジェクション防止のため改行・タブ文字を除去する */
+    private String sanitize(String value) {
+        return value.replaceAll("[\r\n\t]", "_");
     }
 }

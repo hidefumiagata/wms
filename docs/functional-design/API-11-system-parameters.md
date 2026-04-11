@@ -199,8 +199,7 @@ flowchart TD
 ```json
 {
   "errorCode": "INVALID_PARAM_VALUE",
-  "message": "パラメータ値が不正です",
-  "details": []
+  "message": "パラメータ値が不正です"
 }
 ```
 

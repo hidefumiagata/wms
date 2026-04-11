@@ -146,7 +146,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "not_a_number", 0))
                 .isInstanceOf(com.wms.shared.exception.BusinessRuleViolationException.class)
-                .hasMessageContaining("not_a_number");
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("not_a_number");
     }
 
     @Test
@@ -217,7 +218,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("FEATURE_FLAG", "yes", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("yes");
+                .hasMessageContaining("BOOLEAN型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("yes");
     }
 
     @Test
@@ -310,7 +312,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-1", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("-1")
+                .hasMessageContaining("INTEGER型パラメータに負の値は設定できません")
+                .hasMessageNotContaining("-1")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
     }
@@ -325,7 +328,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-2147483648", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("-2147483648")
+                .hasMessageContaining("INTEGER型パラメータに負の値は設定できません")
+                .hasMessageNotContaining("-2147483648")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
     }
@@ -340,7 +344,8 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "1.5", 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("1.5")
+                .hasMessageContaining("INTEGER型パラメータに不正な値が指定されました")
+                .hasMessageNotContaining("1.5")
                 .satisfies(e -> assertThat(((BusinessRuleViolationException) e).getErrorCode())
                         .isEqualTo("INVALID_PARAM_VALUE"));
     }
