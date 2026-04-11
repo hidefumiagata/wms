@@ -60,6 +60,11 @@ public class SystemParameterService {
     }
 
     private void validateParamValue(SystemParameter param, String newValue) {
+        if (newValue == null) {
+            throw new BusinessRuleViolationException(
+                    "INVALID_PARAM_VALUE",
+                    "パラメータ値にnullは設定できません");
+        }
         if ("INTEGER".equals(param.getValueType())) {
             try {
                 Integer.parseInt(newValue);
@@ -69,7 +74,7 @@ public class SystemParameterService {
                         "INTEGER型パラメータに不正な値: " + newValue);
             }
         } else if ("STRING".equals(param.getValueType())) {
-            if (newValue == null || newValue.isBlank()) {
+            if (newValue.isBlank()) {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
                         "STRING型パラメータに空の値は設定できません");

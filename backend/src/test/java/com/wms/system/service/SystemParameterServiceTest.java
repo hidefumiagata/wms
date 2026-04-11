@@ -243,7 +243,33 @@ class SystemParameterServiceTest {
 
         assertThatThrownBy(() -> systemParameterService.updateValue("NAME", null, 0))
                 .isInstanceOf(BusinessRuleViolationException.class)
-                .hasMessageContaining("STRING");
+                .hasMessageContaining("null");
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — nullでBusinessRuleViolationException")
+    void updateValue_integerType_nullValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", null, 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("null");
+    }
+
+    @Test
+    @DisplayName("updateValue: BOOLEAN型 — nullでBusinessRuleViolationException")
+    void updateValue_booleanType_nullValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("FEATURE_FLAG").paramValue("true").valueType("BOOLEAN").build();
+        when(systemParameterRepository.findByParamKey("FEATURE_FLAG"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("FEATURE_FLAG", null, 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("null");
     }
 
     @Test

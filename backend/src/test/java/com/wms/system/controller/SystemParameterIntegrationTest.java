@@ -516,7 +516,7 @@ class SystemParameterIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
-        @DisplayName("SC-004: BOOLEAN型に不正値 → 422")
+        @DisplayName("BOOLEAN型に不正値 → 422")
         void update_booleanInvalidValue_returns422() throws Exception {
             Integer version = getVersion("AUTO_ALLOCATE_ON_OUTBOUND");
             String body = String.format("""
