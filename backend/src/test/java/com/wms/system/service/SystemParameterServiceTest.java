@@ -6,6 +6,7 @@ import com.wms.shared.exception.ResourceNotFoundException;
 import com.wms.system.entity.SystemParameter;
 import com.wms.system.repository.SystemParameterRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,15 +65,38 @@ class SystemParameterServiceTest {
         assertThat(systemParameterService.getIntValue("LOGIN_FAILURE_LOCK_COUNT")).isEqualTo(5);
     }
 
-    @Test
-    void findAll_returnsList() {
-        SystemParameter p1 = SystemParameter.builder().paramKey("KEY1").paramValue("V1").build();
-        SystemParameter p2 = SystemParameter.builder().paramKey("KEY2").paramValue("V2").build();
-        when(systemParameterRepository.findAll()).thenReturn(List.of(p1, p2));
+    @Nested
+    @DisplayName("findAll")
+    class FindAll {
 
-        List<SystemParameter> result = systemParameterService.findAll();
+        @Test
+        @DisplayName("正常系: ソート済みリストを返す")
+        void findAll_returnsSortedList() {
+            SystemParameter p1 = SystemParameter.builder()
+                    .paramKey("KEY1").paramValue("V1").category("INVENTORY").displayOrder(1).build();
+            SystemParameter p2 = SystemParameter.builder()
+                    .paramKey("KEY2").paramValue("V2").category("INVENTORY").displayOrder(2).build();
+            SystemParameter p3 = SystemParameter.builder()
+                    .paramKey("KEY3").paramValue("V3").category("SYSTEM").displayOrder(1).build();
+            when(systemParameterRepository.findAllByOrderByCategoryAscDisplayOrderAsc())
+                    .thenReturn(List.of(p1, p2, p3));
 
-        assertThat(result).hasSize(2);
+            List<SystemParameter> result = systemParameterService.findAll();
+
+            assertThat(result).containsExactly(p1, p2, p3);
+            verify(systemParameterRepository).findAllByOrderByCategoryAscDisplayOrderAsc();
+        }
+
+        @Test
+        @DisplayName("正常系: 空リストを返す")
+        void findAll_empty_returnsEmptyList() {
+            when(systemParameterRepository.findAllByOrderByCategoryAscDisplayOrderAsc())
+                    .thenReturn(List.of());
+
+            List<SystemParameter> result = systemParameterService.findAll();
+
+            assertThat(result).isEmpty();
+        }
     }
 
     @Test
