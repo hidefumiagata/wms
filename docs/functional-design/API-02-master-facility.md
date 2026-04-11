@@ -561,6 +561,7 @@ flowchart TD
 | **メソッド** | `GET` |
 | **エンドポイント** | `/api/v1/master/warehouses/exists` |
 | **概要** | 指定された倉庫コードがすでに登録されているか確認する。倉庫登録画面（MST-022）でのリアルタイム重複チェックに使用する。 |
+| **認可ロール** | SYSTEM_ADMIN、WAREHOUSE_MANAGER |
 
 ### 2. リクエスト仕様
 
@@ -594,7 +595,7 @@ GET /api/v1/master/warehouses/exists?warehouseCode=WH-001
 |-------------|-----------|--------|
 | `400 Bad Request` | `VALIDATION_ERROR` | `warehouseCode` が未指定 |
 | `401 Unauthorized` | `UNAUTHORIZED` | 未認証 |
-| `403 Forbidden` | `FORBIDDEN` | SYSTEM_ADMIN 以外のロールでのアクセス |
+| `403 Forbidden` | `FORBIDDEN` | 権限不足（対象ロール以外でのアクセス） |
 
 ### 4. 業務ロジック
 
@@ -602,7 +603,7 @@ GET /api/v1/master/warehouses/exists?warehouseCode=WH-001
 flowchart TD
     START([開始: GET /api/v1/master/warehouses/exists]) --> AUTH[JWT認証・ロール確認]
     AUTH -->|未認証| ERR_401[401 UNAUTHORIZED]
-    AUTH -->|SYSTEM_ADMIN以外| ERR_403[403 FORBIDDEN]
+    AUTH -->|権限不足| ERR_403[403 FORBIDDEN]
     AUTH -->|OK| VALIDATE[warehouseCodeパラメータ存在確認]
     VALIDATE -->|未指定| ERR_400[400 VALIDATION_ERROR]
     VALIDATE -->|OK| CHECK["SELECT COUNT(*) FROM warehouses<br/>WHERE warehouse_code = :warehouseCode"]
