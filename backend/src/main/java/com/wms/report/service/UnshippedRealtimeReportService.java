@@ -52,8 +52,7 @@ public class UnshippedRealtimeReportService {
                 warehouseId, asOfDate, format);
 
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         String warehouseName = formatWarehouseName(warehouse);
 

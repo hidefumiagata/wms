@@ -49,8 +49,7 @@ public class InboundInspectionReportService {
         log.info("RPT-01 入荷検品レポート生成開始: slipId={}, format={}", slipId, format);
         List<InboundSlipLine> lines = inboundReportRepository.findInspectionReportData(slipId);
         if (lines.isEmpty()) {
-            throw new ResourceNotFoundException("INBOUND_SLIP_NOT_FOUND",
-                    "入荷伝票が見つかりません: slipId=" + slipId);
+            throw ResourceNotFoundException.of("INBOUND_SLIP_NOT_FOUND", "入荷伝票", slipId);
         }
 
         InboundSlip slip = lines.getFirst().getInboundSlip();

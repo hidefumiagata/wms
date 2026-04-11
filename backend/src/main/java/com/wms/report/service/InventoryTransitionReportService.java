@@ -69,12 +69,10 @@ public class InventoryTransitionReportService {
                 warehouseId, productId, format);
 
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("PRODUCT_NOT_FOUND",
-                        "商品が見つかりません: productId=" + productId));
+                .orElseThrow(() -> ResourceNotFoundException.of("PRODUCT_NOT_FOUND", "商品", productId));
 
         LocalDate effectiveDateFrom = dateFrom != null ? dateFrom
                 : businessDateProvider.today().withDayOfMonth(1);

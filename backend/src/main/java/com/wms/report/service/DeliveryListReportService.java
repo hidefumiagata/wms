@@ -56,8 +56,7 @@ public class DeliveryListReportService {
         log.info("RPT-14 配送リスト生成開始: warehouseId={}, format={}", warehouseId, format);
 
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         String warehouseName = formatWarehouseName(warehouse);
 

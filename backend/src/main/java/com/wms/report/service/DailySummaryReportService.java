@@ -56,8 +56,8 @@ public class DailySummaryReportService {
         boolean batchCompleted = batchExecutionLogRepository
                 .existsByTargetBusinessDateAndStatus(targetBusinessDate, BATCH_STATUS_SUCCESS);
         if (!batchCompleted) {
-            throw new ResourceNotFoundException("BATCH_EXECUTION_NOT_FOUND",
-                    "指定日の日替処理が完了していません: targetBusinessDate=" + targetBusinessDate);
+            throw ResourceNotFoundException.of("BATCH_EXECUTION_NOT_FOUND",
+                    "日替処理結果", targetBusinessDate);
         }
 
         List<DailySummaryReportRow> rows = dailySummaryRecordRepository.findDailySummaryData(targetBusinessDate);

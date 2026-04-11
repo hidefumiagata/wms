@@ -39,6 +39,16 @@ public final class ResourceNotFoundException extends WmsException {
      * resourceName はロガー名に依らず一意に grep 可能なため、通常運用では本ファクトリの
      * 利用で差し支えない (MDC の traceId も併用される)。</p>
      *
+     * <p><strong>id 引数の安全性:</strong> {@code id} は信頼できる内部 PK (Long 等の数値型) のみを
+     * 渡すこと。ユーザー入力由来の文字列を直接渡すと、{@code \r\n} を含む値で偽ログ行が挿入される
+     * (CRLF ログインジェクション) リスクがある。文字列 ID をログ出力する場合は呼び出し元で
+     * 改行文字をサニタイズしてから渡すこと。</p>
+     *
+     * @param errorCode エラーコード文字列 (例: {@code "WAREHOUSE_NOT_FOUND"})。
+     *                  error-codes.md に定義されたリテラルを直接指定すること。
+     * @param resourceName リソース種別名 (例: {@code "倉庫"}, {@code "棚卸"})。
+     *                     コードリテラルのみ許容。ユーザー入力由来の値を渡してはならない
+     *                     (ログインジェクション・メッセージ汚染の防止)。
      * @param id 内部 PK — メッセージには埋め込まれず、ログ出力専用。
      */
     public static ResourceNotFoundException of(String errorCode, String resourceName, Object id) {

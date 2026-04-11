@@ -1,8 +1,15 @@
 package com.wms.shared.exception;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -69,6 +76,53 @@ class ExceptionClassesTest {
             assertThat(ex.getMessage()).isEqualTo("ユーザー が見つかりません");
             assertThat(ex.getMessage()).doesNotContain("admin");
             assertThat(ex.getMessage()).doesNotContain("id=");
+        }
+
+        @Nested
+        @DisplayName("of() 副作用ログ検証 (仕様: ファクトリ内部で log.info を出力)")
+        class OfSideEffectLogTest {
+
+            private Logger factoryLogger;
+            private ListAppender<ILoggingEvent> appender;
+
+            @BeforeEach
+            void setUp() {
+                factoryLogger = (Logger) LoggerFactory.getLogger(ResourceNotFoundException.class);
+                appender = new ListAppender<>();
+                appender.start();
+                factoryLogger.addAppender(appender);
+            }
+
+            @AfterEach
+            void tearDown() {
+                factoryLogger.detachAppender(appender);
+                appender.stop();
+            }
+
+            @Test
+            @DisplayName("of(): INFO レベルで 'resourceName not found: id=<id>, errorCode=<code>' が出力される")
+            void of_emitsInfoLogWithIdAndErrorCode() {
+                ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", 42L);
+
+                assertThat(appender.list)
+                        .as("ファクトリ呼び出しで 1 件の INFO ログが出力される")
+                        .hasSize(1);
+                ILoggingEvent event = appender.list.get(0);
+                assertThat(event.getLevel()).isEqualTo(Level.INFO);
+                // SLF4J のパラメータ付きメッセージはフォーマット済み文字列を getFormattedMessage() で取得
+                assertThat(event.getFormattedMessage())
+                        .isEqualTo("倉庫 not found: id=42, errorCode=WAREHOUSE_NOT_FOUND");
+            }
+
+            @Test
+            @DisplayName("of(): 文字列IDでもログには id が出力される (メッセージには埋め込まれない)")
+            void of_withStringId_emitsInfoLogWithStringId() {
+                ResourceNotFoundException.of("USER_NOT_FOUND", "ユーザー", "admin");
+
+                assertThat(appender.list).hasSize(1);
+                assertThat(appender.list.get(0).getFormattedMessage())
+                        .isEqualTo("ユーザー not found: id=admin, errorCode=USER_NOT_FOUND");
+            }
         }
     }
 

@@ -23,8 +23,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.time.LocalDate;
 import java.util.List;
 
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -288,10 +289,8 @@ class DailySummaryReportServiceTest {
             when(batchExecutionLogRepository.existsByTargetBusinessDateAndStatus(TARGET_DATE, DailySummaryReportService.BATCH_STATUS_SUCCESS))
                     .thenReturn(false);
 
-            assertThatThrownBy(() -> service.generate(TARGET_DATE, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("BATCH_EXECUTION_NOT_FOUND"));
+            Throwable thrown = catchThrowable(() -> service.generate(TARGET_DATE, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "BATCH_EXECUTION_NOT_FOUND", "日替処理結果");
         }
     }
 }

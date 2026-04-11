@@ -48,8 +48,7 @@ public class InventoryReportService {
 
         log.info("RPT-07 在庫一覧レポート生成開始: warehouseId={}, format={}", warehouseId, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         String unitTypeStr = unitType != null ? unitType.getValue() : null;
         String storageConditionStr = storageCondition != null ? storageCondition.getValue() : null;

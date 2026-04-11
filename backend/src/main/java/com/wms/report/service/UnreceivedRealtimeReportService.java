@@ -57,8 +57,7 @@ public class UnreceivedRealtimeReportService {
         log.info("RPT-05 未入荷リスト（リアルタイム）生成開始: warehouseId={}, asOfDate={}, format={}",
                 warehouseId, asOfDate, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         LocalDate effectiveDate = asOfDate != null ? asOfDate : businessDateProvider.today();
 

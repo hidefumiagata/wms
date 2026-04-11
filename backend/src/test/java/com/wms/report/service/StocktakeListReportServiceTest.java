@@ -11,7 +11,6 @@ import com.wms.master.repository.WarehouseRepository;
 import com.wms.report.repository.StocktakeReportRepository;
 import com.wms.report.repository.projection.StocktakeListRow;
 import com.wms.shared.exception.BusinessRuleViolationException;
-import com.wms.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,8 +28,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import static com.wms.shared.exception.ResourceNotFoundAssertions.assertResourceNotFound;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -288,10 +289,9 @@ class StocktakeListReportServiceTest {
         void generate_stocktakeNotFound_throwsException() {
             when(stocktakeHeaderRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(999L, null, null, null, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("STOCKTAKE_NOT_FOUND"));
+            Throwable stocktakeThrown = catchThrowable(
+                    () -> service.generate(999L, null, null, null, ReportFormat.JSON));
+            assertResourceNotFound(stocktakeThrown, "STOCKTAKE_NOT_FOUND", "棚卸");
         }
 
         @Test
@@ -299,36 +299,33 @@ class StocktakeListReportServiceTest {
         void generate_buildingNotFound_throwsException() {
             when(buildingRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(null, 999L, null, null, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("BUILDING_NOT_FOUND"));
+            Throwable thrown = catchThrowable(
+                    () -> service.generate(null, 999L, null, null, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "BUILDING_NOT_FOUND", "棟");
         }
 
         @Test
-        @DisplayName("棚卸の倉庫が存在しない場合はResourceNotFoundException")
+        @DisplayName("棚卸の倉庫が存在しない場合はResourceNotFoundException (連鎖 lookup: 棚卸 10L 成功 → 倉庫 999L 失敗)")
         void generate_stocktakeWarehouseNotFound_throwsException() {
             stocktakeHeader.setWarehouseId(999L);
             when(stocktakeHeaderRepository.findById(10L)).thenReturn(Optional.of(stocktakeHeader));
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(10L, null, null, null, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("WAREHOUSE_NOT_FOUND"));
+            Throwable thrown = catchThrowable(
+                    () -> service.generate(10L, null, null, null, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "WAREHOUSE_NOT_FOUND", "倉庫");
         }
 
         @Test
-        @DisplayName("棟の倉庫が存在しない場合はResourceNotFoundException")
+        @DisplayName("棟の倉庫が存在しない場合はResourceNotFoundException (連鎖 lookup: 棟 5L 成功 → 倉庫 999L 失敗)")
         void generate_buildingWarehouseNotFound_throwsException() {
             building.setWarehouseId(999L);
             when(buildingRepository.findById(5L)).thenReturn(Optional.of(building));
             when(warehouseRepository.findById(999L)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> service.generate(null, 5L, null, null, ReportFormat.JSON))
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .satisfies(ex -> assertThat(((ResourceNotFoundException) ex).getErrorCode())
-                            .isEqualTo("WAREHOUSE_NOT_FOUND"));
+            Throwable thrown = catchThrowable(
+                    () -> service.generate(null, 5L, null, null, ReportFormat.JSON));
+            assertResourceNotFound(thrown, "WAREHOUSE_NOT_FOUND", "倉庫");
         }
     }
 

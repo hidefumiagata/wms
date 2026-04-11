@@ -57,8 +57,7 @@ public class InventoryCorrectionReportService {
 
         log.info("RPT-09 在庫訂正一覧生成開始: warehouseId={}, format={}", warehouseId, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         LocalDate effectiveDateFrom = correctionDateFrom != null ? correctionDateFrom
                 : businessDateProvider.today().withDayOfMonth(1);

@@ -57,8 +57,7 @@ public class InboundResultReportService {
 
         log.info("RPT-04 入庫実績レポート生成開始: warehouseId={}, format={}", warehouseId, format);
         Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + warehouseId));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", warehouseId));
 
         OffsetDateTime fromOdt = storedDateFrom != null
                 ? storedDateFrom.atStartOfDay(JST).toOffsetDateTime() : null;

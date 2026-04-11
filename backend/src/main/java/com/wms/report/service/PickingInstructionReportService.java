@@ -53,12 +53,10 @@ public class PickingInstructionReportService {
                 pickingInstructionId, format);
 
         PickingInstruction instruction = pickingInstructionRepository.findById(pickingInstructionId)
-                .orElseThrow(() -> new ResourceNotFoundException("PICKING_NOT_FOUND",
-                        "ピッキング指示が見つかりません: pickingInstructionId=" + pickingInstructionId));
+                .orElseThrow(() -> ResourceNotFoundException.of("PICKING_NOT_FOUND", "ピッキング指示", pickingInstructionId));
 
         Warehouse warehouse = warehouseRepository.findById(instruction.getWarehouseId())
-                .orElseThrow(() -> new ResourceNotFoundException("WAREHOUSE_NOT_FOUND",
-                        "倉庫が見つかりません: warehouseId=" + instruction.getWarehouseId()));
+                .orElseThrow(() -> ResourceNotFoundException.of("WAREHOUSE_NOT_FOUND", "倉庫", instruction.getWarehouseId()));
 
         String warehouseName = formatWarehouseName(warehouse);
 
