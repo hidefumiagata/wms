@@ -102,8 +102,8 @@
 |------|------|
 | シナリオID | SC-003 |
 | シナリオ名 | 正常系: STRING型パラメータの値を変更し、保存が成功する |
-| 前提条件 | SYSTEM_ADMINでログイン済み。STRING型パラメータが存在 |
-| テストデータ | STRING型パラメータ、変更後の値: `updated-string-value` |
+| 前提条件 | SYSTEM_ADMINでログイン済み。STRING型パラメータ `DEFAULT_WAREHOUSE_CODE` が存在（category: SYSTEM, 現在値: `WH001`） |
+| テストデータ | paramKey: `DEFAULT_WAREHOUSE_CODE`、現在値: `WH001`、変更後: `updated-string-value` |
 
 **テストステップ:**
 
@@ -130,8 +130,8 @@
 |------|------|
 | シナリオID | SC-004 |
 | シナリオ名 | 正常系: BOOLEAN型パラメータの値をトグルスイッチで変更し、保存が成功する |
-| 前提条件 | SYSTEM_ADMINでログイン済み。BOOLEAN型パラメータが存在（現在値: `true`） |
-| テストデータ | BOOLEAN型パラメータ、変更前: `true`、変更後: `false` |
+| 前提条件 | SYSTEM_ADMINでログイン済み。BOOLEAN型パラメータ `AUTO_ALLOCATE_ON_OUTBOUND` が存在（category: OUTBOUND, 現在値: `true`） |
+| テストデータ | paramKey: `AUTO_ALLOCATE_ON_OUTBOUND`、変更前: `true`、変更後: `false` |
 
 **テストステップ:**
 
@@ -284,8 +284,8 @@
 |------|------|
 | シナリオID | SC-010 |
 | シナリオ名 | 異常系: STRING型パラメータに空文字を入力し、バリデーションエラーとなる |
-| 前提条件 | SYSTEM_ADMINでログイン済み。STRING型パラメータが存在 |
-| テストデータ | STRING型パラメータ |
+| 前提条件 | SYSTEM_ADMINでログイン済み。STRING型パラメータ `DEFAULT_WAREHOUSE_CODE` が存在（category: SYSTEM, 現在値: `WH001`） |
+| テストデータ | paramKey: `DEFAULT_WAREHOUSE_CODE` |
 
 **テストステップ:**
 
