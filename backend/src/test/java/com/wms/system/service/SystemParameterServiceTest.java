@@ -83,13 +83,7 @@ class SystemParameterServiceTest {
 
             List<SystemParameter> result = systemParameterService.findAll();
 
-            assertThat(result).hasSize(3);
-            assertThat(result.get(0).getCategory()).isEqualTo("INVENTORY");
-            assertThat(result.get(0).getDisplayOrder()).isEqualTo(1);
-            assertThat(result.get(1).getCategory()).isEqualTo("INVENTORY");
-            assertThat(result.get(1).getDisplayOrder()).isEqualTo(2);
-            assertThat(result.get(2).getCategory()).isEqualTo("SYSTEM");
-            assertThat(result.get(2).getDisplayOrder()).isEqualTo(1);
+            assertThat(result).containsExactly(p1, p2, p3);
             verify(systemParameterRepository).findAllByOrderByCategoryAscDisplayOrderAsc();
         }
 
