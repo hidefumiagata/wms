@@ -19,6 +19,8 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class SystemParameterService {
 
+    private static final int STRING_MAX_LENGTH = 500;
+
     private final SystemParameterRepository systemParameterRepository;
 
     public List<SystemParameter> findAll() {
@@ -79,10 +81,10 @@ public class SystemParameterService {
                         "INVALID_PARAM_VALUE",
                         "STRING型パラメータに空の値は設定できません");
             }
-            if (newValue.length() > 500) {
+            if (newValue.length() > STRING_MAX_LENGTH) {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",
-                        "STRING型パラメータは500文字以内で入力してください");
+                        "STRING型パラメータは" + STRING_MAX_LENGTH + "文字以内で入力してください");
             }
         } else if ("BOOLEAN".equals(param.getValueType())) {
             if (!"true".equalsIgnoreCase(newValue) && !"false".equalsIgnoreCase(newValue)) {
