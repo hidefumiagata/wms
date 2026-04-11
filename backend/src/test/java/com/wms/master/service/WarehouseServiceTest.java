@@ -326,7 +326,10 @@ class WarehouseServiceTest {
             when(warehouseRepository.findById(1L)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> warehouseService.toggleActive(1L, false, 3))
-                    .isInstanceOf(OptimisticLockConflictException.class);
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
 
             verify(inventoryService, never()).hasInventoryByWarehouseId(any());
             verify(warehouseRepository, never()).save(any());

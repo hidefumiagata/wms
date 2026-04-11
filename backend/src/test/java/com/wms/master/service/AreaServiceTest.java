@@ -347,7 +347,10 @@ class AreaServiceTest {
             when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> areaService.toggleActive(1L, false, 3))
-                    .isInstanceOf(OptimisticLockConflictException.class);
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
 
             verify(locationRepository, never()).countByAreaIdAndIsActiveTrue(any());
             verify(areaRepository, never()).save(any());

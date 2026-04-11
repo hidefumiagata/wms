@@ -356,7 +356,10 @@ class UserServiceTest {
             when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> userService.toggleActive(1L, false, 3, 99L))
-                    .isInstanceOf(OptimisticLockConflictException.class);
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
 
             verify(userRepository, never()).save(any());
         }

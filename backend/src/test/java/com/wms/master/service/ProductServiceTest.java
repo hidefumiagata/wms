@@ -471,7 +471,10 @@ class ProductServiceTest {
             when(productRepository.findById(1L)).thenReturn(Optional.of(existing));
 
             assertThatThrownBy(() -> productService.toggleActive(1L, false, 3))
-                    .isInstanceOf(OptimisticLockConflictException.class);
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
 
             verify(inventoryService, never()).hasInventoryByProductId(any());
             verify(productRepository, never()).save(any());
