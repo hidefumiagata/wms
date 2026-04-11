@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -88,7 +89,7 @@ public class ProductService {
     public Product update(UpdateProductCommand cmd) {
         Product product = findById(cmd.id());
 
-        if (!product.getVersion().equals(cmd.version())) {
+        if (!Objects.equals(product.getVersion(), cmd.version())) {
             log.info("Product update version mismatch: id={}, expected={}, actual={}",
                     cmd.id(), cmd.version(), product.getVersion());
             throw OptimisticLockConflictException.standard();
@@ -123,7 +124,7 @@ public class ProductService {
         } else {
             product.deactivate();
         }
-        product.setVersion(cmd.version());
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Product saved = productRepository.save(product);
             log.info("Product updated: id={}, name={}", cmd.id(), cmd.productName());
@@ -137,29 +138,28 @@ public class ProductService {
     @Transactional
     public Product toggleActive(Long id, boolean isActive, Integer version) {
         Product product = findById(id);
-
-        if (!product.getVersion().equals(version)) {
+        // API-04 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(product.getVersion(), version)) {
             log.info("Product toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, product.getVersion());
             throw OptimisticLockConflictException.standard();
         }
-
+        if (Objects.equals(product.getIsActive(), isActive)) {
+            log.info("Product toggleActive no-op: id={}, isActive={}", id, isActive);
+            return product;
+        }
         if (!isActive && inventoryService.hasInventoryByProductId(id)) {
             // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
             log.info("Product deactivate blocked by inventory: id={}", id);
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_INVENTORY",
                     "在庫が存在するため商品を無効化できません");
         }
-        if (product.getIsActive().equals(isActive)) {
-            log.info("Product toggleActive no-op: id={}, isActive={}", id, isActive);
-            return product;
-        }
         if (isActive) {
             product.activate();
         } else {
             product.deactivate();
         }
-        product.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Product saved = productRepository.save(product);
             log.info("Product toggled: id={}, isActive={}", id, isActive);

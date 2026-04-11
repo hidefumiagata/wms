@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,14 +72,14 @@ public class AreaService {
     @Transactional
     public Area update(Long id, String areaName, String storageCondition, Integer version) {
         Area area = findById(id);
-        if (!area.getVersion().equals(version)) {
+        if (!Objects.equals(area.getVersion(), version)) {
             log.info("Area update version mismatch: id={}, expected={}, actual={}",
                     id, version, area.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         area.setAreaName(areaName);
         area.setStorageCondition(storageCondition);
-        area.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Area saved = areaRepository.save(area);
             log.info("Area updated: id={}, name={}", id, areaName);
@@ -92,10 +93,15 @@ public class AreaService {
     @Transactional
     public Area toggleActive(Long id, boolean isActive, Integer version) {
         Area area = findById(id);
-        if (!area.getVersion().equals(version)) {
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(area.getVersion(), version)) {
             log.info("Area toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, area.getVersion());
             throw OptimisticLockConflictException.standard();
+        }
+        if (Objects.equals(area.getIsActive(), isActive)) {
+            log.info("Area toggleActive no-op: id={}, isActive={}", id, isActive);
+            return area;
         }
         if (!isActive && locationRepository.countByAreaIdAndIsActiveTrue(id) > 0) {
             // OWASP A09: 例外メッセージには内部 id を含めない。id は log 側に出力。
@@ -103,16 +109,12 @@ public class AreaService {
             throw new BusinessRuleViolationException("CANNOT_DEACTIVATE_HAS_CHILDREN",
                     "配下に有効なロケーションが存在するため無効化できません");
         }
-        if (area.getIsActive().equals(isActive)) {
-            log.info("Area toggleActive no-op: id={}, isActive={}", id, isActive);
-            return area;
-        }
         if (isActive) {
             area.activate();
         } else {
             area.deactivate();
         }
-        area.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Area saved = areaRepository.save(area);
             log.info("Area toggled: id={}, isActive={}", id, isActive);

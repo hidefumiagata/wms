@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -102,13 +103,13 @@ public class LocationService {
     @Transactional
     public Location update(Long id, String locationName, Integer version) {
         Location location = findById(id);
-        if (!location.getVersion().equals(version)) {
+        if (!Objects.equals(location.getVersion(), version)) {
             log.info("Location update version mismatch: id={}, expected={}, actual={}",
                     id, version, location.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         location.setLocationName(locationName);
-        location.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Location saved = locationRepository.save(location);
             log.info("Location updated: id={}, name={}", id, locationName);
@@ -122,13 +123,14 @@ public class LocationService {
     @Transactional
     public Location toggleActive(Long id, boolean isActive, Integer version) {
         Location location = findById(id);
-        if (!location.getVersion().equals(version)) {
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        if (!Objects.equals(location.getVersion(), version)) {
             log.info("Location toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, location.getVersion());
             throw OptimisticLockConflictException.standard();
         }
         // 冪等性のため、状態が実際に変化しない場合は早期 return（後続の在庫チェックも省略）
-        if (location.getIsActive().equals(isActive)) {
+        if (Objects.equals(location.getIsActive(), isActive)) {
             log.info("Location toggleActive no-op: id={}, isActive={}", id, isActive);
             return location;
         }
@@ -155,7 +157,7 @@ public class LocationService {
         } else {
             location.deactivate();
         }
-        location.setVersion(version);
+        // version は事前チェックで一致確認済みのため再代入不要。
         try {
             Location saved = locationRepository.save(location);
             log.info("Location toggled: id={}, isActive={}", id, isActive);

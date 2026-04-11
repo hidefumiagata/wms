@@ -295,6 +295,38 @@ class BuildingServiceTest {
             assertThatThrownBy(() -> buildingService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Building existing = createBuilding(1L, 10L, "BLDG01", "棟A");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(buildingRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> buildingService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
+
+            verify(areaRepository, never()).countByBuildingId(any());
+            verify(buildingRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Building existing = createBuilding(1L, 10L, "BLDG01", "棟A");
+            existing.setVersion(5);
+            when(buildingRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> buildingService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(areaRepository, never()).countByBuildingId(any());
+            verify(buildingRepository, never()).save(any());
+        }
     }
 
     @Nested

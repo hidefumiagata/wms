@@ -337,6 +337,38 @@ class AreaServiceTest {
             assertThatThrownBy(() -> areaService.toggleActive(1L, false, 0))
                     .isInstanceOf(OptimisticLockConflictException.class);
         }
+
+        @Test
+        @DisplayName("[#470] no-op (既無効化) でも stale version は 409 を返す")
+        void toggleActive_noOpWithStaleVersion_throwsOptimisticLockConflict() {
+            Area existing = createArea(1L, 1L, 1L, "A01", "エリア", "STOCK", "AMBIENT");
+            existing.deactivate();
+            existing.setVersion(5);
+            when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> areaService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class)
+                    .hasMessageContaining("他のユーザーによる更新が先行しました")
+                    // OWASP A09: 内部 id をクライアント向け例外メッセージに露出しない
+                    .hasMessageNotContaining("id=");
+
+            verify(locationRepository, never()).countByAreaIdAndIsActiveTrue(any());
+            verify(areaRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("[#470] BR 違反かつ stale version の場合は 409 (OL) が 422 (BR) より優先される")
+        void toggleActive_brViolationAndStaleVersion_optimisticLockTakesPrecedence() {
+            Area existing = createArea(1L, 1L, 1L, "A01", "エリア", "STOCK", "AMBIENT");
+            existing.setVersion(5);
+            when(areaRepository.findById(1L)).thenReturn(Optional.of(existing));
+
+            assertThatThrownBy(() -> areaService.toggleActive(1L, false, 3))
+                    .isInstanceOf(OptimisticLockConflictException.class);
+
+            verify(locationRepository, never()).countByAreaIdAndIsActiveTrue(any());
+            verify(areaRepository, never()).save(any());
+        }
     }
 
     // --- Helpers ---
