@@ -326,6 +326,18 @@ class WarehouseControllerAuthTest {
 
     @Test
     @WithMockUser(roles = "WAREHOUSE_MANAGER")
+    @DisplayName("WAREHOUSE_MANAGERがGET詳細すると200を返す")
+    void get_warehouseManager_returns200() throws Exception {
+        Warehouse w = createWarehouse(1L, "TKYO", "東京倉庫");
+        when(warehouseService.findById(1L)).thenReturn(w);
+
+        mockMvc.perform(get(BASE_URL + "/1")
+                        .header("X-Requested-With", "XMLHttpRequest"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "WAREHOUSE_MANAGER")
     @DisplayName("WAREHOUSE_MANAGERがGET存在確認すると200を返す")
     void exists_warehouseManager_returns200() throws Exception {
         when(rateLimiterService.tryConsumeCodeExists(any())).thenReturn(true);
