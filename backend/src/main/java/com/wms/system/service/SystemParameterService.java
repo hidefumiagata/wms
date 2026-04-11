@@ -69,7 +69,12 @@ public class SystemParameterService {
         }
         if ("INTEGER".equals(param.getValueType())) {
             try {
-                Integer.parseInt(newValue);
+                int parsed = Integer.parseInt(newValue);
+                if (parsed < 0) {
+                    throw new BusinessRuleViolationException(
+                            "INVALID_PARAM_VALUE",
+                            "INTEGER型パラメータに負の値は設定できません: " + newValue);
+                }
             } catch (NumberFormatException e) {
                 throw new BusinessRuleViolationException(
                         "INVALID_PARAM_VALUE",

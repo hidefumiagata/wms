@@ -301,6 +301,47 @@ class SystemParameterServiceTest {
     }
 
     @Test
+    @DisplayName("updateValue: INTEGER型 — 負値(-1)でBusinessRuleViolationException")
+    void updateValue_integerType_negativeValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-1", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("-1");
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 負値(-100)でBusinessRuleViolationException")
+    void updateValue_integerType_largeNegativeValue_throwsBusinessRuleViolation() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+
+        assertThatThrownBy(() -> systemParameterService.updateValue("TIMEOUT", "-100", 0))
+                .isInstanceOf(BusinessRuleViolationException.class)
+                .hasMessageContaining("-100");
+    }
+
+    @Test
+    @DisplayName("updateValue: INTEGER型 — 0は正常に通る(境界値)")
+    void updateValue_integerType_zeroValue_succeeds() {
+        SystemParameter param = SystemParameter.builder()
+                .paramKey("TIMEOUT").paramValue("60").valueType("INTEGER").build();
+        when(systemParameterRepository.findByParamKey("TIMEOUT"))
+                .thenReturn(Optional.of(param));
+        when(systemParameterRepository.save(any(SystemParameter.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        SystemParameter result = systemParameterService.updateValue("TIMEOUT", "0", 0);
+
+        assertThat(result.getParamValue()).isEqualTo("0");
+    }
+
+    @Test
     void updateValue_optimisticLockConflict_throwsException() {
         SystemParameter param = SystemParameter.builder()
                 .paramKey("KEY1").paramValue("V1").build();
