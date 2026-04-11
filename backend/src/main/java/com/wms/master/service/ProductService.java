@@ -138,7 +138,7 @@ public class ProductService {
     @Transactional
     public Product toggleActive(Long id, boolean isActive, Integer version) {
         Product product = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-04 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(product.getVersion(), version)) {
             log.info("Product toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, product.getVersion());

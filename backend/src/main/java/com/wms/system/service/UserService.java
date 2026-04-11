@@ -100,7 +100,7 @@ public class UserService {
     @Transactional
     public User toggleActive(Long id, boolean isActive, Integer version, Long currentUserId) {
         User user = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-05 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(user.getVersion(), version)) {
             log.info("User toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, user.getVersion());

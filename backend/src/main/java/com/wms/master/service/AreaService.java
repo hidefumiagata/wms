@@ -93,7 +93,7 @@ public class AreaService {
     @Transactional
     public Area toggleActive(Long id, boolean isActive, Integer version) {
         Area area = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(area.getVersion(), version)) {
             log.info("Area toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, area.getVersion());

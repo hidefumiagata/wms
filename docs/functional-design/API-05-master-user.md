@@ -639,13 +639,16 @@ flowchart TD
     VALIDATE -->|OK| FETCH[SELECT FROM users WHERE id = :id]
 
     FETCH -->|存在しない| ERR_404[404 USER_NOT_FOUND]
-    FETCH -->|存在する| CHK_SELF{自分自身かつ\nisActive=false?}
-
-    CHK_SELF -->|Yes| ERR_422[422 CANNOT_DEACTIVATE_SELF]
-    CHK_SELF -->|No| CHK_VERSION{version一致?}
+    FETCH -->|存在する| CHK_VERSION{version一致?}
 
     CHK_VERSION -->|不一致| ERR_409[409 OPTIMISTIC_LOCK_CONFLICT]
-    CHK_VERSION -->|一致| UPDATE["UPDATE users SET<br/>- is_active = :isActive<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
+    CHK_VERSION -->|一致| CHK_SAME{既に同じ状態?}
+
+    CHK_SAME -->|Yes| END_NOOP([200 OK + 現在のユーザーオブジェクト\n冪等性: 更新なし])
+    CHK_SAME -->|No| CHK_SELF{自分自身かつ\nisActive=false?}
+
+    CHK_SELF -->|Yes| ERR_422[422 CANNOT_DEACTIVATE_SELF]
+    CHK_SELF -->|No| UPDATE["UPDATE users SET<br/>- is_active = :isActive<br/>- version = version + 1<br/>- updated_by = ログイン中ユーザーID<br/>- updated_at = NOW<br/>WHERE id = :id AND version = :version"]
 
     UPDATE --> END([200 OK + 更新後ユーザーオブジェクト])
 ```

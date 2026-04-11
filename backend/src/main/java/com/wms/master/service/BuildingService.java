@@ -86,7 +86,7 @@ public class BuildingService {
     @Transactional
     public Building toggleActive(Long id, boolean isActive, Integer version) {
         Building building = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(building.getVersion(), version)) {
             log.info("Building toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, building.getVersion());

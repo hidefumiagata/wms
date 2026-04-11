@@ -123,7 +123,7 @@ public class LocationService {
     @Transactional
     public Location toggleActive(Long id, boolean isActive, Integer version) {
         Location location = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(location.getVersion(), version)) {
             log.info("Location toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, location.getVersion());

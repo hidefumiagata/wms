@@ -101,7 +101,7 @@ public class WarehouseService {
     @Transactional
     public Warehouse toggleActive(Long id, boolean isActive, Integer version) {
         Warehouse warehouse = findById(id);
-        // API-03 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
+        // API-02 §4 業務フロー: CHECK_VERSION → CHECK_SAME → BR check の順で評価する
         if (!Objects.equals(warehouse.getVersion(), version)) {
             log.info("Warehouse toggleActive version mismatch: id={}, expected={}, actual={}",
                     id, version, warehouse.getVersion());
