@@ -62,6 +62,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -1569,6 +1570,7 @@ class InboundSlipServiceTest {
 
             when(inboundSlipRepository.findByIdWithLines(1L)).thenReturn(Optional.of(slip));
             when(inboundSlipRepository.save(any(InboundSlip.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(businessDateProvider.today()).thenReturn(TODAY);
 
             InspectInboundRequest request = new InspectInboundRequest()
                     .lines(List.of(new InspectLineRequest().lineId(11L).inspectedQty(48)));
@@ -1581,7 +1583,7 @@ class InboundSlipServiceTest {
             assertThat(result.getLines().get(0).getInspectedBy()).isEqualTo(10L);
             assertThat(result.getLines().get(0).getInspectedAt()).isNotNull();
             assertThat(result.getLines().get(0).getExpiryDate()).isNull();
-            verify(businessDateProvider, never()).today();
+            verify(businessDateProvider, times(1)).today();
         }
 
         @Test

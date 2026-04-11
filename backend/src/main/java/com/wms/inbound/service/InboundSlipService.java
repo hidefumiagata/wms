@@ -361,6 +361,7 @@ public class InboundSlipService {
 
         Long currentUserId = getCurrentUserId();
         OffsetDateTime now = OffsetDateTime.now();
+        LocalDate businessDate = businessDateProvider.today();
 
         for (InspectLineRequest lineReq : request.getLines()) {
             InboundSlipLine line = slip.getLines().stream()
@@ -386,9 +387,9 @@ public class InboundSlipService {
             }
 
             // 期限切れチェック（SC-INB-042）
-            if (line.getExpiryDate() != null && !line.getExpiryDate().isAfter(businessDateProvider.today())) {
+            if (line.getExpiryDate() != null && !line.getExpiryDate().isAfter(businessDate)) {
                 log.info("InboundSlip inspect expiry date expired: slipId={}, lineId={}, expiryDate={}, businessDate={}",
-                        id, line.getId(), line.getExpiryDate(), businessDateProvider.today());
+                        id, line.getId(), line.getExpiryDate(), businessDate);
                 throw new BusinessRuleViolationException("EXPIRY_DATE_EXPIRED",
                         "賞味期限が営業日以前のため入荷できません");
             }
