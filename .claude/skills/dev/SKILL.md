@@ -22,18 +22,21 @@ argument-hint: <Issue番号 または 開発内容の説明>
 
 ## 使用するサブエージェント一覧
 
-| エージェント | 用途 | 使用 Phase |
-|---|---|---|
-| `Explore`（組み込み） | 関連設計書の特定 | Phase 0 |
-| `Plan`（組み込み） | 詳細作業計画の立案 | Phase 1 |
-| `java-spring-tdd` | バックエンド TDD 実装 | Phase 2 (BE) |
-| `vue-ts-tdd` | フロントエンド TDD 実装 | Phase 2 (FE) |
-| `test-critic` | テスト品質批評 | Phase 3 |
-| `general-purpose` | git 操作・PR 作成・Issue 操作 | Phase 1, 4, 8 |
-| `code-expert-reviewer` | コード品質レビュー | Phase 5–7 |
-| `security-reviewer` | セキュリティレビュー | Phase 5–7 |
-| `design-conformance-reviewer` | 設計準拠レビュー | Phase 5–7 |
-| `review-fix-specialist` | レビュー指摘修正 | Phase 5–7 |
+| エージェント | 用途 | 使用 Phase | model |
+|---|---|---|---|
+| `Explore`（組み込み） | 関連設計書の特定 | Phase 0 | sonnet |
+| `Plan`（組み込み） | 詳細作業計画の立案 | Phase 1 | opus |
+| `java-spring-tdd` | バックエンド TDD 実装 | Phase 2 (BE) | opus |
+| `vue-ts-tdd` | フロントエンド TDD 実装 | Phase 2 (FE) | opus |
+| `test-critic` | テスト品質批評 | Phase 3 | sonnet |
+| `general-purpose` | git 操作・PR 作成・Issue 操作 | Phase 1, 4, 8 | haiku |
+| `code-expert-reviewer` | コード品質レビュー | Phase 5–7 | sonnet |
+| `security-reviewer` | セキュリティレビュー | Phase 5–7 | sonnet |
+| `design-conformance-reviewer` | 設計準拠レビュー | Phase 5–7 | sonnet |
+| `review-fix-specialist` | レビュー指摘修正 | Phase 5–7 | sonnet |
+
+> **モデル選定方針**: 実装・計画など創造性が必要な作業は opus、レビュー・批評など分析的な作業は sonnet、定型コマンド実行は haiku。
+> Agent ツール呼び出し時は必ず上記表の `model` パラメータを指定すること。
 
 ---
 
