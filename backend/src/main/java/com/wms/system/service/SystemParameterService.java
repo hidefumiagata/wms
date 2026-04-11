@@ -22,7 +22,7 @@ public class SystemParameterService {
     private final SystemParameterRepository systemParameterRepository;
 
     public List<SystemParameter> findAll() {
-        return systemParameterRepository.findAll();
+        return systemParameterRepository.findAllByOrderByCategoryAscDisplayOrderAsc();
     }
 
     public SystemParameter findByKey(String paramKey) {
